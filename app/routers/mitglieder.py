@@ -361,3 +361,121 @@ async def mitglieder_export_csv(request: Request, db: AsyncSession = Depends(get
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=mitglieder.csv"},
     )
+
+
+# ---------------------------------------------------------------------------
+# CSV-Import
+# ---------------------------------------------------------------------------
+
+@router.post("/import/csv")
+async def mitglieder_import_csv(
+    request: Request,
+    datei: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+
+    inhalt = await datei.read()
+    try:
+        text = inhalt.decode("utf-8-sig")  # BOM-safe (Excel)
+    except UnicodeDecodeError:
+        text = inhalt.decode("latin-1")    # Fallback für ältere Windows-Exporte
+
+    reader = csv.DictReader(io.StringIO(text), delimiter=";")
+
+    erstellt = 0
+    aktualisiert = 0
+    fehler = []
+
+    def parse_datum(s: str) -> Optional[date]:
+        s = s.strip()
+        for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d.%m.%y"):
+            try:
+                return date.fromisoformat(s) if fmt == "%Y-%m-%d" else date.strptime(s, fmt).date()
+            except ValueError:
+                continue
+        return None
+
+    for zeilennr, zeile in enumerate(reader, start=2):
+        vorname = zeile.get("Vorname", "").strip()
+        nachname = zeile.get("Nachname", "").strip()
+
+        if not vorname or not nachname:
+            fehler.append(f"Zeile {zeilennr}: Vor- oder Nachname fehlt – übersprungen.")
+            continue
+
+        # Duplikat-Erkennung: gleicher Vor- + Nachname + Geburtsdatum
+        geburtsdatum = parse_datum(zeile.get("Geburtsdatum", ""))
+        existing_query = select(Mitglied).where(
+            Mitglied.vorname == vorname,
+            Mitglied.nachname == nachname,
+            Mitglied.deleted_at.is_(None),
+        )
+        if geburtsdatum:
+            existing_query = existing_query.where(Mitglied.geburtsdatum == geburtsdatum)
+
+        existing = (await db.execute(existing_query)).scalar_one_or_none()
+
+        email_ben_str = zeile.get("E-Mail-Benachrichtigungen", "Ja").strip().lower()
+        email_benachrichtigungen = email_ben_str not in ("nein", "no", "false", "0")
+
+        felder = dict(
+            vorname=vorname,
+            nachname=nachname,
+            strasse=zeile.get("Strasse", "").strip() or None,
+            plz=zeile.get("PLZ", "").strip() or None,
+            ort=zeile.get("Ort", "").strip() or None,
+            geburtsdatum=geburtsdatum,
+            iban=zeile.get("IBAN", "").strip() or None,
+            mitglied_seit=parse_datum(zeile.get("Mitglied seit", "")),
+            mitglied_bis=parse_datum(zeile.get("Mitglied bis", "")),
+            email_benachrichtigungen=email_benachrichtigungen,
+            notizen=zeile.get("Notizen", "").strip() or None,
+        )
+
+        if existing:
+            # Vorhandenes Mitglied aktualisieren
+            for k, v in felder.items():
+                setattr(existing, k, v)
+            mitglied = existing
+            aktualisiert += 1
+        else:
+            mitglied = Mitglied(**felder)
+            db.add(mitglied)
+            await db.flush()  # ID generieren für Untereinträge
+            erstellt += 1
+
+        # E-Mail-Adressen (Semikolon-getrennt in einer Zelle)
+        emails_str = zeile.get("E-Mail-Adressen", "").strip()
+        if emails_str and not existing:
+            for i, adresse in enumerate(emails_str.split(";")):
+                adresse = adresse.strip().lower()
+                if adresse:
+                    db.add(MitgliedEmail(
+                        mitglied_id=mitglied.id,
+                        adresse=adresse,
+                        ist_primaer=(i == 0),
+                    ))
+
+        # Telefonnummern (Semikolon-getrennt in einer Zelle)
+        telefone_str = zeile.get("Telefonnummern", "").strip()
+        if telefone_str and not existing:
+            for i, nummer in enumerate(telefone_str.split(";")):
+                nummer = nummer.strip()
+                if nummer:
+                    db.add(MitgliedTelefon(
+                        mitglied_id=mitglied.id,
+                        nummer=nummer,
+                        ist_primaer=(i == 0),
+                    ))
+
+    await db.commit()
+
+    meldung = f"{erstellt} neu importiert, {aktualisiert} aktualisiert"
+    if fehler:
+        meldung += f", {len(fehler)} Fehler"
+
+    return RedirectResponse(
+        f"/mitglieder/?meldung={meldung}",
+        status_code=302,
+    )

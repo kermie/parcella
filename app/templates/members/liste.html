@@ -14,6 +14,13 @@
 {% endblock %}
 
 {% block content %}
+
+{% if request.query_params.get('meldung') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ request.query_params.get('meldung') }}
+</div>
+{% endif %}
+
 <!-- Suche -->
 <div class="card mb-3">
     <div class="card-body py-2">
@@ -27,6 +34,37 @@
             {% endif %}
         </form>
     </div>
+</div>
+
+<!-- CSV Import -->
+<div class="mb-3">
+    <details>
+        <summary class="text-muted" style="cursor: pointer; font-size: 0.85rem;">
+            <i class="bi bi-upload me-1"></i>CSV-Import
+        </summary>
+        <div class="card mt-2">
+            <div class="card-body">
+                <form method="post" action="/mitglieder/import/csv" enctype="multipart/form-data"
+                      class="d-flex gap-2 align-items-center flex-wrap">
+                    <input type="file" name="datei" accept=".csv" class="form-control form-control-sm"
+                           required style="max-width: 300px;">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-upload me-1"></i>Importieren
+                    </button>
+                </form>
+                <div class="form-text mt-2">
+                    Format: Semikolon-getrennte CSV mit Spalten:
+                    <code>Vorname; Nachname; Strasse; PLZ; Ort; Geburtsdatum; IBAN;
+                    Mitglied seit; Mitglied bis; E-Mail-Benachrichtigungen;
+                    E-Mail-Adressen; Telefonnummern; Notizen</code><br>
+                    Datumsformat: <code>JJJJ-MM-TT</code> oder <code>TT.MM.JJJJ</code>.
+                    Mehrere E-Mail-Adressen / Telefonnummern jeweils durch Semikolon trennen.<br>
+                    Tipp: Einfach einen <a href="/mitglieder/export/csv">CSV-Export</a>
+                    als Vorlage verwenden.
+                </div>
+            </div>
+        </div>
+    </details>
 </div>
 
 <!-- Tabelle -->
