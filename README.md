@@ -59,7 +59,7 @@ Im Entwicklungsmodus (SMTP nicht konfiguriert) erscheinen Einladungslinks direkt
 - ✅ Parzellentverwaltung (Status, Kündigung, Fläche)
 - ✅ m:n-Zuordnung Mitglied ↔ Parzelle (Haupt-/Mitpächter)
 - ✅ CSV-Export (Mitglieder, Parzellen)
-- ✅ CSV-Import (Parzellen)
+- ✅ CSV-Import und -Export (Mitglieder und Parzellen)
 - ✅ Vereinseinstellungen (Flächen A/B/C, SMTP)
 
 ## Geplant (nächste Phasen)
