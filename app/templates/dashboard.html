@@ -14,7 +14,8 @@
                 </div>
                 <div>
                     <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Mitglieder</div>
-                    <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);" id="stat-mitglieder">–</div>
+                    <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ stats.mitglieder_gesamt }}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">{{ stats.mitglieder_aktiv }} aktiv</div>
                 </div>
             </div>
             <div class="card-footer bg-transparent border-top-0 pt-0">
@@ -31,8 +32,13 @@
                     <i class="bi bi-grid-3x3"></i>
                 </div>
                 <div>
-                    <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Parzellen</div>
-                    <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-braun);" id="stat-parzellen">–</div>
+                    <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Parzellen aktiv</div>
+                    <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-braun);">{{ stats.parzellen_aktiv }}</div>
+                    {% if stats.parzellen_unbesetzt > 0 %}
+                    <div style="font-size: 0.75rem; color: #92400e;">{{ stats.parzellen_unbesetzt }} unbesetzt</div>
+                    {% else %}
+                    <div class="text-muted" style="font-size: 0.75rem;">alle besetzt</div>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-footer bg-transparent border-top-0 pt-0">
@@ -50,7 +56,8 @@
                 </div>
                 <div>
                     <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Gekündigt</div>
-                    <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;" id="stat-gekuendigt">–</div>
+                    <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;">{{ stats.parzellen_gekuendigt }}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">Parzellen</div>
                 </div>
             </div>
             <div class="card-footer bg-transparent border-top-0 pt-0">
@@ -68,10 +75,15 @@
                 </div>
                 <div>
                     <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">C-Fläche (qm)</div>
-                    <div style="font-size: 1.8rem; font-weight: 700; color: #1e40af;" id="stat-flaeche">–</div>
+                    <div style="font-size: 1.8rem; font-weight: 700; color: #1e40af;">
+                        {{ "{:,.0f}".format(stats.flaeche_gesamt_qm).replace(",", ".") }}
+                    </div>
+                    <div class="text-muted" style="font-size: 0.75rem;">aktive Parzellen</div>
                 </div>
             </div>
-            <div class="card-footer bg-transparent border-top-0 pt-0 text-muted" style="font-size: 0.75rem;">Summe aktiver Parzellen</div>
+            <div class="card-footer bg-transparent border-top-0 pt-0 text-muted" style="font-size: 0.75rem;">
+                Summe aller aktiven Parzellenflächen
+            </div>
         </div>
     </div>
 </div>
@@ -81,17 +93,32 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-people me-2"></i>Neueste Mitglieder</div>
             <div class="card-body p-0">
-                <div id="neueste-mitglieder" class="list-group list-group-flush">
-                    <div class="list-group-item text-muted">Wird geladen…</div>
-                </div>
+                <ul class="list-group list-group-flush">
+                    {% for m in neueste_mitglieder %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/mitglieder/{{ m.id }}" class="text-decoration-none fw-semibold"
+                           style="color: var(--gv-gruen);">
+                            {{ m.vollname }}
+                        </a>
+                        <span class="text-muted" style="font-size: 0.82rem;">
+                            {{ m.mitglied_seit.strftime('%d.%m.%Y') if m.mitglied_seit else '–' }}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted">Noch keine Mitglieder angelegt.</li>
+                    {% endfor %}
+                </ul>
             </div>
-            <div class="card-footer"><a href="/mitglieder/neu" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-lg me-1"></i>Neues Mitglied</a></div>
+            <div class="card-footer">
+                <a href="/mitglieder/neu" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Neues Mitglied
+                </a>
+            </div>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Schnellzugriff</div>
+            <div class="card-header"><i class="bi bi-lightning me-2"></i>Schnellzugriff</div>
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="/mitglieder/neu" class="btn btn-outline-primary text-start">
@@ -119,22 +146,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-// Einfache Statistiken per fetch nachladen (ohne extra API-Endpunkt, nur DOM-Update)
-async function ladeStats() {
-    // Mitglieder
-    const mRes = await fetch('/mitglieder/export/csv');
-    // Wir zählen einfach Zeilen (minus Header)
-    // Für echte Stats bauen wir später einen /api/stats Endpunkt
-    // Vorerst: Platzhalter mit Linktext
-    document.getElementById('stat-mitglieder').textContent = '→';
-    document.getElementById('stat-parzellen').textContent = '→';
-    document.getElementById('stat-gekuendigt').textContent = '→';
-    document.getElementById('stat-flaeche').textContent = '–';
-}
-// ladeStats();  // Wird in Phase 2 aktiviert wenn /api/stats Endpunkt da ist
-</script>
 {% endblock %}

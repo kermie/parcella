@@ -2,6 +2,7 @@
 Gartenverein-Verwaltung – Hauptanwendung.
 """
 from contextlib import asynccontextmanager
+from datetime import date
 import logging
 
 from fastapi import FastAPI, Request
@@ -9,14 +10,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db, AsyncSessionLocal
-from app.models import Benutzer, BenutzerRolle
+from app.models import Benutzer, BenutzerRolle, Mitglied, Parzelle, ParzelleStatus, MitgliedParzelle
 from app.auth import hash_passwort, get_current_user
 from app.routers import auth, mitglieder, parzellen, admin as admin_router
-from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen
+from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen, api_stats
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,12 +26,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: ersten Admin anlegen falls die Benutzertabelle leer ist.
-
-    Das Datenbankschema selbst wird NICHT mehr hier erzeugt, sondern über
-    Alembic-Migrationen verwaltet (siehe migrations/). Vor dem ersten Start
-    bzw. nach Schemaänderungen: `alembic upgrade head` ausführen.
-    """
+    """Startup: ersten Admin anlegen falls die Benutzertabelle leer ist."""
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Benutzer))
         if not result.scalar_one_or_none():
@@ -45,7 +42,6 @@ async def lifespan(app: FastAPI):
                 "Erster Admin-Benutzer angelegt: admin@gartenverein.local / admin1234 "
                 "– BITTE SOFORT PASSWORT ÄNDERN!"
             )
-
     yield
 
 
@@ -80,6 +76,7 @@ app.include_router(api_auth.router)
 app.include_router(api_mitglieder.router)
 app.include_router(api_parzellen.router)
 app.include_router(api_einstellungen.router)
+app.include_router(api_stats.router)
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -89,12 +86,65 @@ async def startseite(request: Request):
     async with AsyncSessionLocal() as db:
         benutzer = await get_current_user(request, db)
 
-    if not benutzer:
-        return RedirectResponse("/auth/login", status_code=302)
+        if not benutzer:
+            return RedirectResponse("/auth/login", status_code=302)
+
+        mitglieder_gesamt = await db.scalar(
+            select(func.count()).where(Mitglied.deleted_at.is_(None))
+        )
+        mitglieder_aktiv = await db.scalar(
+            select(func.count()).where(
+                Mitglied.deleted_at.is_(None),
+                (Mitglied.mitglied_bis.is_(None)) | (Mitglied.mitglied_bis >= date.today())
+            )
+        )
+        parzellen_aktiv = await db.scalar(
+            select(func.count()).select_from(Parzelle).where(
+                Parzelle.status == ParzelleStatus.AKTIV
+            )
+        )
+        parzellen_gekuendigt = await db.scalar(
+            select(func.count()).select_from(Parzelle).where(
+                Parzelle.status == ParzelleStatus.GEKUENDIGT
+            )
+        )
+        besetzte_ids = select(MitgliedParzelle.parzelle_id).distinct()
+        parzellen_unbesetzt = await db.scalar(
+            select(func.count()).select_from(Parzelle).where(
+                Parzelle.status == ParzelleStatus.AKTIV,
+                Parzelle.id.not_in(besetzte_ids)
+            )
+        )
+        flaeche_gesamt = await db.scalar(
+            select(func.coalesce(func.sum(Parzelle.flaeche_qm), 0)).where(
+                Parzelle.status == ParzelleStatus.AKTIV
+            )
+        )
+        neueste_result = await db.execute(
+            select(Mitglied)
+            .where(Mitglied.deleted_at.is_(None))
+            .order_by(Mitglied.created_at.desc())
+            .limit(5)
+        )
+        neueste_mitglieder = neueste_result.scalars().all()
+
+    stats = {
+        "mitglieder_gesamt": mitglieder_gesamt or 0,
+        "mitglieder_aktiv": mitglieder_aktiv or 0,
+        "parzellen_aktiv": parzellen_aktiv or 0,
+        "parzellen_gekuendigt": parzellen_gekuendigt or 0,
+        "parzellen_unbesetzt": parzellen_unbesetzt or 0,
+        "flaeche_gesamt_qm": float(flaeche_gesamt or 0),
+    }
 
     return templates.TemplateResponse(
         "dashboard.html",
-        {"request": request, "benutzer": benutzer},
+        {
+            "request": request,
+            "benutzer": benutzer,
+            "stats": stats,
+            "neueste_mitglieder": neueste_mitglieder,
+        },
     )
 
 
