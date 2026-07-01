@@ -17,7 +17,7 @@ from app.config import settings
 from app.database import get_db, AsyncSessionLocal
 from app.models import Benutzer, BenutzerRolle, Mitglied, Parzelle, ParzelleStatus, MitgliedParzelle
 from app.auth import hash_passwort, get_current_user
-from app.routers import auth, mitglieder, parzellen, admin as admin_router
+from app.routers import auth, mitglieder, parzellen, admin as admin_router, pflichtstunden
 from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen, api_stats
 
 logging.basicConfig(level=logging.INFO)
@@ -70,6 +70,7 @@ app.include_router(auth.router)
 app.include_router(mitglieder.router)
 app.include_router(parzellen.router)
 app.include_router(admin_router.router)
+app.include_router(pflichtstunden.router)
 
 # Router registrieren – REST-API (JSON, JWT-Auth)
 app.include_router(api_auth.router)

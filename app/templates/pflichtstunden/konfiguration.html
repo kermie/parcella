@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Pflichtstunden-Konfiguration{% endblock %}
+{% block page_title %}Pflichtstunden-Konfiguration{% endblock %}
+
+{% block topbar_actions %}
+<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Jahr anlegen / aktualisieren</div>
+            <div class="card-body">
+                <form method="post" action="/pflichtstunden/konfiguration/neu">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Jahr <span class="text-danger">*</span></label>
+                        <input type="number" name="jahr" class="form-control"
+                               value="{{ aktuelles_jahr }}" min="2000" max="2100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Pflichtstunden gesamt <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="stunden_gesamt" class="form-control"
+                                   placeholder="5.0" required>
+                            <span class="input-group-text">h</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Stundensatz <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="stundensatz_eur" class="form-control"
+                                   placeholder="25.00" required>
+                            <span class="input-group-text">€</span>
+                        </div>
+                        <div class="form-text">Gegenwert pro nicht geleisteter Stunde</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Abrechnungsmodus</label>
+                        <select name="modus" class="form-select">
+                            <option value="pro_pachtvertrag">Pro Pachtvertrag / Parzelle</option>
+                            <option value="pro_mitglied">Pro Mitglied</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Pro Pachtvertrag:</strong> Alle Pächter einer Parzelle leisten zusammen die Pflichtstunden.<br>
+                            <strong>Pro Mitglied:</strong> Jedes Mitglied leistet individuell.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notiz</label>
+                        <input type="text" name="notiz" class="form-control"
+                               placeholder="z.B. Beschluss HV vom 15.03.2025">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-1"></i>Speichern
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history me-2"></i>Historische Konfigurationen</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Jahr</th>
+                            <th>Stunden</th>
+                            <th>Satz</th>
+                            <th>Max. Schuld</th>
+                            <th>Modus</th>
+                            <th>Notiz</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in konfigurationen %}
+                        <tr>
+                            <td class="fw-bold">{{ k.jahr }}</td>
+                            <td>{{ k.stunden_gesamt | int }} h</td>
+                            <td>{{ "%.2f"|format(k.stundensatz_eur|float) }} €</td>
+                            <td>{{ "%.2f"|format(k.stunden_gesamt|float * k.stundensatz_eur|float) }} €</td>
+                            <td>
+                                <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.72rem;">
+                                    {% if k.modus.value == 'pro_pachtvertrag' %}Pachtvertrag{% else %}Mitglied{% endif %}
+                                </span>
+                            </td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ k.notiz or '–' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">
+                                Noch keine Konfiguration vorhanden.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

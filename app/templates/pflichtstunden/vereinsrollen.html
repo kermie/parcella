@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Vereinsrollen{% endblock %}
+{% block page_title %}Vereinsrollen{% endblock %}
+
+{% block topbar_actions %}
+<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Neue Vereinsrolle</div>
+            <div class="card-body">
+                <form method="post" action="/pflichtstunden/vereinsrollen/neu">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Bezeichnung <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control"
+                               placeholder="z.B. Vorsitzender, Wasserverantwortlicher" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Beschreibung</label>
+                        <textarea name="beschreibung" class="form-control" rows="2"
+                                  placeholder="Aufgaben dieser Rolle…"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="pflichtstunden_befreit" id="befreit-check"
+                                   onchange="document.getElementById('befreiungsgrund-row').style.display = this.checked ? '' : 'none'">
+                            <label class="form-check-label" for="befreit-check">
+                                Von Pflichtstunden befreit
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="befreiungsgrund-row" style="display: none;">
+                        <label class="form-label fw-semibold">Befreiungsgrund</label>
+                        <select name="befreiungsgrund" class="form-select">
+                            <option value="">– bitte wählen –</option>
+                            <option value="vorstand">Vorstandsarbeit</option>
+                            <option value="krankheit">Krankheit / gesundheitliche Gründe</option>
+                            <option value="alter">Altersbefreiung</option>
+                            <option value="sonstig">Sonstiger Grund</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-1"></i>Rolle anlegen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-person-badge me-2"></i>Bestehende Rollen</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Bezeichnung</th>
+                            <th>Befreit</th>
+                            <th>Grund</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in rollen %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ r.name }}</div>
+                                {% if r.beschreibung %}
+                                <div class="text-muted" style="font-size: 0.82rem;">{{ r.beschreibung }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.pflichtstunden_befreit %}
+                                <span class="badge badge-aktiv">Ja</span>
+                                {% else %}
+                                <span class="text-muted">Nein</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted" style="font-size: 0.85rem;">
+                                {{ r.befreiungsgrund.value if r.befreiungsgrund else '–' }}
+                            </td>
+                            <td class="text-end">
+                                <form method="post"
+                                      action="/pflichtstunden/vereinsrollen/{{ r.id }}/loeschen">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                            onclick="return confirm('Rolle wirklich löschen?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">
+                                Noch keine Vereinsrollen angelegt.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

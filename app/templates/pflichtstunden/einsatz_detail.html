@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{{ einsatz.titel }}{% endblock %}
+{% block page_title %}{{ einsatz.titel }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <!-- Einsatz-Details -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Details</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5 text-muted">Typ</dt>
+                    <dd class="col-sm-7">
+                        {% if einsatz.typ.value == 'standard' %}
+                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
+                        {% else %}
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">Datum</dt>
+                    <dd class="col-sm-7 fw-semibold">{{ einsatz.datum.strftime('%d.%m.%Y') }}</dd>
+
+                    <dt class="col-sm-5 text-muted">Uhrzeit</dt>
+                    <dd class="col-sm-7">
+                        {% if einsatz.uhrzeit_von %}
+                            {{ einsatz.uhrzeit_von }}{% if einsatz.uhrzeit_bis %} – {{ einsatz.uhrzeit_bis }}{% endif %}
+                        {% else %}–{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">Plätze</dt>
+                    <dd class="col-sm-7">
+                        {{ einsatz.teilnahmen | length }}
+                        {% if einsatz.max_teilnehmer %}/ {{ einsatz.max_teilnehmer }}{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">Std./Person</dt>
+                    <dd class="col-sm-7">
+                        {% if einsatz.stunden_pro_teilnehmer %}
+                        {{ einsatz.stunden_pro_teilnehmer | int }} h
+                        {% else %}–{% endif %}
+                    </dd>
+                </dl>
+
+                {% if einsatz.beschreibung %}
+                <hr>
+                <p class="mb-0" style="font-size: 0.9rem;">{{ einsatz.beschreibung }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Teilnahmen -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-2"></i>Teilnehmer</span>
+                <span class="text-muted" style="font-size: 0.85rem;">
+                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'erschienen') | list | length }}
+                    erschienen ·
+                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'angemeldet') | list | length }}
+                    angemeldet
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mitglied</th>
+                            <th>Status</th>
+                            <th>Stunden</th>
+                            <th>Notiz</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in einsatz.teilnahmen | sort(attribute='mitglied.nachname') %}
+                        <tr>
+                            <td>
+                                <a href="/mitglieder/{{ t.mitglied.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ t.mitglied.vollname }}</a>
+                            </td>
+                            <td>
+                                <form method="post"
+                                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/{{ t.id }}/status"
+                                      class="d-flex gap-1 align-items-center">
+                                    <select name="status" class="form-select form-select-sm"
+                                            style="width: auto;" onchange="this.form.submit()">
+                                        <option value="angemeldet" {% if t.status.value == 'angemeldet' %}selected{% endif %}>Angemeldet</option>
+                                        <option value="erschienen" {% if t.status.value == 'erschienen' %}selected{% endif %}>Erschienen</option>
+                                        <option value="nicht_erschienen" {% if t.status.value == 'nicht_erschienen' %}selected{% endif %}>Nicht erschienen</option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post"
+                                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/{{ t.id }}/status"
+                                      class="d-flex gap-1 align-items-center">
+                                    <input type="hidden" name="status" value="{{ t.status.value }}">
+                                    <div class="input-group input-group-sm" style="width: 90px;">
+                                        <input type="text" name="stunden_geleistet" class="form-control form-control-sm"
+                                               value="{{ t.stunden_geleistet or einsatz.stunden_pro_teilnehmer or '' }}"
+                                               placeholder="h">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary px-1">✓</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ t.notiz or '' }}</td>
+                            <td class="text-end">
+                                <form method="post"
+                                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/{{ t.id }}/entfernen">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                            onclick="return confirm('Teilnahme entfernen?')">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">
+                                Noch keine Teilnehmer eingetragen.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Teilnehmer hinzufügen -->
+            <div class="card-footer">
+                <form method="post"
+                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/hinzufuegen"
+                      class="d-flex gap-2 flex-wrap align-items-center">
+                    <select name="mitglied_id" class="form-select form-select-sm" style="max-width: 220px;" required>
+                        <option value="">Mitglied wählen…</option>
+                        {% for m in alle_mitglieder %}
+                        {% if m.id not in bereits_eingetragen %}
+                        <option value="{{ m.id }}">{{ m.vollname }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <select name="status" class="form-select form-select-sm" style="width: auto;">
+                        <option value="erschienen">Erschienen</option>
+                        <option value="angemeldet">Angemeldet</option>
+                        <option value="nicht_erschienen">Nicht erschienen</option>
+                    </select>
+                    <div class="input-group input-group-sm" style="width: 100px;">
+                        <input type="text" name="stunden_geleistet" class="form-control"
+                               placeholder="{{ einsatz.stunden_pro_teilnehmer or 'h' }}">
+                        <span class="input-group-text">h</span>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Hinzufügen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

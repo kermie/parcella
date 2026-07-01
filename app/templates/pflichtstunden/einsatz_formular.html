@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Neuer Arbeitseinsatz{% endblock %}
+{% block page_title %}Neuer Arbeitseinsatz{% endblock %}
+
+{% block topbar_actions %}
+<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" action="/pflichtstunden/einsaetze/neu">
+<div class="row g-3" style="max-width: 640px;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-calendar-event me-2"></i>Einsatz anlegen</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Titel <span class="text-danger">*</span></label>
+                        <input type="text" name="titel" class="form-control"
+                               placeholder="z.B. Frühjahrsputz, Heckenschnitt Nordseite" required autofocus>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Typ</label>
+                        <select name="typ" class="form-select">
+                            <option value="standard">Standard (geplant)</option>
+                            <option value="besonders">Besonders (spontan)</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Datum <span class="text-danger">*</span></label>
+                        <input type="date" name="datum" class="form-control" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Von</label>
+                        <input type="time" name="uhrzeit_von" class="form-control" placeholder="08:00">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Bis</label>
+                        <input type="time" name="uhrzeit_bis" class="form-control" placeholder="12:00">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Max. Teilnehmer</label>
+                        <input type="number" name="max_teilnehmer" class="form-control"
+                               placeholder="Leer = unbegrenzt" min="1">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Stunden pro Teilnehmer</label>
+                        <div class="input-group">
+                            <input type="text" name="stunden_pro_teilnehmer" class="form-control"
+                                   placeholder="z.B. 4.0">
+                            <span class="input-group-text">h</span>
+                        </div>
+                        <div class="form-text">Kann beim Eintragen individuell angepasst werden</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Beschreibung</label>
+                        <textarea name="beschreibung" class="form-control" rows="3"
+                                  placeholder="Aufgaben, Werkzeug, Besonderheiten…"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 d-flex gap-2 justify-content-end">
+        <a href="/pflichtstunden/" class="btn btn-outline-secondary">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>Einsatz anlegen
+        </button>
+    </div>
+</div>
+</form>
+{% endblock %}

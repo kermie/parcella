@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Pflichtstunden {{ jahr }}{% endblock %}
+{% block page_title %}Pflichtstunden {{ jahr }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2">
+        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+            {% for j in verfuegbare_jahre %}
+            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <a href="/pflichtstunden/einsaetze/neu" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Neuer Einsatz
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if not config %}
+<div class="alert alert-warning d-flex gap-2 align-items-center">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    Keine Pflichtstunden-Konfiguration für {{ jahr }} vorhanden.
+    <a href="/pflichtstunden/konfiguration" class="alert-link ms-1">Jetzt anlegen →</a>
+</div>
+{% else %}
+<div class="row g-3 mb-4">
+    <div class="col-sm-4">
+        <div class="card text-center p-3">
+            <div class="text-muted mb-1" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Pflichtstunden {{ jahr }}</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--gv-gruen);">{{ config.stunden_gesamt | int }}h</div>
+            <div class="text-muted" style="font-size: 0.82rem;">à {{ "%.2f"|format(config.stundensatz_eur|float) }} €</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card text-center p-3">
+            <div class="text-muted mb-1" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Modus</div>
+            <div style="font-size: 1.1rem; font-weight: 600; color: var(--gv-gruen);">
+                {% if config.modus.value == 'pro_pachtvertrag' %}Pro Pachtvertrag{% else %}Pro Mitglied{% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.82rem;">Abrechnungseinheit</div>
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="card text-center p-3">
+            <div class="text-muted mb-1" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">Max. Schuldbetrag</div>
+            <div style="font-size: 2rem; font-weight: 700; color: #92400e;">
+                {{ "%.2f"|format(config.stunden_gesamt|float * config.stundensatz_eur|float) }} €
+            </div>
+            <div class="text-muted" style="font-size: 0.82rem;">bei Null-Stunden</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Einsätze des Jahres -->
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-calendar-event me-2"></i>Arbeitseinsätze {{ jahr }}</span>
+        <div class="d-flex gap-2">
+            <a href="/pflichtstunden/auswertung?jahr={{ jahr }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-bar-chart me-1"></i>Jahresauswertung
+            </a>
+            <a href="/pflichtstunden/auswertung/csv?jahr={{ jahr }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-download me-1"></i>CSV Export
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Titel</th>
+                    <th>Typ</th>
+                    <th>Zeit</th>
+                    <th>Teilnehmer</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in einsaetze %}
+                <tr>
+                    <td class="fw-semibold">{{ e.datum.strftime('%d.%m.%Y') }}</td>
+                    <td>
+                        <a href="/pflichtstunden/einsaetze/{{ e.id }}" class="text-decoration-none"
+                           style="color: var(--gv-gruen);">{{ e.titel }}</a>
+                    </td>
+                    <td>
+                        {% if e.typ.value == 'standard' %}
+                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
+                        {% else %}
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">
+                        {% if e.uhrzeit_von %}{{ e.uhrzeit_von }}{% if e.uhrzeit_bis %} – {{ e.uhrzeit_bis }}{% endif %}{% else %}–{% endif %}
+                    </td>
+                    <td>
+                        {{ e.teilnahmen | length }}
+                        {% if e.max_teilnehmer %}/ {{ e.max_teilnehmer }}{% endif %}
+                        <small class="text-muted ms-1">
+                            ({{ e.teilnahmen | selectattr('status.value', 'eq', 'erschienen') | list | length }} erschienen)
+                        </small>
+                    </td>
+                    <td class="text-end">
+                        <a href="/pflichtstunden/einsaetze/{{ e.id }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="bi bi-calendar-x d-block mb-2" style="font-size: 1.5rem;"></i>
+                        Noch keine Arbeitseinsätze für {{ jahr }}.
+                        <br><a href="/pflichtstunden/einsaetze/neu" class="btn btn-sm btn-primary mt-2">
+                            Ersten Einsatz anlegen
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Schnellzugriff -->
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body d-grid gap-2">
+                <a href="/pflichtstunden/konfiguration" class="btn btn-outline-secondary text-start">
+                    <i class="bi bi-gear me-2"></i>Stunden-Konfiguration
+                </a>
+                <a href="/pflichtstunden/vereinsrollen" class="btn btn-outline-secondary text-start">
+                    <i class="bi bi-person-badge me-2"></i>Vereinsrollen
+                </a>
+                <a href="/pflichtstunden/patenschaften?jahr={{ jahr }}" class="btn btn-outline-secondary text-start">
+                    <i class="bi bi-heart me-2"></i>Patenschaften
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
