@@ -2,7 +2,9 @@
 
 [![Lizenz: AGPL v3](https://img.shields.io/badge/Lizenz-AGPL%20v3-blue.svg)](LICENSE)
 
-Eine Open-Source Webanwendung zur Verwaltung von Kleingärtnervereinen.
+Eine Open-Source Webanwendung zur Verwaltung von Kleingärtnervereinen: Mitglieder, Parzellen, Pachtverwaltung, Strom- und Wassergemeinschaft.
+
+Entstanden als Vibe-Coding-Projekt mit dem Ziel, den proprietären "Gartenmanager" zu ersetzen.
 
 ## Lizenz
 
@@ -18,26 +20,37 @@ andere Vereine) betreibt, muss den Quellcode der modifizierten Version
 - **Templates:** Jinja2 (Server-Side Rendering)
 - **CSS:** Bootstrap 5
 - **Datenbank:** PostgreSQL 16
-- **Container:** Docker + docker compose
+- **Migrationen:** Alembic
+- **Container:** Docker + docker-compose
 
 ## Schnellstart (Entwicklung)
 
 ### 1. Repository klonen und konfigurieren
 
 ```bash
+git clone https://github.com/kermie/gartenverein.git
+cd gartenverein
 cp .env.example .env
-# .env nach Bedarf anpassen
+# .env nach Bedarf anpassen (Passwörter, SMTP etc.)
 ```
 
-### 2. Docker-Container starten
+### 2. UID/GID eintragen (verhindert root-Dateien auf dem Host)
 
 ```bash
+echo "UID=$(id -u)" >> .env
+echo "GID=$(id -g)" >> .env
+```
+
+### 3. Docker-Container bauen und starten
+
+```bash
+docker compose build web
 docker compose up -d
 ```
 
 Die Anwendung ist nun unter **http://localhost:8000** erreichbar.
 
-### 3. Erster Login
+### 4. Erster Login
 
 Beim ersten Start wird automatisch ein Admin-Konto angelegt:
 
@@ -46,28 +59,30 @@ Beim ersten Start wird automatisch ein Admin-Konto angelegt:
 
 ⚠️ **Bitte sofort nach dem ersten Login das Passwort ändern!**
 
-Im Entwicklungsmodus (SMTP nicht konfiguriert) erscheinen Einladungslinks direkt in der Oberfläche.
-
 ---
 
-## Funktionen (Phase 1)
+## Funktionen (aktueller Stand)
 
-- ✅ Benutzeranmeldung per Session
+- ✅ Benutzeranmeldung per Session (Cookie-basiert)
 - ✅ Einladungssystem (kein öffentliches Registrieren)
 - ✅ Rollensystem: Admin, Vorstand, Kassierer, Lesend
-- ✅ Mitgliederverwaltung (Stammdaten, Telefon, E-Mail, IBAN)
-- ✅ Parzellentverwaltung (Status, Kündigung, Fläche)
-- ✅ m:n-Zuordnung Mitglied ↔ Parzelle (Haupt-/Mitpächter)
+- ✅ Mitgliederverwaltung (Stammdaten, mehrere Telefonnummern, mehrere E-Mail-Adressen, IBAN)
+- ✅ Parzellentverwaltung (Status: aktiv/gekündigt/gelöscht, Fläche, Kündigung)
+- ✅ m:n-Zuordnung Mitglied ↔ Parzelle (Haupt-/Mitpächter, Doppelgärten)
 - ✅ CSV-Export (Mitglieder, Parzellen)
-- ✅ CSV-Import und -Export (Mitglieder und Parzellen)
-- ✅ Vereinseinstellungen (Flächen A/B/C, SMTP)
+- ✅ CSV-Import (Mitglieder, Parzellen) mit Duplikaterkennung
+- ✅ Vereinseinstellungen (Flächen A/B/C, SMTP-Konfiguration)
+- ✅ Dashboard mit Live-Statistiken (Mitglieder, Parzellen, Flächen)
+- ✅ REST-API mit JWT-Authentifizierung und Swagger-Dokumentation
 
 ## Geplant (nächste Phasen)
 
+- Passwort ändern für eingeloggte Benutzer
 - Strom- und Wasserabrechnung
 - Rechnungsstellung (per Parzelle, Fläche, Mitglied)
 - Dokumentenverwaltung
 - Serienbriefe / E-Mail-Kampagnen
+- i18n (Englische Oberfläche)
 
 ---
 
@@ -97,11 +112,13 @@ curl http://localhost:8000/api/v1/mitglieder \
 
 Tokens sind 24 Stunden gültig. Die Swagger-UI hat einen "Authorize"-Button für bequemes Testen.
 
-### Wichtigste Endpunkte
+### Endpunkte
 
 | Methode | Pfad | Beschreibung |
 |---|---|---|
 | POST | `/api/v1/auth/login` | Token anfordern (JSON) |
+| GET | `/api/v1/auth/me` | Eigenes Profil abrufen |
+| GET | `/api/v1/stats` | Dashboard-Statistiken |
 | GET | `/api/v1/mitglieder` | Mitglieder auflisten (Suche, Paginierung) |
 | GET | `/api/v1/mitglieder/{id}` | Mitglied inkl. Parzellen abrufen |
 | POST | `/api/v1/mitglieder` | Mitglied anlegen |
@@ -125,17 +142,19 @@ Lesezugriff ist für alle authentifizierten Benutzer (auch `lesend`) erlaubt.
 
 ## Datenbankmigrationen (Alembic)
 
-Schemaänderungen laufen ab sofort über Alembic statt automatischem
-`create_all()`. Bei bestehender Installation **einmalig** siehe
-[MIGRATION-HINWEIS.md](./MIGRATION-HINWEIS.md).
+Schemaänderungen laufen über Alembic statt automatischem `create_all()`.
 
 ```bash
-# Neue Migration nach Modelländerung erzeugen
-docker compose run --rm web alembic revision --autogenerate -m "Beschreibung"
-
 # Migrationen anwenden (läuft auch automatisch beim Containerstart)
 docker compose run --rm web alembic upgrade head
+
+# Neue Migration nach Modelländerung erzeugen
+docker compose run --rm web alembic revision --autogenerate -m "Kurzbeschreibung"
 ```
+
+Bei bestehender Installation vor Alembic-Einführung: siehe [MIGRATION-HINWEIS.md](./MIGRATION-HINWEIS.md).
+
+---
 
 ## Produktion (Hetzner)
 
@@ -164,12 +183,12 @@ server {
 ## Datenbankstruktur
 
 ```
-benutzer          – Anwendungsbenutzer (nicht Vereinsmitglieder)
-einladungen       – Einladungstoken per E-Mail
-mitglieder        – Vereinsmitglieder
-mitglied_telefon  – n Telefonnummern pro Mitglied
-mitglied_email    – n E-Mail-Adressen pro Mitglied
-parzellen         – Gartenparzellen
-mitglied_parzelle – m:n Zuordnung (mit Metadaten)
-vereinseinstellungen – Key-Value für Vereinsstammdaten
+benutzer              – Anwendungsbenutzer (nicht Vereinsmitglieder)
+einladungen           – Einladungstoken per E-Mail
+mitglieder            – Vereinsmitglieder
+mitglied_telefon      – n Telefonnummern pro Mitglied
+mitglied_email        – n E-Mail-Adressen pro Mitglied
+parzellen             – Gartenparzellen
+mitglied_parzelle     – m:n Zuordnung (mit Metadaten)
+vereinseinstellungen  – Key-Value für Vereinsstammdaten
 ```
