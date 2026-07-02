@@ -129,10 +129,8 @@
                         {% endif %}
 
                         <td>
-                            {% if z.alle_befreit is defined and z.alle_befreit %}
-                            <span class="badge" style="background: #dbeafe; color: #1e40af;">Befreit</span>
-                            {% elif z.befreit is defined and z.befreit %}
-                            <span class="badge" style="background: #dbeafe; color: #1e40af;">Befreit</span>
+                            {% if z.befreit %}
+                            <span class="badge" style="background: #dbeafe; color: #1e40af;"><i class="bi bi-shield-check me-1"></i>Befreit</span>
                             {% elif z.erfuellt %}
                             <span class="badge badge-aktiv"><i class="bi bi-check-lg me-1"></i>Erfüllt</span>
                             {% else %}

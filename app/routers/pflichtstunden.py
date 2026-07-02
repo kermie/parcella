@@ -74,7 +74,7 @@ async def _ist_befreit(db: AsyncSession, mitglied_id: str, jahr: int) -> bool:
     """Prüft ob ein Mitglied für ein Jahr von Pflichtstunden befreit ist."""
     result = await db.execute(
         select(MitgliedVereinsrolle)
-        .join(Vereinsrolle)
+        .join(Vereinsrolle, MitgliedVereinsrolle.vereinsrolle_id == Vereinsrolle.id)
         .where(
             MitgliedVereinsrolle.mitglied_id == mitglied_id,
             MitgliedVereinsrolle.jahr == jahr,
@@ -661,8 +661,8 @@ async def auswertung(
             offen = max(0.0, pflicht - gesamt_stunden)
             schuldbetrag = offen * float(config.stundensatz_eur)
 
-            # Befreit wenn ALLE Pächter befreit
-            alle_befreit = all(p["befreit"] for p in paechter_details)
+            # Befreit wenn MINDESTENS EIN Pächter befreit (Ansatz A: Befreiung gilt für die ganze Parzelle)
+            alle_befreit = any(p["befreit"] for p in paechter_details)
 
             zeilen.append({
                 "parzelle": parzelle,
@@ -673,6 +673,7 @@ async def auswertung(
                 "schuldbetrag": schuldbetrag if not alle_befreit else 0.0,
                 "erfuellt": alle_befreit or gesamt_stunden >= pflicht,
                 "alle_befreit": alle_befreit,
+                "befreit": alle_befreit,  # einheitlicher Key für Template
             })
 
     else:
