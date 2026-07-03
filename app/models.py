@@ -349,10 +349,11 @@ class PflichtstundenKonfiguration(Base):
 # ---------------------------------------------------------------------------
 
 class BefreiungsGrund(str, enum.Enum):
-    VORSTAND = "vorstand"          # Vorstandsarbeit
-    KRANKHEIT = "krankheit"        # Krankheit/gesundheitliche Gründe
-    ALTER = "alter"                # Altersbefreiung
-    SONSTIG = "sonstig"            # Sonstiger Grund
+    VORSTAND = "VORSTAND"
+    ERWEITERTER_VORSTAND = "ERWEITERTER_VORSTAND"
+    KRANKHEIT = "KRANKHEIT"
+    ALTER = "ALTER"
+    SONSTIG = "SONSTIG"
 
 
 class Vereinsrolle(Base):
