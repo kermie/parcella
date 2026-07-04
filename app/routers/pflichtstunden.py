@@ -156,6 +156,90 @@ async def konfiguration_seite(request: Request, db: AsyncSession = Depends(get_d
     )
 
 
+@router.get("/konfiguration/{konfiguration_id}/bearbeiten", response_class=HTMLResponse)
+async def konfiguration_bearbeiten_seite(
+    konfiguration_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    benutzer = await require_user(request, db)
+
+    result = await db.execute(
+        select(PflichtstundenKonfiguration).where(PflichtstundenKonfiguration.id == konfiguration_id)
+    )
+    konfiguration = result.scalar_one_or_none()
+    if not konfiguration:
+        raise HTTPException(status_code=404, detail="Konfiguration nicht gefunden")
+
+    return templates.TemplateResponse(
+        "pflichtstunden/konfiguration_formular.html",
+        {
+            "request": request,
+            "benutzer": benutzer,
+            "konfiguration": konfiguration,
+            "PflichtstundenModus": PflichtstundenModus,
+        },
+    )
+
+
+@router.post("/konfiguration/{konfiguration_id}/bearbeiten")
+async def konfiguration_aktualisieren(
+    konfiguration_id: str,
+    request: Request,
+    jahr: int = Form(...),
+    stunden_gesamt: str = Form(...),
+    stundensatz_eur: str = Form(...),
+    modus: str = Form("pro_pachtvertrag"),
+    notiz: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+
+    result = await db.execute(
+        select(PflichtstundenKonfiguration).where(PflichtstundenKonfiguration.id == konfiguration_id)
+    )
+    konfiguration = result.scalar_one_or_none()
+    if not konfiguration:
+        raise HTTPException(status_code=404, detail="Konfiguration nicht gefunden")
+
+    # Falls das Jahr geändert wird: prüfen ob es mit einem anderen Eintrag kollidiert
+    if jahr != konfiguration.jahr:
+        kollision = await _get_config_fuer_jahr(db, jahr)
+        if kollision and kollision.id != konfiguration_id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Für {jahr} existiert bereits eine andere Konfiguration."
+            )
+
+    konfiguration.jahr = jahr
+    konfiguration.stunden_gesamt = float(stunden_gesamt.replace(",", "."))
+    konfiguration.stundensatz_eur = float(stundensatz_eur.replace(",", "."))
+    konfiguration.modus = PflichtstundenModus(modus)
+    konfiguration.notiz = notiz.strip() or None
+
+    await db.commit()
+    return RedirectResponse("/pflichtstunden/konfiguration", status_code=302)
+
+
+@router.post("/konfiguration/{konfiguration_id}/loeschen")
+async def konfiguration_loeschen(
+    konfiguration_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+
+    result = await db.execute(
+        select(PflichtstundenKonfiguration).where(PflichtstundenKonfiguration.id == konfiguration_id)
+    )
+    konfiguration = result.scalar_one_or_none()
+    if konfiguration:
+        await db.delete(konfiguration)
+        await db.commit()
+
+    return RedirectResponse("/pflichtstunden/konfiguration", status_code=302)
+
+
 @router.post("/konfiguration/neu")
 async def konfiguration_erstellen(
     request: Request,
