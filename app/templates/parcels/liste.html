@@ -68,10 +68,11 @@
                             <span class="badge badge-{{ p.status.value }}">{{ p.status.value }}</span>
                         </td>
                         <td>
-                            {% for z in p.mitglieder_zuordnungen %}
+                            {% set aktuelle_paechter = p.mitglieder_zuordnungen | selectattr('zuordnung_bis', 'none') | list %}
+                            {% for z in aktuelle_paechter %}
                             <a href="/mitglieder/{{ z.mitglied.id }}" class="text-decoration-none"
                                style="color: var(--gv-gruen);">
-                                {{ z.mitglied.nachname }}{% if z.ist_hauptpaechter %}<i class="bi bi-star-fill text-warning ms-1" style="font-size: 0.7rem;"></i>{% endif %}
+                                {{ z.mitglied.vorname }} {{ z.mitglied.nachname }}{% if z.ist_hauptpaechter %}<i class="bi bi-star-fill text-warning ms-1" style="font-size: 0.7rem;"></i>{% endif %}
                             </a>{% if not loop.last %}, {% endif %}
                             {% else %}
                             <span class="text-muted">–</span>
