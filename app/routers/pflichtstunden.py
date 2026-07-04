@@ -552,7 +552,7 @@ async def patenschaften_seite(
 @router.post("/patenschaften/neu")
 async def patenschaft_erstellen(
     request: Request,
-    mitglied_id: str = Form(...),
+    mitglied_id: str = Form(""),
     bereich: str = Form(...),
     beschreibung: str = Form(""),
     stunden_anrechenbar: str = Form(...),
@@ -563,7 +563,7 @@ async def patenschaft_erstellen(
     await require_user(request, db)
 
     patenschaft = Patenschaft(
-        mitglied_id=mitglied_id,
+        mitglied_id=mitglied_id.strip() or None,
         bereich=bereich.strip(),
         beschreibung=beschreibung.strip() or None,
         stunden_anrechenbar=float(stunden_anrechenbar.replace(",", ".")),
