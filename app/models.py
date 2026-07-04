@@ -542,3 +542,34 @@ class EinsatzTeilnahme(Base):
     __table_args__ = (
         UniqueConstraint("einsatz_id", "mitglied_id", name="uq_einsatz_mitglied"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Änderungshistorie (generisches Audit-Log für Feldänderungen)
+# ---------------------------------------------------------------------------
+
+class Aenderungshistorie(Base):
+    """
+    Generisches Audit-Log: protokolliert Feldänderungen an beliebigen
+    Entitäten (z.B. Parzelle.flaeche_qm). Ermöglicht Nachvollziehbarkeit
+    ohne für jede Tabelle eine eigene Historie-Tabelle zu brauchen.
+    """
+    __tablename__ = "aenderungshistorie"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    entitaet_typ: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    entitaet_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    feldname: Mapped[str] = mapped_column(String(100), nullable=False)
+    alter_wert: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    neuer_wert: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    geaendert_von_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
+    )
+    geaendert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
+
+    geaendert_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
+
+    def __repr__(self) -> str:
+        return f"<Aenderungshistorie {self.entitaet_typ}:{self.entitaet_id} {self.feldname}>"

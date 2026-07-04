@@ -15,9 +15,10 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db, aktives_mitglied_filter
 from app.models import (
-    Parzelle, ParzelleStatus, MitgliedParzelle, Mitglied
+    Parzelle, ParzelleStatus, MitgliedParzelle, Mitglied, Aenderungshistorie
 )
 from app.auth import require_user
+from app.aenderungstracker import AenderungsTracker
 
 router = APIRouter(prefix="/parzellen", tags=["parzellen"])
 templates = Jinja2Templates(directory="app/templates")
@@ -147,6 +148,18 @@ async def parzelle_detail(
     )
     alle_mitglieder = mitglieder_result.scalars().all()
 
+    # Änderungshistorie der Feldwerte
+    aenderungen_result = await db.execute(
+        select(Aenderungshistorie)
+        .options(selectinload(Aenderungshistorie.geaendert_von))
+        .where(
+            Aenderungshistorie.entitaet_typ == "Parzelle",
+            Aenderungshistorie.entitaet_id == parzelle_id,
+        )
+        .order_by(Aenderungshistorie.geaendert_am.desc())
+    )
+    aenderungen = aenderungen_result.scalars().all()
+
     return templates.TemplateResponse(
         "parcels/detail.html",
         {
@@ -154,6 +167,7 @@ async def parzelle_detail(
             "benutzer": benutzer,
             "parzelle": parzelle,
             "alle_mitglieder": alle_mitglieder,
+            "aenderungen": aenderungen,
             "ParzelleStatus": ParzelleStatus,
         },
     )
@@ -189,11 +203,16 @@ async def parzelle_aktualisieren(
     notizen: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
-    await require_user(request, db)
+    benutzer = await require_user(request, db)
     parzelle = await _get_parzelle_mit_details(db, parzelle_id)
 
     if not parzelle:
         raise HTTPException(status_code=404)
+
+    tracker = AenderungsTracker(
+        parzelle, "Parzelle",
+        ["gartennummer", "flaeche_qm", "status", "kuendigung_datum", "kuendigung_notiz", "notizen"]
+    )
 
     flaeche = None
     if flaeche_qm.strip():
@@ -217,6 +236,7 @@ async def parzelle_aktualisieren(
 
     parzelle.kuendigung_notiz = kuendigung_notiz.strip() or None
 
+    await tracker.commit(db, benutzer.id)
     await db.commit()
     return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
 
@@ -236,23 +256,92 @@ async def mitglied_zuordnen(
 ):
     await require_user(request, db)
 
-    # Bereits zugeordnet?
+    # Bereits (auch historisch) zugeordnet?
     existing = await db.execute(
         select(MitgliedParzelle).where(
             MitgliedParzelle.parzelle_id == parzelle_id,
             MitgliedParzelle.mitglied_id == mitglied_id,
         )
     )
-    if existing.scalar_one_or_none():
-        return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+    zuordnung = existing.scalar_one_or_none()
 
-    zuordnung = MitgliedParzelle(
-        parzelle_id=parzelle_id,
-        mitglied_id=mitglied_id,
-        ist_hauptpaechter=ist_hauptpaechter,
-        zuordnung_von=date.fromisoformat(zuordnung_von) if zuordnung_von else None,
+    if zuordnung:
+        if zuordnung.zuordnung_bis is None:
+            # Bereits aktiv zugeordnet, nichts zu tun
+            return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+        # Frühere (beendete) Zuordnung reaktivieren statt Duplikat anzulegen
+        zuordnung.zuordnung_bis = None
+        zuordnung.zuordnung_von = date.fromisoformat(zuordnung_von) if zuordnung_von else date.today()
+        zuordnung.ist_hauptpaechter = ist_hauptpaechter
+    else:
+        zuordnung = MitgliedParzelle(
+            parzelle_id=parzelle_id,
+            mitglied_id=mitglied_id,
+            ist_hauptpaechter=ist_hauptpaechter,
+            zuordnung_von=date.fromisoformat(zuordnung_von) if zuordnung_von else None,
+        )
+        db.add(zuordnung)
+
+    await db.commit()
+    return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+
+
+@router.get("/{parzelle_id}/mitglied/{zuordnung_id}/bearbeiten", response_class=HTMLResponse)
+async def mitglied_zuordnung_bearbeiten_seite(
+    parzelle_id: str,
+    zuordnung_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    benutzer = await require_user(request, db)
+
+    result = await db.execute(
+        select(MitgliedParzelle)
+        .options(selectinload(MitgliedParzelle.mitglied))
+        .where(MitgliedParzelle.id == zuordnung_id, MitgliedParzelle.parzelle_id == parzelle_id)
     )
-    db.add(zuordnung)
+    zuordnung = result.scalar_one_or_none()
+    if not zuordnung:
+        raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
+
+    parzelle = await _get_parzelle_mit_details(db, parzelle_id)
+
+    return templates.TemplateResponse(
+        "parcels/zuordnung_formular.html",
+        {
+            "request": request,
+            "benutzer": benutzer,
+            "zuordnung": zuordnung,
+            "parzelle": parzelle,
+        },
+    )
+
+
+@router.post("/{parzelle_id}/mitglied/{zuordnung_id}/bearbeiten")
+async def mitglied_zuordnung_aktualisieren(
+    parzelle_id: str,
+    zuordnung_id: str,
+    request: Request,
+    ist_hauptpaechter: bool = Form(False),
+    zuordnung_von: str = Form(""),
+    zuordnung_bis: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+
+    result = await db.execute(
+        select(MitgliedParzelle).where(
+            MitgliedParzelle.id == zuordnung_id, MitgliedParzelle.parzelle_id == parzelle_id
+        )
+    )
+    zuordnung = result.scalar_one_or_none()
+    if not zuordnung:
+        raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
+
+    zuordnung.ist_hauptpaechter = ist_hauptpaechter
+    zuordnung.zuordnung_von = date.fromisoformat(zuordnung_von) if zuordnung_von.strip() else None
+    zuordnung.zuordnung_bis = date.fromisoformat(zuordnung_bis) if zuordnung_bis.strip() else None
+
     await db.commit()
     return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
 
@@ -264,6 +353,11 @@ async def mitglied_entfernen(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Beendet eine Pächter-Zuordnung (setzt zuordnung_bis), löscht sie aber
+    NICHT aus der Datenbank – so bleibt die Historie erhalten (wer war
+    von wann bis wann Pächter dieser Parzelle).
+    """
     await require_user(request, db)
     result = await db.execute(
         select(MitgliedParzelle).where(
@@ -272,8 +366,8 @@ async def mitglied_entfernen(
         )
     )
     zuordnung = result.scalar_one_or_none()
-    if zuordnung:
-        await db.delete(zuordnung)
+    if zuordnung and zuordnung.zuordnung_bis is None:
+        zuordnung.zuordnung_bis = date.today()
         await db.commit()
     return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
 
