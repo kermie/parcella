@@ -3,9 +3,20 @@
 {% block page_title %}{{ einsatz.titel }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
-</a>
+<div class="d-flex gap-2">
+    <a href="/pflichtstunden/einsaetze/{{ einsatz.id }}/bearbeiten" class="btn btn-sm btn-primary">
+        <i class="bi bi-pencil me-1"></i>Bearbeiten
+    </a>
+    <form method="post" action="/pflichtstunden/einsaetze/{{ einsatz.id }}/loeschen" class="d-inline">
+        <button type="submit" class="btn btn-sm btn-outline-danger"
+                onclick="return confirm('Einsatz „{{ einsatz.titel }}“ wirklich löschen? Alle Teilnahmen gehen verloren.')">
+            <i class="bi bi-trash me-1"></i>Löschen
+        </button>
+    </form>
+    <a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Zurück
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}

@@ -4,6 +4,9 @@
 
 {% block topbar_actions %}
 <div class="d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#csvImportModal">
+        <i class="bi bi-upload me-1"></i>CSV Import
+    </button>
     <a href="/parzellen/export/csv" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-download me-1"></i>CSV Export
     </a>
@@ -34,27 +37,6 @@
             {% endif %}
         </form>
     </div>
-</div>
-
-<!-- CSV Import -->
-<div class="mb-3">
-    <details>
-        <summary class="text-muted" style="cursor: pointer; font-size: 0.85rem;">
-            <i class="bi bi-upload me-1"></i>CSV-Import
-        </summary>
-        <div class="card mt-2">
-            <div class="card-body">
-                <form method="post" action="/parzellen/import/csv" enctype="multipart/form-data"
-                      class="d-flex gap-2 align-items-center">
-                    <input type="file" name="datei" accept=".csv" class="form-control form-control-sm" required style="max-width: 300px;">
-                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-upload me-1"></i>Importieren
-                    </button>
-                </form>
-                <div class="form-text mt-1">Format: Semikolon-getrennte CSV mit Spalten: Gartennummer; Fläche (qm); Status; Notizen</div>
-            </div>
-        </div>
-    </details>
 </div>
 
 <!-- Tabelle -->
@@ -124,5 +106,27 @@
         {% if gesamt_flaeche > 0 %} · Gesamtfläche: {{ '%g' % gesamt_flaeche }} qm{% endif %}
     </div>
     {% endif %}
+</div>
+
+<!-- CSV Import Modal -->
+<div class="modal fade" id="csvImportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>CSV-Import</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="/parzellen/import/csv" enctype="multipart/form-data"
+                      class="d-flex gap-2 align-items-center">
+                    <input type="file" name="datei" accept=".csv" class="form-control form-control-sm" required style="max-width: 300px;">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-upload me-1"></i>Importieren
+                    </button>
+                </form>
+                <div class="form-text mt-1">Format: Semikolon-getrennte CSV mit Spalten: Gartennummer; Fläche (qm); Status; Notizen</div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

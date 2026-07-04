@@ -321,6 +321,85 @@ async def einsatz_erstellen(
     return RedirectResponse(f"/pflichtstunden/einsaetze/{einsatz.id}", status_code=302)
 
 
+@router.get("/einsaetze/{einsatz_id}/bearbeiten", response_class=HTMLResponse)
+async def einsatz_bearbeiten_seite(
+    einsatz_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    benutzer = await require_user(request, db)
+
+    result = await db.execute(select(Arbeitseinsatz).where(Arbeitseinsatz.id == einsatz_id))
+    einsatz = result.scalar_one_or_none()
+    if not einsatz:
+        raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
+
+    return templates.TemplateResponse(
+        "pflichtstunden/einsatz_formular.html",
+        {
+            "request": request,
+            "benutzer": benutzer,
+            "einsatz": einsatz,
+            "EinsatzTyp": EinsatzTyp,
+        },
+    )
+
+
+@router.post("/einsaetze/{einsatz_id}/bearbeiten")
+async def einsatz_aktualisieren(
+    einsatz_id: str,
+    request: Request,
+    titel: str = Form(...),
+    beschreibung: str = Form(""),
+    typ: str = Form("standard"),
+    datum: str = Form(...),
+    uhrzeit_von: str = Form(""),
+    uhrzeit_bis: str = Form(""),
+    max_teilnehmer: str = Form(""),
+    stunden_pro_teilnehmer: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+
+    result = await db.execute(select(Arbeitseinsatz).where(Arbeitseinsatz.id == einsatz_id))
+    einsatz = result.scalar_one_or_none()
+    if not einsatz:
+        raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
+
+    einsatz.titel = titel.strip()
+    einsatz.beschreibung = beschreibung.strip() or None
+    einsatz.typ = EinsatzTyp(typ)
+    einsatz.datum = date.fromisoformat(datum)
+    einsatz.uhrzeit_von = uhrzeit_von.strip() or None
+    einsatz.uhrzeit_bis = uhrzeit_bis.strip() or None
+    einsatz.max_teilnehmer = int(max_teilnehmer) if max_teilnehmer.strip() else None
+    einsatz.stunden_pro_teilnehmer = (
+        float(stunden_pro_teilnehmer.replace(",", ".")) if stunden_pro_teilnehmer.strip() else None
+    )
+
+    await db.commit()
+    return RedirectResponse(f"/pflichtstunden/einsaetze/{einsatz_id}", status_code=302)
+
+
+@router.post("/einsaetze/{einsatz_id}/loeschen")
+async def einsatz_loeschen(
+    einsatz_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+
+    result = await db.execute(select(Arbeitseinsatz).where(Arbeitseinsatz.id == einsatz_id))
+    einsatz = result.scalar_one_or_none()
+    if einsatz:
+        jahr = einsatz.datum.year
+        await db.delete(einsatz)
+        await db.commit()
+        return RedirectResponse(f"/pflichtstunden/?jahr={jahr}", status_code=302)
+
+    return RedirectResponse("/pflichtstunden/", status_code=302)
+
+
 @router.get("/einsaetze/{einsatz_id}", response_class=HTMLResponse)
 async def einsatz_detail(
     einsatz_id: str,

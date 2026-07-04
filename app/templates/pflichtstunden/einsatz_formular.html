@@ -1,54 +1,71 @@
 {% extends "base.html" %}
-{% block title %}Neuer Arbeitseinsatz{% endblock %}
-{% block page_title %}Neuer Arbeitseinsatz{% endblock %}
+{% block title %}{% if einsatz %}Einsatz bearbeiten{% else %}Neuer Arbeitseinsatz{% endif %}{% endblock %}
+{% block page_title %}{% if einsatz %}Einsatz bearbeiten{% else %}Neuer Arbeitseinsatz{% endif %}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+<a href="{% if einsatz %}/pflichtstunden/einsaetze/{{ einsatz.id }}{% else %}/pflichtstunden/{% endif %}"
+   class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
 {% endblock %}
 
 {% block content %}
-<form method="post" action="/pflichtstunden/einsaetze/neu">
+<form method="post"
+      action="{% if einsatz %}/pflichtstunden/einsaetze/{{ einsatz.id }}/bearbeiten{% else %}/pflichtstunden/einsaetze/neu{% endif %}">
 <div class="row g-3" style="max-width: 640px;">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-calendar-event me-2"></i>Einsatz anlegen</div>
+            <div class="card-header">
+                <i class="bi bi-calendar-event me-2"></i>
+                {% if einsatz %}Einsatz bearbeiten{% else %}Einsatz anlegen{% endif %}
+            </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label fw-semibold">Titel <span class="text-danger">*</span></label>
                         <input type="text" name="titel" class="form-control"
+                               value="{{ einsatz.titel if einsatz else '' }}"
                                placeholder="z.B. Frühjahrsputz, Heckenschnitt Nordseite" required autofocus>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Typ</label>
                         <select name="typ" class="form-select">
-                            <option value="standard">Standard (geplant)</option>
-                            <option value="besonders">Besonders (spontan)</option>
+                            <option value="standard" {% if einsatz and einsatz.typ.value == 'standard' %}selected{% endif %}>
+                                Standard (geplant)
+                            </option>
+                            <option value="besonders" {% if einsatz and einsatz.typ.value == 'besonders' %}selected{% endif %}>
+                                Besonders (spontan)
+                            </option>
                         </select>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Datum <span class="text-danger">*</span></label>
-                        <input type="date" name="datum" class="form-control" required>
+                        <input type="date" name="datum" class="form-control"
+                               value="{{ einsatz.datum.isoformat() if einsatz else '' }}" required>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Von</label>
-                        <input type="time" name="uhrzeit_von" class="form-control" placeholder="08:00">
+                        <input type="time" name="uhrzeit_von" class="form-control"
+                               value="{{ einsatz.uhrzeit_von if einsatz and einsatz.uhrzeit_von else '' }}"
+                               placeholder="08:00">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Bis</label>
-                        <input type="time" name="uhrzeit_bis" class="form-control" placeholder="12:00">
+                        <input type="time" name="uhrzeit_bis" class="form-control"
+                               value="{{ einsatz.uhrzeit_bis if einsatz and einsatz.uhrzeit_bis else '' }}"
+                               placeholder="12:00">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Max. Teilnehmer</label>
                         <input type="number" name="max_teilnehmer" class="form-control"
+                               value="{{ einsatz.max_teilnehmer if einsatz and einsatz.max_teilnehmer else '' }}"
                                placeholder="Leer = unbegrenzt" min="1">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Stunden pro Teilnehmer</label>
                         <div class="input-group">
                             <input type="text" name="stunden_pro_teilnehmer" class="form-control"
+                                   value="{{ einsatz.stunden_pro_teilnehmer|int if einsatz and einsatz.stunden_pro_teilnehmer else '' }}"
                                    placeholder="z.B. 4.0">
                             <span class="input-group-text">h</span>
                         </div>
@@ -57,16 +74,18 @@
                     <div class="col-12">
                         <label class="form-label fw-semibold">Beschreibung</label>
                         <textarea name="beschreibung" class="form-control" rows="3"
-                                  placeholder="Aufgaben, Werkzeug, Besonderheiten…"></textarea>
+                                  placeholder="Aufgaben, Werkzeug, Besonderheiten…">{{ einsatz.beschreibung if einsatz and einsatz.beschreibung else '' }}</textarea>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-12 d-flex gap-2 justify-content-end">
-        <a href="/pflichtstunden/" class="btn btn-outline-secondary">Abbrechen</a>
+        <a href="{% if einsatz %}/pflichtstunden/einsaetze/{{ einsatz.id }}{% else %}/pflichtstunden/{% endif %}"
+           class="btn btn-outline-secondary">Abbrechen</a>
         <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-lg me-1"></i>Einsatz anlegen
+            <i class="bi bi-check-lg me-1"></i>
+            {% if einsatz %}Änderungen speichern{% else %}Einsatz anlegen{% endif %}
         </button>
     </div>
 </div>
