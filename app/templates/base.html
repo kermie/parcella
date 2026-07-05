@@ -126,6 +126,7 @@
             <i class="bi bi-grid-3x3"></i> Parzellen
         </a>
 
+        {% if request.state.module_flags.pflichtstunden %}
         <div class="nav-label">Arbeitseinsätze</div>
         <a href="/pflichtstunden/" class="{% if '/pflichtstunden' in request.url.path and '/auswertung' not in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-hammer"></i> Einsätze & Übersicht
@@ -136,6 +137,7 @@
         <a href="/pflichtstunden/patenschaften" class="{% if '/pflichtstunden/patenschaften' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-heart"></i> Patenschaften
         </a>
+        {% endif %}
 
         {% if benutzer.rolle.value in ['admin', 'vorstand'] %}
         <div class="nav-label">Administration</div>

@@ -22,7 +22,13 @@ from app.models import (
 )
 from app.auth import require_user
 
-router = APIRouter(prefix="/pflichtstunden", tags=["pflichtstunden"])
+from app.module_flags import require_modul
+
+router = APIRouter(
+    prefix="/pflichtstunden",
+    tags=["pflichtstunden"],
+    dependencies=[Depends(require_modul("pflichtstunden"))],
+)
 templates = Jinja2Templates(directory="app/templates")
 
 
@@ -295,7 +301,7 @@ async def einsatz_erstellen(
     request: Request,
     titel: str = Form(...),
     beschreibung: str = Form(""),
-    typ: str = Form("standard"),
+    typ: str = Form("STANDARD"),
     datum: str = Form(...),
     uhrzeit_von: str = Form(""),
     uhrzeit_bis: str = Form(""),
@@ -351,7 +357,7 @@ async def einsatz_aktualisieren(
     request: Request,
     titel: str = Form(...),
     beschreibung: str = Form(""),
-    typ: str = Form("standard"),
+    typ: str = Form("STANDARD"),
     datum: str = Form(...),
     uhrzeit_von: str = Form(""),
     uhrzeit_bis: str = Form(""),
@@ -447,7 +453,7 @@ async def teilnehmer_hinzufuegen(
     einsatz_id: str,
     request: Request,
     mitglied_id: str = Form(...),
-    status: str = Form("erschienen"),
+    status: str = Form("ERSCHIENEN"),
     stunden_geleistet: str = Form(""),
     notiz: str = Form(""),
     db: AsyncSession = Depends(get_db),

@@ -17,6 +17,7 @@ from app.config import settings
 from app.database import get_db, AsyncSessionLocal, aktives_mitglied_filter
 from app.models import Benutzer, BenutzerRolle, Mitglied, Parzelle, ParzelleStatus, MitgliedParzelle
 from app.auth import hash_passwort, get_current_user
+from app.module_flags import lade_modul_flags
 from app.routers import auth, mitglieder, parzellen, admin as admin_router, pflichtstunden
 from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen, api_stats
 
@@ -28,8 +29,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Startup: ersten Admin anlegen falls die Benutzertabelle leer ist."""
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(Benutzer))
-        if not result.scalar_one_or_none():
+        anzahl_benutzer = await db.scalar(select(func.count()).select_from(Benutzer))
+        if not anzahl_benutzer:
             erster_admin = Benutzer(
                 email="admin@gartenverein.local",
                 name="Administrator",
@@ -64,6 +65,20 @@ app = FastAPI(
 
 # Statische Dateien
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
+@app.middleware("http")
+async def modul_flags_middleware(request: Request, call_next):
+    """
+    Lädt einmal pro Request die Modul-Flags (z.B. ob Pflichtstunden aktiv
+    ist) und legt sie unter request.state.module_flags ab. Templates und
+    Router-Dependencies (require_modul) lesen von dort, ohne die DB
+    erneut abzufragen.
+    """
+    async with AsyncSessionLocal() as db:
+        request.state.module_flags = await lade_modul_flags(db)
+    response = await call_next(request)
+    return response
 
 # Router registrieren – Web-UI (Jinja2)
 app.include_router(auth.router)

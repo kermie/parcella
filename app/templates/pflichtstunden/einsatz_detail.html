@@ -30,7 +30,7 @@
                 <dl class="row mb-0">
                     <dt class="col-sm-5 text-muted">Typ</dt>
                     <dd class="col-sm-7">
-                        {% if einsatz.typ.value == 'standard' %}
+                        {% if einsatz.typ.value == 'STANDARD' %}
                         <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
                         {% else %}
                         <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
@@ -75,9 +75,9 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-people me-2"></i>Teilnehmer</span>
                 <span class="text-muted" style="font-size: 0.85rem;">
-                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'erschienen') | list | length }}
+                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'ERSCHIENEN') | list | length }}
                     erschienen ·
-                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'angemeldet') | list | length }}
+                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'ANGEMELDET') | list | length }}
                     angemeldet
                 </span>
             </div>
@@ -105,9 +105,9 @@
                                       class="d-flex gap-1 align-items-center">
                                     <select name="status" class="form-select form-select-sm"
                                             style="width: auto;" onchange="this.form.submit()">
-                                        <option value="angemeldet" {% if t.status.value == 'angemeldet' %}selected{% endif %}>Angemeldet</option>
-                                        <option value="erschienen" {% if t.status.value == 'erschienen' %}selected{% endif %}>Erschienen</option>
-                                        <option value="nicht_erschienen" {% if t.status.value == 'nicht_erschienen' %}selected{% endif %}>Nicht erschienen</option>
+                                        <option value="ANGEMELDET" {% if t.status.value == 'ANGEMELDET' %}selected{% endif %}>Angemeldet</option>
+                                        <option value="ERSCHIENEN" {% if t.status.value == 'ERSCHIENEN' %}selected{% endif %}>Erschienen</option>
+                                        <option value="NICHT_ERSCHIENEN" {% if t.status.value == 'NICHT_ERSCHIENEN' %}selected{% endif %}>Nicht erschienen</option>
                                     </select>
                                 </form>
                             </td>
@@ -160,9 +160,9 @@
                         {% endfor %}
                     </select>
                     <select name="status" class="form-select form-select-sm" style="width: auto;">
-                        <option value="erschienen">Erschienen</option>
-                        <option value="angemeldet">Angemeldet</option>
-                        <option value="nicht_erschienen">Nicht erschienen</option>
+                        <option value="ERSCHIENEN">Erschienen</option>
+                        <option value="ANGEMELDET">Angemeldet</option>
+                        <option value="NICHT_ERSCHIENEN">Nicht erschienen</option>
                     </select>
                     <div class="input-group input-group-sm" style="width: 100px;">
                         <input type="text" name="stunden_geleistet" class="form-control"

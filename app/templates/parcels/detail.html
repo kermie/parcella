@@ -34,12 +34,13 @@
 
                     <dt class="col-sm-5 text-muted">Status</dt>
                     <dd class="col-sm-7">
-                        <span class="badge badge-{{ parzelle.status.value }}">{{ parzelle.status.value }}</span>
+                        <span class="badge badge-{{ parzelle.status.value|lower }}">{{ parzelle.status.value|lower }}</span>
                     </dd>
 
-                    {% if parzelle.kuendigung_datum %}
-                    <dt class="col-sm-5 text-muted">Kündigung</dt>
-                    <dd class="col-sm-7">{{ parzelle.kuendigung_datum.strftime('%d.%m.%Y') }}</dd>
+                    {% set kuendigung_eintrag = aenderungen | selectattr('feldname', 'eq', 'status') | selectattr('neuer_wert', 'eq', 'GEKUENDIGT') | first %}
+                    {% if kuendigung_eintrag %}
+                    <dt class="col-sm-5 text-muted">Gekündigt am</dt>
+                    <dd class="col-sm-7">{{ kuendigung_eintrag.geaendert_am.strftime('%d.%m.%Y') }}</dd>
                     {% endif %}
 
                     {% if parzelle.kuendigung_notiz %}

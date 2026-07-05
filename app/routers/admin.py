@@ -153,6 +153,14 @@ EINSTELLUNGEN_FELDER = [
     ("smtp_from", "Absender-E-Mail"),
 ]
 
+# Optionale Funktionsbereiche, die sich pro Verein ein-/ausschalten lassen.
+# Schlüssel folgen der Konvention "modul_<name>" (siehe app/module_flags.py).
+MODULE_FELDER = [
+    ("modul_pflichtstunden", "Pflichtstunden-Verwaltung",
+     "Arbeitseinsätze, Patenschaften, Vereinsrollen und Jahresauswertung. "
+     "Deaktivieren, falls der Verein keine Pflichtstunden erhebt."),
+]
+
 
 @router.get("/einstellungen", response_class=HTMLResponse)
 async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_db)):
@@ -168,6 +176,7 @@ async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_d
             "benutzer": benutzer,
             "einstellungen": einstellungen,
             "felder": EINSTELLUNGEN_FELDER,
+            "module_felder": MODULE_FELDER,
         },
     )
 
@@ -182,6 +191,25 @@ async def einstellungen_speichern(
 
     for schluessel, beschreibung in EINSTELLUNGEN_FELDER:
         wert = form.get(schluessel, "").strip() or None
+
+        result = await db.execute(
+            select(Vereinseinstellung).where(Vereinseinstellung.schluessel == schluessel)
+        )
+        eintrag = result.scalar_one_or_none()
+
+        if eintrag:
+            eintrag.wert = wert
+        else:
+            db.add(Vereinseinstellung(
+                schluessel=schluessel,
+                wert=wert,
+                beschreibung=beschreibung,
+            ))
+
+    # Modul-Umschalter: Checkboxen senden bei "aus" gar keinen Wert im
+    # Formular, daher explizit "true"/"false" statt nur form.get(...).
+    for schluessel, beschreibung, _hinweis in MODULE_FELDER:
+        wert = "true" if schluessel in form else "false"
 
         result = await db.execute(
             select(Vereinseinstellung).where(Vereinseinstellung.schluessel == schluessel)

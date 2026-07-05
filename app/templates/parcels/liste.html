@@ -27,9 +27,9 @@
             <select name="status_filter" class="form-select form-select-sm" style="max-width: 160px;"
                     onchange="this.form.submit()">
                 <option value="">Alle Status</option>
-                <option value="aktiv" {% if status_filter == 'aktiv' %}selected{% endif %}>Aktiv</option>
-                <option value="gekuendigt" {% if status_filter == 'gekuendigt' %}selected{% endif %}>Gekündigt</option>
-                <option value="geloescht" {% if status_filter == 'geloescht' %}selected{% endif %}>Gelöscht</option>
+                <option value="AKTIV" {% if status_filter == 'AKTIV' %}selected{% endif %}>Aktiv</option>
+                <option value="GEKUENDIGT" {% if status_filter == 'GEKUENDIGT' %}selected{% endif %}>Gekündigt</option>
+                <option value="GELOESCHT" {% if status_filter == 'GELOESCHT' %}selected{% endif %}>Gelöscht</option>
             </select>
             <button type="submit" class="btn btn-sm btn-primary">Suchen</button>
             {% if suche or status_filter %}
@@ -50,7 +50,6 @@
                         <th>Fläche</th>
                         <th>Status</th>
                         <th>Pächter</th>
-                        <th>Kündigung</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -65,7 +64,7 @@
                             {{ '%g' % p.flaeche_qm if p.flaeche_qm else '–' }}{% if p.flaeche_qm %} qm{% endif %}
                         </td>
                         <td>
-                            <span class="badge badge-{{ p.status.value }}">{{ p.status.value }}</span>
+                            <span class="badge badge-{{ p.status.value|lower }}">{{ p.status.value|lower }}</span>
                         </td>
                         <td>
                             {% set aktuelle_paechter = p.mitglieder_zuordnungen | selectattr('zuordnung_bis', 'none') | list %}
@@ -78,9 +77,6 @@
                             <span class="text-muted">–</span>
                             {% endfor %}
                         </td>
-                        <td class="text-muted">
-                            {{ p.kuendigung_datum.strftime('%d.%m.%Y') if p.kuendigung_datum else '–' }}
-                        </td>
                         <td class="text-end">
                             <a href="/parzellen/{{ p.id }}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-eye"></i>
@@ -89,7 +85,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-grid-3x3 d-block mb-2" style="font-size: 1.5rem;"></i>
                             Keine Parzellen gefunden.<br>
                             <a href="/parzellen/neu" class="btn btn-sm btn-primary mt-2">Erste Parzelle anlegen</a>

@@ -197,8 +197,7 @@ async def parzelle_aktualisieren(
     request: Request,
     gartennummer: str = Form(...),
     flaeche_qm: str = Form(""),
-    status: str = Form("aktiv"),
-    kuendigung_datum: str = Form(""),
+    status: str = Form("AKTIV"),
     kuendigung_notiz: str = Form(""),
     notizen: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -211,7 +210,7 @@ async def parzelle_aktualisieren(
 
     tracker = AenderungsTracker(
         parzelle, "Parzelle",
-        ["gartennummer", "flaeche_qm", "status", "kuendigung_datum", "kuendigung_notiz", "notizen"]
+        ["gartennummer", "flaeche_qm", "status", "kuendigung_notiz", "notizen"]
     )
 
     flaeche = None
@@ -227,12 +226,6 @@ async def parzelle_aktualisieren(
 
     if status in [s.value for s in ParzelleStatus]:
         parzelle.status = ParzelleStatus(status)
-
-    if kuendigung_datum:
-        try:
-            parzelle.kuendigung_datum = date.fromisoformat(kuendigung_datum)
-        except ValueError:
-            pass
 
     parzelle.kuendigung_notiz = kuendigung_notiz.strip() or None
 
@@ -393,7 +386,7 @@ async def parzellen_export_csv(request: Request, db: AsyncSession = Depends(get_
     writer = csv.writer(output, delimiter=";")
     writer.writerow([
         "Gartennummer", "Fläche (qm)", "Status",
-        "Kündigungsdatum", "Kündigungsnotiz",
+        "Kündigungsnotiz",
         "Mitglieder (Hauptpächter zuerst)", "Notizen"
     ])
 
@@ -406,7 +399,6 @@ async def parzellen_export_csv(request: Request, db: AsyncSession = Depends(get_
             p.gartennummer,
             str(p.flaeche_qm).replace(".", ",") if p.flaeche_qm else "",
             p.status.value,
-            p.kuendigung_datum.isoformat() if p.kuendigung_datum else "",
             p.kuendigung_notiz or "",
             mitglieder_str,
             p.notizen or "",
@@ -459,7 +451,7 @@ async def parzellen_import_csv(
             except ValueError:
                 pass
 
-        status_str = zeile.get("Status", "aktiv").strip()
+        status_str = zeile.get("Status", "AKTIV").strip().upper()
         status = ParzelleStatus.AKTIV
         if status_str in [s.value for s in ParzelleStatus]:
             status = ParzelleStatus(status_str)

@@ -144,7 +144,7 @@
                             </td>
                             <td>{{ z.parzelle.flaeche_qm | round(1) if z.parzelle.flaeche_qm else '–' }} {% if z.parzelle.flaeche_qm %}qm{% endif %}</td>
                             <td>
-                                <span class="badge badge-{{ z.parzelle.status.value }}">{{ z.parzelle.status.value }}</span>
+                                <span class="badge badge-{{ z.parzelle.status.value|lower }}">{{ z.parzelle.status.value|lower }}</span>
                             </td>
                             <td>{% if z.ist_hauptpaechter %}<span class="badge badge-aktiv">Hauptpächter</span>{% else %}<span class="text-muted">Mitpächter</span>{% endif %}</td>
                             <td class="text-muted">{{ z.zuordnung_von.strftime('%d.%m.%Y') if z.zuordnung_von else '–' }}</td>

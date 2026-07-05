@@ -42,15 +42,14 @@
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Status</label>
                         <select name="status" class="form-select">
-                            <option value="aktiv" {% if parzelle.status.value == 'aktiv' %}selected{% endif %}>Aktiv</option>
-                            <option value="gekuendigt" {% if parzelle.status.value == 'gekuendigt' %}selected{% endif %}>Gekündigt</option>
-                            <option value="geloescht" {% if parzelle.status.value == 'geloescht' %}selected{% endif %}>Gelöscht</option>
+                            <option value="AKTIV" {% if parzelle.status.value == 'AKTIV' %}selected{% endif %}>Aktiv</option>
+                            <option value="GEKUENDIGT" {% if parzelle.status.value == 'GEKUENDIGT' %}selected{% endif %}>Gekündigt</option>
+                            <option value="GELOESCHT" {% if parzelle.status.value == 'GELOESCHT' %}selected{% endif %}>Gelöscht</option>
                         </select>
-                    </div>
-                    <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Kündigungsdatum</label>
-                        <input type="date" name="kuendigung_datum" class="form-control"
-                               value="{{ parzelle.kuendigung_datum.isoformat() if parzelle.kuendigung_datum else '' }}">
+                        <div class="form-text">
+                            Der Zeitpunkt einer Statusänderung wird automatisch in der
+                            Änderungshistorie protokolliert – ein separates Kündigungsdatum ist nicht nötig.
+                        </div>
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">Kündigungsnotiz</label>

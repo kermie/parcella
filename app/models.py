@@ -35,9 +35,9 @@ def new_uuid() -> str:
 # ---------------------------------------------------------------------------
 
 class ParzelleStatus(str, enum.Enum):
-    AKTIV = "aktiv"
-    GEKUENDIGT = "gekuendigt"
-    GELOESCHT = "geloescht"
+    AKTIV = "AKTIV"
+    GEKUENDIGT = "GEKUENDIGT"
+    GELOESCHT = "GELOESCHT"
 
 
 class BenutzerRolle(str, enum.Enum):
@@ -223,7 +223,6 @@ class Parzelle(Base):
     )
 
     # Kündigung (wer hat wann gekündigt)
-    kuendigung_datum: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     kuendigung_notiz: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Notizen
@@ -455,14 +454,14 @@ class Patenschaft(Base):
 # ---------------------------------------------------------------------------
 
 class EinsatzTyp(str, enum.Enum):
-    STANDARD = "standard"      # Geplanter Termin, Anmeldung möglich
-    BESONDERS = "besonders"    # Spontan/ungeplant (Gartenbank streichen etc.)
+    STANDARD = "STANDARD"      # Geplanter Termin, Anmeldung möglich
+    BESONDERS = "BESONDERS"    # Spontan/ungeplant (Gartenbank streichen etc.)
 
 
 class TeilnahmeStatus(str, enum.Enum):
-    ANGEMELDET = "angemeldet"           # Hat sich angemeldet
-    ERSCHIENEN = "erschienen"           # War da, Stunden werden angerechnet
-    NICHT_ERSCHIENEN = "nicht_erschienen"  # Angemeldet aber nicht erschienen
+    ANGEMELDET = "ANGEMELDET"           # Hat sich angemeldet
+    ERSCHIENEN = "ERSCHIENEN"           # War da, Stunden werden angerechnet
+    NICHT_ERSCHIENEN = "NICHT_ERSCHIENEN"  # Angemeldet aber nicht erschienen
 
 
 class Arbeitseinsatz(Base):

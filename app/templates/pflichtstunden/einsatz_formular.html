@@ -30,10 +30,10 @@
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Typ</label>
                         <select name="typ" class="form-select">
-                            <option value="standard" {% if einsatz and einsatz.typ.value == 'standard' %}selected{% endif %}>
+                            <option value="STANDARD" {% if einsatz and einsatz.typ.value == 'STANDARD' %}selected{% endif %}>
                                 Standard (geplant)
                             </option>
-                            <option value="besonders" {% if einsatz and einsatz.typ.value == 'besonders' %}selected{% endif %}>
+                            <option value="BESONDERS" {% if einsatz and einsatz.typ.value == 'BESONDERS' %}selected{% endif %}>
                                 Besonders (spontan)
                             </option>
                         </select>

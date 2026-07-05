@@ -89,7 +89,7 @@
                            style="color: var(--gv-gruen);">{{ e.titel }}</a>
                     </td>
                     <td>
-                        {% if e.typ.value == 'standard' %}
+                        {% if e.typ.value == 'STANDARD' %}
                         <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
                         {% else %}
                         <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
@@ -102,7 +102,7 @@
                         {{ e.teilnahmen | length }}
                         {% if e.max_teilnehmer %}/ {{ e.max_teilnehmer }}{% endif %}
                         <small class="text-muted ms-1">
-                            ({{ e.teilnahmen | selectattr('status.value', 'eq', 'erschienen') | list | length }} erschienen)
+                            ({{ e.teilnahmen | selectattr('status.value', 'eq', 'ERSCHIENEN') | list | length }} erschienen)
                         </small>
                     </td>
                     <td class="text-end">
