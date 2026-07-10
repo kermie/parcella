@@ -512,3 +512,62 @@ class ParzelleVersicherungKostenOut(ParzelleVersicherungOut):
     sach_kosten_eur: Decimal
     unfall_kosten_eur: Decimal
     gesamt_kosten_eur: Decimal
+
+
+# ---------------------------------------------------------------------------
+# Ticketsystem
+# ---------------------------------------------------------------------------
+
+class TicketNachrichtCreate(BaseModel):
+    richtung: str = Field("AUSGEHEND", description="EINGEHEND, AUSGEHEND oder INTERN")
+    inhalt: str
+
+
+class TicketNachrichtOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    ticket_id: str
+    richtung: str
+    inhalt: str
+    verfasst_von_id: Optional[str] = None
+    erstellt_am: datetime
+
+
+class TicketCreate(BaseModel):
+    betreff: str
+    absender_email: EmailStr
+    absender_name: Optional[str] = None
+    nachricht: str = Field(..., description="Erste Nachricht des Tickets (wird als EINGEHEND gespeichert)")
+
+
+class TicketStatusUpdate(BaseModel):
+    status: str = Field(..., description="NICHT_ZUGEWIESEN, ZUGEWIESEN, ZURUECKGESTELLT oder GESCHLOSSEN")
+    zurueckgestellt_bis: Optional[date] = None
+
+
+class TicketZuweisungUpdate(BaseModel):
+    benutzer_id: Optional[str] = Field(None, description="Leer/None = Zuweisung aufheben")
+
+
+class TicketMitgliedUpdate(BaseModel):
+    mitglied_id: Optional[str] = None
+
+
+class TicketOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    betreff: str
+    status: str
+    zugewiesen_an_id: Optional[str] = None
+    zurueckgestellt_bis: Optional[date] = None
+    mitglied_id: Optional[str] = None
+    absender_email: str
+    absender_name: Optional[str] = None
+    spam_verdacht: bool
+    erstellt_am: datetime
+    aktualisiert_am: datetime
+    geschlossen_am: Optional[datetime] = None
+
+
+class TicketDetailOut(TicketOut):
+    nachrichten: List[TicketNachrichtOut] = []

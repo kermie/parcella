@@ -842,3 +842,104 @@ class UnfallversicherungZusatzperson(Base):
     __table_args__ = (
         UniqueConstraint("parzelle_versicherung_id", "mitglied_id", name="uq_versicherung_mitglied"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Ticketsystem
+# ---------------------------------------------------------------------------
+
+class TicketStatus(str, enum.Enum):
+    NICHT_ZUGEWIESEN = "NICHT_ZUGEWIESEN"
+    ZUGEWIESEN = "ZUGEWIESEN"
+    ZURUECKGESTELLT = "ZURUECKGESTELLT"
+    GESCHLOSSEN = "GESCHLOSSEN"
+
+
+class NachrichtRichtung(str, enum.Enum):
+    EINGEHEND = "EINGEHEND"   # Vom Absender/Kunden (später per E-Mail, Etappe 1: manuell)
+    AUSGEHEND = "AUSGEHEND"   # Antwort eines Benutzers (später als E-Mail versendet, Etappe 2)
+    INTERN = "INTERN"         # Interne Notiz, nie an den Absender gesendet
+
+
+class Ticket(Base):
+    """
+    Ein Support-Ticket = ein Anliegen eines Absenders. In Etappe 2 werden
+    Tickets automatisch aus eingehenden E-Mails erzeugt; in Etappe 1 können
+    sie manuell angelegt werden, um das Grundgerüst zu testen.
+    """
+    __tablename__ = "tickets"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    betreff: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    status: Mapped[TicketStatus] = mapped_column(
+        SAEnum(TicketStatus), default=TicketStatus.NICHT_ZUGEWIESEN, nullable=False, index=True
+    )
+    zugewiesen_an_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    zurueckgestellt_bis: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    # Automatischer Abgleich per Absender-E-Mail; überschreibbar/manuell korrigierbar,
+    # falls die Adresse mehreren Mitgliedern gehört oder unbekannt ist.
+    mitglied_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("mitglieder.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    absender_email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    absender_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    # Vorbereitung für Etappe 3 (Spam-Schnittstelle): Felder existieren bereits,
+    # damit später keine weitere Migration nötig ist. Die eigentliche Prüfung
+    # ist in Etappe 1 ein No-Op (siehe app/spam_filter.py).
+    spam_verdacht: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    spam_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
+
+    erstellt_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    aktualisiert_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+    geschlossen_am: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    zugewiesen_an: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
+    mitglied: Mapped[Optional["Mitglied"]] = relationship("Mitglied")
+    nachrichten: Mapped[List["TicketNachricht"]] = relationship(
+        "TicketNachricht", back_populates="ticket", cascade="all, delete-orphan",
+        order_by="TicketNachricht.erstellt_am",
+    )
+
+    @property
+    def ist_faellig(self) -> bool:
+        """True, wenn ein zurückgestelltes Ticket sein Datum erreicht hat und
+        wieder als aktiv behandelt werden soll (rein berechnet, kein Hintergrundjob)."""
+        if self.status != TicketStatus.ZURUECKGESTELLT:
+            return False
+        return self.zurueckgestellt_bis is not None and self.zurueckgestellt_bis <= date.today()
+
+    def __repr__(self) -> str:
+        return f"<Ticket {self.betreff!r} ({self.status.value})>"
+
+
+class TicketNachricht(Base):
+    """Eine einzelne Nachricht innerhalb eines Ticket-Verlaufs."""
+    __tablename__ = "ticket_nachrichten"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    ticket_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    richtung: Mapped[NachrichtRichtung] = mapped_column(SAEnum(NachrichtRichtung), nullable=False)
+    inhalt: Mapped[str] = mapped_column(Text, nullable=False)
+    verfasst_von_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
+    )
+    erstellt_am: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="nachrichten")
+    verfasst_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
+
+    def __repr__(self) -> str:
+        return f"<TicketNachricht {self.richtung.value} @ {self.ticket_id}>"

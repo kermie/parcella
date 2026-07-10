@@ -169,6 +169,9 @@ MODULE_FELDER = [
     ("modul_versicherungen", "Versicherungsverwaltung",
      "Sach- und Unfallversicherung pro Parzelle inkl. Jahresauswertung. "
      "Deaktivieren, falls der Verein keine Versicherungen über das Programm abwickelt."),
+    ("modul_tickets", "Ticketsystem",
+     "Support-Tickets mit Zuweisung, Status und Mitglied-Zuordnung. "
+     "Deaktivieren, falls der Verein kein internes Ticketsystem nutzt."),
 ]
 
 

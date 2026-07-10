@@ -171,6 +171,12 @@
             <i class="bi bi-grid-3x3"></i> Parzellen
         </a>
 
+        {% if request.state.module_flags.tickets %}
+        <a href="/tickets/" class="nav-top-link {% if '/tickets' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-ticket-perforated"></i> Tickets
+        </a>
+        {% endif %}
+
         {% if request.state.module_flags.pflichtstunden %}
         <div class="nav-group" data-group="pflichtstunden">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
