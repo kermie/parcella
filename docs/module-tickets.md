@@ -49,6 +49,24 @@ den IMAP-Abruf (Empfang) gibt es zusätzliche Felder (`imap_host`,
 `imap_port`, `imap_ssl`) – IMAP-Benutzer/-Passwort sind identisch mit den
 SMTP-Zugangsdaten, da es sich um dasselbe Postfach handelt.
 
+**Erstsynchronisierung überspringt bestehende E-Mails.** Ein Postfach, das
+schon lange in Betrieb ist, kann tausende E-Mails enthalten. Der allererste
+Abruf würde ohne Sonderbehandlung versuchen, **alle** davon einzeln per
+`UID FETCH` abzurufen – das führte in der Praxis zu einem `socket error:
+EOF` (Verbindungsabbruch durch den Mailserver bei zu vielen Befehlen in
+einer Sitzung). Die Lösung: Ist `ticket_imap_letzte_uid` noch nicht
+gesetzt, wird beim ersten Abruf **nur die aktuell höchste UID ermittelt**
+(eine einzelne `SEARCH`, kein `FETCH`) und als Startpunkt gespeichert –
+ohne eine einzige Mail zu verarbeiten. Ab dem nächsten Zyklus werden dann
+ausschließlich neu eingehende E-Mails verarbeitet. Das entspricht auch dem
+erwarteten Verhalten: niemand möchte, dass das jahrelange Mail-Archiv
+plötzlich komplett als Tickets im System auftaucht.
+
+**Lehre:** Bei jeder Art von "seit dem letzten Mal"-Verarbeitung (IMAP,
+aber auch denkbar für andere Polling-Szenarien) den Sonderfall "es gab
+noch nie ein 'letztes Mal'" explizit behandeln, statt ihn implizit als
+"alles seit Anfang der Zeit" zu interpretieren.
+
 **IMAP läuft synchron in einem Thread, nicht async.** Es gibt keine
 ausgereifte async-IMAP-Bibliothek in den Standard-Abhängigkeiten. Statt
 eine neue hinzuzufügen, nutzt `app/ticket_mailer.py` Python-Bordmittel

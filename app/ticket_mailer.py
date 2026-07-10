@@ -136,6 +136,37 @@ def _extrahiere_text(nachricht) -> str:
         return ""
 
 
+def _hole_hoechste_uid_sync(konfig: Dict[str, Any]) -> int:
+    """
+    Ermittelt nur die höchste aktuell vorhandene UID, OHNE eine einzige
+    Nachricht abzurufen. Wird für die Erstsynchronisierung genutzt (siehe
+    verarbeite_eingehende_mails) – verhindert, dass beim allerersten Abruf
+    Tausende bestehende Alt-Mails auf einmal als Tickets importiert werden.
+    """
+    if konfig["imap_ssl"]:
+        verbindung = imaplib.IMAP4_SSL(konfig["imap_host"], konfig["imap_port"])
+    else:
+        verbindung = imaplib.IMAP4(konfig["imap_host"], konfig["imap_port"])
+
+    try:
+        verbindung.login(konfig["imap_user"], konfig["imap_password"])
+        verbindung.select("INBOX")
+        status, daten = verbindung.uid("search", None, "ALL")
+        if status != "OK" or not daten or not daten[0]:
+            return 0
+        alle_uids = [int(u) for u in daten[0].split()]
+        return max(alle_uids) if alle_uids else 0
+    finally:
+        try:
+            verbindung.close()
+        except Exception:
+            pass
+        try:
+            verbindung.logout()
+        except Exception:
+            pass
+
+
 def _hole_neue_mails_sync(konfig: Dict[str, Any], letzte_uid: Optional[int]) -> List[Dict[str, Any]]:
     """
     Synchrone IMAP-Abfrage (läuft in einem Thread-Executor). Gibt eine Liste
@@ -253,7 +284,31 @@ async def verarbeite_eingehende_mails(db: AsyncSession) -> int:
         return 0
 
     letzte_uid_str = await _lese_einstellung(db, _SCHLUESSEL_LETZTE_UID)
+    erstlauf = letzte_uid_str is None
     letzte_uid = int(letzte_uid_str) if letzte_uid_str else None
+
+    if erstlauf:
+        # Beim allerersten Abruf werden bestehende E-Mails NICHT importiert –
+        # nur die aktuell höchste UID wird als Startpunkt gemerkt. Sonst
+        # würde ein Postfach mit tausenden Alt-Mails auf einen Schlag komplett
+        # (und sehr langsam, ggf. mit Verbindungsabbruch) importiert werden.
+        try:
+            hoechste_uid = await asyncio.to_thread(_hole_hoechste_uid_sync, konfig)
+        except Exception as e:
+            logger.error(f"IMAP-Erstsynchronisierung fehlgeschlagen: {e}")
+            await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_FEHLER, str(e))
+            await db.commit()
+            return 0
+
+        await _schreibe_einstellung(db, _SCHLUESSEL_LETZTE_UID, str(hoechste_uid))
+        await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_ABRUF, datetime.now(timezone.utc).isoformat())
+        await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_FEHLER, None)
+        await db.commit()
+        logger.info(
+            f"Ticket-Postfach: Erstsynchronisierung abgeschlossen (UID {hoechste_uid}). "
+            f"Bestehende E-Mails wurden übersprungen, ab jetzt werden nur neue E-Mails verarbeitet."
+        )
+        return 0
 
     try:
         mails = await asyncio.to_thread(_hole_neue_mails_sync, konfig, letzte_uid)
