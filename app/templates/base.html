@@ -51,6 +51,53 @@
             color: #fff;
             border-left-color: #95d5b2;
         }
+
+        /* Immer sichtbare Top-Links (Dashboard, Mitglieder, Parzellen) */
+        .nav-top-link {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.5rem 1rem; color: rgba(255,255,255,0.85);
+            text-decoration: none; font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+        .nav-top-link:hover, .nav-top-link.aktiv {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-left-color: #95d5b2;
+        }
+
+        /* Aufklappbare Modul-Gruppen */
+        .nav-group { margin-top: 0.25rem; }
+        .nav-group-toggle {
+            display: flex; align-items: center; gap: 0.6rem;
+            width: 100%; padding: 0.6rem 1rem;
+            background: none; border: none;
+            color: rgba(255,255,255,0.75);
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; text-align: left;
+            cursor: pointer; transition: color 0.15s;
+        }
+        .nav-group-toggle:hover { color: #fff; }
+        .nav-group-toggle span { flex: 1; }
+        .nav-group-chevron {
+            font-size: 0.7rem; transition: transform 0.2s;
+        }
+        .nav-group-toggle.collapsed .nav-group-chevron {
+            transform: rotate(-90deg);
+        }
+        .nav-group-body a {
+            display: flex; align-items: center;
+            padding: 0.45rem 1rem 0.45rem 2.4rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none; font-size: 0.87rem;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+        }
+        .nav-group-body a:hover, .nav-group-body a.aktiv {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-left-color: #95d5b2;
+        }
         .sidebar-footer {
             padding: 0.75rem 1rem;
             border-top: 1px solid rgba(255,255,255,0.15);
@@ -113,88 +160,103 @@
         <small>Verwaltung</small>
     </div>
     <div class="sidebar-nav">
-        <div class="nav-label">Übersicht</div>
-        <a href="/" class="{% if request.url.path == '/' %}aktiv{% endif %}">
+        <a href="/" class="nav-top-link {% if request.url.path == '/' %}aktiv{% endif %}">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
-        <div class="nav-label">Stammdaten</div>
-        <a href="/mitglieder/" class="{% if '/mitglieder' in request.url.path %}aktiv{% endif %}">
+        <a href="/mitglieder/" class="nav-top-link {% if '/mitglieder' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-people"></i> Mitglieder
         </a>
-        <a href="/parzellen/" class="{% if '/parzellen' in request.url.path %}aktiv{% endif %}">
+        <a href="/parzellen/" class="nav-top-link {% if '/parzellen' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-grid-3x3"></i> Parzellen
         </a>
 
         {% if request.state.module_flags.pflichtstunden %}
-        <div class="nav-label">Arbeitseinsätze</div>
-        <a href="/pflichtstunden/" class="{% if '/pflichtstunden' in request.url.path and '/auswertung' not in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-hammer"></i> Einsätze & Übersicht
-        </a>
-        <a href="/pflichtstunden/auswertung" class="{% if '/pflichtstunden/auswertung' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-bar-chart"></i> Jahresauswertung
-        </a>
-        <a href="/pflichtstunden/patenschaften" class="{% if '/pflichtstunden/patenschaften' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-heart"></i> Patenschaften
-        </a>
+        <div class="nav-group" data-group="pflichtstunden">
+            <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#nav-group-pflichtstunden">
+                <i class="bi bi-hammer"></i>
+                <span>Arbeitseinsätze</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body" id="nav-group-pflichtstunden">
+                <a href="/pflichtstunden/" class="{% if '/pflichtstunden' in request.url.path and '/auswertung' not in request.url.path %}aktiv{% endif %}">
+                    Einsätze &amp; Übersicht
+                </a>
+                <a href="/pflichtstunden/auswertung" class="{% if '/pflichtstunden/auswertung' in request.url.path %}aktiv{% endif %}">
+                    Jahresauswertung
+                </a>
+                <a href="/pflichtstunden/patenschaften" class="{% if '/pflichtstunden/patenschaften' in request.url.path %}aktiv{% endif %}">
+                    Patenschaften
+                </a>
+            </div>
+        </div>
         {% endif %}
 
         {% if request.state.module_flags.wasser %}
-        <div class="nav-label">Wasser</div>
-        <a href="/wasser/" class="{% if request.url.path == '/wasser/' %}aktiv{% endif %}">
-            <i class="bi bi-droplet"></i> Übersicht
-        </a>
-        <a href="/wasser/zaehlpunkte" class="{% if '/wasser/zaehlpunkte' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-speedometer2"></i> Zaehlpunkte
-        </a>
-        <a href="/wasser/ablesung" class="{% if '/wasser/ablesung' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-clipboard-check"></i> Ablesung
-        </a>
-        <a href="/wasser/auswertung" class="{% if '/wasser/auswertung' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-bar-chart"></i> Auswertung
-        </a>
+        <div class="nav-group" data-group="wasser">
+            <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#nav-group-wasser">
+                <i class="bi bi-droplet"></i>
+                <span>Wasser</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body" id="nav-group-wasser">
+                <a href="/wasser/" class="{% if request.url.path == '/wasser/' %}aktiv{% endif %}">Übersicht</a>
+                <a href="/wasser/zaehlpunkte" class="{% if '/wasser/zaehlpunkte' in request.url.path %}aktiv{% endif %}">Zaehlpunkte</a>
+                <a href="/wasser/ablesung" class="{% if '/wasser/ablesung' in request.url.path %}aktiv{% endif %}">Ablesung</a>
+                <a href="/wasser/auswertung" class="{% if '/wasser/auswertung' in request.url.path %}aktiv{% endif %}">Auswertung</a>
+            </div>
+        </div>
         {% endif %}
 
         {% if request.state.module_flags.strom %}
-        <div class="nav-label">Strom</div>
-        <a href="/strom/" class="{% if request.url.path == '/strom/' %}aktiv{% endif %}">
-            <i class="bi bi-lightning-charge"></i> Übersicht
-        </a>
-        <a href="/strom/zaehlpunkte" class="{% if '/strom/zaehlpunkte' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-speedometer2"></i> Zaehlpunkte
-        </a>
-        <a href="/strom/ablesung" class="{% if '/strom/ablesung' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-clipboard-check"></i> Ablesung
-        </a>
-        <a href="/strom/auswertung" class="{% if '/strom/auswertung' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-bar-chart"></i> Auswertung
-        </a>
+        <div class="nav-group" data-group="strom">
+            <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#nav-group-strom">
+                <i class="bi bi-lightning-charge"></i>
+                <span>Strom</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body" id="nav-group-strom">
+                <a href="/strom/" class="{% if request.url.path == '/strom/' %}aktiv{% endif %}">Übersicht</a>
+                <a href="/strom/zaehlpunkte" class="{% if '/strom/zaehlpunkte' in request.url.path %}aktiv{% endif %}">Zaehlpunkte</a>
+                <a href="/strom/ablesung" class="{% if '/strom/ablesung' in request.url.path %}aktiv{% endif %}">Ablesung</a>
+                <a href="/strom/auswertung" class="{% if '/strom/auswertung' in request.url.path %}aktiv{% endif %}">Auswertung</a>
+            </div>
+        </div>
         {% endif %}
 
         {% if request.state.module_flags.versicherungen %}
-        <div class="nav-label">Versicherungen</div>
-        <a href="/versicherungen/" class="{% if request.url.path == '/versicherungen/' %}aktiv{% endif %}">
-            <i class="bi bi-shield-check"></i> Übersicht
-        </a>
-        <a href="/versicherungen/parzellen" class="{% if '/versicherungen/parzellen' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-grid-3x3"></i> Parzellen
-        </a>
-        <a href="/versicherungen/konfiguration" class="{% if '/versicherungen/konfiguration' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-gear"></i> Konfiguration
-        </a>
-        <a href="/versicherungen/auswertung" class="{% if '/versicherungen/auswertung' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-bar-chart"></i> Auswertung
-        </a>
+        <div class="nav-group" data-group="versicherungen">
+            <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#nav-group-versicherungen">
+                <i class="bi bi-shield-check"></i>
+                <span>Versicherungen</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body" id="nav-group-versicherungen">
+                <a href="/versicherungen/" class="{% if request.url.path == '/versicherungen/' %}aktiv{% endif %}">Übersicht</a>
+                <a href="/versicherungen/parzellen" class="{% if '/versicherungen/parzellen' in request.url.path %}aktiv{% endif %}">Parzellen</a>
+                <a href="/versicherungen/konfiguration" class="{% if '/versicherungen/konfiguration' in request.url.path %}aktiv{% endif %}">Konfiguration</a>
+                <a href="/versicherungen/auswertung" class="{% if '/versicherungen/auswertung' in request.url.path %}aktiv{% endif %}">Auswertung</a>
+            </div>
+        </div>
         {% endif %}
 
         {% if benutzer.rolle.value in ['admin', 'vorstand'] %}
-        <div class="nav-label">Administration</div>
-        <a href="/admin/" class="{% if '/admin/' == request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-people-fill"></i> Benutzer
-        </a>
-        <a href="/admin/einstellungen" class="{% if '/admin/einstellungen' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-gear"></i> Einstellungen
-        </a>
+        <div class="nav-group" data-group="administration">
+            <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#nav-group-administration">
+                <i class="bi bi-gear-wide-connected"></i>
+                <span>Administration</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body" id="nav-group-administration">
+                <a href="/admin/" class="{% if '/admin/' == request.url.path %}aktiv{% endif %}">Benutzer</a>
+                <a href="/admin/einstellungen" class="{% if '/admin/einstellungen' in request.url.path %}aktiv{% endif %}">Einstellungen</a>
+            </div>
+        </div>
         {% endif %}
     </div>
     <div class="sidebar-footer">
@@ -227,6 +289,40 @@
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Navigation: Modul-Gruppen aufklappbar machen, Zustand pro Browser merken.
+// Die Gruppe mit der aktuell aktiven Seite klappt immer auf, unabhängig
+// vom gespeicherten Zustand – niemand soll seine aktuelle Seite "verlieren".
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.nav-group').forEach(function (gruppe) {
+        var name = gruppe.dataset.group;
+        var body = gruppe.querySelector('.nav-group-body');
+        var toggle = gruppe.querySelector('.nav-group-toggle');
+        var enthaeltAktiv = gruppe.querySelector('a.aktiv') !== null;
+        var gespeichert = localStorage.getItem('navGroup:' + name);
+
+        var sollAufklappen = enthaeltAktiv || gespeichert !== 'zu';
+
+        if (sollAufklappen) {
+            body.classList.add('show');
+            toggle.classList.remove('collapsed');
+            toggle.setAttribute('aria-expanded', 'true');
+        } else {
+            body.classList.remove('show');
+            toggle.classList.add('collapsed');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+
+        // Zustand merken, sobald der Nutzer selbst auf-/zuklappt
+        body.addEventListener('shown.bs.collapse', function () {
+            localStorage.setItem('navGroup:' + name, 'auf');
+        });
+        body.addEventListener('hidden.bs.collapse', function () {
+            localStorage.setItem('navGroup:' + name, 'zu');
+        });
+    });
+});
+</script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>
