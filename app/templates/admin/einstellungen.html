@@ -81,8 +81,8 @@
                     <label class="form-label fw-semibold">{{ label }}</label>
                     <input type="{{ 'password' if 'password' in schluessel else 'text' }}"
                            name="{{ schluessel }}" class="form-control"
-                           value="{{ einstellungen.get(schluessel, '') or '' }}"
-                           {% if 'password' in schluessel %}placeholder="(unverändert lassen = kein Reset)"{% endif %}>
+                           value="{{ '' if 'password' in schluessel else (einstellungen.get(schluessel, '') or '') }}"
+                           {% if 'password' in schluessel %}placeholder="{% if einstellungen.get(schluessel) %}•••••••• (gesetzt – neu eingeben zum Ändern){% else %}Noch nicht gesetzt{% endif %}"{% endif %}>
                 </div>
                 {% endfor %}
             </div>

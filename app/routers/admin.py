@@ -13,6 +13,7 @@ from app.database import get_db
 from app.models import Benutzer, Einladung, EinladungStatus, BenutzerRolle, Vereinseinstellung
 from app.auth import require_admin, erstelle_einladungstoken, hash_passwort
 from app.email_service import sende_email
+from app.crypto_utils import verschluesseln
 from app.config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -205,6 +206,15 @@ async def einstellungen_speichern(
             select(Vereinseinstellung).where(Vereinseinstellung.schluessel == schluessel)
         )
         eintrag = result.scalar_one_or_none()
+
+        if schluessel == "smtp_password":
+            # Leeres Feld = "unverändert lassen" (wie im Platzhaltertext
+            # versprochen), damit man nicht bei jedem Speichern das
+            # Passwort neu eintippen muss. Nur ein NEUER Wert wird
+            # verschlüsselt gespeichert.
+            if not wert:
+                continue
+            wert = verschluesseln(wert)
 
         if eintrag:
             eintrag.wert = wert

@@ -18,6 +18,7 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.models import Vereinseinstellung
+from app.crypto_utils import entschluesseln
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ async def lade_smtp_konfiguration(db: AsyncSession) -> dict:
         "host": gespeichert.get("smtp_host") or settings.smtp_host,
         "port": port,
         "user": gespeichert.get("smtp_user") or settings.smtp_user,
-        "password": gespeichert.get("smtp_password") or settings.smtp_password,
+        "password": entschluesseln(gespeichert.get("smtp_password")) or settings.smtp_password,
         "from": gespeichert.get("smtp_from") or settings.smtp_from,
         "tls": _bool(gespeichert.get("smtp_tls")) if "smtp_tls" in gespeichert else settings.smtp_tls,
     }
