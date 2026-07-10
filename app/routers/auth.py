@@ -15,7 +15,6 @@ from app.auth import (
     verify_passwort, hash_passwort, erstelle_session_token,
     pruefe_einladungstoken, erstelle_einladungstoken, get_current_user, require_admin
 )
-from app.email_service import sende_email
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])

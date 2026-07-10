@@ -100,7 +100,7 @@ async def benutzer_einladen(
     </body></html>
     """
 
-    email_gesendet = await sende_email(email, betreff, html)
+    email_gesendet = await sende_email(email, betreff, html, db=db)
 
     # Im Entwicklungsmodus: Link in der URL zurückgeben
     if settings.is_development and not email_gesendet:
