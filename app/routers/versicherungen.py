@@ -71,7 +71,20 @@ async def _get_or_create_pv(db: AsyncSession, parzelle_id: str, jahr: int) -> Pa
     if not pv:
         pv = ParzelleVersicherung(parzelle_id=parzelle_id, jahr=jahr)
         db.add(pv)
-        await db.flush()
+        await db.commit()
+        # Frisch angelegte Zeile mit eager-geladenen Beziehungen neu laden.
+        # Ohne das würde ein späterer Zugriff auf pv.sach_paket/pv.zusatzpersonen
+        # einen synchronen Lazy-Load auslösen, der mit dem asynchronen
+        # Datenbanktreiber zu "MissingGreenlet" führt.
+        result = await db.execute(
+            select(ParzelleVersicherung)
+            .options(
+                selectinload(ParzelleVersicherung.sach_paket),
+                selectinload(ParzelleVersicherung.zusatzpersonen),
+            )
+            .where(ParzelleVersicherung.id == pv.id)
+        )
+        pv = result.scalar_one()
     return pv
 
 
@@ -312,7 +325,6 @@ async def versicherung_detail(
     konfiguration = await _get_konfiguration(db, jahr)
     pakete = await _get_pakete(db, jahr)
     pv = await _get_or_create_pv(db, parzelle_id, jahr)
-    await db.commit()  # falls neu angelegt
 
     gruppierung = haushalts_gruppierung(parzelle.mitglieder_zuordnungen)
     zusatz_ids = {z.mitglied_id for z in pv.zusatzpersonen}
