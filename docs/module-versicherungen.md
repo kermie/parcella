@@ -50,3 +50,12 @@ die sich jährlich ändern können, gehören in eine Tabelle, nicht in Code.
   ersten Mal für ein Jahr geöffnet wird) müssen die Beziehungen nach dem
   Commit explizit neu geladen werden, bevor auf `sach_paket` oder
   `zusatzpersonen` zugegriffen wird. Siehe `_get_or_create_pv()`.
+
+## REST-API
+
+Dieses Modul verfügt (nachträglich ergänzt) über es für dieses Modul vollständige
+REST-API-Endpunkte (JWT-authentifiziert, siehe `/api/docs`). Siehe README
+für die Endpunkt-Übersicht. Hintergrund: anfangs wurden neue Module nur
+als Web-Oberfläche gebaut, die API wurde nachträglich nachgezogen – seither
+gilt die Regel, dass jedes neue Modul **von Anfang an** sowohl Web-UI als
+auch API-Endpunkte bekommt (siehe Architektur-Entscheidungen).

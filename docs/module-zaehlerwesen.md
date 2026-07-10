@@ -89,3 +89,12 @@ getrennt berechnet – kein Vermischen von altem und neuem Zählerstand.
   Anlegen die Zeile explizit mit `selectinload(...)` neu laden (siehe
   `_get_or_create_pv()` im Versicherungsmodul für ein Beispiel dieses
   Musters).
+
+## REST-API
+
+Dieses Modul verfügt (nachträglich ergänzt) über es für dieses Modul vollständige
+REST-API-Endpunkte (JWT-authentifiziert, siehe `/api/docs`). Siehe README
+für die Endpunkt-Übersicht. Hintergrund: anfangs wurden neue Module nur
+als Web-Oberfläche gebaut, die API wurde nachträglich nachgezogen – seither
+gilt die Regel, dass jedes neue Modul **von Anfang an** sowohl Web-UI als
+auch API-Endpunkte bekommt (siehe Architektur-Entscheidungen).

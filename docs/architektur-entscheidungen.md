@@ -115,3 +115,17 @@ und `Zaehlpunkt`-Beziehungen.
 **Regel:** Nach dem Neuanlegen einer Zeile mit Beziehungen, die später
 gebraucht werden, die Zeile explizit mit `selectinload(...)` neu laden,
 statt das ursprüngliche (frisch erzeugte) Objekt weiterzuverwenden.
+
+## API-first ab sofort verbindlich
+
+**Der Lückenfund:** Nach dem Bau von Pflichtstunden, Zählerwesen und
+Versicherungen stellte sich heraus, dass nur die ursprünglichen
+Phase-1-Module (Mitglieder, Parzellen) REST-API-Endpunkte hatten – die
+drei neueren Module existierten nur als Web-Oberfläche. Das widersprach
+der eigentlichen Idee, dass die REST-API die zentrale Erweiterbarkeitsfläche
+für externe Integrationen sein soll (siehe Diskussion zum Plugin-System).
+
+**Regel ab sofort:** Jedes neue Modul bekommt von Anfang an sowohl eine
+Web-Oberfläche (Jinja2-Router) als auch REST-API-Endpunkte
+(`app/routers/api_<modul>.py`), nicht nacheinander. Bestehende Lücken
+(Pflichtstunden, Zählerwesen, Versicherungen) wurden nachgezogen.

@@ -62,3 +62,12 @@ macht als die Standard-Pflicht).
   nachträglich auf Großschreibung korrigiert werden – siehe
   [Architektur-Entscheidungen](./architektur-entscheidungen.md) für die
   ausführliche Erklärung dieses wiederkehrenden Bugs.
+
+## REST-API
+
+Dieses Modul verfügt (nachträglich ergänzt) über es für dieses Modul vollständige
+REST-API-Endpunkte (JWT-authentifiziert, siehe `/api/docs`). Siehe README
+für die Endpunkt-Übersicht. Hintergrund: anfangs wurden neue Module nur
+als Web-Oberfläche gebaut, die API wurde nachträglich nachgezogen – seither
+gilt die Regel, dass jedes neue Modul **von Anfang an** sowohl Web-UI als
+auch API-Endpunkte bekommt (siehe Architektur-Entscheidungen).

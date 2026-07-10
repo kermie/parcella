@@ -22,6 +22,8 @@ from app.routers import auth, mitglieder, parzellen, admin as admin_router, pfli
 from app.routers.zaehlerwesen import erstelle_zaehler_router
 from app.models import ZaehlerMedium
 from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen, api_stats
+from app.routers import api_pflichtstunden, api_versicherungen
+from app.routers.api_zaehlerwesen import erstelle_zaehler_api_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -109,6 +111,13 @@ app.include_router(api_mitglieder.router)
 app.include_router(api_parzellen.router)
 app.include_router(api_einstellungen.router)
 app.include_router(api_stats.router)
+app.include_router(api_pflichtstunden.router)
+app.include_router(api_versicherungen.router)
+
+api_wasser_router = erstelle_zaehler_api_router(ZaehlerMedium.WASSER, "/wasser", "wasser")
+api_strom_router = erstelle_zaehler_api_router(ZaehlerMedium.STROM, "/strom", "strom")
+app.include_router(api_wasser_router)
+app.include_router(api_strom_router)
 
 templates = Jinja2Templates(directory="app/templates")
 

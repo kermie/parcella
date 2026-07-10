@@ -156,6 +156,20 @@ Tokens sind 24 Stunden gültig. Die Swagger-UI hat einen "Authorize"-Button für
 | DELETE | `/api/v1/parzellen/{id}/zuordnungen/{zid}` | Zuordnung entfernen |
 | GET | `/api/v1/einstellungen` | Vereinseinstellungen abrufen |
 | PUT | `/api/v1/einstellungen/{schluessel}` | Einstellung setzen (nur Admin/Vorstand) |
+| GET/PUT | `/api/v1/pflichtstunden/konfiguration/{jahr}` | Pflichtstunden-Konfiguration |
+| GET/POST/PUT/DELETE | `/api/v1/pflichtstunden/vereinsrollen` | Vereinsrollen + Zuordnungen |
+| GET/POST/PUT/DELETE | `/api/v1/pflichtstunden/einsaetze` | Arbeitseinsätze + Teilnahmen |
+| GET/POST/PUT/DELETE | `/api/v1/pflichtstunden/patenschaften` | Patenschaften |
+| GET | `/api/v1/pflichtstunden/auswertung/{jahr}` | Jahresauswertung |
+| GET/POST/PUT/DELETE | `/api/v1/wasser/zaehlpunkte` | Wasser-Zählpunkte + Zähler |
+| POST | `/api/v1/wasser/zaehlpunkte/{id}/tauschen` | Wasserzähler tauschen |
+| GET/POST/DELETE | `/api/v1/wasser/zaehlpunkte/{id}/zaehlerstaende` | Wasser-Ablesungen |
+| GET | `/api/v1/wasser/auswertung/{jahr}` | Wasser-Verbrauchsauswertung |
+| GET/POST/PUT/DELETE | `/api/v1/strom/zaehlpunkte` | Strom-Zählpunkte + Zähler (analog Wasser) |
+| GET/POST/PUT/DELETE | `/api/v1/versicherungen/pakete` | Sachversicherungs-Pakete |
+| GET/PUT | `/api/v1/versicherungen/konfiguration/{jahr}` | Unfallversicherungs-Beträge |
+| GET/PUT | `/api/v1/versicherungen/parzellen/{id}/{jahr}` | Versicherungsstatus einer Parzelle |
+| GET | `/api/v1/versicherungen/auswertung/{jahr}` | Jahresauswertung |
 
 Schreibzugriff (POST/PUT/DELETE) erfordert die Rolle `admin`, `vorstand` oder `kassierer`.
 Lesezugriff ist für alle authentifizierten Benutzer (auch `lesend`) erlaubt.
