@@ -152,17 +152,9 @@ EINSTELLUNGEN_FELDER = [
     ("smtp_user", "SMTP-Benutzer"),
     ("smtp_password", "SMTP-Passwort"),
     ("smtp_from", "Absender-E-Mail"),
-    ("ticket_imap_host", "Ticket-Postfach: IMAP-Server"),
-    ("ticket_imap_port", "Ticket-Postfach: IMAP-Port"),
-    ("ticket_imap_user", "Ticket-Postfach: IMAP-Benutzer (E-Mail)"),
-    ("ticket_imap_password", "Ticket-Postfach: IMAP-Passwort"),
-    ("ticket_imap_ssl", "Ticket-Postfach: IMAP SSL (true/false)"),
-    ("ticket_smtp_host", "Ticket-Postfach: SMTP-Server"),
-    ("ticket_smtp_port", "Ticket-Postfach: SMTP-Port"),
-    ("ticket_smtp_user", "Ticket-Postfach: SMTP-Benutzer (E-Mail)"),
-    ("ticket_smtp_password", "Ticket-Postfach: SMTP-Passwort"),
-    ("ticket_smtp_tls", "Ticket-Postfach: SMTP TLS (true/false)"),
-    ("ticket_absender_name", "Ticket-Postfach: Absendername"),
+    ("imap_host", "IMAP-Server (für Ticket-Postfach)"),
+    ("imap_port", "IMAP-Port"),
+    ("imap_ssl", "IMAP SSL (true/false)"),
 ]
 
 # Optionale Funktionsbereiche, die sich pro Verein ein-/ausschalten lassen.

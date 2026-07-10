@@ -1,8 +1,9 @@
 """
 Ticket-Postfach-Integration (Etappe 2): IMAP-Abruf eingehender E-Mails und
-SMTP-Versand ausgehender Antworten über EIN konfigurierbares Postfach
-(z.B. info@verein.de) – getrennt von der allgemeinen Vereins-SMTP-
-Konfiguration, die für Einladungen genutzt wird.
+SMTP-Versand ausgehender Antworten – über DASSELBE Postfach, das auch für
+allgemeine System-E-Mails (Einladungen) genutzt wird. Es gibt bewusst nur
+EINEN Satz SMTP-Zugangsdaten (siehe app/email_service.py); hier kommen nur
+die zusätzlichen IMAP-Felder dazu, die zum Empfangen nötig sind.
 
 Design-Entscheidungen (siehe auch docs/module-tickets.md):
 - Betriebsdaten (letzte verarbeitete UID, Fehler) leben in der bestehenden
@@ -22,7 +23,6 @@ import email
 import imaplib
 import logging
 import re
-import uuid
 from datetime import datetime, timezone
 from email.header import decode_header
 from email.mime.text import MIMEText
@@ -33,9 +33,8 @@ import aiosmtplib
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.config import settings
 from app.models import Vereinseinstellung, Ticket, TicketNachricht, TicketStatus, NachrichtRichtung
-from app.crypto_utils import verschluesseln, entschluesseln
+from app.email_service import lade_smtp_konfiguration
 from app.ticket_utils import finde_mitglieder_per_email
 from app.spam_filter import pruefe_auf_spam
 
@@ -43,7 +42,6 @@ logger = logging.getLogger(__name__)
 
 # Betriebsdaten-Schlüssel in der vereinseinstellungen-Tabelle
 _SCHLUESSEL_LETZTE_UID = "ticket_imap_letzte_uid"
-_SCHLUESSEL_UIDVALIDITY = "ticket_imap_uidvalidity"
 _SCHLUESSEL_LETZTER_ABRUF = "ticket_imap_letzter_abruf"
 _SCHLUESSEL_LETZTER_FEHLER = "ticket_imap_letzter_fehler"
 
@@ -64,14 +62,18 @@ async def _schreibe_einstellung(db: AsyncSession, schluessel: str, wert: Optiona
 
 
 async def lade_postfach_konfiguration(db: AsyncSession) -> Dict[str, Any]:
-    """Lädt die Ticket-Postfach-Konfiguration (IMAP + SMTP) aus der Datenbank."""
-    schluessel_liste = [
-        "ticket_imap_host", "ticket_imap_port", "ticket_imap_user", "ticket_imap_password", "ticket_imap_ssl",
-        "ticket_smtp_host", "ticket_smtp_port", "ticket_smtp_user", "ticket_smtp_password", "ticket_smtp_tls",
-        "ticket_absender_name",
-    ]
+    """
+    Lädt die Postfach-Konfiguration: SMTP-Zugangsdaten kommen aus der
+    bereits bestehenden allgemeinen E-Mail-Konfiguration (dasselbe Postfach
+    wie für Einladungen) – nur IMAP-Host/-Port/-SSL sind ticketspezifisch,
+    da die allgemeine Konfiguration nur zum Senden gedacht ist.
+    """
+    smtp_konfig = await lade_smtp_konfiguration(db)
+
     result = await db.execute(
-        select(Vereinseinstellung).where(Vereinseinstellung.schluessel.in_(schluessel_liste))
+        select(Vereinseinstellung).where(
+            Vereinseinstellung.schluessel.in_(["imap_host", "imap_port", "imap_ssl"])
+        )
     )
     gespeichert = {e.schluessel: e.wert for e in result.scalars().all() if e.wert}
 
@@ -81,22 +83,22 @@ async def lade_postfach_konfiguration(db: AsyncSession) -> Dict[str, Any]:
         return str(wert).strip().lower() in ("true", "1", "ja", "an")
 
     return {
-        "imap_host": gespeichert.get("ticket_imap_host", ""),
-        "imap_port": int(gespeichert.get("ticket_imap_port") or 993),
-        "imap_user": gespeichert.get("ticket_imap_user", ""),
-        "imap_password": entschluesseln(gespeichert.get("ticket_imap_password")) or "",
-        "imap_ssl": _bool(gespeichert.get("ticket_imap_ssl"), True),
-        "smtp_host": gespeichert.get("ticket_smtp_host", ""),
-        "smtp_port": int(gespeichert.get("ticket_smtp_port") or 587),
-        "smtp_user": gespeichert.get("ticket_smtp_user", ""),
-        "smtp_password": entschluesseln(gespeichert.get("ticket_smtp_password")) or "",
-        "smtp_tls": _bool(gespeichert.get("ticket_smtp_tls"), True),
-        "absender_name": gespeichert.get("ticket_absender_name") or settings.app_name,
+        "imap_host": gespeichert.get("imap_host", ""),
+        "imap_port": int(gespeichert.get("imap_port") or 993),
+        "imap_user": smtp_konfig["user"],       # dasselbe Postfach wie SMTP
+        "imap_password": smtp_konfig["password"],
+        "imap_ssl": _bool(gespeichert.get("imap_ssl"), True),
+        "smtp_host": smtp_konfig["host"],
+        "smtp_port": smtp_konfig["port"],
+        "smtp_user": smtp_konfig["user"],
+        "smtp_password": smtp_konfig["password"],
+        "smtp_tls": smtp_konfig["tls"],
+        "smtp_from": smtp_konfig["from"],
     }
 
 
 def ist_postfach_konfiguriert(konfig: Dict[str, Any]) -> bool:
-    return bool(konfig["imap_host"] and konfig["imap_user"] and konfig["smtp_host"] and konfig["smtp_user"])
+    return bool(konfig["imap_host"] and konfig["smtp_host"] and konfig["smtp_user"])
 
 
 def _dekodiere_header(wert: Optional[str]) -> str:
@@ -336,7 +338,7 @@ async def sende_ticket_antwort(ticket: Ticket, inhalt: str, db: AsyncSession) ->
 
     msg = MIMEText(inhalt, "plain", "utf-8")
     msg["Subject"] = betreff
-    msg["From"] = f"{konfig['absender_name']} <{konfig['smtp_user']}>"
+    msg["From"] = konfig["smtp_from"]
     msg["To"] = ticket.absender_email
     msg["Message-ID"] = neue_message_id
     if letzte_eingehende:

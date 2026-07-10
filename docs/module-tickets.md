@@ -34,6 +34,21 @@ separater Container – passt zum "klein und robust"-Anspruch des Projekts.
 Zusätzlich gibt es einen manuellen "Postfach jetzt abrufen"-Button für
 sofortiges Testen, ohne auf den nächsten Zyklus zu warten.
 
+**Ein einziges Postfach für alles – auf Wunsch des Vereins.** Ursprünglich
+war die Ticket-Postfach-Konfiguration komplett getrennt von der
+allgemeinen SMTP-Konfiguration (eigene Felder für Host/Port/Benutzer/
+Passwort). Der Verein hat das bewusst vereinfacht: "Wenn ich ein
+Ticketsystem sinnvoll nutzen will, braucht es nur eine einzige
+E-Mail-Adresse, ein einziges Postfach. Alles andere würde ich auf dem
+Server nutzen und ggf. Weiterleitungen einrichten." Die SMTP-Zugangsdaten
+(Host, Port, Benutzer, Passwort) werden daher jetzt **einmal** gepflegt
+(`app/email_service.py`, `lade_smtp_konfiguration()`) und für Einladungen
+**und** Ticket-Antworten wiederverwendet (`app/ticket_mailer.py` importiert
+diese Funktion direkt, statt eigene SMTP-Felder zu duplizieren). Nur für
+den IMAP-Abruf (Empfang) gibt es zusätzliche Felder (`imap_host`,
+`imap_port`, `imap_ssl`) – IMAP-Benutzer/-Passwort sind identisch mit den
+SMTP-Zugangsdaten, da es sich um dasselbe Postfach handelt.
+
 **IMAP läuft synchron in einem Thread, nicht async.** Es gibt keine
 ausgereifte async-IMAP-Bibliothek in den Standard-Abhängigkeiten. Statt
 eine neue hinzuzufügen, nutzt `app/ticket_mailer.py` Python-Bordmittel

@@ -73,30 +73,16 @@
             </div>
         </div>
 
-        <div class="card mb-3">
-            <div class="card-header"><i class="bi bi-envelope-at me-2"></i>E-Mail (SMTP)</div>
-            <div class="card-body">
-                {% for schluessel, label in felder[10:15] %}
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">{{ label }}</label>
-                    <input type="{{ 'password' if 'password' in schluessel else 'text' }}"
-                           name="{{ schluessel }}" class="form-control"
-                           value="{{ '' if 'password' in schluessel else (einstellungen.get(schluessel, '') or '') }}"
-                           {% if 'password' in schluessel %}placeholder="{% if einstellungen.get(schluessel) %}•••••••• (gesetzt – neu eingeben zum Ändern){% else %}Noch nicht gesetzt{% endif %}"{% endif %}>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
         <div class="card">
-            <div class="card-header"><i class="bi bi-ticket-perforated me-2"></i>Ticket-Postfach (IMAP/SMTP)</div>
+            <div class="card-header"><i class="bi bi-envelope-at me-2"></i>E-Mail (SMTP + IMAP)</div>
             <div class="card-body">
                 <p class="text-muted mb-3" style="font-size: 0.82rem;">
-                    Ein einziges Postfach (z.B. info@euerverein.de) wird per IMAP
-                    abgefragt und per SMTP für Antworten genutzt. Getrennt von der
-                    allgemeinen SMTP-Konfiguration oben, die nur für Einladungs-E-Mails dient.
+                    Ein einziges Postfach für alles: System-E-Mails (Einladungen)
+                    werden per SMTP versendet, das Ticketsystem nutzt dasselbe
+                    Postfach zum Senden von Antworten und ruft es zusätzlich per
+                    IMAP ab, um eingehende Anfragen als Tickets zu erfassen.
                 </p>
-                {% for schluessel, label in felder[15:26] %}
+                {% for schluessel, label in felder[10:] %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">{{ label }}</label>
                     <input type="{{ 'password' if 'password' in schluessel else 'text' }}"
