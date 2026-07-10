@@ -29,6 +29,8 @@ from app.models import Vereinseinstellung
 # Bewusst True für bestehende Module, damit ein Update nichts "kaputt macht".
 MODULE_DEFAULTS: Dict[str, bool] = {
     "pflichtstunden": True,
+    "wasser": True,
+    "strom": True,
 }
 
 

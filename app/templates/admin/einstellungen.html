@@ -24,14 +24,17 @@
                 <div class="row g-3">
                     {% for schluessel, name, hinweis in module_felder %}
                     <div class="col-md-6">
-                        <div class="form-check form-switch p-3" style="background: #f8faf9; border-radius: 8px;">
-                            <input class="form-check-input" type="checkbox" role="switch"
-                                   name="{{ schluessel }}" id="{{ schluessel }}"
-                                   {% if einstellungen.get(schluessel, 'true') in ('true', '1', 'ja', 'an') %}checked{% endif %}>
-                            <label class="form-check-label fw-semibold" for="{{ schluessel }}">
-                                {{ name }}
-                            </label>
-                            <div class="text-muted" style="font-size: 0.8rem;">{{ hinweis }}</div>
+                        <div class="d-flex justify-content-between align-items-start gap-3 p-3"
+                             style="background: #f8faf9; border-radius: 8px;">
+                            <div>
+                                <label class="fw-semibold d-block" for="{{ schluessel }}">{{ name }}</label>
+                                <div class="text-muted" style="font-size: 0.8rem;">{{ hinweis }}</div>
+                            </div>
+                            <div class="form-check form-switch mb-0 flex-shrink-0">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       name="{{ schluessel }}" id="{{ schluessel }}"
+                                       {% if einstellungen.get(schluessel, 'true') in ('true', '1', 'ja', 'an') %}checked{% endif %}>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}

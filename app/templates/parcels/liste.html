@@ -17,6 +17,13 @@
 {% endblock %}
 
 {% block content %}
+
+{% if request.query_params.get('meldung') %}
+<div class="alert alert-info d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-info-circle-fill"></i> {{ request.query_params.get('meldung') }}
+</div>
+{% endif %}
+
 <!-- Filter -->
 <div class="card mb-3">
     <div class="card-body py-2">

@@ -139,6 +139,38 @@
         </a>
         {% endif %}
 
+        {% if request.state.module_flags.wasser %}
+        <div class="nav-label">Wasser</div>
+        <a href="/wasser/" class="{% if request.url.path == '/wasser/' %}aktiv{% endif %}">
+            <i class="bi bi-droplet"></i> Übersicht
+        </a>
+        <a href="/wasser/zaehlpunkte" class="{% if '/wasser/zaehlpunkte' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-speedometer2"></i> Zaehlpunkte
+        </a>
+        <a href="/wasser/ablesung" class="{% if '/wasser/ablesung' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-clipboard-check"></i> Ablesung
+        </a>
+        <a href="/wasser/auswertung" class="{% if '/wasser/auswertung' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-bar-chart"></i> Auswertung
+        </a>
+        {% endif %}
+
+        {% if request.state.module_flags.strom %}
+        <div class="nav-label">Strom</div>
+        <a href="/strom/" class="{% if request.url.path == '/strom/' %}aktiv{% endif %}">
+            <i class="bi bi-lightning-charge"></i> Übersicht
+        </a>
+        <a href="/strom/zaehlpunkte" class="{% if '/strom/zaehlpunkte' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-speedometer2"></i> Zaehlpunkte
+        </a>
+        <a href="/strom/ablesung" class="{% if '/strom/ablesung' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-clipboard-check"></i> Ablesung
+        </a>
+        <a href="/strom/auswertung" class="{% if '/strom/auswertung' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-bar-chart"></i> Auswertung
+        </a>
+        {% endif %}
+
         {% if benutzer.rolle.value in ['admin', 'vorstand'] %}
         <div class="nav-label">Administration</div>
         <a href="/admin/" class="{% if '/admin/' == request.url.path %}aktiv{% endif %}">

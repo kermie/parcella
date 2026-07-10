@@ -19,6 +19,8 @@ from app.models import Benutzer, BenutzerRolle, Mitglied, Parzelle, ParzelleStat
 from app.auth import hash_passwort, get_current_user
 from app.module_flags import lade_modul_flags
 from app.routers import auth, mitglieder, parzellen, admin as admin_router, pflichtstunden
+from app.routers.zaehlerwesen import erstelle_zaehler_router
+from app.models import ZaehlerMedium
 from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen, api_stats
 
 logging.basicConfig(level=logging.INFO)
@@ -86,6 +88,19 @@ app.include_router(mitglieder.router)
 app.include_router(parzellen.router)
 app.include_router(admin_router.router)
 app.include_router(pflichtstunden.router)
+
+# Zählerwesen: EINE Codebasis (app/routers/zaehlerwesen.py), zweimal
+# instanziiert für Wasser und Strom – siehe erstelle_zaehler_router().
+wasser_router = erstelle_zaehler_router(
+    medium=ZaehlerMedium.WASSER, url_prefix="/wasser", modul_name="wasser",
+    medium_label="Wasser", einheit="m³", icon="bi-droplet", dezimalstellen=1,
+)
+strom_router = erstelle_zaehler_router(
+    medium=ZaehlerMedium.STROM, url_prefix="/strom", modul_name="strom",
+    medium_label="Strom", einheit="kWh", icon="bi-lightning-charge", dezimalstellen=0,
+)
+app.include_router(wasser_router)
+app.include_router(strom_router)
 
 # Router registrieren – REST-API (JSON, JWT-Auth)
 app.include_router(api_auth.router)

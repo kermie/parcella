@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}{{ zaehlpunkt.anzeigename }}{% endblock %}
+{% block page_title %}{{ zaehlpunkt.anzeigename }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_prefix }}/zaehlpunkte" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <!-- Zaehlpunkt-Details -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><i class="bi {{ icon }} me-2"></i>Zaehlpunkt</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Typ</dt>
+                    <dd class="col-sm-8">
+                        {% if zaehlpunkt.typ.value == 'HAUPTZAEHLER' %}
+                        <span class="badge" style="background: #dbeafe; color: #1e40af;">Hauptzähler</span>
+                        {% elif zaehlpunkt.typ.value == 'PARZELLE' %}
+                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Parzelle</span>
+                        {% else %}
+                        <span class="badge" style="background: #f5ede8; color: var(--gv-braun);">Verein</span>
+                        {% endif %}
+                    </dd>
+
+                    {% if zaehlpunkt.parzelle %}
+                    <dt class="col-sm-4 text-muted">Parzelle</dt>
+                    <dd class="col-sm-8">
+                        <a href="/parzellen/{{ zaehlpunkt.parzelle.id }}" class="text-decoration-none"
+                           style="color: var(--gv-gruen);">{{ zaehlpunkt.parzelle.gartennummer }}</a>
+                    </dd>
+                    {% endif %}
+
+                    {% if zaehlpunkt.notizen %}
+                    <dt class="col-sm-4 text-muted">Notizen</dt>
+                    <dd class="col-sm-8">{{ zaehlpunkt.notizen }}</dd>
+                    {% endif %}
+                </dl>
+
+                <hr>
+                <form method="post" action="{{ url_prefix }}/zaehlpunkte/{{ zaehlpunkt.id }}/bearbeiten">
+                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Bezeichnung</label>
+                    <input type="text" name="bezeichnung" class="form-control form-control-sm mb-2"
+                           value="{{ zaehlpunkt.bezeichnung or '' }}"
+                           {% if zaehlpunkt.typ.value == 'PARZELLE' %}placeholder="Optional, z.B. „Ost-Zugang“"{% endif %}>
+                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Notizen</label>
+                    <textarea name="notizen" class="form-control form-control-sm mb-2" rows="2">{{ zaehlpunkt.notizen or '' }}</textarea>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-check-lg me-1"></i>Speichern
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aktueller Zähler -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-speedometer2 me-2"></i>Aktueller {{ medium_label }}zähler</div>
+            <div class="card-body">
+                {% if aktueller_zaehler %}
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Nummer</dt>
+                    <dd class="col-sm-8"><code>{{ aktueller_zaehler.nummer }}</code></dd>
+
+                    <dt class="col-sm-4 text-muted">Eingebaut am</dt>
+                    <dd class="col-sm-8">{{ aktueller_zaehler.eingebaut_am.strftime('%d.%m.%Y') if aktueller_zaehler.eingebaut_am else '–' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Geeicht bis</dt>
+                    <dd class="col-sm-8">
+                        {% if aktueller_zaehler.geeicht_bis %}
+                        {{ aktueller_zaehler.geeicht_bis }}
+                        {% if aktueller_zaehler.geeicht_bis <= aktuelles_jahr %}
+                        <span class="badge ms-1" style="background: #fef3c7; color: #92400e;">Eichung abgelaufen</span>
+                        {% endif %}
+                        {% else %}–{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Anfangsstand</dt>
+                    <dd class="col-sm-8">{{ aktueller_zaehler.anfangsstand | fmt(dezimalstellen) }} {{ einheit }}</dd>
+                </dl>
+
+                <hr>
+                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="collapse"
+                        data-bs-target="#tausch-formular">
+                    <i class="bi bi-arrow-repeat me-1"></i>Zähler tauschen
+                </button>
+
+                <div class="collapse mt-3" id="tausch-formular">
+                    <div class="card card-body bg-light">
+                        <form method="post" action="{{ url_prefix }}/zaehlpunkte/{{ zaehlpunkt.id }}/zaehler/tauschen">
+                            <div class="row g-2">
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Alter Zähler ausgebaut am</label>
+                                    <input type="date" name="ausgebaut_am" class="form-control form-control-sm"
+                                           value="{{ heute }}" required>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Neuer Zähler eingebaut am</label>
+                                    <input type="date" name="eingebaut_am" class="form-control form-control-sm"
+                                           value="{{ heute }}" required>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Neue Nummer <span class="text-danger">*</span></label>
+                                    <input type="text" name="neue_nummer" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Geeicht bis</label>
+                                    <input type="number" name="geeicht_bis" class="form-control form-control-sm"
+                                           placeholder="z.B. 2032">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">Anfangsstand</label>
+                                    <input type="text" name="anfangsstand" class="form-control form-control-sm"
+                                           value="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}">
+                                </div>
+                                <div class="col-sm-6 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-sm btn-warning w-100"
+                                            onclick="return confirm('Zähler wirklich tauschen? Der alte Zähler wird deaktiviert.')">
+                                        <i class="bi bi-check-lg me-1"></i>Tauschen
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Kein aktiver Zähler für diesen Zaehlpunkt.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Zählerstände / Ablesungen -->
+    {% if aktueller_zaehler %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clipboard-data me-2"></i>Ablesungen</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Jahr</th>
+                            <th>Datum</th>
+                            <th>Stand ({{ einheit }})</th>
+                            <th>Verbrauch ({{ einheit }})</th>
+                            <th>Notiz</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eintrag in staende_mit_verbrauch %}
+                        <tr>
+                            <td class="fw-semibold">{{ eintrag.stand.jahr }}</td>
+                            <td class="text-muted">{{ eintrag.stand.datum.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ eintrag.stand.stand | fmt(dezimalstellen) }}</td>
+                            <td>
+                                {% if eintrag.verbrauch is not none %}
+                                {{ eintrag.verbrauch | fmt(dezimalstellen) }}
+                                {% else %}–{% endif %}
+                            </td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ eintrag.stand.notiz or '' }}</td>
+                            <td class="text-end">
+                                <form method="post" action="{{ url_prefix }}/zaehlerstand/{{ eintrag.stand.id }}/loeschen">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                            onclick="return confirm('Ablesung wirklich löschen?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">Noch keine Ablesungen erfasst.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer">
+                <form method="post" action="{{ url_prefix }}/zaehlpunkte/{{ zaehlpunkt.id }}/ablesung/neu"
+                      class="d-flex gap-2 flex-wrap align-items-end">
+                    <input type="hidden" name="rueck_url" value="{{ url_prefix }}/zaehlpunkte/{{ zaehlpunkt.id }}">
+                    <div>
+                        <label class="form-label small mb-0">Jahr</label>
+                        <input type="number" name="jahr" class="form-control form-control-sm" style="width: 100px;"
+                               value="{{ aktuelles_jahr }}" required>
+                    </div>
+                    <div>
+                        <label class="form-label small mb-0">Datum</label>
+                        <input type="date" name="datum" class="form-control form-control-sm" value="{{ heute }}" required>
+                    </div>
+                    <div>
+                        <label class="form-label small mb-0">Zählerstand ({{ einheit }})</label>
+                        <input type="text" name="stand" class="form-control form-control-sm" style="width: 130px;"
+                               placeholder="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}" required>
+                    </div>
+                    <div>
+                        <label class="form-label small mb-0">Notiz</label>
+                        <input type="text" name="notiz" class="form-control form-control-sm" style="width: 160px;">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>Ablesung erfassen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Frühere Zähler -->
+    {% if fruehere_zaehler %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history me-2"></i>Frühere Zähler</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nummer</th>
+                            <th>Eingebaut</th>
+                            <th>Ausgebaut</th>
+                            <th>Letzter Stand</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for z in fruehere_zaehler %}
+                        <tr class="text-muted">
+                            <td><code>{{ z.nummer }}</code></td>
+                            <td>{{ z.eingebaut_am.strftime('%d.%m.%Y') if z.eingebaut_am else '–' }}</td>
+                            <td>{{ z.ausgebaut_am.strftime('%d.%m.%Y') if z.ausgebaut_am else '–' }}</td>
+                            <td>
+                                {% set letzte = z.zaehlerstaende | sort(attribute='jahr', reverse=true) | first %}
+                                {% if letzte %}{{ letzte.stand | fmt(dezimalstellen) }} {{ einheit }}{% else %}–{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

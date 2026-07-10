@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ medium_label }}-Ablesung {{ jahr }}{% endblock %}
+{% block page_title %}{{ medium_label }}-Ablesung {{ jahr }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .ablesung-zeile input[type="text"] {
+        font-size: 1.1rem;
+        padding: 0.6rem;
+        min-width: 110px;
+    }
+    .ablesung-zeile .btn {
+        padding: 0.6rem 1rem;
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2">
+        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+            {% for j in range(jahr + 1, jahr - 4, -1) %}
+            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <a href="{{ url_prefix }}/" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Zurück
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if fehler %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div>{{ fehler }}</div>
+</div>
+{% endif %}
+
+{% macro zeile(z, jahr, heute) %}
+<div class="ablesung-zeile d-flex flex-wrap align-items-center gap-2 py-2 px-3 border-bottom">
+    <div style="min-width: 160px; flex: 1;">
+        <div class="fw-semibold">{{ z.zaehlpunkt.anzeigename }}</div>
+        <div class="text-muted" style="font-size: 0.78rem;">
+            <code>{{ z.zaehler.nummer }}</code> · Vorjahr: {{ z.vorjahreswert | fmt(dezimalstellen) }} {{ einheit }}
+        </div>
+    </div>
+    {% if z.ablesung %}
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge badge-aktiv" style="font-size: 0.9rem;">
+            {{ z.ablesung.stand | fmt(dezimalstellen) }} {{ einheit }}
+        </span>
+        <span class="text-muted" style="font-size: 0.8rem;">erfasst</span>
+    </div>
+    {% else %}
+    <form method="post" action="{{ url_prefix }}/zaehlpunkte/{{ z.zaehlpunkt.id }}/ablesung/neu"
+          class="d-flex gap-2 align-items-center">
+        <input type="hidden" name="jahr" value="{{ jahr }}">
+        <input type="hidden" name="datum" value="{{ heute }}">
+        <input type="hidden" name="rueck_url" value="{{ url_prefix }}/ablesung?jahr={{ jahr }}">
+        <input type="text" name="stand" class="form-control"
+               placeholder="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}"
+               inputmode="{% if dezimalstellen == 0 %}numeric{% else %}decimal{% endif %}" required>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i>
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% if hauptzaehler_zeilen %}
+<div class="card mb-3">
+    <div class="card-header" style="background: #dbeafe; color: #1e40af;">
+        <i class="bi {{ icon }} me-2"></i>Hauptzähler
+    </div>
+    <div class="card-body p-0">
+        {% for z in hauptzaehler_zeilen %}{{ zeile(z, jahr, heute) }}{% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Parzellen</div>
+    <div class="card-body p-0">
+        {% for z in parzellen_zeilen %}{{ zeile(z, jahr, heute) }}{% endfor %}
+        {% if not parzellen_zeilen %}
+        <div class="text-center text-muted py-3">Keine Parzellen-Zaehlpunkte vorhanden.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if verein_zeilen %}
+<div class="card mb-3">
+    <div class="card-header" style="background: #f5ede8; color: var(--gv-braun);">
+        <i class="bi bi-building me-2"></i>Vereinsanschlüsse
+    </div>
+    <div class="card-body p-0">
+        {% for z in verein_zeilen %}{{ zeile(z, jahr, heute) }}{% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

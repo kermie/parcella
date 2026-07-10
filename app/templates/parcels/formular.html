@@ -82,4 +82,28 @@
 
 </div>
 </form>
+
+{% if parzelle %}
+<div class="row g-3 mt-2" style="max-width: 640px;">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Gefahrenzone</div>
+            <div class="card-body">
+                <p class="text-muted mb-3" style="font-size: 0.88rem;">
+                    Löscht die Parzelle <strong>{{ parzelle.gartennummer }}</strong> unwiderruflich aus der
+                    Datenbank – anders als der Status „Gelöscht", der die Historie erhält.
+                    Alle Mitgliederzuordnungen zu dieser Parzelle werden mit entfernt, Wasseranschlüsse
+                    bleiben erhalten aber ohne Parzellenbezug. Diese Aktion kann nicht rückgängig gemacht werden.
+                </p>
+                <form method="post" action="/parzellen/{{ parzelle.id }}/endgueltig-loeschen"
+                      onsubmit="return confirm('Parzelle {{ parzelle.gartennummer }} wirklich UNWIDERRUFLICH löschen? Dies kann nicht rückgängig gemacht werden.')">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>Parzelle endgültig löschen
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

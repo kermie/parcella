@@ -234,6 +234,31 @@ async def parzelle_aktualisieren(
     return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
 
 
+@router.post("/{parzelle_id}/endgueltig-loeschen")
+async def parzelle_endgueltig_loeschen(
+    parzelle_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Löscht eine Parzelle unwiderruflich aus der Datenbank – anders als der
+    Status "Gelöscht" (Soft-Delete), der die Historie erhält. Gedacht für
+    versehentlich angelegte Test-/Demo-Datensätze, nicht für den
+    Normalbetrieb.
+    """
+    await require_user(request, db)
+
+    parzelle = await _get_parzelle_mit_details(db, parzelle_id)
+    if not parzelle:
+        raise HTTPException(status_code=404)
+
+    await db.delete(parzelle)
+    await db.commit()
+    import urllib.parse
+    meldung = urllib.parse.quote(f"Parzelle {parzelle.gartennummer} endgültig gelöscht")
+    return RedirectResponse(f"/parzellen/?meldung={meldung}", status_code=302)
+
+
 # ---------------------------------------------------------------------------
 # Mitglieder-Zuordnung
 # ---------------------------------------------------------------------------
@@ -425,15 +450,28 @@ async def parzellen_import_csv(
     await require_user(request, db)
 
     inhalt = await datei.read()
-    text = inhalt.decode("utf-8-sig")  # BOM-safe
-    reader = csv.DictReader(io.StringIO(text), delimiter=";")
+    try:
+        text = inhalt.decode("utf-8-sig")  # BOM-safe
+    except UnicodeDecodeError:
+        text = inhalt.decode("latin-1")
+
+    try:
+        delimiter = csv.Sniffer().sniff(text[:2048], delimiters=";,").delimiter
+    except csv.Error:
+        delimiter = ";"
+
+    reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+    if reader.fieldnames:
+        reader.fieldnames = [f.strip() if f else f for f in reader.fieldnames]
 
     erstellt = 0
     uebersprungen = 0
+    fehlende_gartennummer = 0
 
     for zeile in reader:
-        gartennummer = zeile.get("Gartennummer", "").strip().upper()
+        gartennummer = (zeile.get("Gartennummer") or "").strip().upper()
         if not gartennummer:
+            fehlende_gartennummer += 1
             continue
 
         existing = await db.execute(
@@ -444,14 +482,14 @@ async def parzellen_import_csv(
             continue
 
         flaeche = None
-        flaeche_str = zeile.get("Fläche (qm)", "").replace(",", ".").strip()
+        flaeche_str = (zeile.get("Fläche (qm)") or "").replace(",", ".").strip()
         if flaeche_str:
             try:
                 flaeche = float(flaeche_str)
             except ValueError:
                 pass
 
-        status_str = zeile.get("Status", "AKTIV").strip().upper()
+        status_str = (zeile.get("Status") or "AKTIV").strip().upper()
         status = ParzelleStatus.AKTIV
         if status_str in [s.value for s in ParzelleStatus]:
             status = ParzelleStatus(status_str)
@@ -460,13 +498,19 @@ async def parzellen_import_csv(
             gartennummer=gartennummer,
             flaeche_qm=flaeche,
             status=status,
-            notizen=zeile.get("Notizen", "").strip() or None,
+            notizen=(zeile.get("Notizen") or "").strip() or None,
         )
         db.add(parzelle)
         erstellt += 1
 
     await db.commit()
+
+    meldung = f"{erstellt} importiert, {uebersprungen} übersprungen"
+    if fehlende_gartennummer:
+        meldung += f", {fehlende_gartennummer} ohne Gartennummer ignoriert"
+
+    import urllib.parse
     return RedirectResponse(
-        f"/parzellen/?meldung={erstellt} importiert, {uebersprungen} übersprungen",
+        f"/parzellen/?meldung={urllib.parse.quote(meldung)}",
         status_code=302,
     )

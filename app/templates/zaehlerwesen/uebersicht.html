@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ medium_label }} {{ jahr }}{% endblock %}
+{% block page_title %}{{ medium_label }} {{ jahr }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2">
+        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+            {% for j in verfuegbare_jahre %}
+            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <a href="{{ url_prefix }}/ablesung?jahr={{ jahr }}" class="btn btn-sm btn-primary">
+        <i class="bi bi-clipboard-check me-1"></i>Ablesung erfassen
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if warnung %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div>{{ warnung }}</div>
+</div>
+{% endif %}
+
+{% if offene_ablesungen > 0 %}
+<div class="alert alert-info d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-info-circle-fill"></i>
+    {{ offene_ablesungen }} Zaehlpunkt(e) haben für {{ jahr }} noch keine Ablesung.
+    <a href="{{ url_prefix }}/ablesung?jahr={{ jahr }}" class="alert-link ms-1">Jetzt erfassen →</a>
+</div>
+{% endif %}
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Hauptzähler
+                </div>
+                <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-gruen);">
+                    {{ verbrauch_haupt | fmt(dezimalstellen) }} {{ einheit }}
+                </div>
+                <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_hauptzaehler }} Zähler</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Parzellen
+                </div>
+                <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-braun);">
+                    {{ verbrauch_parzellen | fmt(dezimalstellen) }} {{ einheit }}
+                </div>
+                <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_parzellen }} Zaehlpunkte</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Vereinsanschlüsse
+                </div>
+                <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">
+                    {{ verbrauch_verein | fmt(dezimalstellen) }} {{ einheit }}
+                </div>
+                <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_verein }} Zaehlpunkte</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Differenz
+                </div>
+                {% set differenz = verbrauch_haupt - verbrauch_parzellen - verbrauch_verein %}
+                <div style="font-size: 1.6rem; font-weight: 700; color: {% if differenz < 0 %}#991b1b{% else %}#065f46{% endif %};">
+                    {{ differenz | fmt(dezimalstellen) }} {{ einheit }}
+                </div>
+                <div class="text-muted" style="font-size: 0.8rem;">Haupt − Verteilung</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body d-grid gap-2">
+                <a href="{{ url_prefix }}/zaehlpunkte" class="btn btn-outline-primary text-start">
+                    <i class="bi {{ icon }} me-2"></i>Alle Zaehlpunkte
+                </a>
+                <a href="{{ url_prefix }}/zaehlpunkte/neu" class="btn btn-outline-primary text-start">
+                    <i class="bi bi-plus-square me-2"></i>Neuer Zaehlpunkt
+                </a>
+                <a href="{{ url_prefix }}/auswertung?jahr={{ jahr }}" class="btn btn-outline-secondary text-start">
+                    <i class="bi bi-bar-chart me-2"></i>Jahresauswertung
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

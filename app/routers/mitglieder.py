@@ -3,7 +3,7 @@ Mitglieder-Router: Liste, Anlegen, Bearbeiten, CSV-Import/Export.
 """
 import csv
 import io
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
@@ -388,7 +388,20 @@ async def mitglieder_import_csv(
     except UnicodeDecodeError:
         text = inhalt.decode("latin-1")    # Fallback für ältere Windows-Exporte
 
-    reader = csv.DictReader(io.StringIO(text), delimiter=";")
+    # Trennzeichen automatisch erkennen (Semikolon oder Komma) – viele
+    # Tabellenprogramme speichern CSVs je nach Spracheinstellung
+    # unterschiedlich, auch wenn die Datei ursprünglich mit Semikolon
+    # exportiert wurde.
+    try:
+        delimiter = csv.Sniffer().sniff(text[:2048], delimiters=";,").delimiter
+    except csv.Error:
+        delimiter = ";"
+
+    reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+    # Spaltennamen von führenden/nachgestellten Leerzeichen befreien,
+    # falls die Tabellenkalkulation beim Speichern welche eingefügt hat.
+    if reader.fieldnames:
+        reader.fieldnames = [f.strip() if f else f for f in reader.fieldnames]
 
     erstellt = 0
     aktualisiert = 0
@@ -398,21 +411,21 @@ async def mitglieder_import_csv(
         s = s.strip()
         for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d.%m.%y"):
             try:
-                return date.fromisoformat(s) if fmt == "%Y-%m-%d" else date.strptime(s, fmt).date()
+                return date.fromisoformat(s) if fmt == "%Y-%m-%d" else datetime.strptime(s, fmt).date()
             except ValueError:
                 continue
         return None
 
     for zeilennr, zeile in enumerate(reader, start=2):
-        vorname = zeile.get("Vorname", "").strip()
-        nachname = zeile.get("Nachname", "").strip()
+        vorname = (zeile.get("Vorname") or "").strip()
+        nachname = (zeile.get("Nachname") or "").strip()
 
         if not vorname or not nachname:
             fehler.append(f"Zeile {zeilennr}: Vor- oder Nachname fehlt – übersprungen.")
             continue
 
         # Duplikat-Erkennung: gleicher Vor- + Nachname + Geburtsdatum
-        geburtsdatum = parse_datum(zeile.get("Geburtsdatum", ""))
+        geburtsdatum = parse_datum(zeile.get("Geburtsdatum") or "")
         existing_query = select(Mitglied).where(
             Mitglied.vorname == vorname,
             Mitglied.nachname == nachname,
@@ -421,23 +434,24 @@ async def mitglieder_import_csv(
         if geburtsdatum:
             existing_query = existing_query.where(Mitglied.geburtsdatum == geburtsdatum)
 
-        existing = (await db.execute(existing_query)).scalar_one_or_none()
+        existing_result = await db.execute(existing_query)
+        existing = existing_result.scalars().first()
 
-        email_ben_str = zeile.get("E-Mail-Benachrichtigungen", "Ja").strip().lower()
+        email_ben_str = (zeile.get("E-Mail-Benachrichtigungen") or "Ja").strip().lower()
         email_benachrichtigungen = email_ben_str not in ("nein", "no", "false", "0")
 
         felder = dict(
             vorname=vorname,
             nachname=nachname,
-            strasse=zeile.get("Strasse", "").strip() or None,
-            plz=zeile.get("PLZ", "").strip() or None,
-            ort=zeile.get("Ort", "").strip() or None,
+            strasse=(zeile.get("Strasse") or "").strip() or None,
+            plz=(zeile.get("PLZ") or "").strip() or None,
+            ort=(zeile.get("Ort") or "").strip() or None,
             geburtsdatum=geburtsdatum,
-            iban=zeile.get("IBAN", "").strip() or None,
-            mitglied_seit=parse_datum(zeile.get("Mitglied seit", "")),
-            mitglied_bis=parse_datum(zeile.get("Mitglied bis", "")),
+            iban=(zeile.get("IBAN") or "").strip() or None,
+            mitglied_seit=parse_datum(zeile.get("Mitglied seit") or ""),
+            mitglied_bis=parse_datum(zeile.get("Mitglied bis") or ""),
             email_benachrichtigungen=email_benachrichtigungen,
-            notizen=zeile.get("Notizen", "").strip() or None,
+            notizen=(zeile.get("Notizen") or "").strip() or None,
         )
 
         if existing:
@@ -453,7 +467,7 @@ async def mitglieder_import_csv(
             erstellt += 1
 
         # E-Mail-Adressen (Semikolon-getrennt in einer Zelle)
-        emails_str = zeile.get("E-Mail-Adressen", "").strip()
+        emails_str = (zeile.get("E-Mail-Adressen") or "").strip()
         if emails_str and not existing:
             for i, adresse in enumerate(emails_str.split(";")):
                 adresse = adresse.strip().lower()
@@ -465,7 +479,7 @@ async def mitglieder_import_csv(
                     ))
 
         # Telefonnummern (Semikolon-getrennt in einer Zelle)
-        telefone_str = zeile.get("Telefonnummern", "").strip()
+        telefone_str = (zeile.get("Telefonnummern") or "").strip()
         if telefone_str and not existing:
             for i, nummer in enumerate(telefone_str.split(";")):
                 nummer = nummer.strip()
@@ -481,8 +495,13 @@ async def mitglieder_import_csv(
     meldung = f"{erstellt} neu importiert, {aktualisiert} aktualisiert"
     if fehler:
         meldung += f", {len(fehler)} Fehler"
+        # Erste paar Fehlerdetails anzeigen, damit man die Ursache sofort sieht
+        meldung += " – " + " | ".join(fehler[:3])
+        if len(fehler) > 3:
+            meldung += f" (und {len(fehler) - 3} weitere)"
 
+    import urllib.parse
     return RedirectResponse(
-        f"/mitglieder/?meldung={meldung}",
+        f"/mitglieder/?meldung={urllib.parse.quote(meldung)}",
         status_code=302,
     )

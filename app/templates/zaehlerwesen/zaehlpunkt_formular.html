@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Neuer {{ medium_label }}-Zaehlpunkt{% endblock %}
+{% block page_title %}Neuer {{ medium_label }}-Zaehlpunkt{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_prefix }}/zaehlpunkte" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" action="{{ url_prefix }}/zaehlpunkte/neu">
+<div class="row g-3" style="max-width: 640px;">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi {{ icon }} me-2"></i>Zaehlpunkt</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Typ <span class="text-danger">*</span></label>
+                        <select name="typ" class="form-select" required
+                                onchange="
+                                    document.getElementById('parzelle-feld').style.display = this.value === 'PARZELLE' ? '' : 'none';
+                                    document.getElementById('bezeichnung-feld').style.display = this.value !== 'PARZELLE' ? '' : 'none';
+                                ">
+                            <option value="PARZELLE">Parzelle</option>
+                            <option value="VEREIN">Vereinseigene Anschlussstelle</option>
+                            <option value="HAUPTZAEHLER">Hauptzähler (Übergabe vom Versorger)</option>
+                        </select>
+                    </div>
+                    <div class="col-12" id="parzelle-feld">
+                        <label class="form-label fw-semibold">Parzelle <span class="text-danger">*</span></label>
+                        <select name="parzelle_id" class="form-select">
+                            <option value="">– bitte wählen –</option>
+                            {% for p in alle_parzellen %}
+                            <option value="{{ p.id }}">{{ p.gartennummer }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12" id="bezeichnung-feld" style="display: none;">
+                        <label class="form-label fw-semibold">Bezeichnung <span class="text-danger">*</span></label>
+                        <input type="text" name="bezeichnung" class="form-control"
+                               placeholder="z.B. Vereinsheim, Waschplatz, Hauptzähler {{ medium_label }}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Notizen</label>
+                        <textarea name="notizen" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-speedometer2 me-2"></i>{{ medium_label }}zähler</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Nummer <span class="text-danger">*</span></label>
+                        <input type="text" name="nummer" class="form-control" required
+                               placeholder="z.B. 12345678">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Geeicht bis (Jahr)</label>
+                        <input type="number" name="geeicht_bis" class="form-control"
+                               placeholder="z.B. 2032" min="2000" max="2100">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Eingebaut am</label>
+                        <input type="date" name="eingebaut_am" class="form-control" value="{{ heute }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Anfangsstand</label>
+                        <div class="input-group">
+                            <input type="text" name="anfangsstand" class="form-control"
+                                   value="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}">
+                            <span class="input-group-text">{{ einheit }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 d-flex gap-2 justify-content-end">
+        <a href="{{ url_prefix }}/zaehlpunkte" class="btn btn-outline-secondary">Abbrechen</a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg me-1"></i>Zaehlpunkt anlegen
+        </button>
+    </div>
+
+</div>
+</form>
+{% endblock %}

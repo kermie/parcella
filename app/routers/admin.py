@@ -159,6 +159,12 @@ MODULE_FELDER = [
     ("modul_pflichtstunden", "Pflichtstunden-Verwaltung",
      "Arbeitseinsätze, Patenschaften, Vereinsrollen und Jahresauswertung. "
      "Deaktivieren, falls der Verein keine Pflichtstunden erhebt."),
+    ("modul_wasser", "Wasserverwaltung",
+     "Wasserzähler, Zählerstände und Verbrauchsauswertung. "
+     "Deaktivieren, falls der Verein keine eigene Wasserversorgung verwaltet."),
+    ("modul_strom", "Stromverwaltung",
+     "Stromzähler, Zählerstände und Verbrauchsauswertung. "
+     "Deaktivieren, falls der Verein keine eigene Stromversorgung verwaltet."),
 ]
 
 

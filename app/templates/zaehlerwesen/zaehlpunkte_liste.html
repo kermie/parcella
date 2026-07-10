@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ medium_label }}-Zaehlpunkte{% endblock %}
+{% block page_title %}{{ medium_label }}-Zaehlpunkte{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2">
+    <a href="{{ url_prefix }}/" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Zurück
+    </a>
+    <a href="{{ url_prefix }}/zaehlpunkte/neu" class="btn btn-sm btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Neuer Zaehlpunkt
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Typ</th>
+                    <th>Zaehlpunkt</th>
+                    <th>Zähler-Nr.</th>
+                    <th>Status</th>
+                    <th>Geeicht bis</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in zaehlpunkte %}
+                <tr>
+                    <td>
+                        {% if a.typ.value == 'HAUPTZAEHLER' %}
+                        <span class="badge" style="background: #dbeafe; color: #1e40af;">Hauptzähler</span>
+                        {% elif a.typ.value == 'PARZELLE' %}
+                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Parzelle</span>
+                        {% else %}
+                        <span class="badge" style="background: #f5ede8; color: var(--gv-braun);">Verein</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_prefix }}/zaehlpunkte/{{ a.id }}" class="text-decoration-none fw-semibold"
+                           style="color: var(--gv-gruen);">{{ a.anzeigename }}</a>
+                    </td>
+                    <td>
+                        {% if a.aktueller_zaehler %}
+                        <code>{{ a.aktueller_zaehler.nummer }}</code>
+                        {% else %}
+                        <span class="text-muted">kein aktiver Zähler</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if a.aktueller_zaehler %}
+                        <span class="badge badge-aktiv">aktiv</span>
+                        {% else %}
+                        <span class="badge" style="background: #fee2e2; color: #991b1b;">ohne Zähler</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted">
+                        {% if a.aktueller_zaehler and a.aktueller_zaehler.geeicht_bis %}
+                            {{ a.aktueller_zaehler.geeicht_bis }}
+                            {% if a.aktueller_zaehler.geeicht_bis <= jahr %}
+                            <i class="bi bi-exclamation-triangle-fill text-warning ms-1" title="Eichung abgelaufen"></i>
+                            {% endif %}
+                        {% else %}–{% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_prefix }}/zaehlpunkte/{{ a.id }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="bi {{ icon }} d-block mb-2" style="font-size: 1.5rem;"></i>
+                        Noch keine {{ medium_label }}-Zaehlpunkte angelegt.<br>
+                        <a href="{{ url_prefix }}/zaehlpunkte/neu" class="btn btn-sm btn-primary mt-2">Ersten Zaehlpunkt anlegen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if zaehlpunkte %}
+    <div class="card-footer text-muted" style="font-size: 0.82rem;">
+        {{ zaehlpunkte | length }} Zaehlpunkt(e)
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
