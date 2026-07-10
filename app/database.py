@@ -6,6 +6,9 @@ engine = create_async_engine(
     settings.database_url,
     echo=settings.is_development,
     pool_pre_ping=True,
+    pool_recycle=1800,  # Verbindungen nach 30 Min. proaktiv erneuern,
+                        # verhindert "MissingGreenlet"-Fehler bei
+                        # lange ungenutzten/stale Verbindungen
 )
 
 AsyncSessionLocal = async_sessionmaker(
