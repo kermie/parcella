@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Einkaufswunsch bestätigen{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: #f4f7f4;">
+    <div style="width: 100%; max-width: 480px; padding: 1rem;">
+        <div class="text-center mb-4">
+            <div style="font-size: 2.5rem; color: var(--gv-gruen);"><i class="bi bi-cart-check"></i></div>
+            <h1 style="font-size: 1.3rem; font-weight: 700; color: var(--gv-gruen);">Einkaufswunsch bestätigen</h1>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <p class="text-muted" style="font-size: 0.85rem;">
+                    Folgender Einkaufswunsch wurde in Ihrem Namen erfasst. Bitte prüfen Sie
+                    die Angaben und bestätigen Sie, falls alles korrekt ist.
+                </p>
+                <dl class="row mb-3">
+                    <dt class="col-sm-4 text-muted">Titel</dt>
+                    <dd class="col-sm-8 fw-semibold">{{ ew.titel }}</dd>
+                    <dt class="col-sm-4 text-muted">Begründung</dt>
+                    <dd class="col-sm-8" style="white-space: pre-wrap;">{{ ew.begruendung }}</dd>
+                    {% if ew.link %}
+                    <dt class="col-sm-4 text-muted">Link</dt>
+                    <dd class="col-sm-8"><a href="{{ ew.link }}" target="_blank" rel="noopener">{{ ew.link }}</a></dd>
+                    {% endif %}
+                    {% if ew.geschaetzte_kosten_eur %}
+                    <dt class="col-sm-4 text-muted">Geschätzte Kosten</dt>
+                    <dd class="col-sm-8">{{ "%.2f"|format(ew.geschaetzte_kosten_eur|float) }} €</dd>
+                    {% endif %}
+                </dl>
+
+                {% if ew.vom_anfragenden_bestaetigt %}
+                <div class="alert alert-success mb-0">
+                    <i class="bi bi-check-circle-fill me-1"></i>Sie haben diese Angaben bereits bestätigt.
+                </div>
+                {% else %}
+                <form method="post" action="/einkaufswuensche/bestaetigen/{{ token }}">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-1"></i>Angaben bestätigen
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

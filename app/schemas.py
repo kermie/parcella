@@ -577,3 +577,51 @@ class TicketOut(BaseModel):
 
 class TicketDetailOut(TicketOut):
     nachrichten: List[TicketNachrichtOut] = []
+
+
+# ---------------------------------------------------------------------------
+# Einkaufswünsche
+# ---------------------------------------------------------------------------
+
+class EinkaufswunschCreate(BaseModel):
+    titel: str
+    begruendung: str
+    link: Optional[str] = None
+    geschaetzte_kosten_eur: Optional[Decimal] = None
+    anfragender_name: Optional[str] = Field(None, description="Nur wenn für eine externe Person angelegt")
+    anfragender_email: Optional[EmailStr] = Field(None, description="Nur wenn für eine externe Person angelegt")
+
+
+class EinkaufswunschAblehnenRequest(BaseModel):
+    ablehnungsgrund: str
+
+
+class EinkaufswunschFreigabeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    benutzer_id: str
+    freigegeben_am: datetime
+
+
+class EinkaufswunschOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    titel: str
+    begruendung: str
+    link: Optional[str] = None
+    geschaetzte_kosten_eur: Optional[Decimal] = None
+    status: str
+    angefragt_von_id: Optional[str] = None
+    anfragender_name: Optional[str] = None
+    anfragender_email: Optional[str] = None
+    erstellt_von_id: Optional[str] = None
+    vom_anfragenden_bestaetigt: bool
+    ablehnungsgrund: Optional[str] = None
+    abgelehnt_von_id: Optional[str] = None
+    abgelehnt_am: Optional[datetime] = None
+    genehmigt_am: Optional[datetime] = None
+    erstellt_am: datetime
+
+
+class EinkaufswunschDetailOut(EinkaufswunschOut):
+    freigaben: List[EinkaufswunschFreigabeOut] = []

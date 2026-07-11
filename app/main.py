@@ -20,11 +20,11 @@ from app.models import Benutzer, BenutzerRolle, Mitglied, Parzelle, ParzelleStat
 from app.auth import hash_passwort, get_current_user
 from app.module_flags import lade_modul_flags
 from app.ticket_mailer import verarbeite_eingehende_mails
-from app.routers import auth, mitglieder, parzellen, admin as admin_router, pflichtstunden, versicherungen, tickets
+from app.routers import auth, mitglieder, parzellen, admin as admin_router, pflichtstunden, versicherungen, tickets, einkaufswuensche
 from app.routers.zaehlerwesen import erstelle_zaehler_router
 from app.models import ZaehlerMedium
 from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen, api_stats
-from app.routers import api_pflichtstunden, api_versicherungen, api_tickets
+from app.routers import api_pflichtstunden, api_versicherungen, api_tickets, api_einkaufswuensche
 from app.routers.api_zaehlerwesen import erstelle_zaehler_api_router
 
 logging.basicConfig(level=logging.INFO)
@@ -116,6 +116,7 @@ app.include_router(admin_router.router)
 app.include_router(pflichtstunden.router)
 app.include_router(versicherungen.router)
 app.include_router(tickets.router)
+app.include_router(einkaufswuensche.router)
 
 # Zählerwesen: EINE Codebasis (app/routers/zaehlerwesen.py), zweimal
 # instanziiert für Wasser und Strom – siehe erstelle_zaehler_router().
@@ -139,6 +140,7 @@ app.include_router(api_stats.router)
 app.include_router(api_pflichtstunden.router)
 app.include_router(api_versicherungen.router)
 app.include_router(api_tickets.router)
+app.include_router(api_einkaufswuensche.router)
 
 api_wasser_router = erstelle_zaehler_api_router(ZaehlerMedium.WASSER, "/wasser", "wasser")
 api_strom_router = erstelle_zaehler_api_router(ZaehlerMedium.STROM, "/strom", "strom")

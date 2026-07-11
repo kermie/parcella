@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Bestätigt{% endblock %}
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="text-center">
+        <div style="font-size: 3rem; color: var(--gv-gruen);"><i class="bi bi-check-circle-fill"></i></div>
+        <h2 class="mt-2">Vielen Dank!</h2>
+        <p class="text-muted">Ihre Bestätigung für „{{ ew.titel }}" wurde gespeichert.</p>
+    </div>
+</div>
+{% endblock %}

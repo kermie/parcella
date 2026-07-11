@@ -11,7 +11,8 @@ und Beweggründe noch frisch sind.
 - [Pflichtstunden](./module-pflichtstunden.md) – Arbeitseinsätze, Patenschaften, Vereinsrollen
 - [Zählerwesen (Wasser & Strom)](./module-zaehlerwesen.md) – gemeinsame Codebasis für beide Medien
 - [Versicherungen](./module-versicherungen.md) – Sach- und Unfallversicherung pro Parzelle
-- [Ticketsystem](./module-tickets.md) – Support-Tickets, Etappe 1 von 3
+- [Ticketsystem](./module-tickets.md) – Support-Tickets, alle 3 Etappen fertig
+- [Einkaufswünsche](./module-einkaufswuensche.md) – Vier-Augen-Prinzip für Vereinsausgaben
 
 ## Querschnittsthemen
 

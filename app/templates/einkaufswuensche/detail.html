@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}{{ ew.titel }}{% endblock %}
+{% block page_title %}{{ ew.titel }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/einkaufswuensche/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Zurück
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <div class="col-lg-7">
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-cart me-2"></i>Details</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Antragsteller</dt>
+                    <dd class="col-sm-8">
+                        {{ ew.anzeigename_anfragender }}
+                        {% if ew.anfragender_email %}
+                        <div class="text-muted" style="font-size: 0.82rem;">{{ ew.anfragender_email }}</div>
+                        {% if ew.vom_anfragenden_bestaetigt %}
+                        <span class="badge badge-aktiv mt-1"><i class="bi bi-check-lg me-1"></i>Vom Antragsteller bestätigt</span>
+                        {% else %}
+                        <span class="badge mt-1" style="background: #fef3c7; color: #92400e;">Bestätigung ausstehend</span>
+                        {% endif %}
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Erstellt von</dt>
+                    <dd class="col-sm-8">{{ ew.erstellt_von.name if ew.erstellt_von else '–' }} am {{ ew.erstellt_am.strftime('%d.%m.%Y %H:%M') }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Begründung</dt>
+                    <dd class="col-sm-8" style="white-space: pre-wrap;">{{ ew.begruendung }}</dd>
+
+                    {% if ew.link %}
+                    <dt class="col-sm-4 text-muted">Link</dt>
+                    <dd class="col-sm-8"><a href="{{ ew.link }}" target="_blank" rel="noopener">{{ ew.link }}</a></dd>
+                    {% endif %}
+
+                    {% if ew.geschaetzte_kosten_eur %}
+                    <dt class="col-sm-4 text-muted">Geschätzte Kosten</dt>
+                    <dd class="col-sm-8 fw-semibold">{{ "%.2f"|format(ew.geschaetzte_kosten_eur|float) }} €</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        {% if ew.status.value == 'ABGELEHNT' %}
+        <div class="alert alert-danger">
+            <strong><i class="bi bi-x-circle me-1"></i>Abgelehnt</strong>
+            von {{ ew.abgelehnt_von.name if ew.abgelehnt_von else 'Unbekannt' }}
+            am {{ ew.abgelehnt_am.strftime('%d.%m.%Y %H:%M') if ew.abgelehnt_am else '' }}<br>
+            <span style="white-space: pre-wrap;">{{ ew.ablehnungsgrund }}</span>
+        </div>
+        {% elif ew.status.value == 'GENEHMIGT' %}
+        <div class="alert alert-success">
+            <strong><i class="bi bi-check-circle me-1"></i>Genehmigt</strong>
+            am {{ ew.genehmigt_am.strftime('%d.%m.%Y %H:%M') if ew.genehmigt_am else '' }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-people-fill me-2"></i>Freigaben ({{ ew.freigaben | length }}/{{ noetige_freigaben }})</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush mb-3">
+                    {% for f in ew.freigaben %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
+                        <span><i class="bi bi-check-circle-fill text-success me-2"></i>{{ f.benutzer.name }}</span>
+                        <span class="text-muted" style="font-size: 0.8rem;">{{ f.freigegeben_am.strftime('%d.%m.%Y %H:%M') }}</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-muted py-2 px-0">Noch keine Freigaben.</li>
+                    {% endfor %}
+                </ul>
+
+                {% if ew.status.value == 'OFFEN' and ist_vorstand %}
+                    {% if ist_antragsteller %}
+                    <div class="alert alert-secondary mb-0" style="font-size: 0.85rem;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Als Antragsteller können Sie diesen Einkaufswunsch nicht selbst freigeben
+                        (Vier-Augen-Prinzip).
+                    </div>
+                    {% elif hat_bereits_freigegeben %}
+                    <div class="alert alert-secondary mb-0" style="font-size: 0.85rem;">
+                        <i class="bi bi-check-lg me-1"></i>Sie haben bereits freigegeben.
+                    </div>
+                    {% else %}
+                    <form method="post" action="/einkaufswuensche/{{ ew.id }}/freigeben" class="mb-3">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-lg me-1"></i>Freigeben
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="collapse"
+                            data-bs-target="#ablehnen-formular">
+                        <i class="bi bi-x-lg me-1"></i>Ablehnen
+                    </button>
+                    <div class="collapse mt-2" id="ablehnen-formular">
+                        <form method="post" action="/einkaufswuensche/{{ ew.id }}/ablehnen">
+                            <textarea name="ablehnungsgrund" class="form-control form-control-sm mb-2" rows="3"
+                                      placeholder="Begründung für die Ablehnung…" required></textarea>
+                            <button type="submit" class="btn btn-sm btn-danger w-100">
+                                <i class="bi bi-x-lg me-1"></i>Endgültig ablehnen
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

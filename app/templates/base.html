@@ -177,6 +177,12 @@
         </a>
         {% endif %}
 
+        {% if request.state.module_flags.einkaufswuensche %}
+        <a href="/einkaufswuensche/" class="nav-top-link {% if '/einkaufswuensche' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-cart"></i> Einkaufswünsche
+        </a>
+        {% endif %}
+
         {% if request.state.module_flags.pflichtstunden %}
         <div class="nav-group" data-group="pflichtstunden">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"

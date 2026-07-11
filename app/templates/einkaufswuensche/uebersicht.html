@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Einkaufswünsche{% endblock %}
+{% block page_title %}Einkaufswünsche{% endblock %}
+
+{% block topbar_actions %}
+<a href="/einkaufswuensche/neu" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>Neuer Einkaufswunsch
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="/einkaufswuensche/?filter=offen" class="btn btn-{{ 'primary' if filter == 'offen' else 'outline-secondary' }}">Offen</a>
+            <a href="/einkaufswuensche/?filter=genehmigt" class="btn btn-{{ 'primary' if filter == 'genehmigt' else 'outline-secondary' }}">Genehmigt</a>
+            <a href="/einkaufswuensche/?filter=abgelehnt" class="btn btn-{{ 'primary' if filter == 'abgelehnt' else 'outline-secondary' }}">Abgelehnt</a>
+            <a href="/einkaufswuensche/?filter=alle" class="btn btn-{{ 'primary' if filter == 'alle' else 'outline-secondary' }}">Alle</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Titel</th>
+                    <th>Antragsteller</th>
+                    <th>Geschätzte Kosten</th>
+                    <th>Freigaben</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ew in wuensche %}
+                <tr>
+                    <td>
+                        <a href="/einkaufswuensche/{{ ew.id }}" class="text-decoration-none fw-semibold"
+                           style="color: var(--gv-gruen);">{{ ew.titel }}</a>
+                    </td>
+                    <td class="text-muted" style="font-size: 0.85rem;">{{ ew.anzeigename_anfragender }}</td>
+                    <td>{% if ew.geschaetzte_kosten_eur %}{{ "%.2f"|format(ew.geschaetzte_kosten_eur|float) }} €{% else %}–{% endif %}</td>
+                    <td>
+                        {% if ew.status.value == 'OFFEN' %}
+                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
+                            {{ ew.freigaben | length }} / {{ noetige_freigaben }}
+                        </span>
+                        {% else %}–{% endif %}
+                    </td>
+                    <td>
+                        {% if ew.status.value == 'OFFEN' %}
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">Offen</span>
+                        {% elif ew.status.value == 'GENEHMIGT' %}
+                        <span class="badge badge-aktiv">Genehmigt</span>
+                        {% else %}
+                        <span class="badge" style="background: #fee2e2; color: #991b1b;">Abgelehnt</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="/einkaufswuensche/{{ ew.id }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="bi bi-cart d-block mb-2" style="font-size: 1.5rem;"></i>
+                        Keine Einkaufswünsche gefunden.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
