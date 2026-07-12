@@ -34,9 +34,9 @@
             <select name="status_filter" class="form-select form-select-sm" style="max-width: 160px;"
                     onchange="this.form.submit()">
                 <option value="">Alle Status</option>
-                <option value="AKTIV" {% if status_filter == 'AKTIV' %}selected{% endif %}>Aktiv</option>
-                <option value="GEKUENDIGT" {% if status_filter == 'GEKUENDIGT' %}selected{% endif %}>Gekündigt</option>
-                <option value="GELOESCHT" {% if status_filter == 'GELOESCHT' %}selected{% endif %}>Gelöscht</option>
+                <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Aktiv</option>
+                <option value="TERMINATED" {% if status_filter == 'TERMINATED' %}selected{% endif %}>Gekündigt</option>
+                <option value="DELETED" {% if status_filter == 'DELETED' %}selected{% endif %}>Gelöscht</option>
             </select>
             <button type="submit" class="btn btn-sm btn-primary">Suchen</button>
             {% if suche or status_filter %}
@@ -61,7 +61,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for p in parzellen %}
+                    {% for p in parcels %}
                     <tr>
                         <td>
                             <a href="/parcels/{{ p.id }}" class="fw-semibold text-decoration-none"
@@ -103,10 +103,10 @@
             </table>
         </div>
     </div>
-    {% if parzellen %}
+    {% if parcels %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">
-        {{ parzellen | length }} Parzelle{{ 'n' if parzellen | length != 1 else '' }}
-        {% set gesamt_flaeche = parzellen | selectattr('area_sqm') | sum(attribute='area_sqm') %}
+        {{ parcels | length }} Parzelle{{ 'n' if parcels | length != 1 else '' }}
+        {% set gesamt_flaeche = parcels | selectattr('area_sqm') | sum(attribute='area_sqm') %}
         {% if gesamt_flaeche > 0 %} · Gesamtfläche: {{ '%g' % gesamt_flaeche }} qm{% endif %}
     </div>
     {% endif %}

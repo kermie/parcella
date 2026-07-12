@@ -178,7 +178,7 @@ def _zu_kosten_schema(pv: ParzelleVersicherung, konfig: Optional[VersicherungsKo
 
 
 @router.get(
-    "/parcels/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
+    "/parzellen/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
     summary="Versicherungsstatus einer Parcel abrufen",
     description="Gibt 404 zurück, wenn für diese Parcel/Jahr noch kein Status existiert "
                 "(anders als die Web-UI wird er über die API nicht automatisch angelegt).",
@@ -199,7 +199,7 @@ async def versicherung_abrufen(
 
 
 @router.put(
-    "/parcels/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
+    "/parzellen/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
     summary="Versicherungsstatus setzen (Upsert)",
     description="Legt den Status an, falls er nicht existiert, und ersetzt die Liste der Zusatzpersonen komplett.",
 )

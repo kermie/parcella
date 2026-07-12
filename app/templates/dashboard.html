@@ -133,7 +133,7 @@
                     <a href="/parcels/export/csv" class="btn btn-outline-secondary text-start">
                         <i class="bi bi-download me-2"></i>Parzellen als CSV exportieren
                     </a>
-                    {% if benutzer.role.value in ['admin', 'vorstand'] %}
+                    {% if benutzer.rolle.value in ['admin', 'vorstand'] %}
                     <a href="/admin/" class="btn btn-outline-secondary text-start">
                         <i class="bi bi-people-fill me-2"></i>Benutzer verwalten
                     </a>

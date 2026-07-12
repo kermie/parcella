@@ -69,7 +69,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for m in mitglieder %}
+                    {% for m in members %}
                     <tr>
                         <td>
                             <a href="/members/{{ m.id }}" class="text-decoration-none fw-semibold"
@@ -126,9 +126,9 @@
             </table>
         </div>
     </div>
-    {% if mitglieder %}
+    {% if members %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">
-        {{ mitglieder | length }} Mitglied{{ 'er' if mitglieder | length != 1 else '' }}
+        {{ members | length }} Mitglied{{ 'er' if members | length != 1 else '' }}
     </div>
     {% endif %}
 </div>

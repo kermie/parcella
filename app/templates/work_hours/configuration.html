@@ -40,8 +40,8 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Abrechnungsmodus</label>
                         <select name="mode" class="form-select">
-                            <option value="pro_pachtvertrag">Pro Pachtvertrag / Parzelle</option>
-                            <option value="pro_mitglied">Pro Mitglied</option>
+                            <option value="PER_PARCEL">Pro Pachtvertrag / Parzelle</option>
+                            <option value="PER_MEMBER">Pro Mitglied</option>
                         </select>
                         <div class="form-text">
                             <strong>Pro Pachtvertrag:</strong> Alle Pächter einer Parzelle leisten zusammen die Pflichtstunden.<br>
@@ -86,7 +86,7 @@
                             <td>{{ "%.2f"|format(k.hours_required|float * k.rate_per_hour_eur|float) }} €</td>
                             <td>
                                 <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.72rem;">
-                                    {% if k.mode.value == 'pro_pachtvertrag' %}Pachtvertrag{% else %}Mitglied{% endif %}
+                                    {% if k.mode.value == 'PER_PARCEL' %}Pachtvertrag{% else %}Mitglied{% endif %}
                                 </span>
                             </td>
                             <td class="text-muted" style="font-size: 0.85rem;">{{ k.note or '–' }}</td>

@@ -26,6 +26,7 @@ def upgrade() -> None:
             CASE modus::text
                 WHEN 'pro_pachtvertrag' THEN 'PER_PARCEL'
                 WHEN 'pro_mitglied' THEN 'PER_MEMBER'
+                ELSE 'PER_PARCEL'
             END
         )::workhoursmode
     """)
@@ -56,6 +57,7 @@ def upgrade() -> None:
             CASE typ::text
                 WHEN 'STANDARD' THEN 'STANDARD'
                 WHEN 'BESONDERS' THEN 'SPECIAL'
+                ELSE 'STANDARD'
             END
         )::sessiontype
     """)
@@ -71,6 +73,7 @@ def upgrade() -> None:
                 WHEN 'ANGEMELDET' THEN 'REGISTERED'
                 WHEN 'ERSCHIENEN' THEN 'ATTENDED'
                 WHEN 'NICHT_ERSCHIENEN' THEN 'NO_SHOW'
+                ELSE 'REGISTERED'
             END
         )::participationstatus
     """)
@@ -215,6 +218,7 @@ def downgrade() -> None:
                 WHEN 'REGISTERED' THEN 'ANGEMELDET'
                 WHEN 'ATTENDED' THEN 'ERSCHIENEN'
                 WHEN 'NO_SHOW' THEN 'NICHT_ERSCHIENEN'
+                ELSE 'ANGEMELDET'
             END
         )::teilnahmestatus
     """)
@@ -229,6 +233,7 @@ def downgrade() -> None:
             CASE typ::text
                 WHEN 'STANDARD' THEN 'STANDARD'
                 WHEN 'SPECIAL' THEN 'BESONDERS'
+                ELSE 'STANDARD'
             END
         )::einsatztyp
     """)
@@ -259,6 +264,7 @@ def downgrade() -> None:
             CASE modus::text
                 WHEN 'PER_PARCEL' THEN 'pro_pachtvertrag'
                 WHEN 'PER_MEMBER' THEN 'pro_mitglied'
+                ELSE 'pro_pachtvertrag'
             END
         )::pflichtstundenmodus
     """)

@@ -262,7 +262,7 @@ async def paket_loeschen(
 # Parzellen: Liste, Detail/Bearbeiten
 # ---------------------------------------------------------------------------
 
-@router.get("/parcels", response_class=HTMLResponse)
+@router.get("/parzellen", response_class=HTMLResponse)
 async def versicherungen_parzellen_liste(
     request: Request,
     jahr: Optional[int] = None,
@@ -302,7 +302,7 @@ async def versicherungen_parzellen_liste(
     })
 
 
-@router.get("/parcels/{parzelle_id}", response_class=HTMLResponse)
+@router.get("/parzellen/{parzelle_id}", response_class=HTMLResponse)
 async def versicherung_detail(
     parzelle_id: str,
     request: Request,
@@ -338,7 +338,7 @@ async def versicherung_detail(
     })
 
 
-@router.post("/parcels/{parzelle_id}/speichern")
+@router.post("/parzellen/{parzelle_id}/speichern")
 async def versicherung_speichern(
     parzelle_id: str,
     request: Request,
@@ -370,7 +370,7 @@ async def versicherung_speichern(
             ))
 
     await db.commit()
-    return RedirectResponse(f"/versicherungen/parcels/{parzelle_id}?jahr={jahr}", status_code=302)
+    return RedirectResponse(f"/versicherungen/parzellen/{parzelle_id}?jahr={jahr}", status_code=302)
 
 
 # ---------------------------------------------------------------------------

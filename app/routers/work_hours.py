@@ -195,7 +195,7 @@ async def konfiguration_aktualisieren(
     year: int = Form(...),
     hours_required: str = Form(...),
     rate_per_hour_eur: str = Form(...),
-    mode: str = Form("pro_pachtvertrag"),
+    mode: str = Form("PER_PARCEL"),
     note: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -252,7 +252,7 @@ async def konfiguration_erstellen(
     year: int = Form(...),
     hours_required: str = Form(...),
     rate_per_hour_eur: str = Form(...),
-    mode: str = Form("pro_pachtvertrag"),
+    mode: str = Form("PER_PARCEL"),
     note: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -1038,7 +1038,7 @@ async def auswertung(
                 befreit = await _is_exempt(db, m.id, year)
                 gesamt_stunden += stand["gesamt"]
                 paechter_details.append({
-                    "mitglied": m,
+                    "member": m,
                     "stand": stand,
                     "befreit": befreit,
                 })
@@ -1087,7 +1087,7 @@ async def auswertung(
             schuldbetrag = offen * float(config.rate_per_hour_eur)
 
             zeilen.append({
-                "mitglied": m,
+                "member": m,
                 "stand": stand,
                 "befreit": befreit,
                 "pflicht_stunden": pflicht,

@@ -101,6 +101,23 @@ def ist_postfach_konfiguriert(konfig: Dict[str, Any]) -> bool:
     return bool(konfig["imap_host"] and konfig["smtp_host"] and konfig["smtp_user"])
 
 
+def _sicher_dekodieren(payload: bytes, zeichensatz: Optional[str]) -> str:
+    """
+    Dekodiert Bytes mit dem angegebenen Zeichensatz, fällt aber sicher auf
+    UTF-8 zurück, wenn der Zeichensatz Python unbekannt ist.
+
+    Manche Mailserver/-clients deklarieren nicht-standardkonforme
+    Zeichensatznamen wie "unknown-8bit" – das führt zu einem LookupError,
+    noch bevor überhaupt ein einziges Byte dekodiert wird. errors="replace"
+    allein hilft hier NICHT, da es nur fehlerhafte Bytes bei einem
+    BEKANNTEN Zeichensatz abfängt, nicht einen unbekannten Namen selbst.
+    """
+    try:
+        return payload.decode(zeichensatz or "utf-8", errors="replace")
+    except LookupError:
+        return payload.decode("utf-8", errors="replace")
+
+
 def _dekodiere_header(wert: Optional[str]) -> str:
     if not wert:
         return ""
@@ -108,7 +125,7 @@ def _dekodiere_header(wert: Optional[str]) -> str:
     ergebnis = ""
     for text, kodierung in teile:
         if isinstance(text, bytes):
-            ergebnis += text.decode(kodierung or "utf-8", errors="replace")
+            ergebnis += _sicher_dekodieren(text, kodierung)
         else:
             ergebnis += text
     return ergebnis
@@ -121,18 +138,18 @@ def _extrahiere_text(nachricht) -> str:
             if teil.get_content_type() == "text/plain" and not teil.get("Content-Disposition"):
                 payload = teil.get_payload(decode=True)
                 if payload:
-                    return payload.decode(teil.get_content_charset() or "utf-8", errors="replace")
+                    return _sicher_dekodieren(payload, teil.get_content_charset())
         for teil in nachricht.walk():
             if teil.get_content_type() == "text/html" and not teil.get("Content-Disposition"):
                 payload = teil.get_payload(decode=True)
                 if payload:
-                    html = payload.decode(teil.get_content_charset() or "utf-8", errors="replace")
+                    html = _sicher_dekodieren(payload, teil.get_content_charset())
                     return re.sub(r"<[^>]+>", "", html).strip()
         return ""
     else:
         payload = nachricht.get_payload(decode=True)
         if payload:
-            return payload.decode(nachricht.get_content_charset() or "utf-8", errors="replace")
+            return _sicher_dekodieren(payload, nachricht.get_content_charset())
         return ""
 
 

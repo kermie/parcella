@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if mitglied %}{{ mitglied.full_name }} bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
-{% block page_title %}{% if mitglied %}Mitglied bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
+{% block title %}{% if member %}{{ member.full_name }} bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
+{% block page_title %}{% if member %}Mitglied bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
 
 {% block topbar_actions %}
-<a href="{% if mitglied %}/members/{{ mitglied.id }}{% else %}/members/{% endif %}"
+<a href="{% if member %}/members/{{ member.id }}{% else %}/members/{% endif %}"
    class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Abbrechen
 </a>
@@ -16,7 +16,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="{% if mitglied %}/members/{{ mitglied.id }}/bearbeiten{% else %}/members/neu{% endif %}">
+<form method="post" action="{% if member %}/members/{{ member.id }}/bearbeiten{% else %}/members/neu{% endif %}">
 <div class="row g-3">
 
     <div class="col-lg-6">
@@ -27,23 +27,23 @@
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Vorname <span class="text-danger">*</span></label>
                         <input type="text" name="first_name" class="form-control"
-                               value="{{ mitglied.first_name if mitglied else '' }}" required autofocus>
+                               value="{{ member.first_name if member else '' }}" required autofocus>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Nachname <span class="text-danger">*</span></label>
                         <input type="text" name="last_name" class="form-control"
-                               value="{{ mitglied.last_name if mitglied else '' }}" required>
+                               value="{{ member.last_name if member else '' }}" required>
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">Geburtsdatum</label>
                         <input type="date" name="date_of_birth" class="form-control"
-                               value="{{ mitglied.date_of_birth.isoformat() if mitglied and mitglied.date_of_birth else '' }}">
+                               value="{{ member.date_of_birth.isoformat() if member and member.date_of_birth else '' }}">
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">IBAN</label>
                         <input type="text" name="iban" class="form-control font-monospace"
                                placeholder="DE00 0000 0000 0000 0000 00"
-                               value="{{ mitglied.iban if mitglied else '' }}">
+                               value="{{ member.iban if member else '' }}">
                     </div>
                 </div>
             </div>
@@ -58,17 +58,17 @@
                     <div class="col-12">
                         <label class="form-label fw-semibold">Straße und Hausnummer</label>
                         <input type="text" name="street" class="form-control"
-                               value="{{ mitglied.street if mitglied else '' }}">
+                               value="{{ member.street if member else '' }}">
                     </div>
                     <div class="col-sm-4">
                         <label class="form-label fw-semibold">PLZ</label>
                         <input type="text" name="postal_code" class="form-control" maxlength="10"
-                               value="{{ mitglied.postal_code if mitglied else '' }}">
+                               value="{{ member.postal_code if member else '' }}">
                     </div>
                     <div class="col-sm-8">
                         <label class="form-label fw-semibold">Ort</label>
                         <input type="text" name="city" class="form-control"
-                               value="{{ mitglied.city if mitglied else '' }}">
+                               value="{{ member.city if member else '' }}">
                     </div>
                 </div>
             </div>
@@ -83,19 +83,19 @@
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Mitglied seit</label>
                         <input type="date" name="member_since" class="form-control"
-                               value="{{ mitglied.member_since.isoformat() if mitglied and mitglied.member_since else '' }}">
+                               value="{{ member.member_since.isoformat() if member and member.member_since else '' }}">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Mitglied bis</label>
                         <input type="date" name="member_until" class="form-control"
-                               value="{{ mitglied.member_until.isoformat() if mitglied and mitglied.member_until else '' }}">
+                               value="{{ member.member_until.isoformat() if member and member.member_until else '' }}">
                         <div class="form-text">Leer lassen = aktives Mitglied</div>
                     </div>
                     <div class="col-12">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="email_notifications"
                                    id="email-info"
-                                   {% if not mitglied or mitglied.email_notifications %}checked{% endif %}>
+                                   {% if not member or member.email_notifications %}checked{% endif %}>
                             <label class="form-check-label" for="email-info">
                                 Darf per E-Mail Informationen erhalten
                             </label>
@@ -111,18 +111,18 @@
             <div class="card-header"><i class="bi bi-sticky me-2"></i>Notizen</div>
             <div class="card-body">
                 <textarea name="notes" class="form-control" rows="5"
-                          placeholder="Interne Notizen…">{{ mitglied.notes if mitglied else '' }}</textarea>
+                          placeholder="Interne Notizen…">{{ member.notes if member else '' }}</textarea>
             </div>
         </div>
     </div>
 
     <div class="col-12">
         <div class="d-flex gap-2 justify-content-end">
-            <a href="{% if mitglied %}/members/{{ mitglied.id }}{% else %}/members/{% endif %}"
+            <a href="{% if member %}/members/{{ member.id }}{% else %}/members/{% endif %}"
                class="btn btn-outline-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-lg me-1"></i>
-                {% if mitglied %}Änderungen speichern{% else %}Mitglied anlegen{% endif %}
+                {% if member %}Änderungen speichern{% else %}Mitglied anlegen{% endif %}
             </button>
         </div>
     </div>

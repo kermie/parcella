@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if parzelle %}{{ parzelle.plot_number }} bearbeiten{% else %}Neue Parzelle{% endif %}{% endblock %}
-{% block page_title %}{% if parzelle %}Parzelle bearbeiten{% else %}Neue Parzelle{% endif %}{% endblock %}
+{% block title %}{% if parcel %}{{ parcel.plot_number }} bearbeiten{% else %}Neue Parzelle{% endif %}{% endblock %}
+{% block page_title %}{% if parcel %}Parzelle bearbeiten{% else %}Neue Parzelle{% endif %}{% endblock %}
 
 {% block topbar_actions %}
-<a href="{% if parzelle %}/parcels/{{ parzelle.id }}{% else %}/parcels/{% endif %}"
+<a href="{% if parcel %}/parcels/{{ parcel.id }}{% else %}/parcels/{% endif %}"
    class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Abbrechen
 </a>
@@ -16,7 +16,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="{% if parzelle %}/parcels/{{ parzelle.id }}/bearbeiten{% else %}/parcels/neu{% endif %}">
+<form method="post" action="{% if parcel %}/parcels/{{ parcel.id }}/bearbeiten{% else %}/parcels/neu{% endif %}">
 <div class="row g-3" style="max-width: 640px;">
 
     <div class="col-12">
@@ -28,23 +28,23 @@
                         <label class="form-label fw-semibold">Gartennummer <span class="text-danger">*</span></label>
                         <input type="text" name="plot_number" class="form-control font-monospace"
                                placeholder="z.B. G093 oder G26/27"
-                               value="{{ parzelle.plot_number if parzelle else '' }}" required autofocus>
+                               value="{{ parcel.plot_number if parcel else '' }}" required autofocus>
                         <div class="form-text">Wird automatisch großgeschrieben</div>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Fläche (qm)</label>
                         <input type="text" name="area_sqm" class="form-control"
                                placeholder="z.B. 312.5"
-                               value="{{ parzelle.area_sqm if parzelle and parzelle.area_sqm else '' }}">
+                               value="{{ parcel.area_sqm if parcel and parcel.area_sqm else '' }}">
                     </div>
 
-                    {% if parzelle %}
+                    {% if parcel %}
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Status</label>
                         <select name="status" class="form-select">
-                            <option value="AKTIV" {% if parzelle.status.value == 'AKTIV' %}selected{% endif %}>Aktiv</option>
-                            <option value="GEKUENDIGT" {% if parzelle.status.value == 'GEKUENDIGT' %}selected{% endif %}>Gekündigt</option>
-                            <option value="GELOESCHT" {% if parzelle.status.value == 'GELOESCHT' %}selected{% endif %}>Gelöscht</option>
+                            <option value="ACTIVE" {% if parcel.status.value == 'ACTIVE' %}selected{% endif %}>Aktiv</option>
+                            <option value="TERMINATED" {% if parcel.status.value == 'TERMINATED' %}selected{% endif %}>Gekündigt</option>
+                            <option value="DELETED" {% if parcel.status.value == 'DELETED' %}selected{% endif %}>Gelöscht</option>
                         </select>
                         <div class="form-text">
                             Der Zeitpunkt einer Statusänderung wird automatisch in der
@@ -55,14 +55,14 @@
                         <label class="form-label fw-semibold">Kündigungsnotiz</label>
                         <input type="text" name="termination_note" class="form-control"
                                placeholder="Grund, Anmerkungen…"
-                               value="{{ parzelle.termination_note or '' }}">
+                               value="{{ parcel.termination_note or '' }}">
                     </div>
                     {% endif %}
 
                     <div class="col-12">
                         <label class="form-label fw-semibold">Notizen</label>
                         <textarea name="notes" class="form-control" rows="3"
-                                  placeholder="Interne Notizen zur Parzelle…">{{ parzelle.notes if parzelle else '' }}</textarea>
+                                  placeholder="Interne Notizen zur Parzelle…">{{ parcel.notes if parcel else '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -71,11 +71,11 @@
 
     <div class="col-12">
         <div class="d-flex gap-2 justify-content-end">
-            <a href="{% if parzelle %}/parcels/{{ parzelle.id }}{% else %}/parcels/{% endif %}"
+            <a href="{% if parcel %}/parcels/{{ parcel.id }}{% else %}/parcels/{% endif %}"
                class="btn btn-outline-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-lg me-1"></i>
-                {% if parzelle %}Änderungen speichern{% else %}Parzelle anlegen{% endif %}
+                {% if parcel %}Änderungen speichern{% else %}Parzelle anlegen{% endif %}
             </button>
         </div>
     </div>
@@ -83,20 +83,20 @@
 </div>
 </form>
 
-{% if parzelle %}
+{% if parcel %}
 <div class="row g-3 mt-2" style="max-width: 640px;">
     <div class="col-12">
         <div class="card border-danger">
             <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Gefahrenzone</div>
             <div class="card-body">
                 <p class="text-muted mb-3" style="font-size: 0.88rem;">
-                    Löscht die Parzelle <strong>{{ parzelle.plot_number }}</strong> unwiderruflich aus der
+                    Löscht die Parzelle <strong>{{ parcel.plot_number }}</strong> unwiderruflich aus der
                     Datenbank – anders als der Status „Gelöscht", der die Historie erhält.
                     Alle Mitgliederzuordnungen zu dieser Parzelle werden mit entfernt, Wasseranschlüsse
                     bleiben erhalten aber ohne Parzellenbezug. Diese Aktion kann nicht rückgängig gemacht werden.
                 </p>
-                <form method="post" action="/parcels/{{ parzelle.id }}/endgueltig-loeschen"
-                      onsubmit="return confirm('Parzelle {{ parzelle.plot_number }} wirklich UNWIDERRUFLICH löschen? Dies kann nicht rückgängig gemacht werden.')">
+                <form method="post" action="/parcels/{{ parcel.id }}/endgueltig-loeschen"
+                      onsubmit="return confirm('Parzelle {{ parcel.plot_number }} wirklich UNWIDERRUFLICH löschen? Dies kann nicht rückgängig gemacht werden.')">
                     <button type="submit" class="btn btn-outline-danger">
                         <i class="bi bi-trash me-1"></i>Parzelle endgültig löschen
                     </button>

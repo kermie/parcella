@@ -23,7 +23,7 @@ async def test_paket_anlegen_und_kosten_berechnung(client, admin_benutzer):
     )).json()
 
     status_response = await client.put(
-        f"/api/v1/versicherungen/parcels/{parzelle['id']}/2026",
+        f"/api/v1/versicherungen/parzellen/{parzelle['id']}/2026",
         json={
             "hat_sachversicherung": True, "sach_paket_id": paket["id"],
             "hat_unfallversicherung": True, "zusatzpersonen_mitglied_ids": [],
@@ -53,7 +53,7 @@ async def test_zusatzperson_erhoeht_unfallkosten(client, admin_benutzer):
     )).json()
 
     daten = (await client.put(
-        f"/api/v1/versicherungen/parcels/{parzelle['id']}/2026",
+        f"/api/v1/versicherungen/parzellen/{parzelle['id']}/2026",
         json={
             "hat_sachversicherung": False, "hat_unfallversicherung": True,
             "zusatzpersonen_mitglied_ids": [zusatzperson["id"]],
