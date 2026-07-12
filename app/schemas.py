@@ -375,82 +375,82 @@ class EvaluationRowOut(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Zählerwesen (Wasser & Strom) – medium-agnostische Schemas
+# Metering (Wasser & Strom) – medium-agnostische Schemas
 # ---------------------------------------------------------------------------
 
-class ZaehlpunktBase(BaseModel):
-    typ: str = Field(..., description="HAUPTZAEHLER, PARZELLE oder VEREIN")
-    parzelle_id: Optional[str] = None
-    bezeichnung: Optional[str] = None
-    notizen: Optional[str] = None
+class MeteringPointBase(BaseModel):
+    type: str = Field(..., description="MAIN_METER, PARCEL oder CLUB")
+    parcel_id: Optional[str] = None
+    label: Optional[str] = None
+    notes: Optional[str] = None
 
 
-class ZaehlpunktCreate(ZaehlpunktBase):
-    # Erstes Zähler wird direkt mit angelegt
-    nummer: str
-    geeicht_bis: Optional[int] = None
-    eingebaut_am: Optional[date] = None
-    anfangsstand: Decimal = Decimal("0")
+class MeteringPointCreate(MeteringPointBase):
+    # Erster Meter wird direkt mit angelegt
+    number: str
+    calibrated_until: Optional[int] = None
+    installed_at: Optional[date] = None
+    initial_reading: Decimal = Decimal("0")
 
 
-class ZaehlpunktUpdate(BaseModel):
-    bezeichnung: Optional[str] = None
-    notizen: Optional[str] = None
+class MeteringPointUpdate(BaseModel):
+    label: Optional[str] = None
+    notes: Optional[str] = None
 
 
-class ZaehlerOut(BaseModel):
+class MeterOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    nummer: str
-    ist_aktiv: bool
-    geeicht_bis: Optional[int] = None
-    eingebaut_am: Optional[date] = None
-    ausgebaut_am: Optional[date] = None
-    anfangsstand: Decimal
+    number: str
+    is_active: bool
+    calibrated_until: Optional[int] = None
+    installed_at: Optional[date] = None
+    removed_at: Optional[date] = None
+    initial_reading: Decimal
 
 
-class ZaehlpunktOut(ZaehlpunktBase):
+class MeteringPointOut(MeteringPointBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
     medium: str
 
 
-class ZaehlpunktDetailOut(ZaehlpunktOut):
-    aktueller_zaehler: Optional[ZaehlerOut] = None
-    fruehere_zaehler: List[ZaehlerOut] = []
+class MeteringPointDetailOut(MeteringPointOut):
+    current_meter: Optional[MeterOut] = None
+    former_meters: List[MeterOut] = []
 
 
-class ZaehlerTauschRequest(BaseModel):
+class MeterTauschRequest(BaseModel):
     neue_nummer: str
-    ausgebaut_am: date
-    eingebaut_am: date
-    geeicht_bis: Optional[int] = None
-    anfangsstand: Decimal = Decimal("0")
+    removed_at: date
+    installed_at: date
+    calibrated_until: Optional[int] = None
+    initial_reading: Decimal = Decimal("0")
 
 
-class ZaehlerstandCreate(BaseModel):
-    jahr: int
-    datum: date
-    stand: Decimal
-    notiz: Optional[str] = None
+class MeterReadingCreate(BaseModel):
+    year: int
+    date: date
+    reading: Decimal
+    note: Optional[str] = None
 
 
-class ZaehlerstandOut(BaseModel):
+class MeterReadingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    zaehler_id: str
-    jahr: int
-    datum: date
-    stand: Decimal
-    notiz: Optional[str] = None
+    meter_id: str
+    year: int
+    date: date
+    reading: Decimal
+    note: Optional[str] = None
 
 
-class VerbrauchZeileOut(BaseModel):
-    """Eine Zeile der Verbrauchsauswertung (Zaehlpunkt + berechneter Verbrauch)."""
-    zaehlpunkt_id: str
-    bezeichnung: str
-    zaehler_nummer: Optional[str] = None
-    verbrauch: Optional[Decimal] = None
+class ConsumptionRowOut(BaseModel):
+    """Eine Zeile der Verbrauchsauswertung (MeteringPoint + berechneter Verbrauch)."""
+    metering_point_id: str
+    label: str
+    meter_number: Optional[str] = None
+    consumption: Optional[Decimal] = None
 
 
 # ---------------------------------------------------------------------------

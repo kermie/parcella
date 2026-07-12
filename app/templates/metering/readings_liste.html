@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}{{ medium_label }}-Ablesung {{ jahr }}{% endblock %}
-{% block page_title %}{{ medium_label }}-Ablesung {{ jahr }}{% endblock %}
+{% block title %}{{ medium_label }}-Ablesung {{ year }}{% endblock %}
+{% block page_title %}{{ medium_label }}-Ablesung {{ year }}{% endblock %}
 
 {% block extra_head %}
 <style>
-    .ablesung-zeile input[type="text"] {
+    .entry-zeile input[type="text"] {
         font-size: 1.1rem;
         padding: 0.6rem;
         min-width: 110px;
     }
-    .ablesung-zeile .btn {
+    .entry-zeile .btn {
         padding: 0.6rem 1rem;
         font-size: 1rem;
     }
@@ -19,9 +19,9 @@
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
-        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-            {% for j in range(jahr + 1, jahr - 4, -1) %}
-            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+            {% for j in range(year + 1, year - 4, -1) %}
+            <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
     </form>
@@ -40,28 +40,28 @@
 </div>
 {% endif %}
 
-{% macro zeile(z, jahr, heute) %}
-<div class="ablesung-zeile d-flex flex-wrap align-items-center gap-2 py-2 px-3 border-bottom">
+{% macro zeile(z, year, heute) %}
+<div class="entry-zeile d-flex flex-wrap align-items-center gap-2 py-2 px-3 border-bottom">
     <div style="min-width: 160px; flex: 1;">
-        <div class="fw-semibold">{{ z.zaehlpunkt.anzeigename }}</div>
+        <div class="fw-semibold">{{ z.metering_point.display_name }}</div>
         <div class="text-muted" style="font-size: 0.78rem;">
-            <code>{{ z.zaehler.nummer }}</code> · Vorjahr: {{ z.vorjahreswert | fmt(dezimalstellen) }} {{ einheit }}
+            <code>{{ z.zaehler.number }}</code> · Vorjahr: {{ z.vorjahreswert | fmt(dezimalstellen) }} {{ unit }}
         </div>
     </div>
-    {% if z.ablesung %}
+    {% if z.entry %}
     <div class="d-flex align-items-center gap-2">
         <span class="badge badge-aktiv" style="font-size: 0.9rem;">
-            {{ z.ablesung.stand | fmt(dezimalstellen) }} {{ einheit }}
+            {{ z.entry.reading | fmt(dezimalstellen) }} {{ unit }}
         </span>
         <span class="text-muted" style="font-size: 0.8rem;">erfasst</span>
     </div>
     {% else %}
-    <form method="post" action="{{ url_prefix }}/zaehlpunkte/{{ z.zaehlpunkt.id }}/ablesung/neu"
+    <form method="post" action="{{ url_prefix }}/metering-points/{{ z.metering_point.id }}/readings/new"
           class="d-flex gap-2 align-items-center">
-        <input type="hidden" name="jahr" value="{{ jahr }}">
-        <input type="hidden" name="datum" value="{{ heute }}">
-        <input type="hidden" name="rueck_url" value="{{ url_prefix }}/ablesung?jahr={{ jahr }}">
-        <input type="text" name="stand" class="form-control"
+        <input type="hidden" name="year" value="{{ year }}">
+        <input type="hidden" name="date" value="{{ heute }}">
+        <input type="hidden" name="rueck_url" value="{{ url_prefix }}/readings?year={{ year }}">
+        <input type="text" name="reading" class="form-control"
                placeholder="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}"
                inputmode="{% if dezimalstellen == 0 %}numeric{% else %}decimal{% endif %}" required>
         <button type="submit" class="btn btn-primary">
@@ -78,7 +78,7 @@
         <i class="bi {{ icon }} me-2"></i>Hauptzähler
     </div>
     <div class="card-body p-0">
-        {% for z in hauptzaehler_zeilen %}{{ zeile(z, jahr, heute) }}{% endfor %}
+        {% for z in hauptzaehler_zeilen %}{{ zeile(z, year, heute) }}{% endfor %}
     </div>
 </div>
 {% endif %}
@@ -86,7 +86,7 @@
 <div class="card mb-3">
     <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Parzellen</div>
     <div class="card-body p-0">
-        {% for z in parzellen_zeilen %}{{ zeile(z, jahr, heute) }}{% endfor %}
+        {% for z in parzellen_zeilen %}{{ zeile(z, year, heute) }}{% endfor %}
         {% if not parzellen_zeilen %}
         <div class="text-center text-muted py-3">Keine Parzellen-Zählpunkte vorhanden.</div>
         {% endif %}
@@ -99,7 +99,7 @@
         <i class="bi bi-building me-2"></i>Vereinsanschlüsse
     </div>
     <div class="card-body p-0">
-        {% for z in verein_zeilen %}{{ zeile(z, jahr, heute) }}{% endfor %}
+        {% for z in verein_zeilen %}{{ zeile(z, year, heute) }}{% endfor %}
     </div>
 </div>
 {% endif %}

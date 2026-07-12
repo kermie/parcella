@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}{{ medium_label }} {{ jahr }}{% endblock %}
-{% block page_title %}{{ medium_label }} {{ jahr }}{% endblock %}
+{% block title %}{{ medium_label }} {{ year }}{% endblock %}
+{% block page_title %}{{ medium_label }} {{ year }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
-        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
             {% for j in verfuegbare_jahre %}
-            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+            <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
     </form>
-    <a href="{{ url_prefix }}/ablesung?jahr={{ jahr }}" class="btn btn-sm btn-primary">
+    <a href="{{ url_prefix }}/readings?year={{ year }}" class="btn btn-sm btn-primary">
         <i class="bi bi-clipboard-check me-1"></i>Ablesung erfassen
     </a>
 </div>
@@ -29,8 +29,8 @@
 {% if offene_ablesungen > 0 %}
 <div class="alert alert-info d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-info-circle-fill"></i>
-    {{ offene_ablesungen }} Zählpunkt(e) haben für {{ jahr }} noch keine Ablesung.
-    <a href="{{ url_prefix }}/ablesung?jahr={{ jahr }}" class="alert-link ms-1">Jetzt erfassen →</a>
+    {{ offene_ablesungen }} Zählpunkt(e) haben für {{ year }} noch keine Ablesung.
+    <a href="{{ url_prefix }}/readings?year={{ year }}" class="alert-link ms-1">Jetzt erfassen →</a>
 </div>
 {% endif %}
 
@@ -42,7 +42,7 @@
                     Hauptzähler
                 </div>
                 <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-gruen);">
-                    {{ verbrauch_haupt | fmt(dezimalstellen) }} {{ einheit }}
+                    {{ verbrauch_haupt | fmt(dezimalstellen) }} {{ unit }}
                 </div>
                 <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_hauptzaehler }} Zähler</div>
             </div>
@@ -55,7 +55,7 @@
                     Parzellen
                 </div>
                 <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-braun);">
-                    {{ verbrauch_parzellen | fmt(dezimalstellen) }} {{ einheit }}
+                    {{ verbrauch_parzellen | fmt(dezimalstellen) }} {{ unit }}
                 </div>
                 <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_parzellen }} Zählpunkte</div>
             </div>
@@ -68,7 +68,7 @@
                     Vereinsanschlüsse
                 </div>
                 <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">
-                    {{ verbrauch_verein | fmt(dezimalstellen) }} {{ einheit }}
+                    {{ verbrauch_verein | fmt(dezimalstellen) }} {{ unit }}
                 </div>
                 <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_verein }} Zählpunkte</div>
             </div>
@@ -82,7 +82,7 @@
                 </div>
                 {% set differenz = verbrauch_haupt - verbrauch_parzellen - verbrauch_verein %}
                 <div style="font-size: 1.6rem; font-weight: 700; color: {% if differenz < 0 %}#991b1b{% else %}#065f46{% endif %};">
-                    {{ differenz | fmt(dezimalstellen) }} {{ einheit }}
+                    {{ differenz | fmt(dezimalstellen) }} {{ unit }}
                 </div>
                 <div class="text-muted" style="font-size: 0.8rem;">Haupt − Verteilung</div>
             </div>
@@ -94,13 +94,13 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-body d-grid gap-2">
-                <a href="{{ url_prefix }}/zaehlpunkte" class="btn btn-outline-primary text-start">
+                <a href="{{ url_prefix }}/metering-points" class="btn btn-outline-primary text-start">
                     <i class="bi {{ icon }} me-2"></i>Alle Zählpunkte
                 </a>
-                <a href="{{ url_prefix }}/zaehlpunkte/neu" class="btn btn-outline-primary text-start">
+                <a href="{{ url_prefix }}/metering-points/new" class="btn btn-outline-primary text-start">
                     <i class="bi bi-plus-square me-2"></i>Neuer Zählpunkt
                 </a>
-                <a href="{{ url_prefix }}/auswertung?jahr={{ jahr }}" class="btn btn-outline-secondary text-start">
+                <a href="{{ url_prefix }}/auswertung?year={{ year }}" class="btn btn-outline-secondary text-start">
                     <i class="bi bi-bar-chart me-2"></i>Jahresauswertung
                 </a>
             </div>

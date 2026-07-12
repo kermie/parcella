@@ -116,6 +116,43 @@ und `Zaehlpunkt`-Beziehungen.
 gebraucht werden, die Zeile explizit mit `selectinload(...)` neu laden,
 statt das ursprüngliche (frisch erzeugte) Objekt weiterzuverwenden.
 
+## Drittes Modul auf Englisch: Zählerwesen → Metering
+
+Strukturell anders als die vorherigen Module: eine Router-Fabrik erzeugt
+zwei Instanzen (Wasser/Strom) aus derselben Codebasis. Diesmal traten
+keine grundsätzlich neuen Fehlerklassen auf, aber die bekannten in noch
+größerer Zahl, weil der Substring "Zaehler" in "Zaehlerstand" steckt –
+Ersetzungsreihenfolge (längster Begriff zuerst) war hier besonders wichtig.
+
+**Ein komplett verwaistes Utility-Modul entdeckt.** `zaehler_utils.py`
+importierte `from app.models import Zaehler, Zaehlerstand` – Klassen, die
+zu diesem Zeitpunkt bereits umbenannt waren. Diese Datei wird von BEIDEN
+Router-Fabriken (`metering.py`, `api_metering.py`) importiert – ein
+Übersehen hier hätte die gesamte App am Start scheitern lassen. Gefunden
+durch systematisches Cross-Referenzieren aller `from app.models import`-
+Zeilen im ganzen Projekt gegen die tatsächlich definierten Klassen –
+diesmal auch in Dateien geprüft, die selbst kein Router sind, sondern
+nur Hilfsfunktionen bereitstellen.
+
+**Zwei weitere Konstruktor-Keyword-Bugs des exakt gleichen Musters wie
+beim Kernmodul.** `MeterReading(zaehler_id=...)` in gleich zwei Dateien
+(HTML- und API-Router) – die Spalte heißt seit der Umbenennung `meter_id`.
+Dieselbe Fehlerklasse wie beim allerersten Fund in `api_versicherungen.py`
+Monate zuvor: ein Konstruktor-Aufruf mit einem Feldnamen, der die
+Umbenennung nicht mitbekommen hat, weil er nicht über eine Wortgrenzen-
+Regex, sondern nur über gezielte manuelle Prüfung auffindbar war.
+
+**Inkonsistente Zwischenbenennung als Symptom, nicht nur als Bug.**
+Bei genauerem Hinsehen fielen mehrfach halb-übersetzte Schema-Felder auf
+(`fruehere_zaehler` neben `current_meter`, `zaehler_nummer` neben
+`meter_number`, `VerbrauchZeileOut` neben `EvaluationRowOut`-artigen
+Namen in anderen Modulen). Das sind keine Funktionsfehler – die Anwendung
+liefe damit technisch korrekt – aber genau die Art Inkonsistenz, die bei
+einer rigorosen Umstellung den Sinn der Übung untergräbt, wenn man sie
+durchgehen lässt. Bei jedem neu geöffneten Schema-Abschnitt lohnt sich
+ein zweiter Blick auf nicht nur "ist der Code korrekt", sondern auch
+"passt der Name zum Rest des umgestellten Moduls".
+
 ## Zweites Modul auf Englisch: Pflichtstunden → Work Hours
 
 Nach dem Kernmodul (Member/Parcel) war Pflichtstunden das nächste Modul

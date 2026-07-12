@@ -205,36 +205,36 @@
         </div>
         {% endif %}
 
-        {% if request.state.module_flags.wasser %}
-        <div class="nav-group" data-group="wasser">
+        {% if request.state.module_flags.water %}
+        <div class="nav-group" data-group="water">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#nav-group-wasser">
+                    data-bs-target="#nav-group-water">
                 <i class="bi bi-droplet"></i>
                 <span>Wasser</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-wasser">
-                <a href="/wasser/" class="{% if request.url.path == '/wasser/' %}aktiv{% endif %}">Übersicht</a>
-                <a href="/wasser/zaehlpunkte" class="{% if '/wasser/zaehlpunkte' in request.url.path %}aktiv{% endif %}">Zählpunkte</a>
-                <a href="/wasser/ablesung" class="{% if '/wasser/ablesung' in request.url.path %}aktiv{% endif %}">Ablesung</a>
-                <a href="/wasser/auswertung" class="{% if '/wasser/auswertung' in request.url.path %}aktiv{% endif %}">Auswertung</a>
+            <div class="collapse nav-group-body" id="nav-group-water">
+                <a href="/water/" class="{% if request.url.path == '/water/' %}aktiv{% endif %}">Übersicht</a>
+                <a href="/water/metering-points" class="{% if '/water/metering-points' in request.url.path %}aktiv{% endif %}">Zählpunkte</a>
+                <a href="/water/readings" class="{% if '/water/readings' in request.url.path %}aktiv{% endif %}">Ablesung</a>
+                <a href="/water/evaluation" class="{% if '/water/evaluation' in request.url.path %}aktiv{% endif %}">Auswertung</a>
             </div>
         </div>
         {% endif %}
 
-        {% if request.state.module_flags.strom %}
-        <div class="nav-group" data-group="strom">
+        {% if request.state.module_flags.electricity %}
+        <div class="nav-group" data-group="electricity">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#nav-group-strom">
+                    data-bs-target="#nav-group-electricity">
                 <i class="bi bi-lightning-charge"></i>
                 <span>Strom</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-strom">
-                <a href="/strom/" class="{% if request.url.path == '/strom/' %}aktiv{% endif %}">Übersicht</a>
-                <a href="/strom/zaehlpunkte" class="{% if '/strom/zaehlpunkte' in request.url.path %}aktiv{% endif %}">Zählpunkte</a>
-                <a href="/strom/ablesung" class="{% if '/strom/ablesung' in request.url.path %}aktiv{% endif %}">Ablesung</a>
-                <a href="/strom/auswertung" class="{% if '/strom/auswertung' in request.url.path %}aktiv{% endif %}">Auswertung</a>
+            <div class="collapse nav-group-body" id="nav-group-electricity">
+                <a href="/electricity/" class="{% if request.url.path == '/electricity/' %}aktiv{% endif %}">Übersicht</a>
+                <a href="/electricity/metering-points" class="{% if '/electricity/metering-points' in request.url.path %}aktiv{% endif %}">Zählpunkte</a>
+                <a href="/electricity/readings" class="{% if '/electricity/readings' in request.url.path %}aktiv{% endif %}">Ablesung</a>
+                <a href="/electricity/evaluation" class="{% if '/electricity/evaluation' in request.url.path %}aktiv{% endif %}">Auswertung</a>
             </div>
         </div>
         {% endif %}
@@ -251,7 +251,7 @@
                 <a href="/versicherungen/" class="{% if request.url.path == '/versicherungen/' %}aktiv{% endif %}">Übersicht</a>
                 <a href="/versicherungen/parzellen" class="{% if '/versicherungen/parzellen' in request.url.path %}aktiv{% endif %}">Parzellen</a>
                 <a href="/versicherungen/konfiguration" class="{% if '/versicherungen/konfiguration' in request.url.path %}aktiv{% endif %}">Konfiguration</a>
-                <a href="/versicherungen/auswertung" class="{% if '/versicherungen/auswertung' in request.url.path %}aktiv{% endif %}">Auswertung</a>
+                <a href="/versicherungen/evaluation" class="{% if '/versicherungen/evaluation' in request.url.path %}aktiv{% endif %}">Auswertung</a>
             </div>
         </div>
         {% endif %}

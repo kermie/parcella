@@ -1,0 +1,117 @@
+"""
+Tests für das Zählerwesen (Wasser & Strom). Schwerpunkt: die
+Monotonie-Prüfung (Zählerstand darf nicht sinken) und die
+Verbrauchsberechnung.
+"""
+from tests.conftest import login, auth_header
+
+
+async def test_metering_point_anlegen_und_ablesung(client, admin_benutzer):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    parcel = (await client.post(
+        "/api/v1/parcels", json={"plot_number": "G200"}, headers=headers
+    )).json()
+
+    metering_point = (await client.post(
+        "/api/v1/water/metering-points",
+        json={
+            "type": "PARCEL", "parcel_id": parcel["id"],
+            "number": "W-12345", "initial_reading": "0.0",
+        },
+        headers=headers,
+    )).json()
+    assert metering_point["current_meter"]["number"] == "W-12345"
+
+    entry = await client.post(
+        f"/api/v1/water/metering-points/{metering_point['id']}/readings",
+        json={"year": 2026, "date": "2026-10-01", "reading": "12.5"},
+        headers=headers,
+    )
+    assert entry.status_code == 201
+
+
+async def test_zaehlerstand_darf_nicht_sinken(client, admin_benutzer):
+    """
+    Kernregel der Plausibilitätsprüfung: ein neuer Zählerstand muss
+    mindestens so hoch sein wie der vorherige derselben Wasseruhr.
+    """
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    metering_point = (await client.post(
+        "/api/v1/water/metering-points",
+        json={"type": "CLUB", "label": "Vereinsheim", "number": "W-99999", "initial_reading": "0.0"},
+        headers=headers,
+    )).json()
+
+    r1 = await client.post(
+        f"/api/v1/water/metering-points/{metering_point['id']}/readings",
+        json={"year": 2025, "date": "2025-10-01", "reading": "50.0"},
+        headers=headers,
+    )
+    assert r1.status_code == 201
+
+    # Ein niedrigerer Stand im Folgejahr muss abgelehnt werden
+    r2 = await client.post(
+        f"/api/v1/water/metering-points/{metering_point['id']}/readings",
+        json={"year": 2026, "date": "2026-10-01", "reading": "30.0"},
+        headers=headers,
+    )
+    assert r2.status_code == 422
+
+    # Ein höherer Stand ist völlig in Ordnung
+    r3 = await client.post(
+        f"/api/v1/water/metering-points/{metering_point['id']}/readings",
+        json={"year": 2026, "date": "2026-10-01", "reading": "75.0"},
+        headers=headers,
+    )
+    assert r3.status_code == 201
+
+
+async def test_verbrauchsberechnung(client, admin_benutzer):
+    """Verbrauch = aktueller Stand minus letzter Stand (oder Anfangsstand)."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    metering_point = (await client.post(
+        "/api/v1/water/metering-points",
+        json={"type": "MAIN_METER", "label": "Hauptzähler", "number": "W-1", "initial_reading": "100.0"},
+        headers=headers,
+    )).json()
+
+    await client.post(
+        f"/api/v1/water/metering-points/{metering_point['id']}/readings",
+        json={"year": 2026, "date": "2026-10-01", "reading": "150.0"},
+        headers=headers,
+    )
+
+    evaluation = (await client.get("/api/v1/water/evaluation/2026", headers=headers)).json()
+    zeile = next(z for z in evaluation if z["metering_point_id"] == metering_point["id"])
+    assert float(zeile["consumption"]) == 50.0  # 150 - Anfangsstand 100
+
+
+async def test_strom_und_wasser_getrennt(client, admin_benutzer):
+    """Wasser- und Strom-MeteringPointe müssen unabhängige, getrennte Listen sein."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    await client.post(
+        "/api/v1/water/metering-points",
+        json={"type": "CLUB", "label": "Nur Wasser", "number": "W-A", "initial_reading": "0"},
+        headers=headers,
+    )
+    await client.post(
+        "/api/v1/electricity/metering-points",
+        json={"type": "CLUB", "label": "Nur Strom", "number": "S-A", "initial_reading": "0"},
+        headers=headers,
+    )
+
+    wasser_liste = (await client.get("/api/v1/water/metering-points", headers=headers)).json()
+    strom_liste = (await client.get("/api/v1/electricity/metering-points", headers=headers)).json()
+
+    assert len(wasser_liste) == 1
+    assert len(strom_liste) == 1
+    assert wasser_liste[0]["label"] == "Nur Wasser"
+    assert strom_liste[0]["label"] == "Nur Strom"

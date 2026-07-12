@@ -240,8 +240,8 @@ class Parcel(Base):
     member_assignments: Mapped[List["MemberParcel"]] = relationship(
         "MemberParcel", back_populates="parcel"
     )
-    zaehlpunkte: Mapped[List["Zaehlpunkt"]] = relationship(
-        "Zaehlpunkt", back_populates="parzelle"
+    metering_points: Mapped[List["MeteringPoint"]] = relationship(
+        "MeteringPoint", back_populates="parcel"
     )
 
     def __repr__(self) -> str:
@@ -591,39 +591,39 @@ class Aenderungshistorie(Base):
 # unterscheiden sich (siehe app/routers/zaehlerwesen.py).
 # ---------------------------------------------------------------------------
 
-class ZaehlerMedium(str, enum.Enum):
-    WASSER = "WASSER"
-    STROM = "STROM"
+class MeteringMedium(str, enum.Enum):
+    WATER = "WATER"
+    ELECTRICITY = "ELECTRICITY"
 
 
-class ZaehlpunktTyp(str, enum.Enum):
-    HAUPTZAEHLER = "HAUPTZAEHLER"  # Übergabepunkt vom öffentlichen Versorger
-    PARZELLE = "PARZELLE"          # Anschluss an einer Parcel
-    VEREIN = "VEREIN"              # Vereinseigene Anschlussstelle (Vereinsheim, Waschplatz etc.)
+class MeteringPointType(str, enum.Enum):
+    MAIN_METER = "MAIN_METER"  # Übergabepunkt vom öffentlichen Versorger
+    PARCEL = "PARCEL"          # Anschluss an einer Parcel
+    CLUB = "CLUB"              # Vereinseigene Anschlussstelle (Vereinsheim, Waschplatz etc.)
 
 
-class Zaehlpunkt(Base):
+class MeteringPoint(Base):
     """
     Ein Zählpunkt für ein Medium (Wasser oder Strom). Entweder an eine
     Parcel gekoppelt, eine vereinseigene Anschlussstelle, oder der
     Hauptzähler der Gesamtversorgung vom öffentlichen Versorger.
 
-    Eine Parcel kann sowohl einen Wasser- als auch einen Strom-Zaehlpunkt
+    Eine Parcel kann sowohl einen Wasser- als auch einen Strom-MeteringPoint
     haben (zwei Zeilen, unterschieden über "medium").
     """
-    __tablename__ = "zaehlpunkte"
+    __tablename__ = "metering_points"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    medium: Mapped[ZaehlerMedium] = mapped_column(SAEnum(ZaehlerMedium), nullable=False)
-    typ: Mapped[ZaehlpunktTyp] = mapped_column(SAEnum(ZaehlpunktTyp), nullable=False)
+    medium: Mapped[MeteringMedium] = mapped_column(SAEnum(MeteringMedium), nullable=False)
+    type: Mapped[MeteringPointType] = mapped_column(SAEnum(MeteringPointType), nullable=False)
 
-    parzelle_id: Mapped[Optional[str]] = mapped_column(
+    parcel_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("parcels.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    # Für HAUPTZAEHLER/VEREIN-Zaehlpunkte (keine Parcel): freier Name.
-    bezeichnung: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # Für MAIN_METER/CLUB-Zählpunkte (keine Parcel): freier Name.
+    label: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    notizen: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -631,49 +631,49 @@ class Zaehlpunkt(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    parzelle: Mapped[Optional["Parcel"]] = relationship("Parcel", back_populates="zaehlpunkte")
-    zaehler: Mapped[List["Zaehler"]] = relationship(
-        "Zaehler", back_populates="zaehlpunkt", cascade="all, delete-orphan"
+    parcel: Mapped[Optional["Parcel"]] = relationship("Parcel", back_populates="metering_points")
+    meters: Mapped[List["Meter"]] = relationship(
+        "Meter", back_populates="metering_point", cascade="all, delete-orphan"
     )
 
     @property
-    def anzeigename(self) -> str:
-        if self.parzelle:
-            return f"Parcel {self.parzelle.plot_number}"
-        return self.bezeichnung or "Unbenannter Zählpunkt"
+    def display_name(self) -> str:
+        if self.parcel:
+            return f"Parcel {self.parcel.plot_number}"
+        return self.label or "Unbenannter Zählpunkt"
 
     @property
-    def aktueller_zaehler(self) -> Optional["Zaehler"]:
-        aktive = [z for z in self.zaehler if z.ist_aktiv]
+    def current_meter(self) -> Optional["Meter"]:
+        aktive = [z for z in self.meters if z.is_active]
         return aktive[0] if aktive else None
 
     def __repr__(self) -> str:
-        return f"<Zaehlpunkt {self.medium.value}:{self.anzeigename}>"
+        return f"<MeteringPoint {self.medium.value}:{self.display_name}>"
 
 
-class Zaehler(Base):
+class Meter(Base):
     """
-    Der physische Zähler (Wasseruhr oder Stromzähler) an einem Zaehlpunkt.
-    Beim Tausch wird der alte Zähler deaktiviert (ausgebaut_am gesetzt)
+    Der physische Zähler (Wasseruhr oder Stromzähler) an einem MeteringPoint.
+    Beim Tausch wird der alte Zähler deaktiviert (removed_at gesetzt)
     und ein neuer mit neuer Nummer angelegt – die Historie bleibt
     vollständig erhalten.
     """
-    __tablename__ = "zaehler"
+    __tablename__ = "meters"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    zaehlpunkt_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("zaehlpunkte.id", ondelete="CASCADE"), nullable=False, index=True
+    metering_point_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("metering_points.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    nummer: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
-    ist_aktiv: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    geeicht_bis: Mapped[Optional[int]] = mapped_column(
+    number: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    calibrated_until: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True,
         comment="Jahr, bis zu dem die Eichung gültig ist (Wasser i.d.R. +6, Strom i.d.R. +8 Jahre)"
     )
-    eingebaut_am: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    ausgebaut_am: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = noch verbaut")
-    anfangsstand: Mapped[float] = mapped_column(Numeric(12, 1), default=0, nullable=False)
-    notizen: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    installed_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    removed_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = noch verbaut")
+    initial_reading: Mapped[float] = mapped_column(Numeric(12, 1), default=0, nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -681,46 +681,42 @@ class Zaehler(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    zaehlpunkt: Mapped["Zaehlpunkt"] = relationship("Zaehlpunkt", back_populates="zaehler")
-    zaehlerstaende: Mapped[List["Zaehlerstand"]] = relationship(
-        "Zaehlerstand", back_populates="zaehler", cascade="all, delete-orphan"
+    metering_point: Mapped["MeteringPoint"] = relationship("MeteringPoint", back_populates="meters")
+    readings: Mapped[List["MeterReading"]] = relationship(
+        "MeterReading", back_populates="meter", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
-        return f"<Zaehler {self.nummer}>"
+        return f"<Meter {self.number}>"
 
 
-class Zaehlerstand(Base):
+class MeterReading(Base):
     """
     Eine jährliche Ablesung eines Zählers (Wasser oder Strom).
     """
-    __tablename__ = "zaehlerstaende"
+    __tablename__ = "meter_readings"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    zaehler_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("zaehler.id", ondelete="CASCADE"), nullable=False, index=True
+    meter_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("meters.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    jahr: Mapped[int] = mapped_column(Integer, nullable=False)
-    datum: Mapped[date] = mapped_column(Date, nullable=False)
-    stand: Mapped[float] = mapped_column(Numeric(12, 1), nullable=False)
-    erfasst_von_id: Mapped[Optional[str]] = mapped_column(
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    reading: Mapped[float] = mapped_column(Numeric(12, 1), nullable=False)
+    recorded_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
     )
-    notiz: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    zaehler: Mapped["Zaehler"] = relationship("Zaehler", back_populates="zaehlerstaende")
-    erfasst_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
+    meter: Mapped["Meter"] = relationship("Meter", back_populates="readings")
+    recorded_by: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
 
     __table_args__ = (
-        UniqueConstraint("zaehler_id", "jahr", name="uq_zaehler_jahr"),
+        UniqueConstraint("meter_id", "year", name="uq_meter_year"),
     )
-
-    def __repr__(self) -> str:
-        return f"<Zaehlerstand {self.jahr}: {self.stand}>"
-
 
 # ---------------------------------------------------------------------------
 # Versicherungsmodul: Sach- und Unfallversicherung pro Parcel

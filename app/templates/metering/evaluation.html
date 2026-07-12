@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}{{ medium_label }}-Auswertung {{ jahr }}{% endblock %}
-{% block page_title %}{{ medium_label }}-Auswertung {{ jahr }}{% endblock %}
+{% block title %}{{ medium_label }}-Auswertung {{ year }}{% endblock %}
+{% block page_title %}{{ medium_label }}-Auswertung {{ year }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
-        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
             {% for j in verfuegbare_jahre %}
-            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+            <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
     </form>
-    <a href="{{ url_prefix }}/auswertung/csv?jahr={{ jahr }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ url_prefix }}/evaluation/csv?year={{ year }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-download me-1"></i>CSV Export
     </a>
     <a href="{{ url_prefix }}/" class="btn btn-sm btn-outline-secondary">
@@ -33,19 +33,19 @@
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Hauptzähler</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ summe_haupt | fmt(dezimalstellen) }} {{ einheit }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ summe_haupt | fmt(dezimalstellen) }} {{ unit }}</div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Parzellen gesamt</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-braun);">{{ summe_parzellen | fmt(dezimalstellen) }} {{ einheit }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-braun);">{{ summe_parzellen | fmt(dezimalstellen) }} {{ unit }}</div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Verein gesamt</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: #1e40af;">{{ summe_verein | fmt(dezimalstellen) }} {{ einheit }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: #1e40af;">{{ summe_verein | fmt(dezimalstellen) }} {{ unit }}</div>
         </div>
     </div>
 </div>
@@ -59,17 +59,17 @@
                 <tr>
                     <th>Zählpunkt</th>
                     <th>Zähler-Nr.</th>
-                    <th>Verbrauch ({{ einheit }})</th>
+                    <th>Verbrauch ({{ unit }})</th>
                 </tr>
             </thead>
             <tbody>
                 {% for z in zeilen %}
                 <tr>
                     <td>
-                        <a href="{{ url_prefix }}/zaehlpunkte/{{ z.zaehlpunkt.id }}" class="text-decoration-none"
-                           style="color: var(--gv-gruen);">{{ z.zaehlpunkt.anzeigename }}</a>
+                        <a href="{{ url_prefix }}/metering-points/{{ z.metering_point.id }}" class="text-decoration-none"
+                           style="color: var(--gv-gruen);">{{ z.metering_point.display_name }}</a>
                     </td>
-                    <td>{% if z.zaehler %}<code>{{ z.zaehler.nummer }}</code>{% else %}–{% endif %}</td>
+                    <td>{% if z.zaehler %}<code>{{ z.zaehler.number }}</code>{% else %}–{% endif %}</td>
                     <td>
                         {% if z.verbrauch is not none %}
                         {{ z.verbrauch | fmt(dezimalstellen) }}

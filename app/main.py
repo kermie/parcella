@@ -21,11 +21,11 @@ from app.auth import hash_passwort, get_current_user
 from app.module_flags import lade_modul_flags
 from app.ticket_mailer import verarbeite_eingehende_mails
 from app.routers import auth, members, parcels, admin as admin_router, work_hours, versicherungen, tickets, einkaufswuensche
-from app.routers.zaehlerwesen import erstelle_zaehler_router
-from app.models import ZaehlerMedium
+from app.routers.metering import erstelle_metering_router
+from app.models import MeteringMedium
 from app.routers import api_auth, api_members, api_parcels, api_einstellungen, api_stats
 from app.routers import api_work_hours, api_versicherungen, api_tickets, api_einkaufswuensche
-from app.routers.api_zaehlerwesen import erstelle_zaehler_api_router
+from app.routers.api_metering import erstelle_metering_api_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -118,18 +118,18 @@ app.include_router(versicherungen.router)
 app.include_router(tickets.router)
 app.include_router(einkaufswuensche.router)
 
-# Zählerwesen: EINE Codebasis (app/routers/zaehlerwesen.py), zweimal
-# instanziiert für Wasser und Strom – siehe erstelle_zaehler_router().
-wasser_router = erstelle_zaehler_router(
-    medium=ZaehlerMedium.WASSER, url_prefix="/wasser", modul_name="wasser",
-    medium_label="Wasser", einheit="m³", icon="bi-droplet", dezimalstellen=1,
+# Zählerwesen: EINE Codebasis (app/routers/metering.py), zweimal
+# instanziiert für Wasser und Strom – siehe erstelle_metering_router().
+water_router = erstelle_metering_router(
+    medium=MeteringMedium.WATER, url_prefix="/water", modul_name="water",
+    medium_label="Wasser", unit="m³", icon="bi-droplet", dezimalstellen=1,
 )
-strom_router = erstelle_zaehler_router(
-    medium=ZaehlerMedium.STROM, url_prefix="/strom", modul_name="strom",
-    medium_label="Strom", einheit="kWh", icon="bi-lightning-charge", dezimalstellen=0,
+electricity_router = erstelle_metering_router(
+    medium=MeteringMedium.ELECTRICITY, url_prefix="/electricity", modul_name="electricity",
+    medium_label="Strom", unit="kWh", icon="bi-lightning-charge", dezimalstellen=0,
 )
-app.include_router(wasser_router)
-app.include_router(strom_router)
+app.include_router(water_router)
+app.include_router(electricity_router)
 
 # Router registrieren – REST-API (JSON, JWT-Auth)
 app.include_router(api_auth.router)
@@ -142,10 +142,10 @@ app.include_router(api_versicherungen.router)
 app.include_router(api_tickets.router)
 app.include_router(api_einkaufswuensche.router)
 
-api_wasser_router = erstelle_zaehler_api_router(ZaehlerMedium.WASSER, "/wasser", "wasser")
-api_strom_router = erstelle_zaehler_api_router(ZaehlerMedium.STROM, "/strom", "strom")
-app.include_router(api_wasser_router)
-app.include_router(api_strom_router)
+api_water_router = erstelle_metering_api_router(MeteringMedium.WATER, "/water", "water")
+api_electricity_router = erstelle_metering_api_router(MeteringMedium.ELECTRICITY, "/electricity", "electricity")
+app.include_router(api_water_router)
+app.include_router(api_electricity_router)
 
 templates = Jinja2Templates(directory="app/templates")
 

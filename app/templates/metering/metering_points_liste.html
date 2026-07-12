@@ -7,7 +7,7 @@
     <a href="{{ url_prefix }}/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Zurück
     </a>
-    <a href="{{ url_prefix }}/zaehlpunkte/neu" class="btn btn-sm btn-primary">
+    <a href="{{ url_prefix }}/metering-points/new" class="btn btn-sm btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Neuer Zählpunkt
     </a>
 </div>
@@ -28,45 +28,45 @@
                 </tr>
             </thead>
             <tbody>
-                {% for a in zaehlpunkte %}
+                {% for a in metering_points %}
                 <tr>
                     <td>
-                        {% if a.typ.value == 'HAUPTZAEHLER' %}
+                        {% if a.type.value == 'MAIN_METER' %}
                         <span class="badge" style="background: #dbeafe; color: #1e40af;">Hauptzähler</span>
-                        {% elif a.typ.value == 'PARZELLE' %}
+                        {% elif a.type.value == 'PARCEL' %}
                         <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Parzelle</span>
                         {% else %}
                         <span class="badge" style="background: #f5ede8; color: var(--gv-braun);">Verein</span>
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_prefix }}/zaehlpunkte/{{ a.id }}" class="text-decoration-none fw-semibold"
-                           style="color: var(--gv-gruen);">{{ a.anzeigename }}</a>
+                        <a href="{{ url_prefix }}/metering-points/{{ a.id }}" class="text-decoration-none fw-semibold"
+                           style="color: var(--gv-gruen);">{{ a.display_name }}</a>
                     </td>
                     <td>
-                        {% if a.aktueller_zaehler %}
-                        <code>{{ a.aktueller_zaehler.nummer }}</code>
+                        {% if a.current_meter %}
+                        <code>{{ a.current_meter.number }}</code>
                         {% else %}
                         <span class="text-muted">kein aktiver Zähler</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if a.aktueller_zaehler %}
+                        {% if a.current_meter %}
                         <span class="badge badge-aktiv">aktiv</span>
                         {% else %}
                         <span class="badge" style="background: #fee2e2; color: #991b1b;">ohne Zähler</span>
                         {% endif %}
                     </td>
                     <td class="text-muted">
-                        {% if a.aktueller_zaehler and a.aktueller_zaehler.geeicht_bis %}
-                            {{ a.aktueller_zaehler.geeicht_bis }}
-                            {% if a.aktueller_zaehler.geeicht_bis <= jahr %}
+                        {% if a.current_meter and a.current_meter.calibrated_until %}
+                            {{ a.current_meter.calibrated_until }}
+                            {% if a.current_meter.calibrated_until <= year %}
                             <i class="bi bi-exclamation-triangle-fill text-warning ms-1" title="Eichung abgelaufen"></i>
                             {% endif %}
                         {% else %}–{% endif %}
                     </td>
                     <td class="text-end">
-                        <a href="{{ url_prefix }}/zaehlpunkte/{{ a.id }}" class="btn btn-sm btn-outline-secondary">
+                        <a href="{{ url_prefix }}/metering-points/{{ a.id }}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-eye"></i>
                         </a>
                     </td>
@@ -76,16 +76,16 @@
                     <td colspan="6" class="text-center py-5 text-muted">
                         <i class="bi {{ icon }} d-block mb-2" style="font-size: 1.5rem;"></i>
                         Noch keine {{ medium_label }}-Zählpunkte angelegt.<br>
-                        <a href="{{ url_prefix }}/zaehlpunkte/neu" class="btn btn-sm btn-primary mt-2">Ersten Zählpunkt anlegen</a>
+                        <a href="{{ url_prefix }}/metering-points/new" class="btn btn-sm btn-primary mt-2">Ersten Zählpunkt anlegen</a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    {% if zaehlpunkte %}
+    {% if metering_points %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">
-        {{ zaehlpunkte | length }} Zählpunkt(e)
+        {{ metering_points | length }} Zählpunkt(e)
     </div>
     {% endif %}
 </div>

@@ -1,10 +1,19 @@
-# Modul: Zählerwesen (Wasser & Strom)
+# Modul: Zählerwesen (Metering: Wasser & Strom)
+
+> **Hinweis zur Umbenennung:** Der Code (Modelle, Tabellen, URLs,
+> API-Endpunkte) wurde vollständig auf Englisch umgestellt:
+> `Zaehlpunkt` → `MeteringPoint`, `Zaehler` → `Meter`,
+> `Zaehlerstand` → `MeterReading`, `/wasser/`→`/water/`,
+> `/strom/`→`/electricity/`. Details und Lehren dazu in
+> [Architektur-Entscheidungen](./architektur-entscheidungen.md).
+> Diese Seite beschreibt weiterhin die fachliche Logik, die sich dabei
+> nicht geändert hat.
 
 Verwaltet Wasser- und Stromzähler über **eine gemeinsame Codebasis** –
 das prägnanteste Beispiel im Projekt dafür, wie strukturell ähnliche
 Anforderungen generalisiert statt dupliziert werden.
 
-Modul-Flags: `wasser` und `strom` (unabhängig voneinander abschaltbar)
+Modul-Flags: `water` und `electricity` (unabhängig voneinander abschaltbar)
 
 ## Datenmodell
 
