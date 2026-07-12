@@ -1,18 +1,30 @@
-# Modul: Versicherungen
+# Modul: Versicherungen (Insurance)
+
+> **Hinweis zur Umbenennung:** Der Code (Modelle, Tabellen, URLs,
+> API-Endpunkte) wurde vollständig auf Englisch umgestellt:
+> `SachversicherungPaket` → `PropertyInsurancePackage`,
+> `VersicherungsKonfiguration` → `InsuranceConfiguration`,
+> `ParzelleVersicherung` → `ParcelInsurance`,
+> `UnfallversicherungZusatzperson` → `AccidentInsuranceAdditionalPerson`,
+> `/versicherungen/` → `/insurance/`. Details und Lehren dazu in
+> [Architektur-Entscheidungen](./architektur-entscheidungen.md).
+> Diese Seite beschreibt weiterhin die fachliche Logik, die sich dabei
+> nicht geändert hat.
 
 Verwaltet zwei optionale, pro Parzelle abzuschließende Versicherungen:
-Sachversicherung (wählbares Paket) und Unfallversicherung (mit
-automatischer Haushalts-Erkennung).
+Sachversicherung/property insurance (wählbares Paket) und
+Unfallversicherung/accident insurance (mit automatischer
+Haushalts-Erkennung).
 
-Modul-Flag: `versicherungen`
+Modul-Flag: `insurance`
 
 ## Datenmodell
 
 ```
-sachversicherung_pakete         – Konfigurierbare Pakete pro Jahr (z.B. 40/60/80/100 €)
-versicherungs_konfiguration     – Jahresbasis: Unfall-Grund- und Zusatzbetrag
-parzelle_versicherung           – Versicherungsstatus einer Parzelle für ein Jahr
-unfallversicherung_zusatzpersonen – Wer zusätzlich zum Haushalt mitversichert ist
+property_insurance_packages         – Konfigurierbare Pakete pro Jahr (z.B. 40/60/80/100 €)
+insurance_configuration              – Jahresbasis: Unfall-Grund- und Zusatzbetrag
+parcel_insurance                     – Versicherungsstatus einer Parzelle für ein Jahr
+accident_insurance_additional_persons – Wer zusätzlich zum Haushalt mitversichert ist
 ```
 
 ## Wichtige Entscheidung: Haushalts-Erkennung per Adressvergleich
@@ -27,18 +39,18 @@ Person (Checkbox), ob sie gegen den Zusatzbetrag mitversichert werden
 sollen. Das war eine explizite Anforderung: "können mitversichert werden"
 bedeutet Opt-in, kein Automatismus.
 
-Die Erkennung passiert in `haushalts_gruppierung()`
-(`app/versicherung_utils.py`) und ist bewusst **nur eine Anzeige-Hilfe**,
+Die Erkennung passiert in `household_grouping()`
+(`app/insurance_utils.py`) und ist bewusst **nur eine Anzeige-Hilfe**,
 keine harte Regel in der Datenbank – die tatsächliche Abrechnung basiert
-auf der expliziten Auswahl in `unfallversicherung_zusatzpersonen`, nicht
-auf einer Live-Berechnung der Adressen. Das bedeutet: ändert sich später
-die Adresse eines Mitglieds, ändert sich nicht rückwirkend die Abrechnung
-vergangener Jahre.
+auf der expliziten Auswahl in `accident_insurance_additional_persons`,
+nicht auf einer Live-Berechnung der Adressen. Das bedeutet: ändert sich
+später die Adresse eines Mitglieds, ändert sich nicht rückwirkend die
+Abrechnung vergangener Jahre.
 
 ## Konfigurierbare Pakete statt fester Werte
 
 Die Sachversicherungs-Pakete (aktuell 40/60/80/100 €) sind eine
-eigenständige Tabelle (`sachversicherung_pakete`), jahresbasiert, mit
+eigenständige Tabelle (`property_insurance_packages`), jahresbasiert, mit
 frei editierbarer Anzahl und Beträgen – kein hartkodiertes Vier-Pakete-Modell.
 Das folgt demselben Prinzip wie die Pflichtstunden-Konfiguration: Werte,
 die sich jährlich ändern können, gehören in eine Tabelle, nicht in Code.
@@ -46,10 +58,10 @@ die sich jährlich ändern können, gehören in eine Tabelle, nicht in Code.
 ## Bekannte Fallstricke
 
 - Gleicher `MissingGreenlet`-Fallstrick wie im Zählerwesen-Modul: beim
-  erstmaligen Anlegen einer `ParzelleVersicherung` (wenn eine Parzelle zum
+  erstmaligen Anlegen einer `ParcelInsurance` (wenn eine Parzelle zum
   ersten Mal für ein Jahr geöffnet wird) müssen die Beziehungen nach dem
-  Commit explizit neu geladen werden, bevor auf `sach_paket` oder
-  `zusatzpersonen` zugegriffen wird. Siehe `_get_or_create_pv()`.
+  Commit explizit neu geladen werden, bevor auf `property_package` oder
+  `additional_persons` zugegriffen wird. Siehe `_get_or_create_pi()`.
 
 ## REST-API
 

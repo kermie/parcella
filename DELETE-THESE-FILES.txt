@@ -1,0 +1,25 @@
+Nach dem Entpacken/Überschreiben dieses ZIPs in dein Projekt-Root
+müssen folgende ALTE Dateien manuell gelöscht werden (git kann Löschungen
+nicht per Kopieren abbilden):
+
+  app/routers/versicherungen.py
+  app/routers/api_versicherungen.py
+  app/versicherung_utils.py
+  app/templates/versicherungen/konfiguration.html
+  app/templates/versicherungen/detail.html
+  app/templates/versicherungen/auswertung.html
+  app/templates/versicherungen/uebersicht.html
+  app/templates/versicherungen/parzellen_liste.html
+  app/templates/versicherungen/          (der ganze Ordner, danach leer)
+  tests/test_versicherungen.py
+
+Kurzbefehl (im Projekt-Root ausführen):
+
+  rm -f app/routers/versicherungen.py app/routers/api_versicherungen.py \
+        app/versicherung_utils.py tests/test_versicherungen.py
+  rm -rf app/templates/versicherungen
+
+Danach:
+  git add -A
+  git commit -m "refactor!: rename insurance module to English (Versicherungen -> Insurance)"
+  git push

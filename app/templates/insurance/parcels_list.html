@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Versicherungen – Parzellen{% endblock %}
-{% block page_title %}Versicherungen – Parzellen {{ jahr }}{% endblock %}
+{% block page_title %}Versicherungen – Parzellen {{ year }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/versicherungen/" class="btn btn-sm btn-outline-secondary">
+<a href="/insurance/" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
 {% endblock %}
@@ -22,28 +22,28 @@
                 </tr>
             </thead>
             <tbody>
-                {% for z in zeilen %}
+                {% for r in rows %}
                 <tr>
-                    <td class="fw-semibold">{{ z.parzelle.plot_number }}</td>
+                    <td class="fw-semibold">{{ r.parcel.plot_number }}</td>
                     <td>
-                        {% if z.pv and z.pv.hat_sachversicherung %}
-                        <span class="badge badge-aktiv">{{ z.pv.sach_paket.bezeichnung if z.pv.sach_paket else 'Ja' }}</span>
+                        {% if r.pi and r.pi.has_property_insurance %}
+                        <span class="badge badge-aktiv">{{ r.pi.property_package.name if r.pi.property_package else 'Ja' }}</span>
                         {% else %}
                         <span class="text-muted">–</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if z.pv and z.pv.hat_unfallversicherung %}
+                        {% if r.pi and r.pi.has_accident_insurance %}
                         <span class="badge badge-aktiv">
-                            Ja{% if z.pv.zusatzpersonen %} (+{{ z.pv.zusatzpersonen | length }}){% endif %}
+                            Ja{% if r.pi.additional_persons %} (+{{ r.pi.additional_persons | length }}){% endif %}
                         </span>
                         {% else %}
                         <span class="text-muted">–</span>
                         {% endif %}
                     </td>
-                    <td class="fw-semibold">{{ "%.2f"|format(z.kosten.gesamt) }} €</td>
+                    <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
                     <td class="text-end">
-                        <a href="/versicherungen/parzellen/{{ z.parzelle.id }}?jahr={{ jahr }}"
+                        <a href="/insurance/parcels/{{ r.parcel.id }}?year={{ year }}"
                            class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-pencil"></i>
                         </a>
@@ -57,9 +57,9 @@
             </tbody>
         </table>
     </div>
-    {% if zeilen %}
+    {% if rows %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">
-        {{ zeilen | length }} Parzelle(n)
+        {{ rows | length }} Parzelle(n)
     </div>
     {% endif %}
 </div>

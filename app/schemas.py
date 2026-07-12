@@ -457,59 +457,59 @@ class ConsumptionRowOut(BaseModel):
 # Versicherungen
 # ---------------------------------------------------------------------------
 
-class SachversicherungPaketBase(BaseModel):
-    jahr: int
-    bezeichnung: str
-    betrag_eur: Decimal
-    reihenfolge: int = 0
+class PropertyInsurancePackageBase(BaseModel):
+    year: int
+    name: str
+    amount_eur: Decimal
+    sort_order: int = 0
 
 
-class SachversicherungPaketCreate(SachversicherungPaketBase):
+class PropertyInsurancePackageCreate(PropertyInsurancePackageBase):
     pass
 
 
-class SachversicherungPaketOut(SachversicherungPaketBase):
+class PropertyInsurancePackageOut(PropertyInsurancePackageBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
 
 
-class VersicherungsKonfigurationBase(BaseModel):
-    jahr: int
-    unfall_grundbetrag_eur: Decimal
-    unfall_zusatzbetrag_eur: Decimal
+class InsuranceConfigurationBase(BaseModel):
+    year: int
+    accident_base_amount_eur: Decimal
+    accident_additional_amount_eur: Decimal
 
 
-class VersicherungsKonfigurationCreate(VersicherungsKonfigurationBase):
+class InsuranceConfigurationCreate(InsuranceConfigurationBase):
     pass
 
 
-class VersicherungsKonfigurationOut(VersicherungsKonfigurationBase):
+class InsuranceConfigurationOut(InsuranceConfigurationBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
 
 
-class ParzelleVersicherungUpdate(BaseModel):
-    hat_sachversicherung: bool = False
-    sach_paket_id: Optional[str] = None
-    hat_unfallversicherung: bool = False
-    zusatzpersonen_mitglied_ids: List[str] = []
+class ParcelInsuranceUpdate(BaseModel):
+    has_property_insurance: bool = False
+    property_package_id: Optional[str] = None
+    has_accident_insurance: bool = False
+    additional_person_member_ids: List[str] = []
 
 
-class ParzelleVersicherungOut(BaseModel):
+class ParcelInsuranceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    parzelle_id: str
-    jahr: int
-    hat_sachversicherung: bool
-    sach_paket_id: Optional[str] = None
-    hat_unfallversicherung: bool
+    parcel_id: str
+    year: int
+    has_property_insurance: bool
+    property_package_id: Optional[str] = None
+    has_accident_insurance: bool
 
 
-class ParzelleVersicherungKostenOut(ParzelleVersicherungOut):
-    zusatzpersonen_mitglied_ids: List[str] = []
-    sach_kosten_eur: Decimal
-    unfall_kosten_eur: Decimal
-    gesamt_kosten_eur: Decimal
+class ParcelInsuranceCostOut(ParcelInsuranceOut):
+    additional_person_member_ids: List[str] = []
+    property_cost_eur: Decimal
+    accident_cost_eur: Decimal
+    total_cost_eur: Decimal
 
 
 # ---------------------------------------------------------------------------

@@ -116,6 +116,44 @@ und `Zaehlpunkt`-Beziehungen.
 gebraucht werden, die Zeile explizit mit `selectinload(...)` neu laden,
 statt das ursprüngliche (frisch erzeugte) Objekt weiterzuverwenden.
 
+## Viertes Modul auf Englisch: Versicherungen → Insurance
+
+Erste Runde, in der zwei unterschiedliche deutsche Fachbegriffe
+("Sachversicherung", "Unfallversicherung") in EINEM Modul auf Englisch
+übersetzt werden mussten, statt eines einzelnen Begriffs wie bei den
+vorherigen Modulen. Übersetzung ("Sachversicherung" → "property
+insurance", nicht "contents insurance") wurde vorab mit dem Nutzer
+geklärt, statt sie anzunehmen – Versicherungsbegriffe sind
+kontextabhängig und eine falsche Wahl hätte sich durch das gesamte
+Modul gezogen (Klassennamen, Tabellen, Spalten, Template-Variablen).
+
+**Bereits beim Kernmodul-Umbau bewusst zurückgestellte FK-Spalten
+(`parzelle_id`, `mitglied_id`) mussten hier nachgezogen werden.** Die
+Migration 0014 (Kernmodul) hatte extra dokumentiert, dass Fremdschlüssel-
+Spalten in noch nicht umgestellten Modulen ihre alten Namen behalten,
+bis das jeweilige Modul selbst dran ist. Dieses Modul war der erste Fall,
+in dem sowohl `parzelle_id` (→ `parcel_id`) als auch `mitglied_id`
+(→ `member_id`) gleichzeitig nachgezogen werden mussten, inklusive
+Neuanlage der Unique-Constraints mit neuen Namen.
+
+**Bestehenden Navigations-Bug entdeckt und nebenbei behoben.** Der
+Navigationslink in `base.html` zeigte bereits vor diesem Umbau auf
+`/versicherungen/evaluation`, während der damalige (deutsche) Router nur
+`/versicherungen/auswertung` kannte – ein Link, der nie funktioniert
+hätte. Kam erst durch den systematischen Abgleich "Router-Endpunkte gegen
+Template-Links" ans Licht. Lehre: Ein umfassender Rename ist auch eine
+gute Gelegenheit, bestehende (unabhängige) Inkonsistenzen zu finden, die
+sonst erst bei tatsächlicher Nutzung aufgefallen wären.
+
+**Diesmal Template-Kontextvariablen von Anfang an konsequent mitübersetzt**
+(anders als beim Zählerwesen-Modul, wo z.B. `summe_haupt`/`aktuelles_jahr`
+bewusst/unbewusst Deutsch blieben, siehe Eintrag weiter unten). Technische
+Bezeichner (Variablennamen, Router-Kontext-Keys, Formularfeldnamen) wurden
+komplett auf Englisch umgestellt; sichtbare Oberflächentexte (Labels,
+Fehlermeldungen für Vereinsmitglieder) blieben bewusst Deutsch – das
+Zielpublikum der Software sind deutschsprachige Vereinsmitglieder, nur der
+Code richtet sich an eine internationale Open-Source-Leserschaft.
+
 ## Drittes Modul auf Englisch: Zählerwesen → Metering
 
 Strukturell anders als die vorherigen Module: eine Router-Fabrik erzeugt

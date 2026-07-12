@@ -722,43 +722,44 @@ class MeterReading(Base):
 # Versicherungsmodul: Sach- und Unfallversicherung pro Parcel
 # ---------------------------------------------------------------------------
 
-class SachversicherungPaket(Base):
+class PropertyInsurancePackage(Base):
     """
-    Ein wählbares Sachversicherungs-Paket für ein bestimmtes Jahr
-    (z.B. "Paket 1" = 40 €, "Paket 2" = 60 € usw.). Anzahl und Beträge
-    der Pakete sind frei konfigurierbar und können sich jährlich ändern.
+    Ein wählbares Sachversicherungs-Paket (property insurance) für ein
+    bestimmtes Jahr (z.B. "Paket 1" = 40 €, "Paket 2" = 60 € usw.). Anzahl
+    und Beträge der Pakete sind frei konfigurierbar und können sich
+    jährlich ändern.
     """
-    __tablename__ = "sachversicherung_pakete"
+    __tablename__ = "property_insurance_packages"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    jahr: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    bezeichnung: Mapped[str] = mapped_column(String(100), nullable=False)
-    betrag_eur: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
-    reihenfolge: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    amount_eur: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     def __repr__(self) -> str:
-        return f"<SachversicherungPaket {self.jahr} {self.bezeichnung}: {self.betrag_eur}€>"
+        return f"<PropertyInsurancePackage {self.year} {self.name}: {self.amount_eur}€>"
 
 
-class VersicherungsKonfiguration(Base):
+class InsuranceConfiguration(Base):
     """
-    Jährliche Konfiguration der Unfallversicherungs-Beträge. Sachversicherung
-    wird separat über SachversicherungPaket konfiguriert (mehrere Pakete
-    pro Jahr), Unfallversicherung hat pro Jahr genau einen Grund- und
-    Zusatzbetrag.
+    Jährliche Konfiguration der Unfallversicherungs-Beträge (accident
+    insurance). Sachversicherung (property insurance) wird separat über
+    PropertyInsurancePackage konfiguriert (mehrere Pakete pro Jahr),
+    Unfallversicherung hat pro Jahr genau einen Grund- und Zusatzbetrag.
     """
-    __tablename__ = "versicherungs_konfiguration"
+    __tablename__ = "insurance_configuration"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    jahr: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
-    unfall_grundbetrag_eur: Mapped[float] = mapped_column(
+    year: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
+    accident_base_amount_eur: Mapped[float] = mapped_column(
         Numeric(8, 2), nullable=False,
         comment="Deckt alle Mitglieder im selben Haushalt (gleiche Adresse) ab"
     )
-    unfall_zusatzbetrag_eur: Mapped[float] = mapped_column(
+    accident_additional_amount_eur: Mapped[float] = mapped_column(
         Numeric(8, 2), nullable=False,
         comment="Pro zusätzlich mitversicherter Person außerhalb des Haushalts"
     )
@@ -770,29 +771,30 @@ class VersicherungsKonfiguration(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<VersicherungsKonfiguration {self.jahr}>"
+        return f"<InsuranceConfiguration {self.year}>"
 
 
-class ParzelleVersicherung(Base):
+class ParcelInsurance(Base):
     """
     Versicherungsstatus einer Parcel für ein bestimmtes Jahr:
-    Sachversicherung (optional, mit gewähltem Paket) und Unfallversicherung
-    (optional, Grundbetrag deckt den Haushalt des Hauptpächters ab).
+    Sachversicherung/property insurance (optional, mit gewähltem Paket)
+    und Unfallversicherung/accident insurance (optional, Grundbetrag
+    deckt den Haushalt des Hauptpächters ab).
     """
-    __tablename__ = "parzelle_versicherung"
+    __tablename__ = "parcel_insurance"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    parzelle_id: Mapped[str] = mapped_column(
+    parcel_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    jahr: Mapped[int] = mapped_column(Integer, nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    hat_sachversicherung: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    sach_paket_id: Mapped[Optional[str]] = mapped_column(
-        String(36), ForeignKey("sachversicherung_pakete.id", ondelete="SET NULL"), nullable=True
+    has_property_insurance: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    property_package_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("property_insurance_packages.id", ondelete="SET NULL"), nullable=True
     )
 
-    hat_unfallversicherung: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    has_accident_insurance: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -801,46 +803,47 @@ class ParzelleVersicherung(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    parzelle: Mapped["Parcel"] = relationship("Parcel")
-    sach_paket: Mapped[Optional["SachversicherungPaket"]] = relationship("SachversicherungPaket")
-    zusatzpersonen: Mapped[List["UnfallversicherungZusatzperson"]] = relationship(
-        "UnfallversicherungZusatzperson", back_populates="parzelle_versicherung", cascade="all, delete-orphan"
+    parcel: Mapped["Parcel"] = relationship("Parcel")
+    property_package: Mapped[Optional["PropertyInsurancePackage"]] = relationship("PropertyInsurancePackage")
+    additional_persons: Mapped[List["AccidentInsuranceAdditionalPerson"]] = relationship(
+        "AccidentInsuranceAdditionalPerson", back_populates="parcel_insurance", cascade="all, delete-orphan"
     )
 
     __table_args__ = (
-        UniqueConstraint("parzelle_id", "jahr", name="uq_parzelle_versicherung_jahr"),
+        UniqueConstraint("parcel_id", "year", name="uq_parcel_insurance_year"),
     )
 
     def __repr__(self) -> str:
-        return f"<ParzelleVersicherung {self.parzelle_id} {self.jahr}>"
+        return f"<ParcelInsurance {self.parcel_id} {self.year}>"
 
 
-class UnfallversicherungZusatzperson(Base):
+class AccidentInsuranceAdditionalPerson(Base):
     """
     Ein Member, das zusätzlich zum Haushalt des Hauptpächters gegen
-    Aufpreis in die Unfallversicherung der Parcel aufgenommen wurde
-    (z.B. ein Mitpächter, der nicht am selben Wohnort lebt).
+    Aufpreis in die Unfallversicherung (accident insurance) der Parcel
+    aufgenommen wurde (z.B. ein Mitpächter, der nicht am selben Wohnort
+    lebt).
     """
-    __tablename__ = "unfallversicherung_zusatzpersonen"
+    __tablename__ = "accident_insurance_additional_persons"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    parzelle_versicherung_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("parzelle_versicherung.id", ondelete="CASCADE"), nullable=False, index=True
+    parcel_insurance_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("parcel_insurance.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    mitglied_id: Mapped[str] = mapped_column(
+    member_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    parzelle_versicherung: Mapped["ParzelleVersicherung"] = relationship(
-        "ParzelleVersicherung", back_populates="zusatzpersonen"
+    parcel_insurance: Mapped["ParcelInsurance"] = relationship(
+        "ParcelInsurance", back_populates="additional_persons"
     )
-    mitglied: Mapped["Member"] = relationship("Member")
+    member: Mapped["Member"] = relationship("Member")
 
     __table_args__ = (
-        UniqueConstraint("parzelle_versicherung_id", "mitglied_id", name="uq_versicherung_mitglied"),
+        UniqueConstraint("parcel_insurance_id", "member_id", name="uq_insurance_member"),
     )
 
 

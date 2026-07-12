@@ -1,25 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Versicherung {{ parzelle.plot_number }}{% endblock %}
-{% block page_title %}Versicherung Parzelle {{ parzelle.plot_number }}{% endblock %}
+{% block title %}Versicherung {{ parcel.plot_number }}{% endblock %}
+{% block page_title %}Versicherung Parzelle {{ parcel.plot_number }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/versicherungen/parzellen?jahr={{ jahr }}" class="btn btn-sm btn-outline-secondary">
+<a href="/insurance/parcels?year={{ year }}" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
 {% endblock %}
 
 {% block content %}
 
-{% if not konfiguration %}
+{% if not configuration %}
 <div class="alert alert-warning d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    Keine Versicherungs-Konfiguration für {{ jahr }} vorhanden.
-    <a href="/versicherungen/konfiguration?jahr={{ jahr }}" class="alert-link ms-1">Jetzt anlegen →</a>
+    Keine Versicherungs-Konfiguration für {{ year }} vorhanden.
+    <a href="/insurance/configuration?year={{ year }}" class="alert-link ms-1">Jetzt anlegen →</a>
 </div>
 {% endif %}
 
-<form method="post" action="/versicherungen/parzellen/{{ parzelle.id }}/speichern">
-<input type="hidden" name="jahr" value="{{ jahr }}">
+<form method="post" action="/insurance/parcels/{{ parcel.id }}/save">
+<input type="hidden" name="year" value="{{ year }}">
 <div class="row g-3">
 
     <!-- Sachversicherung -->
@@ -29,25 +29,25 @@
             <div class="card-body">
                 <div class="form-check form-switch mb-3">
                     <input class="form-check-input" type="checkbox" role="switch"
-                           name="hat_sachversicherung" id="hat-sach"
-                           {% if pv.hat_sachversicherung %}checked{% endif %}
-                           onchange="document.getElementById('sach-paket-feld').style.display = this.checked ? '' : 'none';">
-                    <label class="form-check-label fw-semibold" for="hat-sach">Sachversicherung abgeschlossen</label>
+                           name="has_property_insurance" id="has-property"
+                           {% if pi.has_property_insurance %}checked{% endif %}
+                           onchange="document.getElementById('property-package-field').style.display = this.checked ? '' : 'none';">
+                    <label class="form-check-label fw-semibold" for="has-property">Sachversicherung abgeschlossen</label>
                 </div>
-                <div id="sach-paket-feld" style="{% if not pv.hat_sachversicherung %}display: none;{% endif %}">
+                <div id="property-package-field" style="{% if not pi.has_property_insurance %}display: none;{% endif %}">
                     <label class="form-label fw-semibold">Paket</label>
-                    <select name="sach_paket_id" class="form-select">
+                    <select name="property_package_id" class="form-select">
                         <option value="">– bitte wählen –</option>
-                        {% for paket in pakete %}
-                        <option value="{{ paket.id }}" {% if pv.sach_paket_id == paket.id %}selected{% endif %}>
-                            {{ paket.bezeichnung }} ({{ "%.2f"|format(paket.betrag_eur|float) }} €)
+                        {% for package in packages %}
+                        <option value="{{ package.id }}" {% if pi.property_package_id == package.id %}selected{% endif %}>
+                            {{ package.name }} ({{ "%.2f"|format(package.amount_eur|float) }} €)
                         </option>
                         {% endfor %}
                     </select>
-                    {% if not pakete %}
+                    {% if not packages %}
                     <div class="form-text text-warning">
-                        Keine Pakete für {{ jahr }} konfiguriert.
-                        <a href="/versicherungen/konfiguration?jahr={{ jahr }}">Jetzt anlegen →</a>
+                        Keine Pakete für {{ year }} konfiguriert.
+                        <a href="/insurance/configuration?year={{ year }}">Jetzt anlegen →</a>
                     </div>
                     {% endif %}
                 </div>
@@ -62,35 +62,35 @@
             <div class="card-body">
                 <div class="form-check form-switch mb-3">
                     <input class="form-check-input" type="checkbox" role="switch"
-                           name="hat_unfallversicherung" id="hat-unfall"
-                           {% if pv.hat_unfallversicherung %}checked{% endif %}
-                           onchange="document.getElementById('unfall-details').style.display = this.checked ? '' : 'none';">
-                    <label class="form-check-label fw-semibold" for="hat-unfall">Unfallversicherung abgeschlossen</label>
+                           name="has_accident_insurance" id="has-accident"
+                           {% if pi.has_accident_insurance %}checked{% endif %}
+                           onchange="document.getElementById('accident-details').style.display = this.checked ? '' : 'none';">
+                    <label class="form-check-label fw-semibold" for="has-accident">Unfallversicherung abgeschlossen</label>
                 </div>
 
-                <div id="unfall-details" style="{% if not pv.hat_unfallversicherung %}display: none;{% endif %}">
+                <div id="accident-details" style="{% if not pi.has_accident_insurance %}display: none;{% endif %}">
                     <p class="text-muted mb-2" style="font-size: 0.85rem;">
                         Automatisch mitversichert (gleiche Adresse wie Hauptpächter):
                     </p>
                     <ul class="list-group list-group-flush mb-3">
-                        {% for m in haushalt %}
+                        {% for m in household %}
                         <li class="list-group-item py-1 px-2" style="font-size: 0.88rem;">
                             <i class="bi bi-check-circle-fill text-success me-1"></i>{{ m.full_name }}
                         </li>
                         {% endfor %}
                     </ul>
 
-                    {% if extern %}
+                    {% if external %}
                     <p class="text-muted mb-2" style="font-size: 0.85rem;">
                         Weitere Parzellenmitglieder (andere Adresse) – optional gegen Aufpreis mitversicherbar:
                     </p>
                     <ul class="list-group list-group-flush">
-                        {% for m in extern %}
+                        {% for m in external %}
                         <li class="list-group-item py-1 px-2 d-flex align-items-center gap-2" style="font-size: 0.88rem;">
-                            <input class="form-check-input mt-0" type="checkbox" name="zusatzpersonen"
-                                   value="{{ m.id }}" id="zp-{{ m.id }}"
-                                   {% if m.id in zusatz_ids %}checked{% endif %}>
-                            <label class="form-check-label" for="zp-{{ m.id }}">{{ m.full_name }}</label>
+                            <input class="form-check-input mt-0" type="checkbox" name="additional_persons"
+                                   value="{{ m.id }}" id="ap-{{ m.id }}"
+                                   {% if m.id in additional_ids %}checked{% endif %}>
+                            <label class="form-check-label" for="ap-{{ m.id }}">{{ m.full_name }}</label>
                         </li>
                         {% endfor %}
                     </ul>
@@ -103,20 +103,20 @@
     <!-- Kosten-Übersicht -->
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-calculator me-2"></i>Kosten {{ jahr }}</div>
+            <div class="card-header"><i class="bi bi-calculator me-2"></i>Kosten {{ year }}</div>
             <div class="card-body">
                 <div class="row g-3 text-center">
                     <div class="col-sm-4">
                         <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Sachversicherung</div>
-                        <div style="font-size: 1.4rem; font-weight: 700;">{{ "%.2f"|format(kosten.sach_kosten) }} €</div>
+                        <div style="font-size: 1.4rem; font-weight: 700;">{{ "%.2f"|format(cost.property_cost) }} €</div>
                     </div>
                     <div class="col-sm-4">
                         <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Unfallversicherung</div>
-                        <div style="font-size: 1.4rem; font-weight: 700;">{{ "%.2f"|format(kosten.unfall_kosten) }} €</div>
+                        <div style="font-size: 1.4rem; font-weight: 700;">{{ "%.2f"|format(cost.accident_cost) }} €</div>
                     </div>
                     <div class="col-sm-4">
                         <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Gesamt</div>
-                        <div style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">{{ "%.2f"|format(kosten.gesamt) }} €</div>
+                        <div style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">{{ "%.2f"|format(cost.total) }} €</div>
                     </div>
                 </div>
             </div>

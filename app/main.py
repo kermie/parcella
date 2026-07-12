@@ -20,11 +20,11 @@ from app.models import Benutzer, BenutzerRolle, Member, Parcel, ParcelStatus, Me
 from app.auth import hash_passwort, get_current_user
 from app.module_flags import lade_modul_flags
 from app.ticket_mailer import verarbeite_eingehende_mails
-from app.routers import auth, members, parcels, admin as admin_router, work_hours, versicherungen, tickets, einkaufswuensche
+from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, einkaufswuensche
 from app.routers.metering import erstelle_metering_router
 from app.models import MeteringMedium
 from app.routers import api_auth, api_members, api_parcels, api_einstellungen, api_stats
-from app.routers import api_work_hours, api_versicherungen, api_tickets, api_einkaufswuensche
+from app.routers import api_work_hours, api_insurance, api_tickets, api_einkaufswuensche
 from app.routers.api_metering import erstelle_metering_api_router
 
 logging.basicConfig(level=logging.INFO)
@@ -114,7 +114,7 @@ app.include_router(members.router)
 app.include_router(parcels.router)
 app.include_router(admin_router.router)
 app.include_router(work_hours.router)
-app.include_router(versicherungen.router)
+app.include_router(insurance.router)
 app.include_router(tickets.router)
 app.include_router(einkaufswuensche.router)
 
@@ -138,7 +138,7 @@ app.include_router(api_parcels.router)
 app.include_router(api_einstellungen.router)
 app.include_router(api_stats.router)
 app.include_router(api_work_hours.router)
-app.include_router(api_versicherungen.router)
+app.include_router(api_insurance.router)
 app.include_router(api_tickets.router)
 app.include_router(api_einkaufswuensche.router)
 

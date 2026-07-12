@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Versicherungen {{ jahr }}{% endblock %}
-{% block page_title %}Versicherungen {{ jahr }}{% endblock %}
+{% block title %}Versicherungen {{ year }}{% endblock %}
+{% block page_title %}Versicherungen {{ year }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
-        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-            {% for j in verfuegbare_jahre %}
-            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+            {% for j in available_years %}
+            <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
     </form>
-    <a href="/versicherungen/parzellen?jahr={{ jahr }}" class="btn btn-sm btn-primary">
+    <a href="/insurance/parcels?year={{ year }}" class="btn btn-sm btn-primary">
         <i class="bi bi-shield-check me-1"></i>Parzellen verwalten
     </a>
 </div>
@@ -19,11 +19,11 @@
 
 {% block content %}
 
-{% if not konfiguration %}
+{% if not configuration %}
 <div class="alert alert-warning d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    Keine Versicherungs-Konfiguration für {{ jahr }} vorhanden.
-    <a href="/versicherungen/konfiguration?jahr={{ jahr }}" class="alert-link ms-1">Jetzt anlegen →</a>
+    Keine Versicherungs-Konfiguration für {{ year }} vorhanden.
+    <a href="/insurance/configuration?year={{ year }}" class="alert-link ms-1">Jetzt anlegen →</a>
 </div>
 {% endif %}
 
@@ -31,40 +31,40 @@
     <div class="col-sm-6 col-lg-3">
         <div class="card h-100 p-3 text-center">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Sachversicherung</div>
-            <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-gruen);">{{ anzahl_sach }}</div>
+            <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-gruen);">{{ count_property }}</div>
             <div class="text-muted" style="font-size: 0.8rem;">Parzellen</div>
         </div>
     </div>
     <div class="col-sm-6 col-lg-3">
         <div class="card h-100 p-3 text-center">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Unfallversicherung</div>
-            <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-braun);">{{ anzahl_unfall }}</div>
+            <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-braun);">{{ count_accident }}</div>
             <div class="text-muted" style="font-size: 0.8rem;">Parzellen</div>
         </div>
     </div>
     <div class="col-sm-6 col-lg-3">
         <div class="card h-100 p-3 text-center">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Einnahmen Sach</div>
-            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ "%.2f"|format(summe_sach) }} €</div>
+            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ "%.2f"|format(total_property) }} €</div>
         </div>
     </div>
     <div class="col-sm-6 col-lg-3">
         <div class="card h-100 p-3 text-center">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Einnahmen Unfall</div>
-            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ "%.2f"|format(summe_unfall) }} €</div>
+            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ "%.2f"|format(total_accident) }} €</div>
         </div>
     </div>
 </div>
 
-{% if pakete %}
+{% if packages %}
 <div class="card mb-3">
-    <div class="card-header"><i class="bi bi-box-seam me-2"></i>Sachversicherungs-Pakete {{ jahr }}</div>
+    <div class="card-header"><i class="bi bi-box-seam me-2"></i>Sachversicherungs-Pakete {{ year }}</div>
     <div class="card-body">
         <div class="row g-2">
-            {% for p in pakete %}
+            {% for p in packages %}
             <div class="col-auto">
                 <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.85rem; padding: 0.5rem 0.8rem;">
-                    {{ p.bezeichnung }}: {{ "%.2f"|format(p.betrag_eur|float) }} €
+                    {{ p.name }}: {{ "%.2f"|format(p.amount_eur|float) }} €
                 </span>
             </div>
             {% endfor %}
@@ -77,13 +77,13 @@
     <div class="col-md-4">
         <div class="card">
             <div class="card-body d-grid gap-2">
-                <a href="/versicherungen/konfiguration?jahr={{ jahr }}" class="btn btn-outline-primary text-start">
+                <a href="/insurance/configuration?year={{ year }}" class="btn btn-outline-primary text-start">
                     <i class="bi bi-gear me-2"></i>Konfiguration
                 </a>
-                <a href="/versicherungen/parzellen?jahr={{ jahr }}" class="btn btn-outline-primary text-start">
+                <a href="/insurance/parcels?year={{ year }}" class="btn btn-outline-primary text-start">
                     <i class="bi bi-grid-3x3 me-2"></i>Parzellen verwalten
                 </a>
-                <a href="/versicherungen/auswertung?jahr={{ jahr }}" class="btn btn-outline-secondary text-start">
+                <a href="/insurance/evaluation?year={{ year }}" class="btn btn-outline-secondary text-start">
                     <i class="bi bi-bar-chart me-2"></i>Jahresauswertung
                 </a>
             </div>

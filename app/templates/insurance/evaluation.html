@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Versicherungsauswertung {{ jahr }}{% endblock %}
-{% block page_title %}Versicherungsauswertung {{ jahr }}{% endblock %}
+{% block title %}Versicherungsauswertung {{ year }}{% endblock %}
+{% block page_title %}Versicherungsauswertung {{ year }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
-        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-            {% for j in verfuegbare_jahre %}
-            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+            {% for j in available_years %}
+            <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
     </form>
-    <a href="/versicherungen/auswertung/csv?jahr={{ jahr }}" class="btn btn-sm btn-outline-secondary">
+    <a href="/insurance/evaluation/csv?year={{ year }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-download me-1"></i>CSV Export
     </a>
-    <a href="/versicherungen/" class="btn btn-sm btn-outline-secondary">
+    <a href="/insurance/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Zurück
     </a>
 </div>
@@ -26,13 +26,13 @@
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Versicherte Parzellen</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ zeilen | length }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ rows | length }}</div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Gesamteinnahmen</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ "%.2f"|format(summe_gesamt) }} €</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ "%.2f"|format(total_overall) }} €</div>
         </div>
     </div>
 </div>
@@ -52,25 +52,25 @@
                 </tr>
             </thead>
             <tbody>
-                {% for z in zeilen %}
+                {% for r in rows %}
                 <tr>
                     <td class="fw-semibold">
-                        <a href="/versicherungen/parzellen/{{ z.pv.parzelle.id }}?jahr={{ jahr }}"
+                        <a href="/insurance/parcels/{{ r.pi.parcel.id }}?year={{ year }}"
                            class="text-decoration-none" style="color: var(--gv-gruen);">
-                            {{ z.pv.parzelle.plot_number }}
+                            {{ r.pi.parcel.plot_number }}
                         </a>
                     </td>
-                    <td>{{ z.pv.sach_paket.bezeichnung if z.pv.sach_paket else '–' }}</td>
-                    <td>{{ "%.2f"|format(z.kosten.sach_kosten) }} €</td>
-                    <td>{% if z.pv.hat_unfallversicherung %}Ja{% else %}–{% endif %}</td>
-                    <td>{{ z.pv.zusatzpersonen | length }}</td>
-                    <td>{{ "%.2f"|format(z.kosten.unfall_kosten) }} €</td>
-                    <td class="fw-semibold">{{ "%.2f"|format(z.kosten.gesamt) }} €</td>
+                    <td>{{ r.pi.property_package.name if r.pi.property_package else '–' }}</td>
+                    <td>{{ "%.2f"|format(r.cost.property_cost) }} €</td>
+                    <td>{% if r.pi.has_accident_insurance %}Ja{% else %}–{% endif %}</td>
+                    <td>{{ r.pi.additional_persons | length }}</td>
+                    <td>{{ "%.2f"|format(r.cost.accident_cost) }} €</td>
+                    <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
                 </tr>
                 {% else %}
                 <tr>
                     <td colspan="7" class="text-center text-muted py-4">
-                        Keine versicherten Parzellen für {{ jahr }}.
+                        Keine versicherten Parzellen für {{ year }}.
                     </td>
                 </tr>
                 {% endfor %}

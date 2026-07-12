@@ -174,7 +174,7 @@ MODULE_FELDER = [
     ("modul_electricity", "Stromverwaltung",
      "Stromzähler, Zählerstände und Verbrauchsauswertung. "
      "Deaktivieren, falls der Verein keine eigene Stromversorgung verwaltet."),
-    ("modul_versicherungen", "Versicherungsverwaltung",
+    ("modul_insurance", "Versicherungsverwaltung",
      "Sach- und Unfallversicherung pro Parcel inkl. Jahresauswertung. "
      "Deaktivieren, falls der Verein keine Versicherungen über das Programm abwickelt."),
     ("modul_tickets", "Ticketsystem",
