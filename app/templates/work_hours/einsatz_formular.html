@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if einsatz %}Einsatz bearbeiten{% else %}Neuer Arbeitseinsatz{% endif %}{% endblock %}
-{% block page_title %}{% if einsatz %}Einsatz bearbeiten{% else %}Neuer Arbeitseinsatz{% endif %}{% endblock %}
+{% block title %}{% if session %}Einsatz bearbeiten{% else %}Neuer WorkSession{% endif %}{% endblock %}
+{% block page_title %}{% if session %}Einsatz bearbeiten{% else %}Neuer WorkSession{% endif %}{% endblock %}
 
 {% block topbar_actions %}
-<a href="{% if einsatz %}/pflichtstunden/einsaetze/{{ einsatz.id }}{% else %}/pflichtstunden/{% endif %}"
+<a href="{% if session %}/work-hours/sessions/{{ session.id }}{% else %}/work-hours/{% endif %}"
    class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
@@ -11,61 +11,61 @@
 
 {% block content %}
 <form method="post"
-      action="{% if einsatz %}/pflichtstunden/einsaetze/{{ einsatz.id }}/bearbeiten{% else %}/pflichtstunden/einsaetze/neu{% endif %}">
+      action="{% if session %}/work-hours/sessions/{{ session.id }}/edit{% else %}/work-hours/sessions/neu{% endif %}">
 <div class="row g-3" style="max-width: 640px;">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <i class="bi bi-calendar-event me-2"></i>
-                {% if einsatz %}Einsatz bearbeiten{% else %}Einsatz anlegen{% endif %}
+                {% if session %}Einsatz bearbeiten{% else %}Einsatz anlegen{% endif %}
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label fw-semibold">Titel <span class="text-danger">*</span></label>
-                        <input type="text" name="titel" class="form-control"
-                               value="{{ einsatz.titel if einsatz else '' }}"
+                        <input type="text" name="title" class="form-control"
+                               value="{{ session.title if session else '' }}"
                                placeholder="z.B. Frühjahrsputz, Heckenschnitt Nordseite" required autofocus>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Typ</label>
-                        <select name="typ" class="form-select">
-                            <option value="STANDARD" {% if einsatz and einsatz.typ.value == 'STANDARD' %}selected{% endif %}>
+                        <select name="type" class="form-select">
+                            <option value="STANDARD" {% if session and session.type.value == 'STANDARD' %}selected{% endif %}>
                                 Standard (geplant)
                             </option>
-                            <option value="BESONDERS" {% if einsatz and einsatz.typ.value == 'BESONDERS' %}selected{% endif %}>
+                            <option value="SPECIAL" {% if session and session.type.value == 'SPECIAL' %}selected{% endif %}>
                                 Besonders (spontan)
                             </option>
                         </select>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Datum <span class="text-danger">*</span></label>
-                        <input type="date" name="datum" class="form-control"
-                               value="{{ einsatz.datum.isoformat() if einsatz else '' }}" required>
+                        <input type="date" name="date" class="form-control"
+                               value="{{ session.date.isoformat() if session else '' }}" required>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Von</label>
-                        <input type="time" name="uhrzeit_von" class="form-control"
-                               value="{{ einsatz.uhrzeit_von if einsatz and einsatz.uhrzeit_von else '' }}"
+                        <input type="time" name="time_from" class="form-control"
+                               value="{{ session.time_from if session and session.time_from else '' }}"
                                placeholder="08:00">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Bis</label>
-                        <input type="time" name="uhrzeit_bis" class="form-control"
-                               value="{{ einsatz.uhrzeit_bis if einsatz and einsatz.uhrzeit_bis else '' }}"
+                        <input type="time" name="time_until" class="form-control"
+                               value="{{ session.time_until if session and session.time_until else '' }}"
                                placeholder="12:00">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Max. Teilnehmer</label>
-                        <input type="number" name="max_teilnehmer" class="form-control"
-                               value="{{ einsatz.max_teilnehmer if einsatz and einsatz.max_teilnehmer else '' }}"
+                        <input type="number" name="max_participants" class="form-control"
+                               value="{{ session.max_participants if session and session.max_participants else '' }}"
                                placeholder="Leer = unbegrenzt" min="1">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Stunden pro Teilnehmer</label>
                         <div class="input-group">
-                            <input type="text" name="stunden_pro_teilnehmer" class="form-control"
-                                   value="{{ einsatz.stunden_pro_teilnehmer|int if einsatz and einsatz.stunden_pro_teilnehmer else '' }}"
+                            <input type="text" name="hours_per_participant" class="form-control"
+                                   value="{{ session.hours_per_participant|int if session and session.hours_per_participant else '' }}"
                                    placeholder="z.B. 4.0">
                             <span class="input-group-text">h</span>
                         </div>
@@ -73,19 +73,19 @@
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">Beschreibung</label>
-                        <textarea name="beschreibung" class="form-control" rows="3"
-                                  placeholder="Aufgaben, Werkzeug, Besonderheiten…">{{ einsatz.beschreibung if einsatz and einsatz.beschreibung else '' }}</textarea>
+                        <textarea name="description" class="form-control" rows="3"
+                                  placeholder="Aufgaben, Werkzeug, Besonderheiten…">{{ session.description if session and session.description else '' }}</textarea>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-12 d-flex gap-2 justify-content-end">
-        <a href="{% if einsatz %}/pflichtstunden/einsaetze/{{ einsatz.id }}{% else %}/pflichtstunden/{% endif %}"
+        <a href="{% if session %}/work-hours/sessions/{{ session.id }}{% else %}/work-hours/{% endif %}"
            class="btn btn-outline-secondary">Abbrechen</a>
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-lg me-1"></i>
-            {% if einsatz %}Änderungen speichern{% else %}Einsatz anlegen{% endif %}
+            {% if session %}Änderungen speichern{% else %}Einsatz anlegen{% endif %}
         </button>
     </div>
 </div>

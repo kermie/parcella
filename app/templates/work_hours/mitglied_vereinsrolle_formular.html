@@ -3,7 +3,7 @@
 {% block page_title %}Zuordnung bearbeiten{% endblock %}
 
 {% block topbar_actions %}
-<a href="/pflichtstunden/vereinsrollen" class="btn btn-sm btn-outline-secondary">
+<a href="/work-hours/club-roles" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
 {% endblock %}
@@ -12,24 +12,24 @@
 <div class="row g-3" style="max-width: 640px;">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-person-badge me-2"></i>Mitglied in Vereinsrolle bearbeiten</div>
+            <div class="card-header"><i class="bi bi-person-badge me-2"></i>Mitglied in ClubRole bearbeiten</div>
             <div class="card-body">
-                <form method="post" action="/pflichtstunden/vereinsrollen/zuordnung/{{ zuordnung.id }}/bearbeiten">
+                <form method="post" action="/work-hours/club-roles/assignment/{{ assignment.id }}/edit">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Mitglied <span class="text-danger">*</span></label>
-                        <select name="mitglied_id" class="form-select" required>
+                        <select name="member_id" class="form-select" required>
                             {% for m in alle_mitglieder %}
-                            <option value="{{ m.id }}" {% if m.id == zuordnung.mitglied_id %}selected{% endif %}>
+                            <option value="{{ m.id }}" {% if m.id == assignment.member_id %}selected{% endif %}>
                                 {{ m.full_name }}
                             </option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Vereinsrolle <span class="text-danger">*</span></label>
-                        <select name="vereinsrolle_id" class="form-select" required>
+                        <label class="form-label fw-semibold">ClubRole <span class="text-danger">*</span></label>
+                        <select name="club_role_id" class="form-select" required>
                             {% for r in alle_rollen %}
-                            <option value="{{ r.id }}" {% if r.id == zuordnung.vereinsrolle_id %}selected{% endif %}>
+                            <option value="{{ r.id }}" {% if r.id == assignment.club_role_id %}selected{% endif %}>
                                 {{ r.name }}
                             </option>
                             {% endfor %}
@@ -37,8 +37,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Jahr <span class="text-danger">*</span></label>
-                        <input type="number" name="jahr" class="form-control"
-                               value="{{ zuordnung.jahr }}" min="2000" max="2100" required>
+                        <input type="number" name="year" class="form-control"
+                               value="{{ assignment.year }}" min="2000" max="2100" required>
                         <div class="form-text">
                             Die Pflichtstunden-Befreiung gilt für dieses gesamte Kalenderjahr.
                         </div>
@@ -46,23 +46,23 @@
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-semibold">Von</label>
-                            <input type="date" name="von" class="form-control"
-                                   value="{{ zuordnung.von.isoformat() if zuordnung.von else '' }}">
+                            <input type="date" name="valid_from" class="form-control"
+                                   value="{{ assignment.valid_from.isoformat() if assignment.valid_from else '' }}">
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-semibold">Bis</label>
-                            <input type="date" name="bis" class="form-control"
-                                   value="{{ zuordnung.bis.isoformat() if zuordnung.bis else '' }}">
+                            <input type="date" name="valid_until" class="form-control"
+                                   value="{{ assignment.valid_until.isoformat() if assignment.valid_until else '' }}">
                             <div class="form-text">Leer = läuft noch</div>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Notiz</label>
-                        <textarea name="notiz" class="form-control" rows="2"
-                                  placeholder="z.B. Grund für Niederlegung, Übergabe an…">{{ zuordnung.notiz or '' }}</textarea>
+                        <textarea name="note" class="form-control" rows="2"
+                                  placeholder="z.B. Grund für Niederlegung, Übergabe an…">{{ assignment.note or '' }}</textarea>
                     </div>
                     <div class="d-flex gap-2 justify-content-end">
-                        <a href="/pflichtstunden/vereinsrollen" class="btn btn-outline-secondary">Abbrechen</a>
+                        <a href="/work-hours/club-roles" class="btn btn-outline-secondary">Abbrechen</a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-1"></i>Änderungen speichern
                         </button>

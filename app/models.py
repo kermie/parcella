@@ -317,26 +317,26 @@ class Vereinseinstellung(Base):
 # Pflichtstunden-Konfiguration (jahresbasiert)
 # ---------------------------------------------------------------------------
 
-class PflichtstundenModus(str, enum.Enum):
-    PRO_PACHTVERTRAG = "pro_pachtvertrag"  # Stunden gelten pro Parcel (Standard)
-    PRO_MITGLIED = "pro_mitglied"          # Stunden gelten pro Member
+class WorkHoursMode(str, enum.Enum):
+    PER_PARCEL = "PER_PARCEL"    # Stunden gelten pro Parcel (Standard)
+    PER_MEMBER = "PER_MEMBER"    # Stunden gelten pro Member
 
 
-class PflichtstundenKonfiguration(Base):
+class WorkHoursConfiguration(Base):
     """
     Jährliche Konfiguration der Pflichtstunden.
     Historisiert – alte Werte bleiben erhalten für Auswertungen vergangener Jahre.
     """
-    __tablename__ = "pflichtstunden_konfiguration"
+    __tablename__ = "work_hours_configuration"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    jahr: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
-    stunden_gesamt: Mapped[float] = mapped_column(Numeric(5, 1), nullable=False)
-    stundensatz_eur: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
-    modus: Mapped[PflichtstundenModus] = mapped_column(
-        SAEnum(PflichtstundenModus), default=PflichtstundenModus.PRO_PACHTVERTRAG, nullable=False
+    year: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
+    hours_required: Mapped[float] = mapped_column(Numeric(5, 1), nullable=False)
+    rate_per_hour_eur: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    mode: Mapped[WorkHoursMode] = mapped_column(
+        SAEnum(WorkHoursMode), default=WorkHoursMode.PER_PARCEL, nullable=False
     )
-    notiz: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -345,102 +345,102 @@ class PflichtstundenKonfiguration(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<PflichtstundenKonfiguration {self.jahr}: {self.stunden_gesamt}h à {self.stundensatz_eur}€>"
+        return f"<WorkHoursConfiguration {self.year}: {self.hours_required}h @ {self.rate_per_hour_eur}€>"
 
 
 # ---------------------------------------------------------------------------
-# Vereinsrollen (erweiterter Vorstand etc.)
+# Club-Rollen (erweiterter Vorstand etc.)
 # ---------------------------------------------------------------------------
 
-class BefreiungsGrund(str, enum.Enum):
-    VORSTAND = "VORSTAND"
-    ERWEITERTER_VORSTAND = "ERWEITERTER_VORSTAND"
-    KRANKHEIT = "KRANKHEIT"
-    ALTER = "ALTER"
-    SONSTIG = "SONSTIG"
+class ExemptionReason(str, enum.Enum):
+    BOARD = "BOARD"
+    EXTENDED_BOARD = "EXTENDED_BOARD"
+    ILLNESS = "ILLNESS"
+    AGE = "AGE"
+    OTHER = "OTHER"
 
 
-class Vereinsrolle(Base):
+class ClubRole(Base):
     """
     Rollen im Verein (Vorstand, erweiterter Vorstand, Beisitzer etc.).
     Getrennt vom App-Benutzersystem (BenutzerRolle) – hier geht es um
     Vereinsämter, nicht um Zugriffsrechte.
     """
-    __tablename__ = "vereinsrollen"
+    __tablename__ = "club_roles"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    beschreibung: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    pflichtstunden_befreit: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    befreiungsgrund: Mapped[Optional[BefreiungsGrund]] = mapped_column(
-        SAEnum(BefreiungsGrund), nullable=True
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    hours_exempt: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    exemption_reason: Mapped[Optional[ExemptionReason]] = mapped_column(
+        SAEnum(ExemptionReason), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    zuordnungen: Mapped[List["MitgliedVereinsrolle"]] = relationship(
-        "MitgliedVereinsrolle", back_populates="vereinsrolle"
+    assignments: Mapped[List["MemberClubRole"]] = relationship(
+        "MemberClubRole", back_populates="club_role"
     )
 
     def __repr__(self) -> str:
-        return f"<Vereinsrolle {self.name}>"
+        return f"<ClubRole {self.name}>"
 
 
-class MitgliedVereinsrolle(Base):
+class MemberClubRole(Base):
     """
-    Zuordnung Member → Vereinsrolle für ein bestimmtes Jahr.
+    Zuordnung Member → ClubRole für ein bestimmtes Jahr.
     Die Befreiung gilt immer für das gesamte Kalenderjahr (auch wenn die
     Rolle unterjährig niedergelegt wird).
     """
-    __tablename__ = "mitglied_vereinsrolle"
+    __tablename__ = "member_club_roles"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    mitglied_id: Mapped[str] = mapped_column(
+    member_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    vereinsrolle_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("vereinsrollen.id", ondelete="CASCADE"), nullable=False, index=True
+    club_role_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("club_roles.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    jahr: Mapped[int] = mapped_column(Integer, nullable=False)
-    von: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    bis: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    notiz: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    valid_from: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    valid_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    mitglied: Mapped["Member"] = relationship("Member")
-    vereinsrolle: Mapped["Vereinsrolle"] = relationship("Vereinsrolle", back_populates="zuordnungen")
+    member: Mapped["Member"] = relationship("Member")
+    club_role: Mapped["ClubRole"] = relationship("ClubRole", back_populates="assignments")
 
     __table_args__ = (
-        UniqueConstraint("mitglied_id", "vereinsrolle_id", "jahr", name="uq_mitglied_vereinsrolle_jahr"),
+        UniqueConstraint("member_id", "club_role_id", "year", name="uq_member_club_role_year"),
     )
 
 
 # ---------------------------------------------------------------------------
-# Patenschaften
+# Patenschaften (Sponsorships)
 # ---------------------------------------------------------------------------
 
-class Patenschaft(Base):
+class Sponsorship(Base):
     """
     Ein Member übernimmt die Patenschaft für einen Bereich (z.B. Hecke,
     Spielplatz). Die Patenschaft gilt pauschal als Pflichtstunden-Erfüllung.
     """
-    __tablename__ = "patenschaften"
+    __tablename__ = "sponsorships"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    mitglied_id: Mapped[Optional[str]] = mapped_column(
+    member_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("members.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    bereich: Mapped[str] = mapped_column(String(255), nullable=False)
-    beschreibung: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    stunden_anrechenbar: Mapped[float] = mapped_column(
+    area: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    credited_hours: Mapped[float] = mapped_column(
         Numeric(5, 1), nullable=False,
         comment="Pauschale Stunden die pro Jahr angerechnet werden"
     )
-    von: Mapped[date] = mapped_column(Date, nullable=False)
-    bis: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = läuft noch")
+    valid_from: Mapped[date] = mapped_column(Date, nullable=False)
+    valid_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = läuft noch")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -448,48 +448,48 @@ class Patenschaft(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    mitglied: Mapped[Optional["Member"]] = relationship("Member")
+    member: Mapped[Optional["Member"]] = relationship("Member")
 
     def __repr__(self) -> str:
-        return f"<Patenschaft {self.bereich} → {self.mitglied_id}>"
+        return f"<Sponsorship {self.area} → {self.member_id}>"
 
 
 # ---------------------------------------------------------------------------
-# Arbeitseinsätze
+# Arbeitseinsätze (Work Sessions)
 # ---------------------------------------------------------------------------
 
-class EinsatzTyp(str, enum.Enum):
-    STANDARD = "STANDARD"      # Geplanter Termin, Anmeldung möglich
-    BESONDERS = "BESONDERS"    # Spontan/ungeplant (Gartenbank streichen etc.)
+class SessionType(str, enum.Enum):
+    STANDARD = "STANDARD"    # Geplanter Termin, Anmeldung möglich
+    SPECIAL = "SPECIAL"      # Spontan/ungeplant (Gartenbank streichen etc.)
 
 
-class TeilnahmeStatus(str, enum.Enum):
-    ANGEMELDET = "ANGEMELDET"           # Hat sich angemeldet
-    ERSCHIENEN = "ERSCHIENEN"           # War da, Stunden werden angerechnet
-    NICHT_ERSCHIENEN = "NICHT_ERSCHIENEN"  # Angemeldet aber nicht erschienen
+class ParticipationStatus(str, enum.Enum):
+    REGISTERED = "REGISTERED"    # Hat sich angemeldet
+    ATTENDED = "ATTENDED"        # War da, Stunden werden angerechnet
+    NO_SHOW = "NO_SHOW"          # Angemeldet aber nicht erschienen
 
 
-class Arbeitseinsatz(Base):
+class WorkSession(Base):
     """
     Geplanter oder spontaner Arbeitseinsatz im Verein.
     """
-    __tablename__ = "arbeitseinsaetze"
+    __tablename__ = "work_sessions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    titel: Mapped[str] = mapped_column(String(255), nullable=False)
-    beschreibung: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    typ: Mapped[EinsatzTyp] = mapped_column(
-        SAEnum(EinsatzTyp), default=EinsatzTyp.STANDARD, nullable=False
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    type: Mapped[SessionType] = mapped_column(
+        SAEnum(SessionType), default=SessionType.STANDARD, nullable=False
     )
-    datum: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    uhrzeit_von: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)   # "08:00"
-    uhrzeit_bis: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)   # "12:00"
-    max_teilnehmer: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    stunden_pro_teilnehmer: Mapped[Optional[float]] = mapped_column(
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    time_from: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)   # "08:00"
+    time_until: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)  # "12:00"
+    max_participants: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    hours_per_participant: Mapped[Optional[float]] = mapped_column(
         Numeric(4, 1), nullable=True,
         comment="Standardwert; kann pro Teilnahme überschrieben werden"
     )
-    erstellt_von_id: Mapped[Optional[str]] = mapped_column(
+    created_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
@@ -499,53 +499,55 @@ class Arbeitseinsatz(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    teilnahmen: Mapped[List["EinsatzTeilnahme"]] = relationship(
-        "EinsatzTeilnahme", back_populates="einsatz", cascade="all, delete-orphan"
+    participations: Mapped[List["SessionParticipation"]] = relationship(
+        "SessionParticipation", back_populates="session", cascade="all, delete-orphan"
     )
-    erstellt_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
+    created_by: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
 
     @property
-    def freie_plaetze(self) -> Optional[int]:
-        if self.max_teilnehmer is None:
+    def available_spots(self) -> Optional[int]:
+        if self.max_participants is None:
             return None
-        angemeldet = sum(1 for t in self.teilnahmen if t.status != TeilnahmeStatus.NICHT_ERSCHIENEN)
-        return max(0, self.max_teilnehmer - angemeldet)
+        registered = sum(1 for t in self.participations if t.status != ParticipationStatus.NO_SHOW)
+        return max(0, self.max_participants - registered)
 
     def __repr__(self) -> str:
-        return f"<Arbeitseinsatz {self.datum} {self.titel}>"
+        return f"<WorkSession {self.date} {self.title}>"
 
 
-class EinsatzTeilnahme(Base):
+class SessionParticipation(Base):
     """
     Teilnahme eines Mitglieds an einem Arbeitseinsatz.
     """
-    __tablename__ = "einsatz_teilnahmen"
+    __tablename__ = "session_participations"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    einsatz_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("arbeitseinsaetze.id", ondelete="CASCADE"), nullable=False, index=True
+    session_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("work_sessions.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    mitglied_id: Mapped[str] = mapped_column(
+    member_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    status: Mapped[TeilnahmeStatus] = mapped_column(
-        SAEnum(TeilnahmeStatus), default=TeilnahmeStatus.ANGEMELDET, nullable=False
+    status: Mapped[ParticipationStatus] = mapped_column(
+        SAEnum(ParticipationStatus), default=ParticipationStatus.REGISTERED, nullable=False
     )
-    stunden_geleistet: Mapped[Optional[float]] = mapped_column(
+    hours_completed: Mapped[Optional[float]] = mapped_column(
         Numeric(4, 1), nullable=True,
-        comment="Überschreibt stunden_pro_teilnehmer des Einsatzes wenn gesetzt"
+        comment="Überschreibt hours_per_participant des Einsatzes wenn gesetzt"
     )
-    notiz: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    einsatz: Mapped["Arbeitseinsatz"] = relationship("Arbeitseinsatz", back_populates="teilnahmen")
-    mitglied: Mapped["Member"] = relationship("Member")
+    session: Mapped["WorkSession"] = relationship("WorkSession", back_populates="participations")
+    member: Mapped["Member"] = relationship("Member")
 
     __table_args__ = (
-        UniqueConstraint("einsatz_id", "mitglied_id", name="uq_einsatz_mitglied"),
+        UniqueConstraint("session_id", "member_id", name="uq_session_member"),
     )
+
+
 
 
 # ---------------------------------------------------------------------------

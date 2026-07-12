@@ -1,10 +1,19 @@
-# Modul: Pflichtstunden
+# Modul: Pflichtstunden (Work Hours)
+
+> **Hinweis zur Umbenennung:** Der Code (Modelle, Tabellen, URLs,
+> API-Endpunkte) wurde vollständig auf Englisch umgestellt:
+> `Arbeitseinsatz` → `WorkSession`, `Vereinsrolle` → `ClubRole`,
+> `Patenschaft` → `Sponsorship`, `/pflichtstunden/` → `/work-hours/`.
+> Details und Lehren dazu in
+> [Architektur-Entscheidungen](./architektur-entscheidungen.md).
+> Diese Seite beschreibt weiterhin die fachliche Logik, die sich dabei
+> nicht geändert hat.
 
 Verwaltet die jährliche Arbeitsstunden-Pflicht: Standard- und
 Sondereinsätze, Patenschaften als Alternative, Vereinsrollen mit
 automatischer Befreiung.
 
-Modul-Flag: `pflichtstunden` (siehe `app/module_flags.py`)
+Modul-Flag: `work_hours` (siehe `app/module_flags.py`)
 
 ## Datenmodell
 

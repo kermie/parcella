@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}{{ einsatz.titel }}{% endblock %}
-{% block page_title %}{{ einsatz.titel }}{% endblock %}
+{% block title %}{{ session.title }}{% endblock %}
+{% block page_title %}{{ session.title }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2">
-    <a href="/pflichtstunden/einsaetze/{{ einsatz.id }}/bearbeiten" class="btn btn-sm btn-primary">
+    <a href="/work-hours/sessions/{{ session.id }}/edit" class="btn btn-sm btn-primary">
         <i class="bi bi-pencil me-1"></i>Bearbeiten
     </a>
-    <form method="post" action="/pflichtstunden/einsaetze/{{ einsatz.id }}/loeschen" class="d-inline">
+    <form method="post" action="/work-hours/sessions/{{ session.id }}/delete" class="d-inline">
         <button type="submit" class="btn btn-sm btn-outline-danger"
-                onclick="return confirm('Einsatz „{{ einsatz.titel }}“ wirklich löschen? Alle Teilnahmen gehen verloren.')">
+                onclick="return confirm('Einsatz „{{ session.title }}“ wirklich löschen? Alle Teilnahmen gehen verloren.')">
             <i class="bi bi-trash me-1"></i>Löschen
         </button>
     </form>
-    <a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+    <a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Zurück
     </a>
 </div>
@@ -30,7 +30,7 @@
                 <dl class="row mb-0">
                     <dt class="col-sm-5 text-muted">Typ</dt>
                     <dd class="col-sm-7">
-                        {% if einsatz.typ.value == 'STANDARD' %}
+                        {% if session.type.value == 'STANDARD' %}
                         <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
                         {% else %}
                         <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
@@ -38,32 +38,32 @@
                     </dd>
 
                     <dt class="col-sm-5 text-muted">Datum</dt>
-                    <dd class="col-sm-7 fw-semibold">{{ einsatz.datum.strftime('%d.%m.%Y') }}</dd>
+                    <dd class="col-sm-7 fw-semibold">{{ session.date.strftime('%d.%m.%Y') }}</dd>
 
                     <dt class="col-sm-5 text-muted">Uhrzeit</dt>
                     <dd class="col-sm-7">
-                        {% if einsatz.uhrzeit_von %}
-                            {{ einsatz.uhrzeit_von }}{% if einsatz.uhrzeit_bis %} – {{ einsatz.uhrzeit_bis }}{% endif %}
+                        {% if session.time_from %}
+                            {{ session.time_from }}{% if session.time_until %} – {{ session.time_until }}{% endif %}
                         {% else %}–{% endif %}
                     </dd>
 
                     <dt class="col-sm-5 text-muted">Plätze</dt>
                     <dd class="col-sm-7">
-                        {{ einsatz.teilnahmen | length }}
-                        {% if einsatz.max_teilnehmer %}/ {{ einsatz.max_teilnehmer }}{% endif %}
+                        {{ session.participations | length }}
+                        {% if session.max_participants %}/ {{ session.max_participants }}{% endif %}
                     </dd>
 
                     <dt class="col-sm-5 text-muted">Std./Person</dt>
                     <dd class="col-sm-7">
-                        {% if einsatz.stunden_pro_teilnehmer %}
-                        {{ einsatz.stunden_pro_teilnehmer | int }} h
+                        {% if session.hours_per_participant %}
+                        {{ session.hours_per_participant | int }} h
                         {% else %}–{% endif %}
                     </dd>
                 </dl>
 
-                {% if einsatz.beschreibung %}
+                {% if session.description %}
                 <hr>
-                <p class="mb-0" style="font-size: 0.9rem;">{{ einsatz.beschreibung }}</p>
+                <p class="mb-0" style="font-size: 0.9rem;">{{ session.description }}</p>
                 {% endif %}
             </div>
         </div>
@@ -75,9 +75,9 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-people me-2"></i>Teilnehmer</span>
                 <span class="text-muted" style="font-size: 0.85rem;">
-                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'ERSCHIENEN') | list | length }}
+                    {{ session.participations | selectattr('status.value', 'eq', 'ATTENDED') | list | length }}
                     erschienen ·
-                    {{ einsatz.teilnahmen | selectattr('status.value', 'eq', 'ANGEMELDET') | list | length }}
+                    {{ session.participations | selectattr('status.value', 'eq', 'REGISTERED') | list | length }}
                     angemeldet
                 </span>
             </div>
@@ -93,41 +93,41 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for t in einsatz.teilnahmen | sort(attribute='mitglied.last_name') %}
+                        {% for t in session.participations | sort(attribute='mitglied.last_name') %}
                         <tr>
                             <td>
-                                <a href="/members/{{ t.mitglied.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ t.mitglied.full_name }}</a>
+                                <a href="/members/{{ t.member.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ t.member.full_name }}</a>
                             </td>
                             <td>
                                 <form method="post"
-                                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/{{ t.id }}/status"
+                                      action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
                                       class="d-flex gap-1 align-items-center">
                                     <select name="status" class="form-select form-select-sm"
                                             style="width: auto;" onchange="this.form.submit()">
-                                        <option value="ANGEMELDET" {% if t.status.value == 'ANGEMELDET' %}selected{% endif %}>Angemeldet</option>
-                                        <option value="ERSCHIENEN" {% if t.status.value == 'ERSCHIENEN' %}selected{% endif %}>Erschienen</option>
-                                        <option value="NICHT_ERSCHIENEN" {% if t.status.value == 'NICHT_ERSCHIENEN' %}selected{% endif %}>Nicht erschienen</option>
+                                        <option value="REGISTERED" {% if t.status.value == 'REGISTERED' %}selected{% endif %}>Angemeldet</option>
+                                        <option value="ATTENDED" {% if t.status.value == 'ATTENDED' %}selected{% endif %}>Erschienen</option>
+                                        <option value="NO_SHOW" {% if t.status.value == 'NO_SHOW' %}selected{% endif %}>Nicht erschienen</option>
                                     </select>
                                 </form>
                             </td>
                             <td>
                                 <form method="post"
-                                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/{{ t.id }}/status"
+                                      action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
                                       class="d-flex gap-1 align-items-center">
                                     <input type="hidden" name="status" value="{{ t.status.value }}">
                                     <div class="input-group input-group-sm" style="width: 90px;">
-                                        <input type="text" name="stunden_geleistet" class="form-control form-control-sm"
-                                               value="{{ t.stunden_geleistet or einsatz.stunden_pro_teilnehmer or '' }}"
+                                        <input type="text" name="hours_completed" class="form-control form-control-sm"
+                                               value="{{ t.hours_completed or session.hours_per_participant or '' }}"
                                                placeholder="h">
                                         <button type="submit" class="btn btn-sm btn-outline-secondary px-1">✓</button>
                                     </div>
                                 </form>
                             </td>
-                            <td class="text-muted" style="font-size: 0.85rem;">{{ t.notiz or '' }}</td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ t.note or '' }}</td>
                             <td class="text-end">
                                 <form method="post"
-                                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/{{ t.id }}/entfernen">
+                                      action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/remove">
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                             onclick="return confirm('Teilnahme entfernen?')">
                                         <i class="bi bi-x-lg"></i>
@@ -149,9 +149,9 @@
             <!-- Teilnehmer hinzufügen -->
             <div class="card-footer">
                 <form method="post"
-                      action="/pflichtstunden/einsaetze/{{ einsatz.id }}/teilnehmer/hinzufuegen"
+                      action="/work-hours/sessions/{{ session.id }}/participants/add"
                       class="d-flex gap-2 flex-wrap align-items-center">
-                    <select name="mitglied_id" class="form-select form-select-sm" style="max-width: 220px;" required>
+                    <select name="member_id" class="form-select form-select-sm" style="max-width: 220px;" required>
                         <option value="">Mitglied wählen…</option>
                         {% for m in alle_mitglieder %}
                         {% if m.id not in bereits_eingetragen %}
@@ -160,13 +160,13 @@
                         {% endfor %}
                     </select>
                     <select name="status" class="form-select form-select-sm" style="width: auto;">
-                        <option value="ERSCHIENEN">Erschienen</option>
-                        <option value="ANGEMELDET">Angemeldet</option>
-                        <option value="NICHT_ERSCHIENEN">Nicht erschienen</option>
+                        <option value="ATTENDED">Erschienen</option>
+                        <option value="REGISTERED">Angemeldet</option>
+                        <option value="NO_SHOW">Nicht erschienen</option>
                     </select>
                     <div class="input-group input-group-sm" style="width: 100px;">
-                        <input type="text" name="stunden_geleistet" class="form-control"
-                               placeholder="{{ einsatz.stunden_pro_teilnehmer or 'h' }}">
+                        <input type="text" name="hours_completed" class="form-control"
+                               placeholder="{{ session.hours_per_participant or 'h' }}">
                         <span class="input-group-text">h</span>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">

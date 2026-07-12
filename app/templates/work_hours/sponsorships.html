@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Patenschaften {{ jahr }}{% endblock %}
-{% block page_title %}Patenschaften{% endblock %}
+{% block title %}Sponsorshipen {{ year }}{% endblock %}
+{% block page_title %}Sponsorshipen{% endblock %}
 
 {% block topbar_actions %}
-<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+<a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
 {% endblock %}
@@ -12,12 +12,12 @@
 <div class="row g-3">
     <div class="col-lg-5">
         <div class="card">
-            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Patenschaft anlegen / Mitglied hinzufügen</div>
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Sponsorship anlegen / Mitglied hinzufügen</div>
             <div class="card-body">
-                <form method="post" action="/pflichtstunden/patenschaften/neu">
+                <form method="post" action="/work-hours/sponsorships/new">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Bereich <span class="text-danger">*</span></label>
-                        <input type="text" name="bereich" class="form-control" list="bereiche-liste"
+                        <input type="text" name="area" class="form-control" list="bereiche-liste"
                                placeholder="z.B. Hecke Nordseite, Spielplatz, Eingangsbereich" required>
                         <datalist id="bereiche-liste">
                             {% for b in alle_bereiche %}
@@ -31,7 +31,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Mitglied</label>
-                        <select name="mitglied_id" class="form-select">
+                        <select name="member_id" class="form-select">
                             <option value="">– noch nicht vergeben –</option>
                             {% for m in alle_mitglieder %}
                             <option value="{{ m.id }}">{{ m.full_name }}</option>
@@ -41,35 +41,35 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Beschreibung</label>
-                        <textarea name="beschreibung" class="form-control" rows="2"
+                        <textarea name="description" class="form-control" rows="2"
                                   placeholder="Was genau wird gepflegt / betreut?"></textarea>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Anrechenbare Stunden/Jahr <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="stunden_anrechenbar" class="form-control"
-                                   value="{{ config.stunden_gesamt|int if config else '' }}"
+                            <input type="text" name="credited_hours" class="form-control"
+                                   value="{{ config.hours_required|int if config else '' }}"
                                    placeholder="5.0" required>
                             <span class="input-group-text">h</span>
                         </div>
                         <div class="form-text">
                             {% if config %}
-                            Vorbefüllt mit der aktuellen Pflichtstunden-Konfiguration für {{ jahr }}
-                            ({{ config.stunden_gesamt|int }}h) – bei Bedarf anpassbar.
+                            Vorbefüllt mit der aktuellen Pflichtstunden-Konfiguration für {{ year }}
+                            ({{ config.hours_required|int }}h) – bei Bedarf anpassbar.
                             {% else %}
-                            Keine Pflichtstunden-Konfiguration für {{ jahr }} hinterlegt.
+                            Keine Pflichtstunden-Konfiguration für {{ year }} hinterlegt.
                             {% endif %}
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-semibold">Gültig ab <span class="text-danger">*</span></label>
-                            <input type="date" name="von" class="form-control" required
-                                   value="{{ jahr }}-01-01">
+                            <input type="date" name="valid_from" class="form-control" required
+                                   value="{{ year }}-01-01">
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-semibold">Gültig bis</label>
-                            <input type="date" name="bis" class="form-control">
+                            <input type="date" name="valid_until" class="form-control">
                             <div class="form-text">Leer = läuft noch</div>
                         </div>
                     </div>
@@ -84,8 +84,8 @@
     <div class="col-lg-7">
         <div class="card">
             <div class="card-header">
-                <i class="bi bi-heart me-2"></i>Aktive Patenschaften
-                <span class="text-muted ms-1" style="font-size: 0.85rem;">im Jahr {{ jahr }}</span>
+                <i class="bi bi-heart me-2"></i>Aktive Sponsorshipen
+                <span class="text-muted ms-1" style="font-size: 0.85rem;">im Jahr {{ year }}</span>
             </div>
             <div class="card-body p-0">
                 {% if bereiche_gruppiert %}
@@ -100,15 +100,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for bereich, eintraege in bereiche_gruppiert.items() %}
+                        {% for area, eintraege in bereiche_gruppiert.items() %}
                         {% for p in eintraege %}
                         <tr>
                             {% if loop.first %}
                             <td rowspan="{{ eintraege | length }}" class="align-middle"
                                 style="border-right: 2px solid var(--gv-gruen-blass);">
-                                <div class="fw-semibold">{{ bereich }}</div>
-                                {% if p.beschreibung %}
-                                <div class="text-muted" style="font-size: 0.8rem;">{{ p.beschreibung }}</div>
+                                <div class="fw-semibold">{{ area }}</div>
+                                {% if p.description %}
+                                <div class="text-muted" style="font-size: 0.8rem;">{{ p.description }}</div>
                                 {% endif %}
                                 {% if eintraege | length > 1 %}
                                 <span class="badge mt-1" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
@@ -118,25 +118,25 @@
                             </td>
                             {% endif %}
                             <td>
-                                {% if p.mitglied %}
-                                <a href="/members/{{ p.mitglied.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ p.mitglied.full_name }}</a>
+                                {% if p.member %}
+                                <a href="/members/{{ p.member.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ p.member.full_name }}</a>
                                 {% else %}
                                 <span class="text-muted fst-italic">noch nicht vergeben</span>
                                 {% endif %}
                             </td>
-                            <td>{{ p.stunden_anrechenbar | int }} h</td>
+                            <td>{{ p.credited_hours | int }} h</td>
                             <td class="text-muted" style="font-size: 0.85rem;">
-                                {{ p.von.strftime('%d.%m.%Y') }} –
-                                {{ p.bis.strftime('%d.%m.%Y') if p.bis else 'laufend' }}
+                                {{ p.valid_from.strftime('%d.%m.%Y') }} –
+                                {{ p.valid_until.strftime('%d.%m.%Y') if p.valid_until else 'laufend' }}
                             </td>
                             <td class="text-end">
-                                <a href="/pflichtstunden/patenschaften/{{ p.id }}/bearbeiten"
+                                <a href="/work-hours/sponsorships/{{ p.id }}/edit"
                                    class="btn btn-sm btn-outline-secondary border-0">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post"
-                                      action="/pflichtstunden/patenschaften/{{ p.id }}/loeschen"
+                                      action="/work-hours/sponsorships/{{ p.id }}/delete"
                                       class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                             onclick="return confirm('Eintrag wirklich löschen?')">
@@ -151,7 +151,7 @@
                 </table>
                 {% else %}
                 <div class="text-center text-muted py-4">
-                    Keine aktiven Patenschaften im Jahr {{ jahr }}.
+                    Keine aktiven Sponsorshipen im Jahr {{ year }}.
                 </div>
                 {% endif %}
             </div>

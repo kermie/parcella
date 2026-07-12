@@ -3,7 +3,7 @@ Modul-Flags: Ein-/Ausblenden optionaler Funktionsbereiche.
 
 Konzept:
 - Jedes optionale Modul hat einen Schlüssel "modul_<name>" in der
-  Vereinseinstellungen-Tabelle (z.B. "modul_pflichtstunden").
+  Vereinseinstellungen-Tabelle (z.B. "modul_work_hours").
 - Fehlt der Schlüssel (z.B. bei bestehenden Installationen ohne
   explizite Einstellung), gilt der Default in MODULE_DEFAULTS
   (bewusst True, damit bestehende Nutzer nichts verlieren).
@@ -28,7 +28,7 @@ from app.models import Vereinseinstellung
 # Default-Zustand pro Modul, falls kein expliziter Wert in der DB steht.
 # Bewusst True für bestehende Module, damit ein Update nichts "kaputt macht".
 MODULE_DEFAULTS: Dict[str, bool] = {
-    "pflichtstunden": True,
+    "work_hours": True,
     "wasser": True,
     "strom": True,
     "versicherungen": True,

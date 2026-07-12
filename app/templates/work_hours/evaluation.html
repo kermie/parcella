@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Pflichtstunden-Auswertung {{ jahr }}{% endblock %}
-{% block page_title %}Jahresauswertung {{ jahr }}{% endblock %}
+{% block title %}Pflichtstunden-Auswertung {{ year }}{% endblock %}
+{% block page_title %}Jahresauswertung {{ year }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
-        <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
             {% for j in verfuegbare_jahre %}
-            <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+            <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
     </form>
-    <a href="/pflichtstunden/auswertung/csv?jahr={{ jahr }}" class="btn btn-sm btn-outline-secondary">
+    <a href="/work-hours/evaluation/csv?year={{ year }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-download me-1"></i>CSV Export
     </a>
-    <a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+    <a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Zurück
     </a>
 </div>
@@ -25,8 +25,8 @@
 {% if not config %}
 <div class="alert alert-warning d-flex gap-2 align-items-center">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    Keine Pflichtstunden-Konfiguration für {{ jahr }} vorhanden.
-    <a href="/pflichtstunden/konfiguration" class="alert-link ms-1">Jetzt anlegen →</a>
+    Keine Pflichtstunden-Konfiguration für {{ year }} vorhanden.
+    <a href="/work-hours/configuration" class="alert-link ms-1">Jetzt anlegen →</a>
 </div>
 {% else %}
 
@@ -59,9 +59,9 @@
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Modus</div>
             <div style="font-size: 1rem; font-weight: 600; color: var(--gv-gruen);">
-                {% if config.modus.value == 'pro_pachtvertrag' %}Pro Parzelle{% else %}Pro Mitglied{% endif %}
+                {% if config.mode.value == 'pro_pachtvertrag' %}Pro Parzelle{% else %}Pro Mitglied{% endif %}
             </div>
-            <div class="text-muted" style="font-size: 0.75rem;">{{ config.stunden_gesamt | int }}h à {{ "%.2f"|format(config.stundensatz_eur|float) }}€</div>
+            <div class="text-muted" style="font-size: 0.75rem;">{{ config.hours_required | int }}h à {{ "%.2f"|format(config.rate_per_hour_eur|float) }}€</div>
         </div>
     </div>
 </div>
@@ -73,7 +73,7 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        {% if config.modus.value == 'pro_pachtvertrag' %}
+                        {% if config.mode.value == 'pro_pachtvertrag' %}
                         <th>Parzelle</th>
                         <th>Pächter</th>
                         {% else %}
@@ -81,7 +81,7 @@
                         {% endif %}
                         <th>Pflicht</th>
                         <th>Einsätze</th>
-                        <th>Patenschaft</th>
+                        <th>Sponsorship</th>
                         <th>Gesamt</th>
                         <th>Offen</th>
                         <th>Schuldbetrag</th>
@@ -93,7 +93,7 @@
                     <tr class="{% if z.erfuellt %}table-success{% elif z.offen_stunden > 0 %}table-warning{% endif %}"
                         style="{% if z.erfuellt %}background: #f0fdf4 !important;{% endif %}">
 
-                        {% if config.modus.value == 'pro_pachtvertrag' %}
+                        {% if config.mode.value == 'pro_pachtvertrag' %}
                         <td>
                             <a href="/parcels/{{ z.parzelle.id }}" class="fw-bold text-decoration-none"
                                style="color: var(--gv-gruen);">{{ z.parzelle.plot_number }}</a>
@@ -101,8 +101,8 @@
                         <td>
                             {% for pd in z.paechter_details %}
                             <div style="font-size: 0.85rem;">
-                                <a href="/members/{{ pd.mitglied.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ pd.mitglied.full_name }}</a>
+                                <a href="/members/{{ pd.member.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ pd.member.full_name }}</a>
                                 {% if pd.befreit %}<span class="badge ms-1" style="background: #dbeafe; color: #1e40af; font-size: 0.7rem;">befreit</span>{% endif %}
                                 <span class="text-muted">({{ "%.1f"|format(pd.stand.gesamt) }}h)</span>
                             </div>
@@ -117,8 +117,8 @@
 
                         {% else %}
                         <td>
-                            <a href="/members/{{ z.mitglied.id }}" class="text-decoration-none fw-semibold"
-                               style="color: var(--gv-gruen);">{{ z.mitglied.full_name }}</a>
+                            <a href="/members/{{ z.member.id }}" class="text-decoration-none fw-semibold"
+                               style="color: var(--gv-gruen);">{{ z.member.full_name }}</a>
                         </td>
                         <td>{{ z.pflicht_stunden | int }} h</td>
                         <td>{{ "%.1f"|format(z.stand.einsatz_stunden) }} h</td>

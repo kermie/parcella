@@ -116,6 +116,52 @@ und `Zaehlpunkt`-Beziehungen.
 gebraucht werden, die Zeile explizit mit `selectinload(...)` neu laden,
 statt das ursprüngliche (frisch erzeugte) Objekt weiterzuverwenden.
 
+## Zweites Modul auf Englisch: Pflichtstunden → Work Hours
+
+Nach dem Kernmodul (Member/Parcel) war Pflichtstunden das nächste Modul
+in der Reihe. Diesmal mit den Lehren aus der ersten Runde von Anfang an
+proaktiv angewendet – trotzdem tauchten neue Fallstricke auf:
+
+**Verzögerte (function-lokale) Imports werden von Cross-Reference-Skripten
+übersehen.** Der frühere Cross-Check (Schema-/Modell-Importe gegen
+Definitionen abgleichen) prüfte nur Top-Level-Imports am Dateianfang.
+`api_work_hours.py`s Auswertungs-Endpunkt importierte aber
+`from app.routers.pflichtstunden import (...)` **innerhalb einer
+Funktion** (üblich, um Zirkelimporte zu vermeiden) – dieser Pfad existierte
+nach der Umbenennung zu `work_hours.py` nicht mehr, wurde aber vom
+Cross-Check nicht erfasst, da er nur nach Modulanfang-Imports sucht.
+Erst eine gezielte Suche nach eingerückten `from app.`-Zeilen im gesamten
+Projekt deckte das auf. **Lehre:** Cross-Reference-Prüfungen müssen auch
+verzögerte/lokale Imports einschließen, nicht nur Modulkopf-Importe.
+
+**Enum-Wert-Vergleiche (`Enum.ALTER_NAME`) sind eine eigene Fehlerklasse,
+unabhängig von String-Literalen.** Neben den erwarteten Stellen
+(Konstruktor-Keywords, Formularfelder) mussten zusätzlich alle Vergleiche
+der Form `Status.ALTER_NAME` (z.B. `ParticipationStatus.ERSCHIENEN`)
+sowie rohe String-Literale in `Form(...)`-Defaults und
+HTML-`<option value="...">`-Attributen gefunden und umbenannt werden –
+drei unterschiedliche Erscheinungsformen desselben zugrundeliegenden
+Problems (Enum-Werte geändert), die jede für sich gesucht werden mussten.
+
+**Bei dieser Gelegenheit auch den dokumentierten Groß-/Kleinschreibungs-
+Ausreißer korrigiert.** `PflichtstundenModus`/`WorkHoursMode` war der
+einzige klein geschriebene Enum im gesamten Projekt (`pro_pachtvertrag`
+statt `PRO_PACHTVERTRAG`, siehe weiter oben dokumentiert). Da dieses
+Modul ohnehin komplett umgebaut wurde, war es der natürliche Zeitpunkt,
+auch diese Inkonsistenz endlich zu schließen (`PER_PARCEL`/`PER_MEMBER`,
+durchgängig großgeschrieben wie alle anderen Enums).
+
+**URL-Umbenennung per Sed traf auch Template-Pfad-Strings.** Ein
+Sed-Ersetzungsmuster wie `s#/konfiguration#/configuration#g`, gedacht für
+Router-URLs, trifft genauso das Vorkommen von "/konfiguration" innerhalb
+eines Template-Pfad-Strings wie `"pflichtstunden/konfiguration.html"` –
+der Router erwartete danach eine Datei, die es unter diesem Namen noch
+gar nicht gab. Behoben durch Abgleich "vom Router erwartete
+Template-Pfade" gegen "tatsächlich vorhandene Dateien im Ordner" und
+anschließendes Umbenennen der Dateien. **Lehre:** Nach URL-Umbenennungen
+pauschal immer prüfen, ob dieselbe Ersetzung auch Dateipfad-Strings im
+Code getroffen hat.
+
 ## Kernmodul auf Englisch umgestellt (Mitglieder/Parzellen → Members/Parcels)
 
 **Warum jetzt, nicht später:** Solange nur ein Verein die Software

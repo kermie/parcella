@@ -226,152 +226,152 @@ class PaginierteAntwort(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Pflichtstunden
+# Work Hours (Pflichtstunden)
 # ---------------------------------------------------------------------------
 
-class PflichtstundenKonfigurationBase(BaseModel):
-    jahr: int
-    stunden_gesamt: Decimal
-    stundensatz_eur: Decimal
-    modus: str = Field("PRO_PACHTVERTRAG", description="PRO_PACHTVERTRAG oder PRO_MITGLIED")
-    notiz: Optional[str] = None
+class WorkHoursConfigurationBase(BaseModel):
+    year: int
+    hours_required: Decimal
+    rate_per_hour_eur: Decimal
+    mode: str = Field("PER_PARCEL", description="PER_PARCEL oder PER_MEMBER")
+    note: Optional[str] = None
 
 
-class PflichtstundenKonfigurationCreate(PflichtstundenKonfigurationBase):
+class WorkHoursConfigurationCreate(WorkHoursConfigurationBase):
     pass
 
 
-class PflichtstundenKonfigurationOut(PflichtstundenKonfigurationBase):
+class WorkHoursConfigurationOut(WorkHoursConfigurationBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
 
 
-class VereinsrolleBase(BaseModel):
+class ClubRoleBase(BaseModel):
     name: str
-    beschreibung: Optional[str] = None
-    pflichtstunden_befreit: bool = False
-    befreiungsgrund: Optional[str] = None
+    description: Optional[str] = None
+    hours_exempt: bool = False
+    exemption_reason: Optional[str] = None
 
 
-class VereinsrolleCreate(VereinsrolleBase):
+class ClubRoleCreate(ClubRoleBase):
     pass
 
 
-class VereinsrolleOut(VereinsrolleBase):
+class ClubRoleOut(ClubRoleBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
 
 
-class MitgliedVereinsrolleCreate(BaseModel):
-    mitglied_id: str
-    vereinsrolle_id: str
-    jahr: int
-    von: Optional[date] = None
-    bis: Optional[date] = None
-    notiz: Optional[str] = None
+class MemberClubRoleCreate(BaseModel):
+    member_id: str
+    club_role_id: str
+    year: int
+    valid_from: Optional[date] = None
+    valid_until: Optional[date] = None
+    note: Optional[str] = None
 
 
-class MitgliedVereinsrolleOut(BaseModel):
+class MemberClubRoleOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    mitglied_id: str
-    vereinsrolle_id: str
-    jahr: int
-    von: Optional[date] = None
-    bis: Optional[date] = None
-    notiz: Optional[str] = None
+    member_id: str
+    club_role_id: str
+    year: int
+    valid_from: Optional[date] = None
+    valid_until: Optional[date] = None
+    note: Optional[str] = None
 
 
-class ArbeitseinsatzBase(BaseModel):
-    titel: str
-    beschreibung: Optional[str] = None
-    typ: str = Field("STANDARD", description="STANDARD oder BESONDERS")
-    datum: date
-    uhrzeit_von: Optional[str] = None
-    uhrzeit_bis: Optional[str] = None
-    max_teilnehmer: Optional[int] = None
-    stunden_pro_teilnehmer: Optional[Decimal] = None
+class WorkSessionBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    type: str = Field("STANDARD", description="STANDARD oder SPECIAL")
+    date: date
+    time_from: Optional[str] = None
+    time_until: Optional[str] = None
+    max_participants: Optional[int] = None
+    hours_per_participant: Optional[Decimal] = None
 
 
-class ArbeitseinsatzCreate(ArbeitseinsatzBase):
+class WorkSessionCreate(WorkSessionBase):
     pass
 
 
-class ArbeitseinsatzUpdate(BaseModel):
-    titel: Optional[str] = None
-    beschreibung: Optional[str] = None
-    typ: Optional[str] = None
-    datum: Optional[date] = None
-    uhrzeit_von: Optional[str] = None
-    uhrzeit_bis: Optional[str] = None
-    max_teilnehmer: Optional[int] = None
-    stunden_pro_teilnehmer: Optional[Decimal] = None
+class WorkSessionUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[str] = None
+    date: Optional[date] = None
+    time_from: Optional[str] = None
+    time_until: Optional[str] = None
+    max_participants: Optional[int] = None
+    hours_per_participant: Optional[Decimal] = None
 
 
-class ArbeitseinsatzOut(ArbeitseinsatzBase):
+class WorkSessionOut(WorkSessionBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
 
 
-class EinsatzTeilnahmeCreate(BaseModel):
-    mitglied_id: str
-    status: str = Field("ERSCHIENEN", description="ANGEMELDET, ERSCHIENEN oder NICHT_ERSCHIENEN")
-    stunden_geleistet: Optional[Decimal] = None
-    notiz: Optional[str] = None
+class SessionParticipationCreate(BaseModel):
+    member_id: str
+    status: str = Field("ATTENDED", description="REGISTERED, ATTENDED oder NO_SHOW")
+    hours_completed: Optional[Decimal] = None
+    note: Optional[str] = None
 
 
-class EinsatzTeilnahmeUpdate(BaseModel):
+class SessionParticipationUpdate(BaseModel):
     status: Optional[str] = None
-    stunden_geleistet: Optional[Decimal] = None
-    notiz: Optional[str] = None
+    hours_completed: Optional[Decimal] = None
+    note: Optional[str] = None
 
 
-class EinsatzTeilnahmeOut(BaseModel):
+class SessionParticipationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    einsatz_id: str
-    mitglied_id: str
+    session_id: str
+    member_id: str
     status: str
-    stunden_geleistet: Optional[Decimal] = None
-    notiz: Optional[str] = None
+    hours_completed: Optional[Decimal] = None
+    note: Optional[str] = None
 
 
-class PatenschaftBase(BaseModel):
-    bereich: str
-    beschreibung: Optional[str] = None
-    stunden_anrechenbar: Decimal
-    von: date
-    bis: Optional[date] = None
+class SponsorshipBase(BaseModel):
+    area: str
+    description: Optional[str] = None
+    credited_hours: Decimal
+    valid_from: date
+    valid_until: Optional[date] = None
 
 
-class PatenschaftCreate(PatenschaftBase):
-    mitglied_id: Optional[str] = None
+class SponsorshipCreate(SponsorshipBase):
+    member_id: Optional[str] = None
 
 
-class PatenschaftUpdate(BaseModel):
-    mitglied_id: Optional[str] = None
-    bereich: Optional[str] = None
-    beschreibung: Optional[str] = None
-    stunden_anrechenbar: Optional[Decimal] = None
-    von: Optional[date] = None
-    bis: Optional[date] = None
+class SponsorshipUpdate(BaseModel):
+    member_id: Optional[str] = None
+    area: Optional[str] = None
+    description: Optional[str] = None
+    credited_hours: Optional[Decimal] = None
+    valid_from: Optional[date] = None
+    valid_until: Optional[date] = None
 
 
-class PatenschaftOut(PatenschaftBase):
+class SponsorshipOut(SponsorshipBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    mitglied_id: Optional[str] = None
+    member_id: Optional[str] = None
 
 
-class AuswertungZeileOut(BaseModel):
-    """Eine Zeile der Pflichtstunden-Jahresauswertung."""
-    bezeichnung: str
-    pflicht_stunden: Decimal
-    geleistete_stunden: Decimal
-    offen_stunden: Decimal
-    schuldbetrag_eur: Decimal
-    befreit: bool
-    erfuellt: bool
+class EvaluationRowOut(BaseModel):
+    """Eine Zeile der Work-Hours-Jahresauswertung."""
+    label: str
+    hours_required: Decimal
+    hours_completed: Decimal
+    hours_open: Decimal
+    amount_due_eur: Decimal
+    exempt: bool
+    fulfilled: bool
 
 
 # ---------------------------------------------------------------------------

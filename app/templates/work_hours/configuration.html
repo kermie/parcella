@@ -3,7 +3,7 @@
 {% block page_title %}Pflichtstunden-Konfiguration{% endblock %}
 
 {% block topbar_actions %}
-<a href="/pflichtstunden/" class="btn btn-sm btn-outline-secondary">
+<a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
 {% endblock %}
@@ -14,16 +14,16 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Jahr anlegen / aktualisieren</div>
             <div class="card-body">
-                <form method="post" action="/pflichtstunden/konfiguration/neu">
+                <form method="post" action="/work-hours/configuration/new">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Jahr <span class="text-danger">*</span></label>
-                        <input type="number" name="jahr" class="form-control"
+                        <input type="number" name="year" class="form-control"
                                value="{{ aktuelles_jahr }}" min="2000" max="2100" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Pflichtstunden gesamt <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="stunden_gesamt" class="form-control"
+                            <input type="text" name="hours_required" class="form-control"
                                    placeholder="5.0" required>
                             <span class="input-group-text">h</span>
                         </div>
@@ -31,7 +31,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Stundensatz <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" name="stundensatz_eur" class="form-control"
+                            <input type="text" name="rate_per_hour_eur" class="form-control"
                                    placeholder="25.00" required>
                             <span class="input-group-text">€</span>
                         </div>
@@ -39,7 +39,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Abrechnungsmodus</label>
-                        <select name="modus" class="form-select">
+                        <select name="mode" class="form-select">
                             <option value="pro_pachtvertrag">Pro Pachtvertrag / Parzelle</option>
                             <option value="pro_mitglied">Pro Mitglied</option>
                         </select>
@@ -50,7 +50,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Notiz</label>
-                        <input type="text" name="notiz" class="form-control"
+                        <input type="text" name="note" class="form-control"
                                placeholder="z.B. Beschluss HV vom 15.03.2025">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
@@ -80,26 +80,26 @@
                     <tbody>
                         {% for k in konfigurationen %}
                         <tr>
-                            <td class="fw-bold">{{ k.jahr }}</td>
-                            <td>{{ k.stunden_gesamt | int }} h</td>
-                            <td>{{ "%.2f"|format(k.stundensatz_eur|float) }} €</td>
-                            <td>{{ "%.2f"|format(k.stunden_gesamt|float * k.stundensatz_eur|float) }} €</td>
+                            <td class="fw-bold">{{ k.year }}</td>
+                            <td>{{ k.hours_required | int }} h</td>
+                            <td>{{ "%.2f"|format(k.rate_per_hour_eur|float) }} €</td>
+                            <td>{{ "%.2f"|format(k.hours_required|float * k.rate_per_hour_eur|float) }} €</td>
                             <td>
                                 <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.72rem;">
-                                    {% if k.modus.value == 'pro_pachtvertrag' %}Pachtvertrag{% else %}Mitglied{% endif %}
+                                    {% if k.mode.value == 'pro_pachtvertrag' %}Pachtvertrag{% else %}Mitglied{% endif %}
                                 </span>
                             </td>
-                            <td class="text-muted" style="font-size: 0.85rem;">{{ k.notiz or '–' }}</td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ k.note or '–' }}</td>
                             <td class="text-end">
-                                <a href="/pflichtstunden/konfiguration/{{ k.id }}/bearbeiten"
+                                <a href="/work-hours/configuration/{{ k.id }}/edit"
                                    class="btn btn-sm btn-outline-secondary border-0">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post"
-                                      action="/pflichtstunden/konfiguration/{{ k.id }}/loeschen"
+                                      action="/work-hours/configuration/{{ k.id }}/delete"
                                       class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                            onclick="return confirm('Konfiguration für {{ k.jahr }} wirklich löschen?')">
+                                            onclick="return confirm('Konfiguration für {{ k.year }} wirklich löschen?')">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>

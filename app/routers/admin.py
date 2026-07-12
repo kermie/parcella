@@ -165,7 +165,7 @@ EINSTELLUNGEN_FELDER = [
 # Optionale Funktionsbereiche, die sich pro Verein ein-/ausschalten lassen.
 # Schlüssel folgen der Konvention "modul_<name>" (siehe app/module_flags.py).
 MODULE_FELDER = [
-    ("modul_pflichtstunden", "Pflichtstunden-Verwaltung",
+    ("modul_work_hours", "Pflichtstunden-Verwaltung",
      "Arbeitseinsätze, Patenschaften, Vereinsrollen und Jahresauswertung. "
      "Deaktivieren, falls der Verein keine Pflichtstunden erhebt."),
     ("modul_wasser", "Wasserverwaltung",

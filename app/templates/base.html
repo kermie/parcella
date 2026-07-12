@@ -183,22 +183,22 @@
         </a>
         {% endif %}
 
-        {% if request.state.module_flags.pflichtstunden %}
-        <div class="nav-group" data-group="pflichtstunden">
+        {% if request.state.module_flags.work_hours %}
+        <div class="nav-group" data-group="work_hours">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#nav-group-pflichtstunden">
+                    data-bs-target="#nav-group-work_hours">
                 <i class="bi bi-hammer"></i>
                 <span>Arbeitseinsätze</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-pflichtstunden">
-                <a href="/pflichtstunden/" class="{% if '/pflichtstunden' in request.url.path and '/auswertung' not in request.url.path %}aktiv{% endif %}">
+            <div class="collapse nav-group-body" id="nav-group-work_hours">
+                <a href="/work-hours/" class="{% if '/work-hours' in request.url.path and '/evaluation' not in request.url.path %}aktiv{% endif %}">
                     Einsätze &amp; Übersicht
                 </a>
-                <a href="/pflichtstunden/auswertung" class="{% if '/pflichtstunden/auswertung' in request.url.path %}aktiv{% endif %}">
+                <a href="/work-hours/evaluation" class="{% if '/work-hours/evaluation' in request.url.path %}aktiv{% endif %}">
                     Jahresauswertung
                 </a>
-                <a href="/pflichtstunden/patenschaften" class="{% if '/pflichtstunden/patenschaften' in request.url.path %}aktiv{% endif %}">
+                <a href="/work-hours/sponsorships" class="{% if '/work-hours/sponsorships' in request.url.path %}aktiv{% endif %}">
                     Patenschaften
                 </a>
             </div>
