@@ -118,6 +118,34 @@ Connection-Pool) explizit zurückzusetzen, als das Verhalten des
 Test-Frameworks exakt nachzuvollziehen – letzteres ändert sich
 erfahrungsgemäß zwischen Versionen, ersteres nicht.
 
+## SQLAlchemy Identity Map: veraltete Beziehungen trotz erneuter Abfrage
+
+**`_zu_kosten_schema()` zeigte weiterhin 0 € Sachversicherungskosten**,
+obwohl der erste `MissingGreenlet`-Fix bereits griff. Ursache: die
+Beziehung `pv.sach_paket` wurde einmal geladen (mit Wert `None`), **bevor**
+`sach_paket_id` überhaupt gesetzt wurde (nämlich beim Neuanlegen der Zeile
+weiter oben in der Funktion). SQLAlchemys **Identity Map** sorgt dafür,
+dass ein und dasselbe Python-Objekt innerhalb derselben Session für
+denselben Primärschlüssel wiederverwendet wird – ein erneutes Abfragen
+mit `selectinload(sach_paket)` überschreibt eine **bereits als geladen
+markierte** Beziehung NICHT automatisch, selbst nach einem `commit()`,
+solange `expire_on_commit=False` gesetzt ist (was wir bewusst so
+konfiguriert haben, um andere Greenlet-Probleme zu vermeiden).
+
+**Lösung:** `await db.refresh(pv, attribute_names=["sach_paket",
+"zusatzpersonen"])` statt erneutem `select(...)` – `refresh()` erzwingt
+gezielt das Neuladen genau der angegebenen Beziehungen aus der
+Datenbank, unabhängig vom bisherigen (u.U. veralteten) Ladezustand des
+Objekts.
+
+**Einordnung:** Das ist eine dritte, eigenständige Variante der
+"frisch angelegtes Objekt + fehlendes Beziehungs-Reload"-Problemfamilie,
+die uns in diesem Projekt schon mehrfach begegnet ist (Ticketsystem,
+Versicherungs-Anlegen) – diesmal nicht als komplett fehlendes Reload,
+sondern als ein Reload, das durch die Identity Map wirkungslos blieb.
+Bei jedem "Objekt X, dann Feld Y setzen, dann Beziehung Z lesen"-Muster
+lohnt sich die Frage: wurde Z schon VOR dem Setzen von Y geladen?
+
 ## Weitere Testläufe: ein ernster Geschäftslogik-Bug gefunden
 
 **Die "any() statt all()"-Regel war an zwei von drei Stellen falsch

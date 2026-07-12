@@ -240,7 +240,15 @@ async def versicherung_setzen(
 
     await db.commit()
 
-    pv = await _lade_pv(db, parzelle_id, jahr)
+    # Wichtig: pv.sach_paket wurde ggf. schon VOR dem Setzen von
+    # sach_paket_id geladen (z.B. beim Neuanlegen weiter oben, als der Wert
+    # noch None war). Ein erneutes Abfragen über _lade_pv würde wegen
+    # SQLAlchemys Identity Map dasselbe (bereits als "geladen" markierte,
+    # aber inzwischen veraltete) Objekt zurückgeben, OHNE die Beziehung
+    # neu zu holen – da expire_on_commit=False gesetzt ist. db.refresh()
+    # erzwingt das gezielte Neuladen genau dieser Beziehungen.
+    await db.refresh(pv, attribute_names=["sach_paket", "zusatzpersonen"])
+
     konfig_result = await db.execute(select(VersicherungsKonfiguration).where(VersicherungsKonfiguration.jahr == jahr))
     konfig = konfig_result.scalar_one_or_none()
     return _zu_kosten_schema(pv, konfig)
