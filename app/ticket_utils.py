@@ -10,7 +10,7 @@ from sqlalchemy import select, func
 from app.models import Member, MemberEmail
 
 
-async def finde_mitglieder_per_email(db: AsyncSession, email: str) -> List[Member]:
+async def find_members_by_email(db: AsyncSession, email: str) -> List[Member]:
     """
     Sucht Mitglieder, deren hinterlegte E-Mail-Adresse mit der übergebenen
     übereinstimmt (case-insensitive). Gibt eine Liste zurück, da dieselbe

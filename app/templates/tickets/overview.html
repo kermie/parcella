@@ -4,12 +4,12 @@
 
 {% block topbar_actions %}
 <div class="d-flex gap-2">
-    <form method="post" action="/tickets/postfach/abrufen-jetzt" class="d-inline">
+    <form method="post" action="/tickets/inbox/fetch-now" class="d-inline">
         <button type="submit" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-clockwise me-1"></i>Postfach jetzt abrufen
         </button>
     </form>
-    <a href="/tickets/neu" class="btn btn-sm btn-primary">
+    <a href="/tickets/new" class="btn btn-sm btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Neues Ticket
     </a>
 </div>
@@ -23,10 +23,10 @@
 </div>
 {% endif %}
 
-{% if faellige_anzahl > 0 %}
+{% if due_count > 0 %}
 <div class="alert alert-warning d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-alarm-fill"></i>
-    {{ faellige_anzahl }} zurückgestellte(s) Ticket(s) ist/sind wieder fällig.
+    {{ due_count }} zurückgestellte(s) Ticket(s) ist/sind wieder fällig.
 </div>
 {% endif %}
 
@@ -37,13 +37,13 @@
                 <a href="/tickets/?filter=aktiv" class="btn btn-{{ 'primary' if filter == 'aktiv' else 'outline-secondary' }}">Aktiv</a>
                 <a href="/tickets/?filter=mir" class="btn btn-{{ 'primary' if filter == 'mir' else 'outline-secondary' }}">Meine</a>
                 <a href="/tickets/?filter=spam" class="btn btn-{{ 'primary' if filter == 'spam' else 'outline-secondary' }}">
-                    Verdächtig {% if spam_anzahl > 0 %}<span class="badge bg-danger ms-1">{{ spam_anzahl }}</span>{% endif %}
+                    Verdächtig {% if spam_count > 0 %}<span class="badge bg-danger ms-1">{{ spam_count }}</span>{% endif %}
                 </a>
                 <a href="/tickets/?filter=geschlossen" class="btn btn-{{ 'primary' if filter == 'geschlossen' else 'outline-secondary' }}">Geschlossen</a>
                 <a href="/tickets/?filter=alle" class="btn btn-{{ 'primary' if filter == 'alle' else 'outline-secondary' }}">Alle</a>
             </div>
             <input type="hidden" name="filter" value="{{ filter }}">
-            <input type="text" name="suche" value="{{ suche }}" class="form-control form-control-sm"
+            <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm"
                    placeholder="Betreff, Absender…" style="max-width: 220px;">
             <button type="submit" class="btn btn-sm btn-outline-primary">Suchen</button>
         </form>
@@ -65,37 +65,37 @@
             </thead>
             <tbody>
                 {% for t in tickets %}
-                <tr class="{% if t.ist_faellig %}table-warning{% elif t.spam_verdacht %}table-danger{% endif %}">
+                <tr class="{% if t.is_due %}table-warning{% elif t.spam_suspected %}table-danger{% endif %}">
                     <td>
                         <a href="/tickets/{{ t.id }}" class="text-decoration-none fw-semibold"
-                           style="color: var(--gv-gruen);">{{ t.betreff }}</a>
-                        {% if t.spam_verdacht %}
+                           style="color: var(--gv-gruen);">{{ t.subject }}</a>
+                        {% if t.spam_suspected %}
                         <span class="badge bg-danger ms-1" style="font-size: 0.68rem;">Spam-Verdacht</span>
                         {% endif %}
-                        {% if t.mitglied %}
+                        {% if t.member %}
                         <div class="text-muted" style="font-size: 0.78rem;">
-                            <i class="bi bi-person"></i> {{ t.mitglied.full_name }}
+                            <i class="bi bi-person"></i> {{ t.member.full_name }}
                         </div>
                         {% endif %}
                     </td>
                     <td class="text-muted" style="font-size: 0.85rem;">
-                        {{ t.absender_name or t.absender_email }}
+                        {{ t.sender_name or t.sender_email }}
                     </td>
                     <td>
-                        {% if t.status.value == 'NICHT_ZUGEWIESEN' %}
+                        {% if t.status.value == 'UNASSIGNED' %}
                         <span class="badge" style="background: #fee2e2; color: #991b1b;">Nicht zugewiesen</span>
-                        {% elif t.status.value == 'ZUGEWIESEN' %}
+                        {% elif t.status.value == 'ASSIGNED' %}
                         <span class="badge badge-aktiv">Zugewiesen</span>
-                        {% elif t.status.value == 'ZURUECKGESTELLT' %}
+                        {% elif t.status.value == 'DEFERRED' %}
                         <span class="badge" style="background: #fef3c7; color: #92400e;">
-                            Zurückgestellt{% if t.ist_faellig %} (fällig!){% endif %}
+                            Zurückgestellt{% if t.is_due %} (fällig!){% endif %}
                         </span>
                         {% else %}
                         <span class="badge" style="background: #f3f4f6; color: #6b7280;">Geschlossen</span>
                         {% endif %}
                     </td>
-                    <td>{{ t.zugewiesen_an.name if t.zugewiesen_an else '–' }}</td>
-                    <td class="text-muted" style="font-size: 0.82rem;">{{ t.erstellt_am.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>{{ t.assigned_to.name if t.assigned_to else '–' }}</td>
+                    <td class="text-muted" style="font-size: 0.82rem;">{{ t.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td class="text-end">
                         <a href="/tickets/{{ t.id }}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-eye"></i>

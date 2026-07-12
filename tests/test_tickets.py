@@ -24,15 +24,15 @@ async def test_ticket_anlegen_und_automatischer_mitglied_abgleich(client, admin_
     ticket = (await client.post(
         "/api/v1/tickets",
         json={
-            "betreff": "Frage zur Parcel", "absender_email": "petra@example.com",
-            "nachricht": "Wo finde ich meine Wasseruhr?",
+            "subject": "Frage zur Parcel", "sender_email": "petra@example.com",
+            "message": "Wo finde ich meine Wasseruhr?",
         },
         headers=headers,
     )).json()
 
-    assert ticket["mitglied_id"] == mitglied["id"]
-    assert ticket["status"] == "NICHT_ZUGEWIESEN"
-    assert len(ticket["nachrichten"]) == 1
+    assert ticket["member_id"] == mitglied["id"]
+    assert ticket["status"] == "UNASSIGNED"
+    assert len(ticket["messages"]) == 1
 
 
 async def test_ticket_zuweisung_aendert_status(client, admin_benutzer):
@@ -41,24 +41,24 @@ async def test_ticket_zuweisung_aendert_status(client, admin_benutzer):
 
     ticket = (await client.post(
         "/api/v1/tickets",
-        json={"betreff": "Test", "absender_email": "unbekannt@example.com", "nachricht": "Hallo"},
+        json={"subject": "Test", "sender_email": "unbekannt@example.com", "message": "Hallo"},
         headers=headers,
     )).json()
 
     zugewiesen = (await client.put(
-        f"/api/v1/tickets/{ticket['id']}/zuweisung",
-        json={"benutzer_id": admin_benutzer.id},
+        f"/api/v1/tickets/{ticket['id']}/assignment",
+        json={"assigned_to_id": admin_benutzer.id},
         headers=headers,
     )).json()
-    assert zugewiesen["status"] == "ZUGEWIESEN"
-    assert zugewiesen["zugewiesen_an_id"] == admin_benutzer.id
+    assert zugewiesen["status"] == "ASSIGNED"
+    assert zugewiesen["assigned_to_id"] == admin_benutzer.id
 
     aufgehoben = (await client.put(
-        f"/api/v1/tickets/{ticket['id']}/zuweisung",
-        json={"benutzer_id": None},
+        f"/api/v1/tickets/{ticket['id']}/assignment",
+        json={"assigned_to_id": None},
         headers=headers,
     )).json()
-    assert aufgehoben["status"] == "NICHT_ZUGEWIESEN"
+    assert aufgehoben["status"] == "UNASSIGNED"
 
 
 async def test_ticket_status_zurueckgestellt_erfordert_datum(client, admin_benutzer):
@@ -67,20 +67,20 @@ async def test_ticket_status_zurueckgestellt_erfordert_datum(client, admin_benut
 
     ticket = (await client.post(
         "/api/v1/tickets",
-        json={"betreff": "Test", "absender_email": "x@example.com", "nachricht": "Hallo"},
+        json={"subject": "Test", "sender_email": "x@example.com", "message": "Hallo"},
         headers=headers,
     )).json()
 
     ohne_datum = await client.put(
         f"/api/v1/tickets/{ticket['id']}/status",
-        json={"status": "ZURUECKGESTELLT"},
+        json={"status": "DEFERRED"},
         headers=headers,
     )
     assert ohne_datum.status_code == 422
 
     mit_datum = await client.put(
         f"/api/v1/tickets/{ticket['id']}/status",
-        json={"status": "ZURUECKGESTELLT", "zurueckgestellt_bis": "2030-01-01"},
+        json={"status": "DEFERRED", "deferred_until": "2030-01-01"},
         headers=headers,
     )
     assert mit_datum.status_code == 200

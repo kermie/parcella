@@ -34,7 +34,7 @@ niemals die Ticketerstellung blockieren.
 werden nicht gelöscht, sondern nur aus dem Standard-Filter "Aktiv"
 ausgeblendet. Ein eigener Filter-Tab "Verdächtig" (mit Zähler-Badge) zeigt
 sie weiterhin an, inklusive Score und einer nachvollziehbaren Begründung
-(`spam_begruendung`, z.B. "Schlüsselwörter gefunden: casino, gewinn").
+(`spam_reasoning`, z.B. "Schlüsselwörter gefunden: casino, gewinn").
 Jedes Ticket lässt sich mit einem Klick als "kein Spam" (falsch-positiv)
 freigeben – wichtig, weil Heuristiken nie perfekt sind und ein Verein
 niemals ein echtes Anliegen versehentlich für immer verlieren soll.
@@ -61,7 +61,7 @@ beim Speichern (leer = unverändert lassen) wurde dafür generalisiert
 
 **Hintergrund-Polling ohne neuen Dienst.** Ein `asyncio`-Task, gestartet
 in der `lifespan`-Funktion von `main.py`, ruft alle 2 Minuten
-`verarbeite_eingehende_mails()` auf. Kein Celery, kein Redis, kein
+`process_incoming_mails()` auf. Kein Celery, kein Redis, kein
 separater Container – passt zum "klein und robust"-Anspruch des Projekts.
 Zusätzlich gibt es einen manuellen "Postfach jetzt abrufen"-Button für
 sofortiges Testen, ohne auf den nächsten Zyklus zu warten.
@@ -113,19 +113,19 @@ keine zusätzliche Tabelle/Migration nur für diesen Zweck.
 
 **Threading über Message-ID, mit Fallback.** Eingehende Antworten werden
 zuerst über `In-Reply-To`/`References`-Header gegen gespeicherte
-`message_id`-Werte vorheriger `TicketNachricht`-Einträge abgeglichen.
+`message_id`-Werte vorheriger `TicketMessage`-Einträge abgeglichen.
 Schlägt das fehl (z.B. weil der Kunde eine neue Mail statt zu antworten
 schreibt, aber mit gleichem Betreff), wird ersatzweise nach Absender-
 Adresse + bereinigtem Betreff (ohne "Re:"/"AW:"-Präfix) in offenen
 Tickets gesucht. Ohne Treffer entsteht ein neues Ticket.
 
 **Geschlossene Tickets öffnen sich bei neuer Antwort automatisch
-wieder** – der Status springt zurück auf `ZUGEWIESEN` (falls weiterhin
-zugewiesen) oder `NICHT_ZUGEWIESEN`.
+wieder** – der Status springt zurück auf `ASSIGNED` (falls weiterhin
+zugewiesen) oder `UNASSIGNED`.
 
 **Spam-Prüfung wird bereits aufgerufen, obwohl sie noch ein No-Op ist.**
 `pruefe_auf_spam()` aus Etappe 1 wird bei jeder eingehenden Mail bereits
-aufgerufen und das Ergebnis in `spam_verdacht`/`spam_score` gespeichert –
+aufgerufen und das Ergebnis in `spam_suspected`/`spam_score` gespeichert –
 nur die eigentliche Prüflogik ist noch leer. In Etappe 3 muss daher nur
 noch diese eine Funktion ausgetauscht werden, keine Aufrufer.
 
@@ -134,7 +134,7 @@ noch diese eine Funktion ausgetauscht werden, keine Aufrufer.
 ```
 tickets            – Ein Anliegen: Betreff, Status, Zuweisung, Absender,
                       optionale Mitglied-Zuordnung
-ticket_nachrichten – Der Gesprächsverlauf eines Tickets (eingehend/
+ticket_messages     – Der Gesprächsverlauf eines Tickets (eingehend/
                       ausgehend/intern)
 ```
 
@@ -148,17 +148,17 @@ Ein separates Ticket-Zugriffsrecht hätte diese Erweiterung nur verkompliziert.
 **Status als explizite Zustandsmaschine**, nicht implizit aus der
 Zuweisung abgeleitet:
 ```
-NICHT_ZUGEWIESEN → ZUGEWIESEN → GESCHLOSSEN
-                 ↘ ZURUECKGESTELLT (bis Datum) ↗
+UNASSIGNED → ASSIGNED → CLOSED
+     ↘ DEFERRED (bis Datum) ↗
 ```
 Wird ein Ticket zugewiesen, springt der Status automatisch auf
-`ZUGEWIESEN`; wird die Zuweisung aufgehoben, zurück auf `NICHT_ZUGEWIESEN`.
+`ASSIGNED`; wird die Zuweisung aufgehoben, zurück auf `UNASSIGNED`.
 
 **"Zurückgestellt bis" ist rein berechnet, kein Hintergrundjob.** Ein
-Ticket mit Status `ZURUECKGESTELLT`, dessen Datum erreicht ist, wird nicht
+Ticket mit Status `DEFERRED`, dessen Datum erreicht ist, wird nicht
 automatisch in der Datenbank auf einen anderen Status umgeschaltet.
-Stattdessen berechnet die Property `Ticket.ist_faellig` das bei jedem
-Anzeigen live (`status == ZURUECKGESTELLT and zurueckgestellt_bis <= heute`).
+Stattdessen berechnet die Property `Ticket.is_due` das bei jedem
+Anzeigen live (`status == DEFERRED and deferred_until <= heute`).
 Das spart einen Hintergrundjob nur für diesen Zweck – der einzige
 tatsächlich nötige Hintergrundjob (E-Mail-Polling) kommt ohnehin in Etappe 2.
 
@@ -167,7 +167,7 @@ zur Unfallversicherungs-Logik: Ist die Absender-Adresse **eindeutig** einem
 Mitglied zuordenbar, geschieht das automatisch. Teilen sich mehrere
 Mitglieder dieselbe Adresse (z.B. Ehepaare), trifft die Automatik **keine
 Entscheidung** – die Oberfläche zeigt alle Kandidaten zur manuellen Auswahl
-an (`finde_mitglieder_per_email()` in `app/ticket_utils.py`).
+an (`find_members_by_email()` in `app/ticket_utils.py`).
 
 **Zuweisungs-Benachrichtigung nutzt die bestehende SMTP-Infrastruktur**,
 nicht das erst in Etappe 2 kommende Ticket-Postfach. Die allgemeine
@@ -175,7 +175,7 @@ Vereins-SMTP-Konfiguration (siehe Wasser/Strom-übergreifende
 `app/email_service.py`) reicht dafür bereits aus – ein weiterer Beleg
 dafür, dass sich frühere Infrastruktur-Entscheidungen auszahlen.
 
-**Spam-Felder existieren bereits in der Datenbank** (`spam_verdacht`,
+**Spam-Felder existieren bereits in der Datenbank** (`spam_suspected`,
 `spam_score`), obwohl die eigentliche Prüfung (`app/spam_filter.py`)
 noch ein reines No-Op ist. Damit entfällt in Etappe 3 eine weitere
 Migration – nur die Prüffunktion selbst muss ausgetauscht werden.

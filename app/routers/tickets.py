@@ -18,13 +18,13 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
 from app.models import (
-    Ticket, TicketNachricht, TicketStatus, NachrichtRichtung, Benutzer, Member,
+    Ticket, TicketMessage, TicketStatus, MessageDirection, Benutzer, Member,
 )
 from app.auth import require_user
 from app.module_flags import require_modul
 from app.aenderungstracker import AenderungsTracker
-from app.ticket_utils import finde_mitglieder_per_email
-from app.ticket_mailer import sende_ticket_antwort, verarbeite_eingehende_mails
+from app.ticket_utils import find_members_by_email
+from app.ticket_mailer import send_ticket_reply, process_incoming_mails
 from app.email_service import sende_email
 from app.config import settings
 
@@ -36,13 +36,13 @@ router = APIRouter(
 templates = Jinja2Templates(directory="app/templates")
 
 
-async def _lade_ticket_mit_details(db: AsyncSession, ticket_id: str) -> Optional[Ticket]:
+async def _load_ticket_with_details(db: AsyncSession, ticket_id: str) -> Optional[Ticket]:
     result = await db.execute(
         select(Ticket)
         .options(
-            selectinload(Ticket.zugewiesen_an),
-            selectinload(Ticket.mitglied),
-            selectinload(Ticket.nachrichten).selectinload(TicketNachricht.verfasst_von),
+            selectinload(Ticket.assigned_to),
+            selectinload(Ticket.member),
+            selectinload(Ticket.messages).selectinload(TicketMessage.authored_by),
         )
         .where(Ticket.id == ticket_id)
     )
@@ -54,38 +54,38 @@ async def _lade_ticket_mit_details(db: AsyncSession, ticket_id: str) -> Optional
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
-async def tickets_uebersicht(
+async def tickets_overview(
     request: Request,
     filter: str = "aktiv",  # aktiv | mir | geschlossen | alle
-    suche: str = "",
+    search: str = "",
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
 
     query = (
         select(Ticket)
-        .options(selectinload(Ticket.zugewiesen_an), selectinload(Ticket.mitglied))
-        .order_by(Ticket.erstellt_am.desc())
+        .options(selectinload(Ticket.assigned_to), selectinload(Ticket.member))
+        .order_by(Ticket.created_at.desc())
     )
 
     if filter == "aktiv":
-        query = query.where(Ticket.status != TicketStatus.GESCHLOSSEN, Ticket.spam_verdacht == False)
+        query = query.where(Ticket.status != TicketStatus.CLOSED, Ticket.spam_suspected == False)
     elif filter == "mir":
         query = query.where(
-            Ticket.zugewiesen_an_id == benutzer.id, Ticket.status != TicketStatus.GESCHLOSSEN
+            Ticket.assigned_to_id == benutzer.id, Ticket.status != TicketStatus.CLOSED
         )
     elif filter == "geschlossen":
-        query = query.where(Ticket.status == TicketStatus.GESCHLOSSEN)
+        query = query.where(Ticket.status == TicketStatus.CLOSED)
     elif filter == "spam":
-        query = query.where(Ticket.spam_verdacht == True)
+        query = query.where(Ticket.spam_suspected == True)
     # "alle": kein zusätzlicher Filter (zeigt auch Spam-Verdachtsfälle)
 
-    if suche:
+    if search:
         query = query.where(
             or_(
-                Ticket.betreff.ilike(f"%{suche}%"),
-                Ticket.absender_email.ilike(f"%{suche}%"),
-                Ticket.absender_name.ilike(f"%{suche}%"),
+                Ticket.subject.ilike(f"%{search}%"),
+                Ticket.sender_email.ilike(f"%{search}%"),
+                Ticket.sender_name.ilike(f"%{search}%"),
             )
         )
 
@@ -94,17 +94,17 @@ async def tickets_uebersicht(
 
     # "Fällige" zurückgestellte Tickets (Datum erreicht) zählen als aktiv,
     # unabhängig vom gespeicherten Status – rein berechnet, kein Hintergrundjob.
-    faellige_anzahl = sum(1 for t in tickets if t.ist_faellig)
+    due_count = sum(1 for t in tickets if t.is_due)
 
-    spam_anzahl_result = await db.execute(
-        select(Ticket).where(Ticket.spam_verdacht == True)
+    spam_count_result = await db.execute(
+        select(Ticket).where(Ticket.spam_suspected == True)
     )
-    spam_anzahl = len(spam_anzahl_result.scalars().all())
+    spam_count = len(spam_count_result.scalars().all())
 
-    return templates.TemplateResponse("tickets/uebersicht.html", {
+    return templates.TemplateResponse("tickets/overview.html", {
         "request": request, "benutzer": benutzer,
-        "tickets": tickets, "filter": filter, "suche": suche,
-        "faellige_anzahl": faellige_anzahl, "spam_anzahl": spam_anzahl,
+        "tickets": tickets, "filter": filter, "search": search,
+        "due_count": due_count, "spam_count": spam_count,
         "TicketStatus": TicketStatus,
     })
 
@@ -113,39 +113,39 @@ async def tickets_uebersicht(
 # Anlegen
 # ---------------------------------------------------------------------------
 
-@router.get("/neu", response_class=HTMLResponse)
-async def ticket_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
+@router.get("/new", response_class=HTMLResponse)
+async def ticket_new_page(request: Request, db: AsyncSession = Depends(get_db)):
     benutzer = await require_user(request, db)
-    return templates.TemplateResponse("tickets/formular.html", {"request": request, "benutzer": benutzer})
+    return templates.TemplateResponse("tickets/form.html", {"request": request, "benutzer": benutzer})
 
 
-@router.post("/neu")
-async def ticket_erstellen(
+@router.post("/new")
+async def ticket_create(
     request: Request,
-    betreff: str = Form(...),
-    absender_email: str = Form(...),
-    absender_name: str = Form(""),
-    nachricht: str = Form(...),
+    subject: str = Form(...),
+    sender_email: str = Form(...),
+    sender_name: str = Form(""),
+    message: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
 
-    absender_email = absender_email.strip().lower()
-    treffer = await finde_mitglieder_per_email(db, absender_email)
-    mitglied_id = treffer[0].id if len(treffer) == 1 else None
+    sender_email = sender_email.strip().lower()
+    matches = await find_members_by_email(db, sender_email)
+    member_id = matches[0].id if len(matches) == 1 else None
 
     ticket = Ticket(
-        betreff=betreff.strip(),
-        absender_email=absender_email,
-        absender_name=absender_name.strip() or None,
-        mitglied_id=mitglied_id,
+        subject=subject.strip(),
+        sender_email=sender_email,
+        sender_name=sender_name.strip() or None,
+        member_id=member_id,
     )
     db.add(ticket)
     await db.flush()
 
-    db.add(TicketNachricht(
-        ticket_id=ticket.id, richtung=NachrichtRichtung.EINGEHEND,
-        inhalt=nachricht.strip(),
+    db.add(TicketMessage(
+        ticket_id=ticket.id, direction=MessageDirection.INCOMING,
+        content=message.strip(),
     ))
     await db.commit()
 
@@ -163,21 +163,21 @@ async def ticket_detail(
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
-    ticket = await _lade_ticket_mit_details(db, ticket_id)
+    ticket = await _load_ticket_with_details(db, ticket_id)
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
 
     # Mögliche Member-Kandidaten (falls Absender-Adresse mehreren gehört
     # oder noch keinem zugeordnet ist)
-    kandidaten = await finde_mitglieder_per_email(db, ticket.absender_email)
+    candidates = await find_members_by_email(db, ticket.sender_email)
 
     benutzer_result = await db.execute(select(Benutzer).where(Benutzer.ist_aktiv == True).order_by(Benutzer.name))
     alle_benutzer = benutzer_result.scalars().all()
 
     return templates.TemplateResponse("tickets/detail.html", {
         "request": request, "benutzer": benutzer, "ticket": ticket,
-        "kandidaten": kandidaten, "alle_benutzer": alle_benutzer,
-        "TicketStatus": TicketStatus, "NachrichtRichtung": NachrichtRichtung,
+        "candidates": candidates, "alle_benutzer": alle_benutzer,
+        "TicketStatus": TicketStatus, "MessageDirection": MessageDirection,
         "heute": date.today().isoformat(),
     })
 
@@ -186,46 +186,46 @@ async def ticket_detail(
 # Zuweisen
 # ---------------------------------------------------------------------------
 
-@router.post("/{ticket_id}/zuweisen")
-async def ticket_zuweisen(
+@router.post("/{ticket_id}/assign")
+async def ticket_assign(
     ticket_id: str,
     request: Request,
     benutzer_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     aktueller_benutzer = await require_user(request, db)
-    ticket = await _lade_ticket_mit_details(db, ticket_id)
+    ticket = await _load_ticket_with_details(db, ticket_id)
     if not ticket:
         raise HTTPException(status_code=404)
 
-    tracker = AenderungsTracker(ticket, "Ticket", ["status", "zugewiesen_an_id"])
+    tracker = AenderungsTracker(ticket, "Ticket", ["status", "assigned_to_id"])
 
     if benutzer_id.strip():
         result = await db.execute(select(Benutzer).where(Benutzer.id == benutzer_id))
-        zugewiesener = result.scalar_one_or_none()
-        if not zugewiesener:
+        assignee = result.scalar_one_or_none()
+        if not assignee:
             raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
 
-        ticket.zugewiesen_an_id = zugewiesener.id
-        ticket.status = TicketStatus.ZUGEWIESEN
+        ticket.assigned_to_id = assignee.id
+        ticket.status = TicketStatus.ASSIGNED
 
         await tracker.commit(db, aktueller_benutzer.id)
         await db.commit()
 
         # Benachrichtigung per E-Mail (nutzt bestehende Vereins-SMTP-Konfiguration)
-        betreff = f"Ticket zugewiesen: {ticket.betreff}"
+        subject = f"Ticket zugewiesen: {ticket.subject}"
         html = f"""
         <html><body>
-        <p>Hallo {zugewiesener.name},</p>
+        <p>Hallo {assignee.name},</p>
         <p>Ihnen wurde ein Ticket im Gartenmanager zugewiesen:</p>
-        <p><strong>{ticket.betreff}</strong></p>
+        <p><strong>{ticket.subject}</strong></p>
         <p>Bitte melden Sie sich im Gartenmanager an, um es zu bearbeiten.</p>
         </body></html>
         """
-        await sende_email(zugewiesener.email, betreff, html, db=db)
+        await sende_email(assignee.email, subject, html, db=db)
     else:
-        ticket.zugewiesen_an_id = None
-        ticket.status = TicketStatus.NICHT_ZUGEWIESEN
+        ticket.assigned_to_id = None
+        ticket.status = TicketStatus.UNASSIGNED
         await tracker.commit(db, aktueller_benutzer.id)
         await db.commit()
 
@@ -237,37 +237,37 @@ async def ticket_zuweisen(
 # ---------------------------------------------------------------------------
 
 @router.post("/{ticket_id}/status")
-async def ticket_status_aendern(
+async def ticket_status_update(
     ticket_id: str,
     request: Request,
     status_neu: str = Form(...),
-    zurueckgestellt_bis: str = Form(""),
+    deferred_until: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     aktueller_benutzer = await require_user(request, db)
-    ticket = await _lade_ticket_mit_details(db, ticket_id)
+    ticket = await _load_ticket_with_details(db, ticket_id)
     if not ticket:
         raise HTTPException(status_code=404)
 
-    tracker = AenderungsTracker(ticket, "Ticket", ["status", "zurueckgestellt_bis", "geschlossen_am"])
+    tracker = AenderungsTracker(ticket, "Ticket", ["status", "deferred_until", "closed_at"])
 
     neuer_status = TicketStatus(status_neu)
     ticket.status = neuer_status
 
-    if neuer_status == TicketStatus.ZURUECKGESTELLT:
-        if not zurueckgestellt_bis.strip():
+    if neuer_status == TicketStatus.DEFERRED:
+        if not deferred_until.strip():
             raise HTTPException(status_code=400, detail="Datum für Zurückstellung erforderlich")
-        ticket.zurueckgestellt_bis = date.fromisoformat(zurueckgestellt_bis)
+        ticket.deferred_until = date.fromisoformat(deferred_until)
     else:
-        ticket.zurueckgestellt_bis = None
+        ticket.deferred_until = None
 
-    if neuer_status == TicketStatus.GESCHLOSSEN:
-        ticket.geschlossen_am = datetime.now(timezone.utc)
+    if neuer_status == TicketStatus.CLOSED:
+        ticket.closed_at = datetime.now(timezone.utc)
     else:
-        ticket.geschlossen_am = None
+        ticket.closed_at = None
 
-    if neuer_status == TicketStatus.NICHT_ZUGEWIESEN:
-        ticket.zugewiesen_an_id = None
+    if neuer_status == TicketStatus.UNASSIGNED:
+        ticket.assigned_to_id = None
 
     await tracker.commit(db, aktueller_benutzer.id)
     await db.commit()
@@ -278,11 +278,11 @@ async def ticket_status_aendern(
 # Member manuell zuordnen
 # ---------------------------------------------------------------------------
 
-@router.post("/{ticket_id}/mitglied")
-async def ticket_mitglied_zuordnen(
+@router.post("/{ticket_id}/member")
+async def ticket_member_assign(
     ticket_id: str,
     request: Request,
-    mitglied_id: str = Form(""),
+    member_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
@@ -291,7 +291,7 @@ async def ticket_mitglied_zuordnen(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    ticket.mitglied_id = mitglied_id.strip() or None
+    ticket.member_id = member_id.strip() or None
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -300,8 +300,8 @@ async def ticket_mitglied_zuordnen(
 # Spam-Verdacht aufheben (falsch-positiv)
 # ---------------------------------------------------------------------------
 
-@router.post("/{ticket_id}/kein-spam")
-async def ticket_kein_spam(
+@router.post("/{ticket_id}/not-spam")
+async def ticket_mark_not_spam(
     ticket_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -312,7 +312,7 @@ async def ticket_kein_spam(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    ticket.spam_verdacht = False
+    ticket.spam_suspected = False
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -321,30 +321,30 @@ async def ticket_kein_spam(
 # Nachricht / interne Notiz hinzufügen
 # ---------------------------------------------------------------------------
 
-@router.post("/{ticket_id}/nachricht")
-async def nachricht_hinzufuegen(
+@router.post("/{ticket_id}/message")
+async def message_add(
     ticket_id: str,
     request: Request,
-    inhalt: str = Form(...),
-    richtung: str = Form("AUSGEHEND"),
+    content: str = Form(...),
+    direction: str = Form("OUTGOING"),
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
-    ticket = await _lade_ticket_mit_details(db, ticket_id)
+    ticket = await _load_ticket_with_details(db, ticket_id)
     if not ticket:
         raise HTTPException(status_code=404)
 
-    richtung_enum = NachrichtRichtung(richtung)
+    direction_enum = MessageDirection(direction)
     message_id = None
 
-    if richtung_enum == NachrichtRichtung.AUSGEHEND:
-        message_id = await sende_ticket_antwort(ticket, inhalt.strip(), db)
+    if direction_enum == MessageDirection.OUTGOING:
+        message_id = await send_ticket_reply(ticket, content.strip(), db)
 
-    db.add(TicketNachricht(
+    db.add(TicketMessage(
         ticket_id=ticket_id,
-        richtung=richtung_enum,
-        inhalt=inhalt.strip(),
-        verfasst_von_id=benutzer.id,
+        direction=direction_enum,
+        content=content.strip(),
+        authored_by_id=benutzer.id,
         message_id=message_id,
     ))
     await db.commit()
@@ -356,10 +356,10 @@ async def nachricht_hinzufuegen(
 # Ticket-Postfach: manueller Abruf (zusätzlich zum Hintergrund-Polling)
 # ---------------------------------------------------------------------------
 
-@router.post("/postfach/abrufen-jetzt")
-async def postfach_jetzt_abrufen(request: Request, db: AsyncSession = Depends(get_db)):
+@router.post("/inbox/fetch-now")
+async def inbox_fetch_now(request: Request, db: AsyncSession = Depends(get_db)):
     await require_user(request, db)
-    anzahl = await verarbeite_eingehende_mails(db)
+    anzahl = await process_incoming_mails(db)
     import urllib.parse
     meldung = urllib.parse.quote(f"{anzahl} neue E-Mail(s) verarbeitet.")
     return RedirectResponse(f"/tickets/?meldung={meldung}", status_code=302)

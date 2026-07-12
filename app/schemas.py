@@ -516,65 +516,65 @@ class ParcelInsuranceCostOut(ParcelInsuranceOut):
 # Ticketsystem
 # ---------------------------------------------------------------------------
 
-class TicketNachrichtCreate(BaseModel):
-    richtung: str = Field("AUSGEHEND", description="EINGEHEND, AUSGEHEND oder INTERN")
-    inhalt: str
+class TicketMessageCreate(BaseModel):
+    direction: str = Field("OUTGOING", description="INCOMING, OUTGOING oder INTERNAL")
+    content: str
 
 
-class TicketNachrichtOut(BaseModel):
+class TicketMessageOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
     ticket_id: str
-    richtung: str
-    inhalt: str
-    verfasst_von_id: Optional[str] = None
-    erstellt_am: datetime
+    direction: str
+    content: str
+    authored_by_id: Optional[str] = None
+    created_at: datetime
 
 
 class TicketCreate(BaseModel):
-    betreff: str
-    absender_email: EmailStr
-    absender_name: Optional[str] = None
-    nachricht: str = Field(..., description="Erste Nachricht des Tickets (wird als EINGEHEND gespeichert)")
+    subject: str
+    sender_email: EmailStr
+    sender_name: Optional[str] = None
+    message: str = Field(..., description="Erste Nachricht des Tickets (wird als INCOMING gespeichert)")
 
 
 class TicketStatusUpdate(BaseModel):
-    status: str = Field(..., description="NICHT_ZUGEWIESEN, ZUGEWIESEN, ZURUECKGESTELLT oder GESCHLOSSEN")
-    zurueckgestellt_bis: Optional[date] = None
+    status: str = Field(..., description="UNASSIGNED, ASSIGNED, DEFERRED oder CLOSED")
+    deferred_until: Optional[date] = None
 
 
-class TicketZuweisungUpdate(BaseModel):
-    benutzer_id: Optional[str] = Field(None, description="Leer/None = Zuweisung aufheben")
+class TicketAssignmentUpdate(BaseModel):
+    assigned_to_id: Optional[str] = Field(None, description="Leer/None = Zuweisung aufheben")
 
 
 class TicketMemberUpdate(BaseModel):
-    mitglied_id: Optional[str] = None
+    member_id: Optional[str] = None
 
 
 class TicketSpamUpdate(BaseModel):
-    spam_verdacht: bool = Field(..., description="false zum Aufheben eines Spam-Verdachts (falsch-positiv)")
+    spam_suspected: bool = Field(..., description="false zum Aufheben eines Spam-Verdachts (falsch-positiv)")
 
 
 class TicketOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    betreff: str
+    subject: str
     status: str
-    zugewiesen_an_id: Optional[str] = None
-    zurueckgestellt_bis: Optional[date] = None
-    mitglied_id: Optional[str] = None
-    absender_email: str
-    absender_name: Optional[str] = None
-    spam_verdacht: bool
+    assigned_to_id: Optional[str] = None
+    deferred_until: Optional[date] = None
+    member_id: Optional[str] = None
+    sender_email: str
+    sender_name: Optional[str] = None
+    spam_suspected: bool
     spam_score: Optional[Decimal] = None
-    spam_begruendung: Optional[str] = None
-    erstellt_am: datetime
-    aktualisiert_am: datetime
-    geschlossen_am: Optional[datetime] = None
+    spam_reasoning: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    closed_at: Optional[datetime] = None
 
 
 class TicketDetailOut(TicketOut):
-    nachrichten: List[TicketNachrichtOut] = []
+    messages: List[TicketMessageOut] = []
 
 
 # ---------------------------------------------------------------------------

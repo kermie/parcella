@@ -33,75 +33,75 @@ import aiosmtplib
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.models import Vereinseinstellung, Ticket, TicketNachricht, TicketStatus, NachrichtRichtung
+from app.models import Vereinseinstellung, Ticket, TicketMessage, TicketStatus, MessageDirection
 from app.email_service import lade_smtp_konfiguration
-from app.ticket_utils import finde_mitglieder_per_email
+from app.ticket_utils import find_members_by_email
 from app.spam_filter import pruefe_auf_spam
 
 logger = logging.getLogger(__name__)
 
 # Betriebsdaten-Schlüssel in der vereinseinstellungen-Tabelle
-_SCHLUESSEL_LETZTE_UID = "ticket_imap_letzte_uid"
-_SCHLUESSEL_LETZTER_ABRUF = "ticket_imap_letzter_abruf"
-_SCHLUESSEL_LETZTER_FEHLER = "ticket_imap_letzter_fehler"
+_KEY_LAST_UID = "ticket_imap_letzte_uid"
+_KEY_LAST_FETCH = "ticket_imap_letzter_abruf"
+_KEY_LAST_ERROR = "ticket_imap_letzter_fehler"
 
 
-async def _lese_einstellung(db: AsyncSession, schluessel: str) -> Optional[str]:
-    result = await db.execute(select(Vereinseinstellung).where(Vereinseinstellung.schluessel == schluessel))
-    eintrag = result.scalar_one_or_none()
-    return eintrag.wert if eintrag else None
+async def _read_setting(db: AsyncSession, key: str) -> Optional[str]:
+    result = await db.execute(select(Vereinseinstellung).where(Vereinseinstellung.schluessel == key))
+    entry = result.scalar_one_or_none()
+    return entry.wert if entry else None
 
 
-async def _schreibe_einstellung(db: AsyncSession, schluessel: str, wert: Optional[str]) -> None:
-    result = await db.execute(select(Vereinseinstellung).where(Vereinseinstellung.schluessel == schluessel))
-    eintrag = result.scalar_one_or_none()
-    if eintrag:
-        eintrag.wert = wert
+async def _write_setting(db: AsyncSession, key: str, value: Optional[str]) -> None:
+    result = await db.execute(select(Vereinseinstellung).where(Vereinseinstellung.schluessel == key))
+    entry = result.scalar_one_or_none()
+    if entry:
+        entry.wert = value
     else:
-        db.add(Vereinseinstellung(schluessel=schluessel, wert=wert))
+        db.add(Vereinseinstellung(schluessel=key, wert=value))
 
 
-async def lade_postfach_konfiguration(db: AsyncSession) -> Dict[str, Any]:
+async def load_inbox_configuration(db: AsyncSession) -> Dict[str, Any]:
     """
     Lädt die Postfach-Konfiguration: SMTP-Zugangsdaten kommen aus der
     bereits bestehenden allgemeinen E-Mail-Konfiguration (dasselbe Postfach
     wie für Einladungen) – nur IMAP-Host/-Port/-SSL sind ticketspezifisch,
     da die allgemeine Konfiguration nur zum Senden gedacht ist.
     """
-    smtp_konfig = await lade_smtp_konfiguration(db)
+    smtp_config = await lade_smtp_konfiguration(db)
 
     result = await db.execute(
         select(Vereinseinstellung).where(
             Vereinseinstellung.schluessel.in_(["imap_host", "imap_port", "imap_ssl"])
         )
     )
-    gespeichert = {e.schluessel: e.wert for e in result.scalars().all() if e.wert}
+    stored = {e.schluessel: e.wert for e in result.scalars().all() if e.wert}
 
-    def _bool(wert, default=True) -> bool:
-        if wert is None:
+    def _bool(value, default=True) -> bool:
+        if value is None:
             return default
-        return str(wert).strip().lower() in ("true", "1", "ja", "an")
+        return str(value).strip().lower() in ("true", "1", "ja", "an")
 
     return {
-        "imap_host": gespeichert.get("imap_host", ""),
-        "imap_port": int(gespeichert.get("imap_port") or 993),
-        "imap_user": smtp_konfig["user"],       # dasselbe Postfach wie SMTP
-        "imap_password": smtp_konfig["password"],
-        "imap_ssl": _bool(gespeichert.get("imap_ssl"), True),
-        "smtp_host": smtp_konfig["host"],
-        "smtp_port": smtp_konfig["port"],
-        "smtp_user": smtp_konfig["user"],
-        "smtp_password": smtp_konfig["password"],
-        "smtp_tls": smtp_konfig["tls"],
-        "smtp_from": smtp_konfig["from"],
+        "imap_host": stored.get("imap_host", ""),
+        "imap_port": int(stored.get("imap_port") or 993),
+        "imap_user": smtp_config["user"],       # dasselbe Postfach wie SMTP
+        "imap_password": smtp_config["password"],
+        "imap_ssl": _bool(stored.get("imap_ssl"), True),
+        "smtp_host": smtp_config["host"],
+        "smtp_port": smtp_config["port"],
+        "smtp_user": smtp_config["user"],
+        "smtp_password": smtp_config["password"],
+        "smtp_tls": smtp_config["tls"],
+        "smtp_from": smtp_config["from"],
     }
 
 
-def ist_postfach_konfiguriert(konfig: Dict[str, Any]) -> bool:
-    return bool(konfig["imap_host"] and konfig["smtp_host"] and konfig["smtp_user"])
+def is_inbox_configured(config: Dict[str, Any]) -> bool:
+    return bool(config["imap_host"] and config["smtp_host"] and config["smtp_user"])
 
 
-def _sicher_dekodieren(payload: bytes, zeichensatz: Optional[str]) -> str:
+def _safe_decode(payload: bytes, charset: Optional[str]) -> str:
     """
     Dekodiert Bytes mit dem angegebenen Zeichensatz, fällt aber sicher auf
     UTF-8 zurück, wenn der Zeichensatz Python unbekannt ist.
@@ -113,331 +113,326 @@ def _sicher_dekodieren(payload: bytes, zeichensatz: Optional[str]) -> str:
     BEKANNTEN Zeichensatz abfängt, nicht einen unbekannten Namen selbst.
     """
     try:
-        return payload.decode(zeichensatz or "utf-8", errors="replace")
+        return payload.decode(charset or "utf-8", errors="replace")
     except LookupError:
         return payload.decode("utf-8", errors="replace")
 
 
-def _dekodiere_header(wert: Optional[str]) -> str:
-    if not wert:
+def _decode_header(value: Optional[str]) -> str:
+    if not value:
         return ""
-    teile = decode_header(wert)
-    ergebnis = ""
-    for text, kodierung in teile:
+    parts = decode_header(value)
+    result = ""
+    for text, encoding in parts:
         if isinstance(text, bytes):
-            ergebnis += _sicher_dekodieren(text, kodierung)
+            result += _safe_decode(text, encoding)
         else:
-            ergebnis += text
-    return ergebnis
+            result += text
+    return result
 
 
-def _extrahiere_text(nachricht) -> str:
+def _extract_text(msg) -> str:
     """Bevorzugt text/plain, fällt auf grob bereinigtes text/html zurück."""
-    if nachricht.is_multipart():
-        for teil in nachricht.walk():
-            if teil.get_content_type() == "text/plain" and not teil.get("Content-Disposition"):
-                payload = teil.get_payload(decode=True)
+    if msg.is_multipart():
+        for part in msg.walk():
+            if part.get_content_type() == "text/plain" and not part.get("Content-Disposition"):
+                payload = part.get_payload(decode=True)
                 if payload:
-                    return _sicher_dekodieren(payload, teil.get_content_charset())
-        for teil in nachricht.walk():
-            if teil.get_content_type() == "text/html" and not teil.get("Content-Disposition"):
-                payload = teil.get_payload(decode=True)
+                    return _safe_decode(payload, part.get_content_charset())
+        for part in msg.walk():
+            if part.get_content_type() == "text/html" and not part.get("Content-Disposition"):
+                payload = part.get_payload(decode=True)
                 if payload:
-                    html = _sicher_dekodieren(payload, teil.get_content_charset())
+                    html = _safe_decode(payload, part.get_content_charset())
                     return re.sub(r"<[^>]+>", "", html).strip()
         return ""
     else:
-        payload = nachricht.get_payload(decode=True)
+        payload = msg.get_payload(decode=True)
         if payload:
-            return _sicher_dekodieren(payload, nachricht.get_content_charset())
+            return _safe_decode(payload, msg.get_content_charset())
         return ""
 
 
-def _hole_hoechste_uid_sync(konfig: Dict[str, Any]) -> int:
+def _fetch_highest_uid_sync(config: Dict[str, Any]) -> int:
     """
     Ermittelt nur die höchste aktuell vorhandene UID, OHNE eine einzige
     Nachricht abzurufen. Wird für die Erstsynchronisierung genutzt (siehe
-    verarbeite_eingehende_mails) – verhindert, dass beim allerersten Abruf
+    process_incoming_mails) – verhindert, dass beim allerersten Abruf
     Tausende bestehende Alt-Mails auf einmal als Tickets importiert werden.
     """
-    if konfig["imap_ssl"]:
-        verbindung = imaplib.IMAP4_SSL(konfig["imap_host"], konfig["imap_port"])
+    if config["imap_ssl"]:
+        connection = imaplib.IMAP4_SSL(config["imap_host"], config["imap_port"])
     else:
-        verbindung = imaplib.IMAP4(konfig["imap_host"], konfig["imap_port"])
+        connection = imaplib.IMAP4(config["imap_host"], config["imap_port"])
 
     try:
-        verbindung.login(konfig["imap_user"], konfig["imap_password"])
-        verbindung.select("INBOX")
-        status, daten = verbindung.uid("search", None, "ALL")
-        if status != "OK" or not daten or not daten[0]:
+        connection.login(config["imap_user"], config["imap_password"])
+        connection.select("INBOX")
+        status, data = connection.uid("search", None, "ALL")
+        if status != "OK" or not data or not data[0]:
             return 0
-        alle_uids = [int(u) for u in daten[0].split()]
-        return max(alle_uids) if alle_uids else 0
+        all_uids = [int(u) for u in data[0].split()]
+        return max(all_uids) if all_uids else 0
     finally:
         try:
-            verbindung.close()
+            connection.close()
         except Exception:
             pass
         try:
-            verbindung.logout()
+            connection.logout()
         except Exception:
             pass
 
 
-def _hole_neue_mails_sync(konfig: Dict[str, Any], letzte_uid: Optional[int]) -> List[Dict[str, Any]]:
+def _fetch_new_mails_sync(config: Dict[str, Any], last_uid: Optional[int]) -> List[Dict[str, Any]]:
     """
     Synchrone IMAP-Abfrage (läuft in einem Thread-Executor). Gibt eine Liste
     geparster Nachrichten zurück, jeweils mit uid, message_id, in_reply_to,
-    references, von_email, von_name, betreff, text.
+    references, from_email, from_name, subject, text.
     """
-    ergebnisse: List[Dict[str, Any]] = []
+    results: List[Dict[str, Any]] = []
 
-    if konfig["imap_ssl"]:
-        verbindung = imaplib.IMAP4_SSL(konfig["imap_host"], konfig["imap_port"])
+    if config["imap_ssl"]:
+        connection = imaplib.IMAP4_SSL(config["imap_host"], config["imap_port"])
     else:
-        verbindung = imaplib.IMAP4(konfig["imap_host"], konfig["imap_port"])
+        connection = imaplib.IMAP4(config["imap_host"], config["imap_port"])
 
     try:
-        verbindung.login(konfig["imap_user"], konfig["imap_password"])
-        verbindung.select("INBOX")
+        connection.login(config["imap_user"], config["imap_password"])
+        connection.select("INBOX")
 
-        if letzte_uid:
-            suchbereich = f"{letzte_uid + 1}:*"
-        else:
-            suchbereich = "1:*"
+        status, data = connection.uid("search", None, "ALL")
+        if status != "OK" or not data or not data[0]:
+            return results
 
-        status, daten = verbindung.uid("search", None, "ALL")
-        if status != "OK" or not daten or not daten[0]:
-            return ergebnisse
+        all_uids = [int(u) for u in data[0].split()]
+        new_uids = [u for u in all_uids if last_uid is None or u > last_uid]
 
-        alle_uids = [int(u) for u in daten[0].split()]
-        neue_uids = [u for u in alle_uids if letzte_uid is None or u > letzte_uid]
-
-        for uid in neue_uids:
-            status, msg_daten = verbindung.uid("fetch", str(uid), "(RFC822)")
-            if status != "OK" or not msg_daten or not msg_daten[0]:
+        for uid in new_uids:
+            status, msg_data = connection.uid("fetch", str(uid), "(RFC822)")
+            if status != "OK" or not msg_data or not msg_data[0]:
                 continue
 
-            roh = msg_daten[0][1]
-            nachricht = email.message_from_bytes(roh)
+            raw = msg_data[0][1]
+            msg = email.message_from_bytes(raw)
 
-            von_name, von_email = parseaddr(_dekodiere_header(nachricht.get("From", "")))
-            betreff = _dekodiere_header(nachricht.get("Subject", "(ohne Betreff)"))
-            message_id = (nachricht.get("Message-ID") or "").strip()
-            in_reply_to = (nachricht.get("In-Reply-To") or "").strip()
-            references = (nachricht.get("References") or "").strip()
+            from_name, from_email = parseaddr(_decode_header(msg.get("From", "")))
+            subject = _decode_header(msg.get("Subject", "(ohne Betreff)"))
+            message_id = (msg.get("Message-ID") or "").strip()
+            in_reply_to = (msg.get("In-Reply-To") or "").strip()
+            references = (msg.get("References") or "").strip()
 
-            ergebnisse.append({
+            results.append({
                 "uid": uid,
                 "message_id": message_id,
                 "in_reply_to": in_reply_to,
                 "references": references,
-                "von_email": von_email.strip().lower(),
-                "von_name": von_name.strip(),
-                "betreff": betreff.strip() or "(ohne Betreff)",
-                "text": _extrahiere_text(nachricht).strip(),
+                "from_email": from_email.strip().lower(),
+                "from_name": from_name.strip(),
+                "subject": subject.strip() or "(ohne Betreff)",
+                "text": _extract_text(msg).strip(),
             })
 
-        return ergebnisse
+        return results
     finally:
         try:
-            verbindung.close()
+            connection.close()
         except Exception:
             pass
         try:
-            verbindung.logout()
+            connection.logout()
         except Exception:
             pass
 
 
-def _bereinige_betreff(betreff: str) -> str:
+def _normalize_subject(subject: str) -> str:
     """Entfernt Antwort-/Weiterleitungs-Präfixe für den Fallback-Betreffvergleich."""
-    return re.sub(r"^(re|aw|fwd?)\s*:\s*", "", betreff.strip(), flags=re.IGNORECASE).strip().lower()
+    return re.sub(r"^(re|aw|fwd?)\s*:\s*", "", subject.strip(), flags=re.IGNORECASE).strip().lower()
 
 
-async def _finde_passendes_ticket(db: AsyncSession, mail: Dict[str, Any]) -> Optional[Ticket]:
+async def _find_matching_ticket(db: AsyncSession, mail: Dict[str, Any]) -> Optional[Ticket]:
     """Sucht ein bestehendes Ticket für eine eingehende Antwort."""
     # 1. Über Message-ID-Threading (In-Reply-To oder References)
-    kandidaten_ids = []
+    candidate_ids = []
     if mail["in_reply_to"]:
-        kandidaten_ids.append(mail["in_reply_to"])
+        candidate_ids.append(mail["in_reply_to"])
     if mail["references"]:
-        kandidaten_ids.extend(mail["references"].split())
+        candidate_ids.extend(mail["references"].split())
 
-    if kandidaten_ids:
+    if candidate_ids:
         result = await db.execute(
-            select(TicketNachricht).where(TicketNachricht.message_id.in_(kandidaten_ids))
+            select(TicketMessage).where(TicketMessage.message_id.in_(candidate_ids))
         )
-        treffer = result.scalars().first()
-        if treffer:
-            ticket_result = await db.execute(select(Ticket).where(Ticket.id == treffer.ticket_id))
+        match = result.scalars().first()
+        if match:
+            ticket_result = await db.execute(select(Ticket).where(Ticket.id == match.ticket_id))
             ticket = ticket_result.scalar_one_or_none()
             if ticket:
                 return ticket
 
     # 2. Fallback: gleicher Absender + ähnlicher Betreff, nicht geschlossen
-    bereinigt = _bereinige_betreff(mail["betreff"])
+    normalized = _normalize_subject(mail["subject"])
     result = await db.execute(
         select(Ticket).where(
-            Ticket.absender_email == mail["von_email"],
-            Ticket.status != TicketStatus.GESCHLOSSEN,
+            Ticket.sender_email == mail["from_email"],
+            Ticket.status != TicketStatus.CLOSED,
         )
     )
     for ticket in result.scalars().all():
-        if _bereinige_betreff(ticket.betreff) == bereinigt:
+        if _normalize_subject(ticket.subject) == normalized:
             return ticket
 
     return None
 
 
-async def verarbeite_eingehende_mails(db: AsyncSession) -> int:
+async def process_incoming_mails(db: AsyncSession) -> int:
     """
     Ruft neue E-Mails ab und verarbeitet sie zu Tickets/Nachrichten.
     Gibt die Anzahl neu verarbeiteter Mails zurück. Fehler werden abgefangen
     und in der Datenbank vermerkt, statt den Hintergrundjob abstürzen zu lassen.
     """
-    konfig = await lade_postfach_konfiguration(db)
-    if not ist_postfach_konfiguriert(konfig):
+    config = await load_inbox_configuration(db)
+    if not is_inbox_configured(config):
         return 0
 
-    letzte_uid_str = await _lese_einstellung(db, _SCHLUESSEL_LETZTE_UID)
-    erstlauf = letzte_uid_str is None
-    letzte_uid = int(letzte_uid_str) if letzte_uid_str else None
+    last_uid_str = await _read_setting(db, _KEY_LAST_UID)
+    first_run = last_uid_str is None
+    last_uid = int(last_uid_str) if last_uid_str else None
 
-    if erstlauf:
+    if first_run:
         # Beim allerersten Abruf werden bestehende E-Mails NICHT importiert –
         # nur die aktuell höchste UID wird als Startpunkt gemerkt. Sonst
         # würde ein Postfach mit tausenden Alt-Mails auf einen Schlag komplett
         # (und sehr langsam, ggf. mit Verbindungsabbruch) importiert werden.
         try:
-            hoechste_uid = await asyncio.to_thread(_hole_hoechste_uid_sync, konfig)
+            highest_uid = await asyncio.to_thread(_fetch_highest_uid_sync, config)
         except Exception as e:
             logger.error(f"IMAP-Erstsynchronisierung fehlgeschlagen: {e}")
-            await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_FEHLER, str(e))
+            await _write_setting(db, _KEY_LAST_ERROR, str(e))
             await db.commit()
             return 0
 
-        await _schreibe_einstellung(db, _SCHLUESSEL_LETZTE_UID, str(hoechste_uid))
-        await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_ABRUF, datetime.now(timezone.utc).isoformat())
-        await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_FEHLER, None)
+        await _write_setting(db, _KEY_LAST_UID, str(highest_uid))
+        await _write_setting(db, _KEY_LAST_FETCH, datetime.now(timezone.utc).isoformat())
+        await _write_setting(db, _KEY_LAST_ERROR, None)
         await db.commit()
         logger.info(
-            f"Ticket-Postfach: Erstsynchronisierung abgeschlossen (UID {hoechste_uid}). "
+            f"Ticket-Postfach: Erstsynchronisierung abgeschlossen (UID {highest_uid}). "
             f"Bestehende E-Mails wurden übersprungen, ab jetzt werden nur neue E-Mails verarbeitet."
         )
         return 0
 
     try:
-        mails = await asyncio.to_thread(_hole_neue_mails_sync, konfig, letzte_uid)
+        mails = await asyncio.to_thread(_fetch_new_mails_sync, config, last_uid)
     except Exception as e:
         logger.error(f"IMAP-Abruf fehlgeschlagen: {e}")
-        await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_FEHLER, str(e))
+        await _write_setting(db, _KEY_LAST_ERROR, str(e))
         await db.commit()
         return 0
 
-    verarbeitet = 0
-    hoechste_uid = letzte_uid or 0
+    processed = 0
+    highest_uid = last_uid or 0
 
     for mail in mails:
-        hoechste_uid = max(hoechste_uid, mail["uid"])
+        highest_uid = max(highest_uid, mail["uid"])
 
-        if not mail["von_email"]:
+        if not mail["from_email"]:
             continue  # unbrauchbare Nachricht (keine Absenderadresse geparst)
 
-        ticket = await _finde_passendes_ticket(db, mail)
+        ticket = await _find_matching_ticket(db, mail)
 
         if ticket:
             # Geschlossenes Ticket bei neuer Antwort automatisch wieder öffnen
-            if ticket.status == TicketStatus.GESCHLOSSEN:
-                ticket.status = TicketStatus.ZUGEWIESEN if ticket.zugewiesen_an_id else TicketStatus.NICHT_ZUGEWIESEN
-                ticket.geschlossen_am = None
+            if ticket.status == TicketStatus.CLOSED:
+                ticket.status = TicketStatus.ASSIGNED if ticket.assigned_to_id else TicketStatus.UNASSIGNED
+                ticket.closed_at = None
         else:
             # Spam-Prüfung nur für neue Tickets, nicht für Antworten auf
             # bestehende – spart unnötige (ggf. kostenpflichtige) externe Aufrufe.
-            spam_ergebnis = await pruefe_auf_spam(mail["von_email"], mail["betreff"], mail["text"], db)
+            spam_result = await pruefe_auf_spam(mail["from_email"], mail["subject"], mail["text"], db)
 
-            treffer = await finde_mitglieder_per_email(db, mail["von_email"])
-            mitglied_id = treffer[0].id if len(treffer) == 1 else None
+            matches = await find_members_by_email(db, mail["from_email"])
+            member_id = matches[0].id if len(matches) == 1 else None
 
             ticket = Ticket(
-                betreff=mail["betreff"],
-                absender_email=mail["von_email"],
-                absender_name=mail["von_name"] or None,
-                mitglied_id=mitglied_id,
-                spam_verdacht=spam_ergebnis.ist_spam_verdacht,
-                spam_score=spam_ergebnis.score,
-                spam_begruendung=spam_ergebnis.begruendung,
+                subject=mail["subject"],
+                sender_email=mail["from_email"],
+                sender_name=mail["from_name"] or None,
+                member_id=member_id,
+                spam_suspected=spam_result.ist_spam_verdacht,
+                spam_score=spam_result.score,
+                spam_reasoning=spam_result.begruendung,
             )
             db.add(ticket)
             await db.flush()
 
-        db.add(TicketNachricht(
+        db.add(TicketMessage(
             ticket_id=ticket.id,
-            richtung=NachrichtRichtung.EINGEHEND,
-            inhalt=mail["text"] or "(kein Textinhalt)",
+            direction=MessageDirection.INCOMING,
+            content=mail["text"] or "(kein Textinhalt)",
             message_id=mail["message_id"] or None,
             in_reply_to=mail["in_reply_to"] or None,
         ))
-        verarbeitet += 1
+        processed += 1
 
-    await _schreibe_einstellung(db, _SCHLUESSEL_LETZTE_UID, str(hoechste_uid) if hoechste_uid else None)
-    await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_ABRUF, datetime.now(timezone.utc).isoformat())
-    await _schreibe_einstellung(db, _SCHLUESSEL_LETZTER_FEHLER, None)
+    await _write_setting(db, _KEY_LAST_UID, str(highest_uid) if highest_uid else None)
+    await _write_setting(db, _KEY_LAST_FETCH, datetime.now(timezone.utc).isoformat())
+    await _write_setting(db, _KEY_LAST_ERROR, None)
     await db.commit()
 
-    return verarbeitet
+    return processed
 
 
-async def sende_ticket_antwort(ticket: Ticket, inhalt: str, db: AsyncSession) -> Optional[str]:
+async def send_ticket_reply(ticket: Ticket, content: str, db: AsyncSession) -> Optional[str]:
     """
     Sendet eine Antwort auf ein Ticket per E-Mail an den Absender, über das
     konfigurierte Ticket-Postfach. Gibt die generierte Message-ID zurück
-    (zum Speichern auf der TicketNachricht, für künftiges Threading), oder
+    (zum Speichern auf der TicketMessage, für künftiges Threading), oder
     None, falls das Postfach nicht konfiguriert ist oder der Versand fehlschlug.
     """
-    konfig = await lade_postfach_konfiguration(db)
-    if not ist_postfach_konfiguriert(konfig):
+    config = await load_inbox_configuration(db)
+    if not is_inbox_configured(config):
         logger.warning("Ticket-Postfach nicht konfiguriert – Antwort wird nicht per E-Mail versendet.")
         return None
 
-    letzte_eingehende = next(
-        (n for n in reversed(ticket.nachrichten) if n.richtung == NachrichtRichtung.EINGEHEND and n.message_id),
+    last_incoming = next(
+        (m for m in reversed(ticket.messages) if m.direction == MessageDirection.INCOMING and m.message_id),
         None
     )
 
-    neue_message_id = make_msgid()
+    new_message_id = make_msgid()
 
-    betreff = ticket.betreff
-    if not betreff.lower().startswith("re:"):
-        betreff = f"Re: {betreff}"
+    subject = ticket.subject
+    if not subject.lower().startswith("re:"):
+        subject = f"Re: {subject}"
 
-    msg = MIMEText(inhalt, "plain", "utf-8")
-    msg["Subject"] = betreff
-    msg["From"] = konfig["smtp_from"]
-    msg["To"] = ticket.absender_email
-    msg["Message-ID"] = neue_message_id
-    if letzte_eingehende:
-        msg["In-Reply-To"] = letzte_eingehende.message_id
-        msg["References"] = letzte_eingehende.message_id
+    msg = MIMEText(content, "plain", "utf-8")
+    msg["Subject"] = subject
+    msg["From"] = config["smtp_from"]
+    msg["To"] = ticket.sender_email
+    msg["Message-ID"] = new_message_id
+    if last_incoming:
+        msg["In-Reply-To"] = last_incoming.message_id
+        msg["References"] = last_incoming.message_id
 
     try:
         await aiosmtplib.send(
             msg,
-            hostname=konfig["smtp_host"],
-            port=konfig["smtp_port"],
-            username=konfig["smtp_user"],
-            password=konfig["smtp_password"],
-            start_tls=konfig["smtp_tls"],
+            hostname=config["smtp_host"],
+            port=config["smtp_port"],
+            username=config["smtp_user"],
+            password=config["smtp_password"],
+            start_tls=config["smtp_tls"],
         )
-        return neue_message_id
+        return new_message_id
     except Exception as e:
         logger.error(f"Ticket-Antwort konnte nicht gesendet werden: {e}")
         return None
 
 
-async def postfach_status(db: AsyncSession) -> Dict[str, Optional[str]]:
+async def inbox_status(db: AsyncSession) -> Dict[str, Optional[str]]:
     """Betriebsstatus für die Anzeige in der Oberfläche (letzter Abruf, letzter Fehler)."""
     return {
-        "letzter_abruf": await _lese_einstellung(db, _SCHLUESSEL_LETZTER_ABRUF),
-        "letzter_fehler": await _lese_einstellung(db, _SCHLUESSEL_LETZTER_FEHLER),
+        "letzter_abruf": await _read_setting(db, _KEY_LAST_FETCH),
+        "letzter_fehler": await _read_setting(db, _KEY_LAST_ERROR),
     }

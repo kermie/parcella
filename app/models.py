@@ -852,16 +852,16 @@ class AccidentInsuranceAdditionalPerson(Base):
 # ---------------------------------------------------------------------------
 
 class TicketStatus(str, enum.Enum):
-    NICHT_ZUGEWIESEN = "NICHT_ZUGEWIESEN"
-    ZUGEWIESEN = "ZUGEWIESEN"
-    ZURUECKGESTELLT = "ZURUECKGESTELLT"
-    GESCHLOSSEN = "GESCHLOSSEN"
+    UNASSIGNED = "UNASSIGNED"
+    ASSIGNED = "ASSIGNED"
+    DEFERRED = "DEFERRED"
+    CLOSED = "CLOSED"
 
 
-class NachrichtRichtung(str, enum.Enum):
-    EINGEHEND = "EINGEHEND"   # Vom Absender/Kunden (später per E-Mail, Etappe 1: manuell)
-    AUSGEHEND = "AUSGEHEND"   # Antwort eines Benutzers (später als E-Mail versendet, Etappe 2)
-    INTERN = "INTERN"         # Interne Notiz, nie an den Absender gesendet
+class MessageDirection(str, enum.Enum):
+    INCOMING = "INCOMING"   # Vom Absender/Kunden (später per E-Mail, Etappe 1: manuell)
+    OUTGOING = "OUTGOING"   # Antwort eines Benutzers (später als E-Mail versendet, Etappe 2)
+    INTERNAL = "INTERNAL"   # Interne Notiz, nie an den Absender gesendet
 
 
 class Ticket(Base):
@@ -873,71 +873,71 @@ class Ticket(Base):
     __tablename__ = "tickets"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    betreff: Mapped[str] = mapped_column(String(255), nullable=False)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
 
     status: Mapped[TicketStatus] = mapped_column(
-        SAEnum(TicketStatus), default=TicketStatus.NICHT_ZUGEWIESEN, nullable=False, index=True
+        SAEnum(TicketStatus), default=TicketStatus.UNASSIGNED, nullable=False, index=True
     )
-    zugewiesen_an_id: Mapped[Optional[str]] = mapped_column(
+    assigned_to_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    zurueckgestellt_bis: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    deferred_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     # Automatischer Abgleich per Absender-E-Mail; überschreibbar/manuell korrigierbar,
     # falls die Adresse mehreren Mitgliedern gehört oder unbekannt ist.
-    mitglied_id: Mapped[Optional[str]] = mapped_column(
+    member_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("members.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    absender_email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    absender_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    sender_email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    sender_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Vorbereitung für Etappe 3 (Spam-Schnittstelle): Felder existieren bereits,
     # damit später keine weitere Migration nötig ist. Die eigentliche Prüfung
     # ist in Etappe 1 ein No-Op (siehe app/spam_filter.py).
-    spam_verdacht: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    spam_suspected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     spam_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
-    spam_begruendung: Mapped[Optional[str]] = mapped_column(
+    spam_reasoning: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="Nachvollziehbare Begründung, warum als Spam eingestuft (Transparenz)"
     )
 
-    erstellt_am: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    aktualisiert_am: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
-    geschlossen_am: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    zugewiesen_an: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
-    mitglied: Mapped[Optional["Member"]] = relationship("Member")
-    nachrichten: Mapped[List["TicketNachricht"]] = relationship(
-        "TicketNachricht", back_populates="ticket", cascade="all, delete-orphan",
-        order_by="TicketNachricht.erstellt_am",
+    assigned_to: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
+    member: Mapped[Optional["Member"]] = relationship("Member")
+    messages: Mapped[List["TicketMessage"]] = relationship(
+        "TicketMessage", back_populates="ticket", cascade="all, delete-orphan",
+        order_by="TicketMessage.created_at",
     )
 
     @property
-    def ist_faellig(self) -> bool:
+    def is_due(self) -> bool:
         """True, wenn ein zurückgestelltes Ticket sein Datum erreicht hat und
         wieder als aktiv behandelt werden soll (rein berechnet, kein Hintergrundjob)."""
-        if self.status != TicketStatus.ZURUECKGESTELLT:
+        if self.status != TicketStatus.DEFERRED:
             return False
-        return self.zurueckgestellt_bis is not None and self.zurueckgestellt_bis <= date.today()
+        return self.deferred_until is not None and self.deferred_until <= date.today()
 
     def __repr__(self) -> str:
-        return f"<Ticket {self.betreff!r} ({self.status.value})>"
+        return f"<Ticket {self.subject!r} ({self.status.value})>"
 
 
-class TicketNachricht(Base):
+class TicketMessage(Base):
     """Eine einzelne Nachricht innerhalb eines Ticket-Verlaufs."""
-    __tablename__ = "ticket_nachrichten"
+    __tablename__ = "ticket_messages"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     ticket_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    richtung: Mapped[NachrichtRichtung] = mapped_column(SAEnum(NachrichtRichtung), nullable=False)
-    inhalt: Mapped[str] = mapped_column(Text, nullable=False)
-    verfasst_von_id: Mapped[Optional[str]] = mapped_column(
+    direction: Mapped[MessageDirection] = mapped_column(SAEnum(MessageDirection), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    authored_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
     )
     # Für E-Mail-Threading (Etappe 2): Message-ID dieser Nachricht bzw. der
@@ -945,15 +945,15 @@ class TicketNachricht(Base):
     # dem richtigen Ticket zuzuordnen, statt nur nach Betreff zu raten.
     message_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     in_reply_to: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    erstellt_am: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="nachrichten")
-    verfasst_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
+    ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="messages")
+    authored_by: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
 
     def __repr__(self) -> str:
-        return f"<TicketNachricht {self.richtung.value} @ {self.ticket_id}>"
+        return f"<TicketMessage {self.direction.value} @ {self.ticket_id}>"
 
 
 # ---------------------------------------------------------------------------

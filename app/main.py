@@ -19,7 +19,7 @@ from app.database import get_db, AsyncSessionLocal, active_member_filter
 from app.models import Benutzer, BenutzerRolle, Member, Parcel, ParcelStatus, MemberParcel
 from app.auth import hash_passwort, get_current_user
 from app.module_flags import lade_modul_flags
-from app.ticket_mailer import verarbeite_eingehende_mails
+from app.ticket_mailer import process_incoming_mails
 from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, einkaufswuensche
 from app.routers.metering import erstelle_metering_router
 from app.models import MeteringMedium
@@ -31,7 +31,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def _ticket_postfach_polling_schleife():
+async def _ticket_inbox_polling_loop():
     """
     Fragt alle 2 Minuten das konfigurierte Ticket-Postfach nach neuen
     E-Mails ab. Läuft dauerhaft im Hintergrund; Fehler werden abgefangen,
@@ -41,7 +41,7 @@ async def _ticket_postfach_polling_schleife():
     while True:
         try:
             async with AsyncSessionLocal() as db:
-                anzahl = await verarbeite_eingehende_mails(db)
+                anzahl = await process_incoming_mails(db)
                 if anzahl:
                     logger.info(f"Ticket-Postfach: {anzahl} neue E-Mail(s) verarbeitet.")
         except Exception as e:
@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI):
                 "– BITTE SOFORT PASSWORT ÄNDERN!"
             )
 
-    polling_task = asyncio.create_task(_ticket_postfach_polling_schleife())
+    polling_task = asyncio.create_task(_ticket_inbox_polling_loop())
     yield
     polling_task.cancel()
 

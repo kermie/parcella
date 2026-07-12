@@ -16,7 +16,7 @@
     zu Tickets (Hintergrund-Abruf alle 2 Minuten).
 </div>
 
-<form method="post" action="/tickets/neu">
+<form method="post" action="/tickets/new">
 <div class="row g-3" style="max-width: 640px;">
     <div class="col-12">
         <div class="card">
@@ -25,19 +25,19 @@
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label fw-semibold">Betreff <span class="text-danger">*</span></label>
-                        <input type="text" name="betreff" class="form-control" required autofocus>
+                        <input type="text" name="subject" class="form-control" required autofocus>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Absender-E-Mail <span class="text-danger">*</span></label>
-                        <input type="email" name="absender_email" class="form-control" required>
+                        <input type="email" name="sender_email" class="form-control" required>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Absender-Name</label>
-                        <input type="text" name="absender_name" class="form-control">
+                        <input type="text" name="sender_name" class="form-control">
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">Anliegen <span class="text-danger">*</span></label>
-                        <textarea name="nachricht" class="form-control" rows="6" required></textarea>
+                        <textarea name="message" class="form-control" rows="6" required></textarea>
                     </div>
                 </div>
             </div>

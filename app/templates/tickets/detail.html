@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ ticket.betreff }}{% endblock %}
-{% block page_title %}{{ ticket.betreff }}{% endblock %}
+{% block title %}{{ ticket.subject }}{% endblock %}
+{% block page_title %}{{ ticket.subject }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/tickets/" class="btn btn-sm btn-outline-secondary">
@@ -17,46 +17,46 @@
             <div class="card-header">
                 <i class="bi bi-chat-left-text me-2"></i>Verlauf
                 <span class="text-muted ms-1" style="font-size: 0.82rem;">
-                    {{ ticket.absender_name or ticket.absender_email }} &lt;{{ ticket.absender_email }}&gt;
+                    {{ ticket.sender_name or ticket.sender_email }} &lt;{{ ticket.sender_email }}&gt;
                 </span>
             </div>
             <div class="card-body">
-                {% for n in ticket.nachrichten %}
+                {% for n in ticket.messages %}
                 <div class="mb-3 p-3 rounded"
-                     style="background: {% if n.richtung.value == 'EINGEHEND' %}#f0f7f2{% elif n.richtung.value == 'INTERN' %}#fef3c7{% else %}#f8faf9{% endif %};
-                            border-left: 3px solid {% if n.richtung.value == 'EINGEHEND' %}var(--gv-gruen){% elif n.richtung.value == 'INTERN' %}#92400e{% else %}#1e40af{% endif %};">
+                     style="background: {% if n.direction.value == 'INCOMING' %}#f0f7f2{% elif n.direction.value == 'INTERNAL' %}#fef3c7{% else %}#f8faf9{% endif %};
+                            border-left: 3px solid {% if n.direction.value == 'INCOMING' %}var(--gv-gruen){% elif n.direction.value == 'INTERNAL' %}#92400e{% else %}#1e40af{% endif %};">
                     <div class="d-flex justify-content-between mb-1">
                         <span class="fw-semibold" style="font-size: 0.85rem;">
-                            {% if n.richtung.value == 'EINGEHEND' %}
-                            <i class="bi bi-arrow-down-left-circle me-1"></i>{{ ticket.absender_name or ticket.absender_email }}
-                            {% elif n.richtung.value == 'INTERN' %}
-                            <i class="bi bi-sticky me-1"></i>Interne Notiz – {{ n.verfasst_von.name if n.verfasst_von else 'Unbekannt' }}
+                            {% if n.direction.value == 'INCOMING' %}
+                            <i class="bi bi-arrow-down-left-circle me-1"></i>{{ ticket.sender_name or ticket.sender_email }}
+                            {% elif n.direction.value == 'INTERNAL' %}
+                            <i class="bi bi-sticky me-1"></i>Interne Notiz – {{ n.authored_by.name if n.authored_by else 'Unbekannt' }}
                             {% else %}
-                            <i class="bi bi-arrow-up-right-circle me-1"></i>{{ n.verfasst_von.name if n.verfasst_von else 'Unbekannt' }}
+                            <i class="bi bi-arrow-up-right-circle me-1"></i>{{ n.authored_by.name if n.authored_by else 'Unbekannt' }}
                             {% endif %}
                         </span>
-                        <span class="text-muted" style="font-size: 0.78rem;">{{ n.erstellt_am.strftime('%d.%m.%Y %H:%M') }}</span>
+                        <span class="text-muted" style="font-size: 0.78rem;">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
                     </div>
-                    <div style="white-space: pre-wrap; font-size: 0.9rem;">{{ n.inhalt }}</div>
+                    <div style="white-space: pre-wrap; font-size: 0.9rem;">{{ n.content }}</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        {% if ticket.status.value != 'GESCHLOSSEN' %}
+        {% if ticket.status.value != 'CLOSED' %}
         <div class="card">
             <div class="card-header"><i class="bi bi-reply me-2"></i>Antworten / Notiz hinzufügen</div>
             <div class="card-body">
-                <form method="post" action="/tickets/{{ ticket.id }}/nachricht">
+                <form method="post" action="/tickets/{{ ticket.id }}/message">
                     <div class="mb-2">
                         <div class="btn-group btn-group-sm" role="group">
-                            <input type="radio" class="btn-check" name="richtung" id="r-aus" value="AUSGEHEND" checked>
+                            <input type="radio" class="btn-check" name="direction" id="r-aus" value="OUTGOING" checked>
                             <label class="btn btn-outline-primary" for="r-aus">Antwort an Absender</label>
-                            <input type="radio" class="btn-check" name="richtung" id="r-intern" value="INTERN">
+                            <input type="radio" class="btn-check" name="direction" id="r-intern" value="INTERNAL">
                             <label class="btn btn-outline-warning" for="r-intern">Interne Notiz</label>
                         </div>
                     </div>
-                    <textarea name="inhalt" class="form-control mb-2" rows="4" required
+                    <textarea name="content" class="form-control mb-2" rows="4" required
                               placeholder="Nachricht…"></textarea>
                     <div class="form-text mb-2">
                         Antworten werden per E-Mail an den Absender gesendet (sofern das
@@ -74,7 +74,7 @@
 
     <!-- Seitenleiste: Status, Zuweisung, Mitglied -->
     <div class="col-lg-4">
-        {% if ticket.spam_verdacht %}
+        {% if ticket.spam_suspected %}
         <div class="card mb-3 border-danger">
             <div class="card-header text-danger"><i class="bi bi-shield-exclamation me-2"></i>Spam-Verdacht</div>
             <div class="card-body">
@@ -83,10 +83,10 @@
                     <strong>Score:</strong> {{ ticket.spam_score }}
                 </p>
                 {% endif %}
-                {% if ticket.spam_begruendung %}
-                <p class="text-muted mb-2" style="font-size: 0.82rem;">{{ ticket.spam_begruendung }}</p>
+                {% if ticket.spam_reasoning %}
+                <p class="text-muted mb-2" style="font-size: 0.82rem;">{{ ticket.spam_reasoning }}</p>
                 {% endif %}
-                <form method="post" action="/tickets/{{ ticket.id }}/kein-spam">
+                <form method="post" action="/tickets/{{ ticket.id }}/not-spam">
                     <button type="submit" class="btn btn-sm btn-outline-danger w-100">
                         <i class="bi bi-check-lg me-1"></i>Kein Spam – Verdacht aufheben
                     </button>
@@ -100,23 +100,23 @@
             <div class="card-body">
                 <form method="post" action="/tickets/{{ ticket.id }}/status">
                     <select name="status_neu" class="form-select form-select-sm mb-2"
-                            onchange="document.getElementById('zurueckstell-datum').style.display = this.value === 'ZURUECKGESTELLT' ? '' : 'none';">
-                        <option value="NICHT_ZUGEWIESEN" {% if ticket.status.value == 'NICHT_ZUGEWIESEN' %}selected{% endif %}>Nicht zugewiesen</option>
-                        <option value="ZUGEWIESEN" {% if ticket.status.value == 'ZUGEWIESEN' %}selected{% endif %}>Zugewiesen</option>
-                        <option value="ZURUECKGESTELLT" {% if ticket.status.value == 'ZURUECKGESTELLT' %}selected{% endif %}>Zurückgestellt</option>
-                        <option value="GESCHLOSSEN" {% if ticket.status.value == 'GESCHLOSSEN' %}selected{% endif %}>Geschlossen</option>
+                            onchange="document.getElementById('zurueckstell-datum').style.display = this.value === 'DEFERRED' ? '' : 'none';">
+                        <option value="UNASSIGNED" {% if ticket.status.value == 'UNASSIGNED' %}selected{% endif %}>Nicht zugewiesen</option>
+                        <option value="ASSIGNED" {% if ticket.status.value == 'ASSIGNED' %}selected{% endif %}>Zugewiesen</option>
+                        <option value="DEFERRED" {% if ticket.status.value == 'DEFERRED' %}selected{% endif %}>Zurückgestellt</option>
+                        <option value="CLOSED" {% if ticket.status.value == 'CLOSED' %}selected{% endif %}>Geschlossen</option>
                     </select>
                     <div id="zurueckstell-datum" class="mb-2"
-                         style="{% if ticket.status.value != 'ZURUECKGESTELLT' %}display: none;{% endif %}">
+                         style="{% if ticket.status.value != 'DEFERRED' %}display: none;{% endif %}">
                         <label class="form-label small mb-1">Zurückgestellt bis</label>
-                        <input type="date" name="zurueckgestellt_bis" class="form-control form-control-sm"
-                               value="{{ ticket.zurueckgestellt_bis.isoformat() if ticket.zurueckgestellt_bis else '' }}">
+                        <input type="date" name="deferred_until" class="form-control form-control-sm"
+                               value="{{ ticket.deferred_until.isoformat() if ticket.deferred_until else '' }}">
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary w-100">
                         <i class="bi bi-check-lg me-1"></i>Status speichern
                     </button>
                 </form>
-                {% if ticket.ist_faellig %}
+                {% if ticket.is_due %}
                 <div class="alert alert-warning mt-2 mb-0 py-2" style="font-size: 0.82rem;">
                     <i class="bi bi-alarm me-1"></i>Zurückstellung ist abgelaufen – wieder aktiv.
                 </div>
@@ -127,11 +127,11 @@
         <div class="card mb-3">
             <div class="card-header"><i class="bi bi-person-check me-2"></i>Zuweisung</div>
             <div class="card-body">
-                <form method="post" action="/tickets/{{ ticket.id }}/zuweisen">
+                <form method="post" action="/tickets/{{ ticket.id }}/assign">
                     <select name="benutzer_id" class="form-select form-select-sm mb-2">
                         <option value="">– nicht zugewiesen –</option>
                         {% for b in alle_benutzer %}
-                        <option value="{{ b.id }}" {% if ticket.zugewiesen_an_id == b.id %}selected{% endif %}>
+                        <option value="{{ b.id }}" {% if ticket.assigned_to_id == b.id %}selected{% endif %}>
                             {{ b.name }}
                         </option>
                         {% endfor %}
@@ -149,21 +149,21 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Mitglied / Parzelle</div>
             <div class="card-body">
-                {% if ticket.mitglied %}
+                {% if ticket.member %}
                 <p class="mb-2">
-                    <a href="/members/{{ ticket.mitglied.id }}" class="text-decoration-none fw-semibold"
-                       style="color: var(--gv-gruen);">{{ ticket.mitglied.full_name }}</a>
+                    <a href="/members/{{ ticket.member.id }}" class="text-decoration-none fw-semibold"
+                       style="color: var(--gv-gruen);">{{ ticket.member.full_name }}</a>
                 </p>
                 {% else %}
                 <p class="text-muted mb-2" style="font-size: 0.85rem;">Kein Mitglied zugeordnet.</p>
                 {% endif %}
 
-                {% if kandidaten %}
-                <form method="post" action="/tickets/{{ ticket.id }}/mitglied">
-                    <select name="mitglied_id" class="form-select form-select-sm mb-2">
+                {% if candidates %}
+                <form method="post" action="/tickets/{{ ticket.id }}/member">
+                    <select name="member_id" class="form-select form-select-sm mb-2">
                         <option value="">– keine Zuordnung –</option>
-                        {% for m in kandidaten %}
-                        <option value="{{ m.id }}" {% if ticket.mitglied_id == m.id %}selected{% endif %}>
+                        {% for m in candidates %}
+                        <option value="{{ m.id }}" {% if ticket.member_id == m.id %}selected{% endif %}>
                             {{ m.full_name }}
                         </option>
                         {% endfor %}
@@ -172,7 +172,7 @@
                         <i class="bi bi-check-lg me-1"></i>Zuordnung speichern
                     </button>
                 </form>
-                {% if kandidaten | length > 1 %}
+                {% if candidates | length > 1 %}
                 <div class="form-text mt-2">
                     Mehrere Mitglieder nutzen diese E-Mail-Adresse – bitte manuell auswählen.
                 </div>

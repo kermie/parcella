@@ -1,25 +1,23 @@
-Nach dem Entpacken/Überschreiben dieses ZIPs in dein Projekt-Root
-müssen folgende ALTE Dateien manuell gelöscht werden (git kann Löschungen
-nicht per Kopieren abbilden):
+Nach dem Entpacken dieses ZIP-Archivs in dein Projektverzeichnis (Dateien
+überschreiben) bitte diese beiden alten, jetzt umbenannten Template-Dateien
+manuell löschen (git kennt sie noch unter dem alten Namen, das ZIP enthält
+nur die neuen Dateien):
 
-  app/routers/versicherungen.py
-  app/routers/api_versicherungen.py
-  app/versicherung_utils.py
-  app/templates/versicherungen/konfiguration.html
-  app/templates/versicherungen/detail.html
-  app/templates/versicherungen/auswertung.html
-  app/templates/versicherungen/uebersicht.html
-  app/templates/versicherungen/parzellen_liste.html
-  app/templates/versicherungen/          (der ganze Ordner, danach leer)
-  tests/test_versicherungen.py
-
-Kurzbefehl (im Projekt-Root ausführen):
-
-  rm -f app/routers/versicherungen.py app/routers/api_versicherungen.py \
-        app/versicherung_utils.py tests/test_versicherungen.py
-  rm -rf app/templates/versicherungen
+  app/templates/tickets/uebersicht.html   (ersetzt durch overview.html)
+  app/templates/tickets/formular.html     (ersetzt durch form.html)
 
 Danach:
+
   git add -A
-  git commit -m "refactor!: rename insurance module to English (Versicherungen -> Insurance)"
+  git commit -m "refactor: rename ticket module to English (Ticketsystem -> Tickets)"
   git push
+
+Der Commit wurde im Sandbox-Repo bereits mit passender Commit-Message und
+korrekter Git-Identität (Marco Steinhaeuser) vorbereitet; du kannst die
+Commit-Message oben 1:1 übernehmen oder git commit --amend nutzen, falls du
+stattdessen den vorbereiteten Commit direkt einspielen möchtest (dann bräuchtest
+du aber den vollständigen Patch statt des ZIPs – sag Bescheid, falls dir das
+lieber ist).
+
+Migration nicht vergessen, sobald der Server läuft:
+  docker compose exec web alembic upgrade head
