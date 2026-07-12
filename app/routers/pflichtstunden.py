@@ -13,12 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db, aktives_mitglied_filter
+from app.database import get_db, active_member_filter
 from app.models import (
     Arbeitseinsatz, EinsatzTeilnahme, EinsatzTyp, TeilnahmeStatus,
     Patenschaft, Vereinsrolle, MitgliedVereinsrolle, BefreiungsGrund,
     PflichtstundenKonfiguration, PflichtstundenModus,
-    Mitglied, MitgliedParzelle, Parzelle, ParzelleStatus,
+    Member, MemberParcel, Parcel, ParcelStatus,
 )
 from app.auth import require_user
 
@@ -77,7 +77,7 @@ async def _berechne_stunden_fuer_mitglied(
 
 
 async def _ist_befreit(db: AsyncSession, mitglied_id: str, jahr: int) -> bool:
-    """Prüft ob ein Mitglied für ein Jahr von Pflichtstunden befreit ist."""
+    """Prüft ob ein Member für ein Jahr von Pflichtstunden befreit ist."""
     result = await db.execute(
         select(MitgliedVereinsrolle)
         .join(Vereinsrolle, MitgliedVereinsrolle.vereinsrolle_id == Vereinsrolle.id)
@@ -427,9 +427,9 @@ async def einsatz_detail(
 
     # Alle aktiven Mitglieder für Anmelde-Dropdown
     mitglieder_result = await db.execute(
-        select(Mitglied)
-        .where(aktives_mitglied_filter())
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        select(Member)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
     )
     alle_mitglieder = mitglieder_result.scalars().all()
     bereits_eingetragen = {t.mitglied_id for t in einsatz.teilnahmen}
@@ -558,9 +558,9 @@ async def vereinsrollen_seite(
     zuordnungen = zuordnungen_result.scalars().all()
 
     mitglieder_result = await db.execute(
-        select(Mitglied)
-        .where(aktives_mitglied_filter())
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        select(Member)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
     )
     alle_mitglieder = mitglieder_result.scalars().all()
 
@@ -635,9 +635,9 @@ async def mitglied_vereinsrolle_bearbeiten_seite(
         raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
 
     mitglieder_result = await db.execute(
-        select(Mitglied)
-        .where(aktives_mitglied_filter())
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        select(Member)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
     )
     alle_mitglieder = mitglieder_result.scalars().all()
 
@@ -837,9 +837,9 @@ async def patenschaften_seite(
     config = await _get_config_fuer_jahr(db, jahr)
 
     mitglieder_result = await db.execute(
-        select(Mitglied)
-        .where(aktives_mitglied_filter())
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        select(Member)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
     )
     alle_mitglieder = mitglieder_result.scalars().all()
 
@@ -902,9 +902,9 @@ async def patenschaft_bearbeiten_seite(
         raise HTTPException(status_code=404, detail="Patenschaft nicht gefunden")
 
     mitglieder_result = await db.execute(
-        select(Mitglied)
-        .where(aktives_mitglied_filter())
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        select(Member)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
     )
     alle_mitglieder = mitglieder_result.scalars().all()
 
@@ -973,7 +973,7 @@ async def patenschaft_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Auswertung: Jahresstand pro Mitglied/Parzelle
+# Auswertung: Jahresstand pro Member/Parcel
 # ---------------------------------------------------------------------------
 
 @router.get("/auswertung", response_class=HTMLResponse)
@@ -1010,22 +1010,22 @@ async def auswertung(
     zeilen = []
 
     if config.modus == PflichtstundenModus.PRO_PACHTVERTRAG:
-        # Pro Parzelle auswerten – alle aktiven Parzellen mit Pächtern
+        # Pro Parcel auswerten – alle aktiven Parzellen mit Pächtern
         parzellen_result = await db.execute(
-            select(Parzelle)
+            select(Parcel)
             .options(
-                selectinload(Parzelle.mitglieder_zuordnungen).selectinload(MitgliedParzelle.mitglied)
+                selectinload(Parcel.member_assignments).selectinload(MemberParcel.member)
             )
-            .where(Parzelle.status == ParzelleStatus.AKTIV)
-            .order_by(Parzelle.gartennummer)
+            .where(Parcel.status == ParcelStatus.ACTIVE)
+            .order_by(Parcel.plot_number)
         )
-        parzellen = parzellen_result.scalars().all()
+        parcels = parzellen_result.scalars().all()
 
-        for parzelle in parzellen:
+        for parzelle in parcels:
             paechter = [
-                z.mitglied for z in parzelle.mitglieder_zuordnungen
-                if z.mitglied.deleted_at is None
-                and (z.mitglied.mitglied_bis is None or z.mitglied.mitglied_bis >= date.today())
+                z.member for z in parzelle.member_assignments
+                if z.member.deleted_at is None
+                and (z.member.member_until is None or z.member.member_until >= date.today())
             ]
             if not paechter:
                 continue  # Unbesetzte oder nur inaktive Pächter überspringen
@@ -1067,19 +1067,19 @@ async def auswertung(
             })
 
     else:
-        # PRO_MITGLIED: jedes Mitglied mit Parzelle einzeln auswerten
+        # PRO_MITGLIED: jedes Member mit Parcel einzeln auswerten
         mitglieder_result = await db.execute(
-            select(Mitglied)
-            .options(selectinload(Mitglied.parzellen_zuordnungen))
+            select(Member)
+            .options(selectinload(Member.parcel_assignments))
             .where(
-                Mitglied.deleted_at.is_(None),
-                Mitglied.parzellen_zuordnungen.any(),
+                Member.deleted_at.is_(None),
+                Member.parcel_assignments.any(),
             )
-            .order_by(Mitglied.nachname, Mitglied.vorname)
+            .order_by(Member.last_name, Member.first_name)
         )
-        mitglieder = mitglieder_result.scalars().all()
+        members = mitglieder_result.scalars().all()
 
-        for m in mitglieder:
+        for m in members:
             stand = await _berechne_stunden_fuer_mitglied(db, m.id, jahr)
             befreit = await _ist_befreit(db, m.id, jahr)
             pflicht = float(config.stunden_gesamt)
@@ -1128,23 +1128,23 @@ async def auswertung_export_csv(
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
     writer.writerow([
-        "Parzelle", "Pächter", "Pflicht (h)", "Geleistet (h)",
+        "Parcel", "Pächter", "Pflicht (h)", "Geleistet (h)",
         "Patenschaft (h)", "Gesamt (h)", "Offen (h)",
         "Schuldbetrag (EUR)", "Befreit", "Erfüllt"
     ])
 
     if config.modus == PflichtstundenModus.PRO_PACHTVERTRAG:
         parzellen_result = await db.execute(
-            select(Parzelle)
-            .options(selectinload(Parzelle.mitglieder_zuordnungen).selectinload(MitgliedParzelle.mitglied))
-            .where(Parzelle.status == ParzelleStatus.AKTIV)
-            .order_by(Parzelle.gartennummer)
+            select(Parcel)
+            .options(selectinload(Parcel.member_assignments).selectinload(MemberParcel.member))
+            .where(Parcel.status == ParcelStatus.ACTIVE)
+            .order_by(Parcel.plot_number)
         )
         for parzelle in parzellen_result.scalars().all():
             paechter = [
-                z.mitglied for z in parzelle.mitglieder_zuordnungen
-                if z.mitglied.deleted_at is None
-                and (z.mitglied.mitglied_bis is None or z.mitglied.mitglied_bis >= date.today())
+                z.member for z in parzelle.member_assignments
+                if z.member.deleted_at is None
+                and (z.member.member_until is None or z.member.member_until >= date.today())
             ]
             if not paechter:
                 continue
@@ -1152,7 +1152,7 @@ async def auswertung_export_csv(
             einsatz_h = 0.0
             paten_h = 0.0
             # Vier-Augen-freundliche Regel: EIN befreiter Pächter genügt, um
-            # die gesamte Parzelle zu befreien (any(), nicht all() – siehe
+            # die gesamte Parcel zu befreien (any(), nicht all() – siehe
             # docs/architektur-entscheidungen.md).
             ist_befreit = False
             namen = []
@@ -1164,12 +1164,12 @@ async def auswertung_export_csv(
                 paten_h += stand["patenschaft_stunden"]
                 if befreit:
                     ist_befreit = True
-                namen.append(m.vollname)
+                namen.append(m.full_name)
             pflicht = float(config.stunden_gesamt)
             offen = max(0.0, pflicht - gesamt) if not ist_befreit else 0.0
             schuld = offen * float(config.stundensatz_eur)
             writer.writerow([
-                parzelle.gartennummer,
+                parzelle.plot_number,
                 "; ".join(namen),
                 f"{pflicht:.1f}",
                 f"{einsatz_h:.1f}",

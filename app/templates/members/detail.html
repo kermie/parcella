@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{{ mitglied.vollname }}{% endblock %}
-{% block page_title %}{{ mitglied.vollname }}{% endblock %}
+{% block title %}{{ mitglied.full_name }}{% endblock %}
+{% block page_title %}{{ mitglied.full_name }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2">
-    <a href="/mitglieder/{{ mitglied.id }}/bearbeiten" class="btn btn-sm btn-primary">
+    <a href="/members/{{ mitglied.id }}/bearbeiten" class="btn btn-sm btn-primary">
         <i class="bi bi-pencil me-1"></i>Bearbeiten
     </a>
-    <a href="/mitglieder/" class="btn btn-sm btn-outline-secondary">
+    <a href="/members/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Zurück
     </a>
 </div>
@@ -23,15 +23,15 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-sm-5 text-muted">Name</dt>
-                    <dd class="col-sm-7 fw-semibold">{{ mitglied.vollname }}</dd>
+                    <dd class="col-sm-7 fw-semibold">{{ mitglied.full_name }}</dd>
 
                     <dt class="col-sm-5 text-muted">Geburtsdatum</dt>
-                    <dd class="col-sm-7">{{ mitglied.geburtsdatum.strftime('%d.%m.%Y') if mitglied.geburtsdatum else '–' }}</dd>
+                    <dd class="col-sm-7">{{ mitglied.date_of_birth.strftime('%d.%m.%Y') if mitglied.date_of_birth else '–' }}</dd>
 
                     <dt class="col-sm-5 text-muted">Adresse</dt>
                     <dd class="col-sm-7">
-                        {% if mitglied.strasse %}{{ mitglied.strasse }}<br>{% endif %}
-                        {% if mitglied.plz or mitglied.ort %}{{ mitglied.plz or '' }} {{ mitglied.ort or '' }}{% else %}–{% endif %}
+                        {% if mitglied.street %}{{ mitglied.street }}<br>{% endif %}
+                        {% if mitglied.postal_code or mitglied.city %}{{ mitglied.postal_code or '' }} {{ mitglied.city or '' }}{% else %}–{% endif %}
                     </dd>
 
                     <dt class="col-sm-5 text-muted">IBAN</dt>
@@ -42,14 +42,14 @@
                     </dd>
 
                     <dt class="col-sm-5 text-muted">Mitglied seit</dt>
-                    <dd class="col-sm-7">{{ mitglied.mitglied_seit.strftime('%d.%m.%Y') if mitglied.mitglied_seit else '–' }}</dd>
+                    <dd class="col-sm-7">{{ mitglied.member_since.strftime('%d.%m.%Y') if mitglied.member_since else '–' }}</dd>
 
                     <dt class="col-sm-5 text-muted">Mitglied bis</dt>
-                    <dd class="col-sm-7">{{ mitglied.mitglied_bis.strftime('%d.%m.%Y') if mitglied.mitglied_bis else '–' }}</dd>
+                    <dd class="col-sm-7">{{ mitglied.member_until.strftime('%d.%m.%Y') if mitglied.member_until else '–' }}</dd>
 
                     <dt class="col-sm-5 text-muted">E-Mail-Info</dt>
                     <dd class="col-sm-7">
-                        {% if mitglied.email_benachrichtigungen %}
+                        {% if mitglied.email_notifications %}
                         <span class="badge badge-aktiv"><i class="bi bi-check me-1"></i>Ja</span>
                         {% else %}
                         <span class="badge" style="background: #f3f4f6; color: #6b7280;">Nein</span>
@@ -70,8 +70,8 @@
                 <ul class="list-group list-group-flush">
                     {% for t in mitglied.telefonnummern %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ t.nummer }}</span>
-                        <form method="post" action="/mitglieder/{{ mitglied.id }}/telefon/{{ t.id }}/loeschen" class="d-inline">
+                        <span>{{ t.number }}</span>
+                        <form method="post" action="/members/{{ mitglied.id }}/telefon/{{ t.id }}/loeschen" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Entfernen">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -83,9 +83,9 @@
                 </ul>
             </div>
             <div class="card-footer">
-                <form method="post" action="/mitglieder/{{ mitglied.id }}/telefon/hinzufuegen"
+                <form method="post" action="/members/{{ mitglied.id }}/telefon/hinzufuegen"
                       class="d-flex gap-2 flex-wrap">
-                    <input type="text" name="nummer" class="form-control form-control-sm" placeholder="+49 123 456789" required style="min-width: 180px;">
+                    <input type="text" name="number" class="form-control form-control-sm" placeholder="+49 123 456789" required style="min-width: 180px;">
                     <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i></button>
                 </form>
             </div>
@@ -97,8 +97,8 @@
                 <ul class="list-group list-group-flush">
                     {% for e in mitglied.email_adressen %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><a href="mailto:{{ e.adresse }}">{{ e.adresse }}</a></span>
-                        <form method="post" action="/mitglieder/{{ mitglied.id }}/email/{{ e.id }}/loeschen" class="d-inline">
+                        <span><a href="mailto:{{ e.address }}">{{ e.address }}</a></span>
+                        <form method="post" action="/members/{{ mitglied.id }}/email/{{ e.id }}/loeschen" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger border-0">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -110,9 +110,9 @@
                 </ul>
             </div>
             <div class="card-footer">
-                <form method="post" action="/mitglieder/{{ mitglied.id }}/email/hinzufuegen"
+                <form method="post" action="/members/{{ mitglied.id }}/email/hinzufuegen"
                       class="d-flex gap-2 flex-wrap">
-                    <input type="email" name="adresse" class="form-control form-control-sm" placeholder="email@beispiel.de" required style="min-width: 220px;">
+                    <input type="email" name="address" class="form-control form-control-sm" placeholder="email@beispiel.de" required style="min-width: 220px;">
                     <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i></button>
                 </form>
             </div>
@@ -136,20 +136,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for z in mitglied.parzellen_zuordnungen %}
+                        {% for z in mitglied.parcel_assignments %}
                         <tr>
                             <td>
-                                <a href="/parzellen/{{ z.parzelle.id }}" class="fw-semibold text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ z.parzelle.gartennummer }}</a>
+                                <a href="/parcels/{{ z.parcel.id }}" class="fw-semibold text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ z.parcel.plot_number }}</a>
                             </td>
-                            <td>{{ z.parzelle.flaeche_qm | round(1) if z.parzelle.flaeche_qm else '–' }} {% if z.parzelle.flaeche_qm %}qm{% endif %}</td>
+                            <td>{{ z.parcel.area_sqm | round(1) if z.parcel.area_sqm else '–' }} {% if z.parcel.area_sqm %}qm{% endif %}</td>
                             <td>
-                                <span class="badge badge-{{ z.parzelle.status.value|lower }}">{{ z.parzelle.status.value|lower }}</span>
+                                <span class="badge badge-{{ z.parcel.status.value|lower }}">{{ z.parcel.status.value|lower }}</span>
                             </td>
-                            <td>{% if z.ist_hauptpaechter %}<span class="badge badge-aktiv">Hauptpächter</span>{% else %}<span class="text-muted">Mitpächter</span>{% endif %}</td>
-                            <td class="text-muted">{{ z.zuordnung_von.strftime('%d.%m.%Y') if z.zuordnung_von else '–' }}</td>
+                            <td>{% if z.is_primary_tenant %}<span class="badge badge-aktiv">Hauptpächter</span>{% else %}<span class="text-muted">Mitpächter</span>{% endif %}</td>
+                            <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
                             <td class="text-end">
-                                <a href="/parzellen/{{ z.parzelle.id }}" class="btn btn-sm btn-outline-secondary">
+                                <a href="/parcels/{{ z.parcel.id }}" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </td>
@@ -163,18 +163,18 @@
                 </table>
             </div>
             <div class="card-footer">
-                <form method="post" action="/parzellen/PLACEHOLDER/mitglied/zuordnen"
+                <form method="post" action="/parcels/PLACEHOLDER/mitglied/zuordnen"
                       class="d-flex gap-2 flex-wrap align-items-center" id="form-parzelle-zuordnen">
                     <select name="parzelle_id" class="form-select form-select-sm" style="max-width: 180px;" required
-                            onchange="document.getElementById('form-parzelle-zuordnen').action='/parzellen/'+this.value+'/mitglied/zuordnen'">
+                            onchange="document.getElementById('form-parzelle-zuordnen').action='/parcels/'+this.value+'/mitglied/zuordnen'">
                         <option value="">Parzelle wählen…</option>
                         {% for p in alle_parzellen %}
-                        <option value="{{ p.id }}">{{ p.gartennummer }}</option>
+                        <option value="{{ p.id }}">{{ p.plot_number }}</option>
                         {% endfor %}
                     </select>
                     <input type="hidden" name="mitglied_id" value="{{ mitglied.id }}">
                     <div class="form-check form-check-inline my-auto">
-                        <input class="form-check-input" type="checkbox" name="ist_hauptpaechter" id="ist-hp" checked>
+                        <input class="form-check-input" type="checkbox" name="is_primary_tenant" id="ist-hp" checked>
                         <label class="form-check-label small" for="ist-hp">Hauptpächter</label>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">
@@ -186,11 +186,11 @@
     </div>
 
     <!-- Notizen -->
-    {% if mitglied.notizen %}
+    {% if mitglied.notes %}
     <div class="col-12">
         <div class="card">
             <div class="card-header"><i class="bi bi-sticky me-2"></i>Notizen</div>
-            <div class="card-body">{{ mitglied.notizen }}</div>
+            <div class="card-body">{{ mitglied.notes }}</div>
         </div>
     </div>
     {% endif %}

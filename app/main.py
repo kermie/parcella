@@ -15,15 +15,15 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.database import get_db, AsyncSessionLocal, aktives_mitglied_filter
-from app.models import Benutzer, BenutzerRolle, Mitglied, Parzelle, ParzelleStatus, MitgliedParzelle
+from app.database import get_db, AsyncSessionLocal, active_member_filter
+from app.models import Benutzer, BenutzerRolle, Member, Parcel, ParcelStatus, MemberParcel
 from app.auth import hash_passwort, get_current_user
 from app.module_flags import lade_modul_flags
 from app.ticket_mailer import verarbeite_eingehende_mails
-from app.routers import auth, mitglieder, parzellen, admin as admin_router, pflichtstunden, versicherungen, tickets, einkaufswuensche
+from app.routers import auth, members, parcels, admin as admin_router, pflichtstunden, versicherungen, tickets, einkaufswuensche
 from app.routers.zaehlerwesen import erstelle_zaehler_router
 from app.models import ZaehlerMedium
-from app.routers import api_auth, api_mitglieder, api_parzellen, api_einstellungen, api_stats
+from app.routers import api_auth, api_members, api_parcels, api_einstellungen, api_stats
 from app.routers import api_pflichtstunden, api_versicherungen, api_tickets, api_einkaufswuensche
 from app.routers.api_zaehlerwesen import erstelle_zaehler_api_router
 
@@ -82,7 +82,7 @@ app = FastAPI(
         "Zuordnungen und Vereinseinstellungen. Authentifizierung über JWT-Bearer-Token "
         "(siehe `/api/v1/auth/token` bzw. `/api/v1/auth/login`).\n\n"
         "Die interaktive Web-Oberfläche (Jinja2-Templates) läuft parallel unter `/`, "
-        "`/mitglieder/`, `/parzellen/` usw. und nutzt eine separate, cookie-basierte "
+        "`/members/`, `/parcels/` usw. und nutzt eine separate, cookie-basierte "
         "Session-Authentifizierung."
     ),
     docs_url="/api/docs",
@@ -110,8 +110,8 @@ async def modul_flags_middleware(request: Request, call_next):
 
 # Router registrieren – Web-UI (Jinja2)
 app.include_router(auth.router)
-app.include_router(mitglieder.router)
-app.include_router(parzellen.router)
+app.include_router(members.router)
+app.include_router(parcels.router)
 app.include_router(admin_router.router)
 app.include_router(pflichtstunden.router)
 app.include_router(versicherungen.router)
@@ -133,8 +133,8 @@ app.include_router(strom_router)
 
 # Router registrieren – REST-API (JSON, JWT-Auth)
 app.include_router(api_auth.router)
-app.include_router(api_mitglieder.router)
-app.include_router(api_parzellen.router)
+app.include_router(api_members.router)
+app.include_router(api_parcels.router)
 app.include_router(api_einstellungen.router)
 app.include_router(api_stats.router)
 app.include_router(api_pflichtstunden.router)
@@ -158,47 +158,47 @@ async def startseite(request: Request):
         if not benutzer:
             return RedirectResponse("/auth/login", status_code=302)
 
-        mitglieder_gesamt = await db.scalar(
-            select(func.count()).where(aktives_mitglied_filter())
+        members_total = await db.scalar(
+            select(func.count()).where(active_member_filter())
         )
-        mitglieder_aktiv = mitglieder_gesamt  # gesamt zählt bereits nur aktive
-        parzellen_aktiv = await db.scalar(
-            select(func.count()).select_from(Parzelle).where(
-                Parzelle.status == ParzelleStatus.AKTIV
+        members_active = members_total  # gesamt zählt bereits nur aktive
+        parcels_active = await db.scalar(
+            select(func.count()).select_from(Parcel).where(
+                Parcel.status == ParcelStatus.ACTIVE
             )
         )
-        parzellen_gekuendigt = await db.scalar(
-            select(func.count()).select_from(Parzelle).where(
-                Parzelle.status == ParzelleStatus.GEKUENDIGT
+        parcels_terminated = await db.scalar(
+            select(func.count()).select_from(Parcel).where(
+                Parcel.status == ParcelStatus.TERMINATED
             )
         )
-        besetzte_ids = select(MitgliedParzelle.parzelle_id).distinct()
-        parzellen_unbesetzt = await db.scalar(
-            select(func.count()).select_from(Parzelle).where(
-                Parzelle.status == ParzelleStatus.AKTIV,
-                Parzelle.id.not_in(besetzte_ids)
+        besetzte_ids = select(MemberParcel.parcel_id).distinct()
+        parcels_vacant = await db.scalar(
+            select(func.count()).select_from(Parcel).where(
+                Parcel.status == ParcelStatus.ACTIVE,
+                Parcel.id.not_in(besetzte_ids)
             )
         )
-        flaeche_gesamt = await db.scalar(
-            select(func.coalesce(func.sum(Parzelle.flaeche_qm), 0)).where(
-                Parzelle.status == ParzelleStatus.AKTIV
+        area_total = await db.scalar(
+            select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(
+                Parcel.status == ParcelStatus.ACTIVE
             )
         )
         neueste_result = await db.execute(
-            select(Mitglied)
-            .where(aktives_mitglied_filter())
-            .order_by(Mitglied.created_at.desc())
+            select(Member)
+            .where(active_member_filter())
+            .order_by(Member.created_at.desc())
             .limit(5)
         )
-        neueste_mitglieder = neueste_result.scalars().all()
+        recent_members = neueste_result.scalars().all()
 
     stats = {
-        "mitglieder_gesamt": mitglieder_gesamt or 0,
-        "mitglieder_aktiv": mitglieder_aktiv or 0,
-        "parzellen_aktiv": parzellen_aktiv or 0,
-        "parzellen_gekuendigt": parzellen_gekuendigt or 0,
-        "parzellen_unbesetzt": parzellen_unbesetzt or 0,
-        "flaeche_gesamt_qm": float(flaeche_gesamt or 0),
+        "mitglieder_gesamt": members_total or 0,
+        "mitglieder_aktiv": members_active or 0,
+        "parzellen_aktiv": parcels_active or 0,
+        "parzellen_gekuendigt": parcels_terminated or 0,
+        "parzellen_unbesetzt": parcels_vacant or 0,
+        "flaeche_gesamt_qm": float(area_total or 0),
     }
 
     return templates.TemplateResponse(
@@ -207,7 +207,7 @@ async def startseite(request: Request):
             "request": request,
             "benutzer": benutzer,
             "stats": stats,
-            "neueste_mitglieder": neueste_mitglieder,
+            "neueste_mitglieder": recent_members,
         },
     )
 

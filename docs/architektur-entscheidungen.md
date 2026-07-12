@@ -116,6 +116,59 @@ und `Zaehlpunkt`-Beziehungen.
 gebraucht werden, die Zeile explizit mit `selectinload(...)` neu laden,
 statt das ursprüngliche (frisch erzeugte) Objekt weiterzuverwenden.
 
+## Kernmodul auf Englisch umgestellt (Mitglieder/Parzellen → Members/Parcels)
+
+**Warum jetzt, nicht später:** Solange nur ein Verein die Software
+produktiv nutzt, ist jeder Zeitpunkt günstiger als der nächste. Sobald
+externe Vereine oder Contributors dazukommen, wird jede Umbenennung von
+Tabellen, URLs und API-Endpunkten zum Breaking Change. Der Verein hat
+sich daher bewusst für eine rigorose, vollständige Umstellung
+entschieden – kein halbes Ergebnis, auch wenn es kurzfristig mehr
+Aufwand bedeutet.
+
+**Modulweise vorgegangen, Kernmodul zuerst.** Mitglieder/Parzellen sind
+in praktisch jedem anderen Modul über Fremdschlüssel verankert
+(Pflichtstunden, Zählerwesen, Versicherungen, Tickets, Einkaufswünsche) –
+daher mussten sie zuerst umgestellt werden, als Vorlage für alle
+folgenden Module. Andere Module behalten bewusst vorerst ihre deutschen
+Bezeichner (Tabellen, eigene Spalten, URLs) – nur ihre Fremdschlüssel-
+Verweise auf die neuen `members`/`parcels`-Tabellen und die
+`Member`/`Parcel`-Klassennamen wurden zwingend mitgezogen, sonst wäre die
+Anwendung nach diesem Schritt nicht mehr lauffähig gewesen.
+
+**CamelCase-Wortgrenzen als Stolperstein bei automatisierten Umbenennungen.**
+Ein Skript mit `\bMitglied\b`/`\bParzelle\b`-Wortgrenzen-Regex trifft
+zusammengesetzte Klassennamen wie `MitgliedVereinsrolle` oder
+`ParzelleVersicherung` NICHT (kein Regex-Wortgrenzen-Übergang zwischen
+Kleinbuchstabe und Großbuchstabe in camelCase) – das war hier
+gewünscht (diese Klassen gehören anderen Modulen, eigene Runde später),
+hätte bei "MitgliedParzelle" (die eigentliche Kernklasse) aber ebenso
+zugeschlagen, wäre sie nicht vorher explizit als zusammengesetzter
+String behandelt worden. Lehre: bei automatisierten Umbenennungen im
+Code IMMER zuerst prüfen, welche zusammengesetzten Bezeichner von einer
+Wortgrenzen-Regex tatsächlich (nicht) erfasst werden, bevor man sich auf
+das Ergebnis verlässt.
+
+**SQLAlchemy Identity Map + Beziehungs-Attributnamen sind eine
+Ketten-Falle.** Beim Umbenennen von `relationship()`-Attributen (z.B.
+`MitgliedParzelle.mitglied` → `MemberParcel.member`) genügt es nicht,
+nur die Definition zu ändern – JEDER Aufrufer, der `.mitglied` auf einem
+`MemberParcel`-Objekt liest, bricht mit `AttributeError`. Diese Zugriffe
+sind über viele Module verteilt (Pflichtstunden-Auswertung,
+Versicherungs-Haushalts-Erkennung, Dashboard-Statistiken), da
+`Parcel.member_assignments`/`Member.parcel_assignments` fast überall
+durchlaufen werden. Eine reine `\bmitglied\b`-Wortgrenzen-Regex hätte
+das nicht sauber von unrelated lokalen Variablen gleichen Namens in
+ANDEREN, noch nicht umgestellten Modulen unterscheiden können – hier war
+gezieltes, dateiweises Prüfen nötig statt eines blinden globalen Ersatzes.
+
+**Verwaiste Schema-Felder beim Aufräumen entdeckt.** Sowohl
+`ParzelleUpdate.kuendigung_datum` (Pydantic) als auch die entsprechende
+Spalte hätten längst entfernt sein sollen (Migration 0006 hatte die
+DB-Spalte bereits gelöscht) – nur das API-Schema hinkte hinterher. Beim
+gründlichen Durchgehen für die Umbenennung fiel das auf und wurde
+gleich mitbereinigt.
+
 ## API-first ab sofort verbindlich
 
 **Der Lückenfund:** Nach dem Bau von Pflichtstunden, Zählerwesen und

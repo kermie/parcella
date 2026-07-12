@@ -108,7 +108,7 @@ async def test_normale_mitglieder_koennen_nicht_freigeben(client, admin_benutzer
 
     async with AsyncSessionLocal() as session:
         einfaches_mitglied = Benutzer(
-            email="mitglied@example.com", name="Normales Mitglied",
+            email="mitglied@example.com", name="Normales Member",
             passwort_hash=hash_passwort("testpasswort123"), rolle=BenutzerRolle.LESEND,
         )
         session.add(einfaches_mitglied)

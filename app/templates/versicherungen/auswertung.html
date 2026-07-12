@@ -55,9 +55,9 @@
                 {% for z in zeilen %}
                 <tr>
                     <td class="fw-semibold">
-                        <a href="/versicherungen/parzellen/{{ z.pv.parzelle.id }}?jahr={{ jahr }}"
+                        <a href="/versicherungen/parcels/{{ z.pv.parzelle.id }}?jahr={{ jahr }}"
                            class="text-decoration-none" style="color: var(--gv-gruen);">
-                            {{ z.pv.parzelle.gartennummer }}
+                            {{ z.pv.parzelle.plot_number }}
                         </a>
                     </td>
                     <td>{{ z.pv.sach_paket.bezeichnung if z.pv.sach_paket else '–' }}</td>

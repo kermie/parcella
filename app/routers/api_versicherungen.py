@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import (
     SachversicherungPaket, VersicherungsKonfiguration, ParzelleVersicherung,
-    UnfallversicherungZusatzperson, Parzelle, Benutzer,
+    UnfallversicherungZusatzperson, Parcel, Benutzer,
 )
 from app.api_auth import get_current_api_user, require_schreibzugriff
 from app.module_flags import require_modul
@@ -178,9 +178,9 @@ def _zu_kosten_schema(pv: ParzelleVersicherung, konfig: Optional[VersicherungsKo
 
 
 @router.get(
-    "/parzellen/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
-    summary="Versicherungsstatus einer Parzelle abrufen",
-    description="Gibt 404 zurück, wenn für diese Parzelle/Jahr noch kein Status existiert "
+    "/parcels/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
+    summary="Versicherungsstatus einer Parcel abrufen",
+    description="Gibt 404 zurück, wenn für diese Parcel/Jahr noch kein Status existiert "
                 "(anders als die Web-UI wird er über die API nicht automatisch angelegt).",
 )
 async def versicherung_abrufen(
@@ -191,7 +191,7 @@ async def versicherung_abrufen(
 ):
     pv = await _lade_pv(db, parzelle_id, jahr)
     if not pv:
-        raise HTTPException(status_code=404, detail="Kein Versicherungsstatus für diese Parzelle/Jahr")
+        raise HTTPException(status_code=404, detail="Kein Versicherungsstatus für diese Parcel/Jahr")
 
     konfig_result = await db.execute(select(VersicherungsKonfiguration).where(VersicherungsKonfiguration.jahr == jahr))
     konfig = konfig_result.scalar_one_or_none()
@@ -199,7 +199,7 @@ async def versicherung_abrufen(
 
 
 @router.put(
-    "/parzellen/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
+    "/parcels/{parzelle_id}/{jahr}", response_model=ParzelleVersicherungKostenOut,
     summary="Versicherungsstatus setzen (Upsert)",
     description="Legt den Status an, falls er nicht existiert, und ersetzt die Liste der Zusatzpersonen komplett.",
 )
@@ -210,9 +210,9 @@ async def versicherung_setzen(
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
-    parzelle_result = await db.execute(select(Parzelle).where(Parzelle.id == parzelle_id))
+    parzelle_result = await db.execute(select(Parcel).where(Parcel.id == parzelle_id))
     if not parzelle_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Parzelle nicht gefunden")
+        raise HTTPException(status_code=404, detail="Parcel nicht gefunden")
 
     pv = await _lade_pv(db, parzelle_id, jahr)
     if not pv:

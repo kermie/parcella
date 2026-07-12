@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Versicherung {{ parzelle.gartennummer }}{% endblock %}
-{% block page_title %}Versicherung Parzelle {{ parzelle.gartennummer }}{% endblock %}
+{% block title %}Versicherung {{ parzelle.plot_number }}{% endblock %}
+{% block page_title %}Versicherung Parzelle {{ parzelle.plot_number }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/versicherungen/parzellen?jahr={{ jahr }}" class="btn btn-sm btn-outline-secondary">
@@ -18,7 +18,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="/versicherungen/parzellen/{{ parzelle.id }}/speichern">
+<form method="post" action="/versicherungen/parcels/{{ parzelle.id }}/speichern">
 <input type="hidden" name="jahr" value="{{ jahr }}">
 <div class="row g-3">
 
@@ -75,7 +75,7 @@
                     <ul class="list-group list-group-flush mb-3">
                         {% for m in haushalt %}
                         <li class="list-group-item py-1 px-2" style="font-size: 0.88rem;">
-                            <i class="bi bi-check-circle-fill text-success me-1"></i>{{ m.vollname }}
+                            <i class="bi bi-check-circle-fill text-success me-1"></i>{{ m.full_name }}
                         </li>
                         {% endfor %}
                     </ul>
@@ -90,7 +90,7 @@
                             <input class="form-check-input mt-0" type="checkbox" name="zusatzpersonen"
                                    value="{{ m.id }}" id="zp-{{ m.id }}"
                                    {% if m.id in zusatz_ids %}checked{% endif %}>
-                            <label class="form-check-label" for="zp-{{ m.id }}">{{ m.vollname }}</label>
+                            <label class="form-check-label" for="zp-{{ m.id }}">{{ m.full_name }}</label>
                         </li>
                         {% endfor %}
                     </ul>

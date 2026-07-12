@@ -11,13 +11,13 @@ async def test_zaehlpunkt_anlegen_und_ablesung(client, admin_benutzer):
     headers = auth_header(token)
 
     parzelle = (await client.post(
-        "/api/v1/parzellen", json={"gartennummer": "G200"}, headers=headers
+        "/api/v1/parcels", json={"plot_number": "G200"}, headers=headers
     )).json()
 
     zaehlpunkt = (await client.post(
         "/api/v1/wasser/zaehlpunkte",
         json={
-            "typ": "PARZELLE", "parzelle_id": parzelle["id"],
+            "typ": "PARZELLE", "parcel_id": parzelle["id"],
             "nummer": "W-12345", "anfangsstand": "0.0",
         },
         headers=headers,

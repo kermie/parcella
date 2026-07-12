@@ -34,7 +34,7 @@
                         <select name="parzelle_id" class="form-select">
                             <option value="">– bitte wählen –</option>
                             {% for p in alle_parzellen %}
-                            <option value="{{ p.id }}">{{ p.gartennummer }}</option>
+                            <option value="{{ p.id }}">{{ p.plot_number }}</option>
                             {% endfor %}
                         </select>
                     </div>

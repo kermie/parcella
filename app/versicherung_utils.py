@@ -5,37 +5,37 @@ Haushalts-Erkennung (gleiche Adresse = automatisch mitversichert).
 from decimal import Decimal
 from typing import List, Optional
 
-from app.models import Mitglied, MitgliedParzelle, ParzelleVersicherung, VersicherungsKonfiguration
+from app.models import Member, MemberParcel, ParzelleVersicherung, VersicherungsKonfiguration
 
 
-def _adresse_normalisiert(mitglied: Mitglied) -> tuple:
+def _adresse_normalisiert(mitglied: Member) -> tuple:
     """Normalisierte Adresse für den Haushaltsvergleich (whitespace/case-tolerant)."""
     return (
-        (mitglied.strasse or "").strip().lower(),
-        (mitglied.plz or "").strip().lower(),
-        (mitglied.ort or "").strip().lower(),
+        (mitglied.street or "").strip().lower(),
+        (mitglied.postal_code or "").strip().lower(),
+        (mitglied.city or "").strip().lower(),
     )
 
 
-def hauptpaechter_von(zuordnungen: List[MitgliedParzelle]) -> Optional[Mitglied]:
-    """Ermittelt den Hauptpächter einer Parzelle (oder den ersten Pächter als Fallback)."""
-    aktuelle = [z for z in zuordnungen if z.zuordnung_bis is None]
+def hauptpaechter_von(zuordnungen: List[MemberParcel]) -> Optional[Member]:
+    """Ermittelt den Hauptpächter einer Parcel (oder den ersten Pächter als Fallback)."""
+    aktuelle = [z for z in zuordnungen if z.assigned_until is None]
     if not aktuelle:
         return None
-    haupt = next((z for z in aktuelle if z.ist_hauptpaechter), aktuelle[0])
-    return haupt.mitglied
+    haupt = next((z for z in aktuelle if z.is_primary_tenant), aktuelle[0])
+    return haupt.member
 
 
-def haushalts_gruppierung(zuordnungen: List[MitgliedParzelle]) -> dict:
+def haushalts_gruppierung(zuordnungen: List[MemberParcel]) -> dict:
     """
-    Teilt die aktuellen Pächter einer Parzelle in "im Haushalt des
+    Teilt die aktuellen Pächter einer Parcel in "im Haushalt des
     Hauptpächters" (gleiche Adresse) und "außerhalb" auf.
 
-    Rückgabe: {"haushalt": [Mitglied, ...], "extern": [Mitglied, ...]}
+    Rückgabe: {"haushalt": [Member, ...], "extern": [Member, ...]}
     Eine leere Adresse (alle Felder leer) zählt NICHT als Übereinstimmung,
     um Falsch-Zuordnungen bei fehlenden Adressdaten zu vermeiden.
     """
-    aktuelle = [z for z in zuordnungen if z.zuordnung_bis is None]
+    aktuelle = [z for z in zuordnungen if z.assigned_until is None]
     hauptpaechter = hauptpaechter_von(zuordnungen)
 
     if not hauptpaechter:
@@ -48,7 +48,7 @@ def haushalts_gruppierung(zuordnungen: List[MitgliedParzelle]) -> dict:
     extern = []
 
     for z in aktuelle:
-        m = z.mitglied
+        m = z.member
         if m.id == hauptpaechter.id:
             haushalt.append(m)
             continue
@@ -64,7 +64,7 @@ def berechne_versicherungskosten(
     pv: ParzelleVersicherung, konfiguration: Optional[VersicherungsKonfiguration]
 ) -> dict:
     """
-    Berechnet die Versicherungskosten einer Parzelle für ein Jahr.
+    Berechnet die Versicherungskosten einer Parcel für ein Jahr.
     Gibt ein Dict mit sach_kosten, unfall_kosten, gesamt zurück.
     """
     sach_kosten = Decimal("0")

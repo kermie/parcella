@@ -19,11 +19,11 @@ async def test_paket_anlegen_und_kosten_berechnung(client, admin_benutzer):
     )
 
     parzelle = (await client.post(
-        "/api/v1/parzellen", json={"gartennummer": "G300"}, headers=headers
+        "/api/v1/parcels", json={"plot_number": "G300"}, headers=headers
     )).json()
 
     status_response = await client.put(
-        f"/api/v1/versicherungen/parzellen/{parzelle['id']}/2026",
+        f"/api/v1/versicherungen/parcels/{parzelle['id']}/2026",
         json={
             "hat_sachversicherung": True, "sach_paket_id": paket["id"],
             "hat_unfallversicherung": True, "zusatzpersonen_mitglied_ids": [],
@@ -47,13 +47,13 @@ async def test_zusatzperson_erhoeht_unfallkosten(client, admin_benutzer):
         headers=headers,
     )
 
-    parzelle = (await client.post("/api/v1/parzellen", json={"gartennummer": "G301"}, headers=headers)).json()
+    parzelle = (await client.post("/api/v1/parcels", json={"plot_number": "G301"}, headers=headers)).json()
     zusatzperson = (await client.post(
-        "/api/v1/mitglieder", json={"vorname": "Weiterer", "nachname": "Paechter"}, headers=headers
+        "/api/v1/members", json={"first_name": "Weiterer", "last_name": "Paechter"}, headers=headers
     )).json()
 
     daten = (await client.put(
-        f"/api/v1/versicherungen/parzellen/{parzelle['id']}/2026",
+        f"/api/v1/versicherungen/parcels/{parzelle['id']}/2026",
         json={
             "hat_sachversicherung": False, "hat_unfallversicherung": True,
             "zusatzpersonen_mitglied_ids": [zusatzperson["id"]],

@@ -13,18 +13,18 @@ async def test_ticket_anlegen_und_automatischer_mitglied_abgleich(client, admin_
     headers = auth_header(token)
 
     mitglied = (await client.post(
-        "/api/v1/mitglieder", json={"vorname": "Petra", "nachname": "Beispiel"}, headers=headers
+        "/api/v1/members", json={"first_name": "Petra", "last_name": "Beispiel"}, headers=headers
     )).json()
     await client.post(
-        f"/api/v1/mitglieder/{mitglied['id']}/email-adressen",
-        json={"adresse": "petra@example.com"},
+        f"/api/v1/members/{mitglied['id']}/email-addresses",
+        json={"address": "petra@example.com"},
         headers=headers,
     )
 
     ticket = (await client.post(
         "/api/v1/tickets",
         json={
-            "betreff": "Frage zur Parzelle", "absender_email": "petra@example.com",
+            "betreff": "Frage zur Parcel", "absender_email": "petra@example.com",
             "nachricht": "Wo finde ich meine Wasseruhr?",
         },
         headers=headers,

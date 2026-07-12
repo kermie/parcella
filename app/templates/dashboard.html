@@ -19,7 +19,7 @@
                 </div>
             </div>
             <div class="card-footer bg-transparent border-top-0 pt-0">
-                <a href="/mitglieder/" class="btn btn-sm btn-outline-primary w-100">Alle anzeigen</a>
+                <a href="/members/" class="btn btn-sm btn-outline-primary w-100">Alle anzeigen</a>
             </div>
         </div>
     </div>
@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="card-footer bg-transparent border-top-0 pt-0">
-                <a href="/parzellen/" class="btn btn-sm btn-outline-primary w-100">Alle anzeigen</a>
+                <a href="/parcels/" class="btn btn-sm btn-outline-primary w-100">Alle anzeigen</a>
             </div>
         </div>
     </div>
@@ -61,7 +61,7 @@
                 </div>
             </div>
             <div class="card-footer bg-transparent border-top-0 pt-0">
-                <a href="/parzellen/?status_filter=gekuendigt" class="btn btn-sm btn-outline-primary w-100">Anzeigen</a>
+                <a href="/parcels/?status_filter=gekuendigt" class="btn btn-sm btn-outline-primary w-100">Anzeigen</a>
             </div>
         </div>
     </div>
@@ -96,12 +96,12 @@
                 <ul class="list-group list-group-flush">
                     {% for m in neueste_mitglieder %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="/mitglieder/{{ m.id }}" class="text-decoration-none fw-semibold"
+                        <a href="/members/{{ m.id }}" class="text-decoration-none fw-semibold"
                            style="color: var(--gv-gruen);">
-                            {{ m.vollname }}
+                            {{ m.full_name }}
                         </a>
                         <span class="text-muted" style="font-size: 0.82rem;">
-                            {{ m.mitglied_seit.strftime('%d.%m.%Y') if m.mitglied_seit else '–' }}
+                            {{ m.member_since.strftime('%d.%m.%Y') if m.member_since else '–' }}
                         </span>
                     </li>
                     {% else %}
@@ -110,7 +110,7 @@
                 </ul>
             </div>
             <div class="card-footer">
-                <a href="/mitglieder/neu" class="btn btn-sm btn-primary">
+                <a href="/members/neu" class="btn btn-sm btn-primary">
                     <i class="bi bi-plus-lg me-1"></i>Neues Mitglied
                 </a>
             </div>
@@ -121,16 +121,16 @@
             <div class="card-header"><i class="bi bi-lightning me-2"></i>Schnellzugriff</div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="/mitglieder/neu" class="btn btn-outline-primary text-start">
+                    <a href="/members/neu" class="btn btn-outline-primary text-start">
                         <i class="bi bi-person-plus me-2"></i>Neues Mitglied anlegen
                     </a>
-                    <a href="/parzellen/neu" class="btn btn-outline-primary text-start">
+                    <a href="/parcels/neu" class="btn btn-outline-primary text-start">
                         <i class="bi bi-plus-square me-2"></i>Neue Parzelle anlegen
                     </a>
-                    <a href="/mitglieder/export/csv" class="btn btn-outline-secondary text-start">
+                    <a href="/members/export/csv" class="btn btn-outline-secondary text-start">
                         <i class="bi bi-download me-2"></i>Mitglieder als CSV exportieren
                     </a>
-                    <a href="/parzellen/export/csv" class="btn btn-outline-secondary text-start">
+                    <a href="/parcels/export/csv" class="btn btn-outline-secondary text-start">
                         <i class="bi bi-download me-2"></i>Parzellen als CSV exportieren
                     </a>
                     {% if benutzer.rolle.value in ['admin', 'vorstand'] %}

@@ -7,10 +7,10 @@
     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#csvImportModal">
         <i class="bi bi-upload me-1"></i>CSV Import
     </button>
-    <a href="/mitglieder/export/csv" class="btn btn-sm btn-outline-secondary">
+    <a href="/members/export/csv" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-download me-1"></i>CSV Export
     </a>
-    <a href="/mitglieder/neu" class="btn btn-sm btn-primary">
+    <a href="/members/neu" class="btn btn-sm btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Neues Mitglied
     </a>
 </div>
@@ -41,7 +41,7 @@
             </div>
             <button type="submit" class="btn btn-sm btn-primary">Suchen</button>
             {% if suche or auch_inaktive %}
-            <a href="/mitglieder/" class="btn btn-sm btn-outline-secondary">Zurücksetzen</a>
+            <a href="/members/" class="btn btn-sm btn-outline-secondary">Zurücksetzen</a>
             {% endif %}
         </form>
     </div>
@@ -72,38 +72,38 @@
                     {% for m in mitglieder %}
                     <tr>
                         <td>
-                            <a href="/mitglieder/{{ m.id }}" class="text-decoration-none fw-semibold"
+                            <a href="/members/{{ m.id }}" class="text-decoration-none fw-semibold"
                                style="color: var(--gv-gruen);">
-                                {{ m.nachname }}, {{ m.vorname }}
+                                {{ m.last_name }}, {{ m.first_name }}
                             </a>
                         </td>
                         <td class="text-muted">
-                            {% if m.plz and m.ort %}{{ m.plz }} {{ m.ort }}{% elif m.ort %}{{ m.ort }}{% else %}–{% endif %}
+                            {% if m.postal_code and m.city %}{{ m.postal_code }} {{ m.city }}{% elif m.city %}{{ m.city }}{% else %}–{% endif %}
                         </td>
                         <td class="text-muted">
-                            {{ m.mitglied_seit.strftime('%d.%m.%Y') if m.mitglied_seit else '–' }}
+                            {{ m.member_since.strftime('%d.%m.%Y') if m.member_since else '–' }}
                         </td>
                         <td>
-                            {% for z in m.parzellen_zuordnungen %}
+                            {% for z in m.parcel_assignments %}
                             <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
-                                {{ z.parzelle.gartennummer }}
+                                {{ z.parcel.plot_number }}
                             </span>
                             {% else %}
                             <span class="text-muted">–</span>
                             {% endfor %}
                         </td>
                         <td>
-                            {% if m.ist_aktiv %}
+                            {% if m.is_active %}
                             <span class="badge badge-aktiv">aktiv</span>
                             {% else %}
                             <span class="badge badge-gekuendigt">inaktiv</span>
-                            {% if m.mitglied_bis %}
-                            <div class="text-muted" style="font-size: 0.72rem;">seit {{ m.mitglied_bis.strftime('%d.%m.%Y') }}</div>
+                            {% if m.member_until %}
+                            <div class="text-muted" style="font-size: 0.72rem;">seit {{ m.member_until.strftime('%d.%m.%Y') }}</div>
                             {% endif %}
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <a href="/mitglieder/{{ m.id }}" class="btn btn-sm btn-outline-secondary">
+                            <a href="/members/{{ m.id }}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-eye"></i>
                             </a>
                         </td>
@@ -117,7 +117,7 @@
                             {% else %}
                             <i class="bi bi-people d-block mb-2" style="font-size: 1.5rem;"></i>
                             Noch keine Mitglieder angelegt.<br>
-                            <a href="/mitglieder/neu" class="btn btn-sm btn-primary mt-2">Erstes Mitglied anlegen</a>
+                            <a href="/members/neu" class="btn btn-sm btn-primary mt-2">Erstes Mitglied anlegen</a>
                             {% endif %}
                         </td>
                     </tr>
@@ -142,7 +142,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="post" action="/mitglieder/import/csv" enctype="multipart/form-data"
+                <form method="post" action="/members/import/csv" enctype="multipart/form-data"
                       class="d-flex gap-2 align-items-center flex-wrap">
                     <input type="file" name="datei" accept=".csv" class="form-control form-control-sm"
                            required style="max-width: 300px;">
@@ -157,7 +157,7 @@
                     E-Mail-Adressen; Telefonnummern; Notizen</code><br>
                     Datumsformat: <code>JJJJ-MM-TT</code> oder <code>TT.MM.JJJJ</code>.
                     Mehrere E-Mail-Adressen / Telefonnummern jeweils durch Semikolon trennen.<br>
-                    Tipp: Einfach einen <a href="/mitglieder/export/csv">CSV-Export</a>
+                    Tipp: Einfach einen <a href="/members/export/csv">CSV-Export</a>
                     als Vorlage verwenden.
                 </div>
             </div>

@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if mitglied %}{{ mitglied.vollname }} bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
+{% block title %}{% if mitglied %}{{ mitglied.full_name }} bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
 {% block page_title %}{% if mitglied %}Mitglied bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
 
 {% block topbar_actions %}
-<a href="{% if mitglied %}/mitglieder/{{ mitglied.id }}{% else %}/mitglieder/{% endif %}"
+<a href="{% if mitglied %}/members/{{ mitglied.id }}{% else %}/members/{% endif %}"
    class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Abbrechen
 </a>
@@ -16,7 +16,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="{% if mitglied %}/mitglieder/{{ mitglied.id }}/bearbeiten{% else %}/mitglieder/neu{% endif %}">
+<form method="post" action="{% if mitglied %}/members/{{ mitglied.id }}/bearbeiten{% else %}/members/neu{% endif %}">
 <div class="row g-3">
 
     <div class="col-lg-6">
@@ -26,18 +26,18 @@
                 <div class="row g-3">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Vorname <span class="text-danger">*</span></label>
-                        <input type="text" name="vorname" class="form-control"
-                               value="{{ mitglied.vorname if mitglied else '' }}" required autofocus>
+                        <input type="text" name="first_name" class="form-control"
+                               value="{{ mitglied.first_name if mitglied else '' }}" required autofocus>
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Nachname <span class="text-danger">*</span></label>
-                        <input type="text" name="nachname" class="form-control"
-                               value="{{ mitglied.nachname if mitglied else '' }}" required>
+                        <input type="text" name="last_name" class="form-control"
+                               value="{{ mitglied.last_name if mitglied else '' }}" required>
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">Geburtsdatum</label>
-                        <input type="date" name="geburtsdatum" class="form-control"
-                               value="{{ mitglied.geburtsdatum.isoformat() if mitglied and mitglied.geburtsdatum else '' }}">
+                        <input type="date" name="date_of_birth" class="form-control"
+                               value="{{ mitglied.date_of_birth.isoformat() if mitglied and mitglied.date_of_birth else '' }}">
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-semibold">IBAN</label>
@@ -57,18 +57,18 @@
                 <div class="row g-3">
                     <div class="col-12">
                         <label class="form-label fw-semibold">Straße und Hausnummer</label>
-                        <input type="text" name="strasse" class="form-control"
-                               value="{{ mitglied.strasse if mitglied else '' }}">
+                        <input type="text" name="street" class="form-control"
+                               value="{{ mitglied.street if mitglied else '' }}">
                     </div>
                     <div class="col-sm-4">
                         <label class="form-label fw-semibold">PLZ</label>
-                        <input type="text" name="plz" class="form-control" maxlength="10"
-                               value="{{ mitglied.plz if mitglied else '' }}">
+                        <input type="text" name="postal_code" class="form-control" maxlength="10"
+                               value="{{ mitglied.postal_code if mitglied else '' }}">
                     </div>
                     <div class="col-sm-8">
                         <label class="form-label fw-semibold">Ort</label>
-                        <input type="text" name="ort" class="form-control"
-                               value="{{ mitglied.ort if mitglied else '' }}">
+                        <input type="text" name="city" class="form-control"
+                               value="{{ mitglied.city if mitglied else '' }}">
                     </div>
                 </div>
             </div>
@@ -82,20 +82,20 @@
                 <div class="row g-3">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Mitglied seit</label>
-                        <input type="date" name="mitglied_seit" class="form-control"
-                               value="{{ mitglied.mitglied_seit.isoformat() if mitglied and mitglied.mitglied_seit else '' }}">
+                        <input type="date" name="member_since" class="form-control"
+                               value="{{ mitglied.member_since.isoformat() if mitglied and mitglied.member_since else '' }}">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">Mitglied bis</label>
-                        <input type="date" name="mitglied_bis" class="form-control"
-                               value="{{ mitglied.mitglied_bis.isoformat() if mitglied and mitglied.mitglied_bis else '' }}">
+                        <input type="date" name="member_until" class="form-control"
+                               value="{{ mitglied.member_until.isoformat() if mitglied and mitglied.member_until else '' }}">
                         <div class="form-text">Leer lassen = aktives Mitglied</div>
                     </div>
                     <div class="col-12">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="email_benachrichtigungen"
+                            <input class="form-check-input" type="checkbox" name="email_notifications"
                                    id="email-info"
-                                   {% if not mitglied or mitglied.email_benachrichtigungen %}checked{% endif %}>
+                                   {% if not mitglied or mitglied.email_notifications %}checked{% endif %}>
                             <label class="form-check-label" for="email-info">
                                 Darf per E-Mail Informationen erhalten
                             </label>
@@ -110,15 +110,15 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-sticky me-2"></i>Notizen</div>
             <div class="card-body">
-                <textarea name="notizen" class="form-control" rows="5"
-                          placeholder="Interne Notizen…">{{ mitglied.notizen if mitglied else '' }}</textarea>
+                <textarea name="notes" class="form-control" rows="5"
+                          placeholder="Interne Notizen…">{{ mitglied.notes if mitglied else '' }}</textarea>
             </div>
         </div>
     </div>
 
     <div class="col-12">
         <div class="d-flex gap-2 justify-content-end">
-            <a href="{% if mitglied %}/mitglieder/{{ mitglied.id }}{% else %}/mitglieder/{% endif %}"
+            <a href="{% if mitglied %}/members/{{ mitglied.id }}{% else %}/members/{% endif %}"
                class="btn btn-outline-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-lg me-1"></i>

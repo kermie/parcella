@@ -18,7 +18,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import (
     SachversicherungPaket, VersicherungsKonfiguration, ParzelleVersicherung,
-    UnfallversicherungZusatzperson, Parzelle, ParzelleStatus, MitgliedParzelle, Mitglied,
+    UnfallversicherungZusatzperson, Parcel, ParcelStatus, MemberParcel, Member,
 )
 from app.auth import require_user
 from app.module_flags import require_modul
@@ -262,7 +262,7 @@ async def paket_loeschen(
 # Parzellen: Liste, Detail/Bearbeiten
 # ---------------------------------------------------------------------------
 
-@router.get("/parzellen", response_class=HTMLResponse)
+@router.get("/parcels", response_class=HTMLResponse)
 async def versicherungen_parzellen_liste(
     request: Request,
     jahr: Optional[int] = None,
@@ -275,11 +275,11 @@ async def versicherungen_parzellen_liste(
     konfiguration = await _get_konfiguration(db, jahr)
 
     parzellen_result = await db.execute(
-        select(Parzelle)
-        .where(Parzelle.status == ParzelleStatus.AKTIV)
-        .order_by(Parzelle.gartennummer)
+        select(Parcel)
+        .where(Parcel.status == ParcelStatus.ACTIVE)
+        .order_by(Parcel.plot_number)
     )
-    parzellen = parzellen_result.scalars().all()
+    parcels = parzellen_result.scalars().all()
 
     pv_result = await db.execute(
         select(ParzelleVersicherung)
@@ -289,7 +289,7 @@ async def versicherungen_parzellen_liste(
     pv_by_parzelle = {pv.parzelle_id: pv for pv in pv_result.scalars().all()}
 
     zeilen = []
-    for p in parzellen:
+    for p in parcels:
         pv = pv_by_parzelle.get(p.id)
         kosten = berechne_versicherungskosten(pv, konfiguration) if pv else {
             "sach_kosten": Decimal("0"), "unfall_kosten": Decimal("0"), "gesamt": Decimal("0")
@@ -302,7 +302,7 @@ async def versicherungen_parzellen_liste(
     })
 
 
-@router.get("/parzellen/{parzelle_id}", response_class=HTMLResponse)
+@router.get("/parcels/{parzelle_id}", response_class=HTMLResponse)
 async def versicherung_detail(
     parzelle_id: str,
     request: Request,
@@ -314,19 +314,19 @@ async def versicherung_detail(
         jahr = date.today().year
 
     parzelle_result = await db.execute(
-        select(Parzelle)
-        .options(selectinload(Parzelle.mitglieder_zuordnungen).selectinload(MitgliedParzelle.mitglied))
-        .where(Parzelle.id == parzelle_id)
+        select(Parcel)
+        .options(selectinload(Parcel.member_assignments).selectinload(MemberParcel.member))
+        .where(Parcel.id == parzelle_id)
     )
     parzelle = parzelle_result.scalar_one_or_none()
     if not parzelle:
-        raise HTTPException(status_code=404, detail="Parzelle nicht gefunden")
+        raise HTTPException(status_code=404, detail="Parcel nicht gefunden")
 
     konfiguration = await _get_konfiguration(db, jahr)
     pakete = await _get_pakete(db, jahr)
     pv = await _get_or_create_pv(db, parzelle_id, jahr)
 
-    gruppierung = haushalts_gruppierung(parzelle.mitglieder_zuordnungen)
+    gruppierung = haushalts_gruppierung(parzelle.member_assignments)
     zusatz_ids = {z.mitglied_id for z in pv.zusatzpersonen}
     kosten = berechne_versicherungskosten(pv, konfiguration)
 
@@ -338,7 +338,7 @@ async def versicherung_detail(
     })
 
 
-@router.post("/parzellen/{parzelle_id}/speichern")
+@router.post("/parcels/{parzelle_id}/speichern")
 async def versicherung_speichern(
     parzelle_id: str,
     request: Request,
@@ -370,7 +370,7 @@ async def versicherung_speichern(
             ))
 
     await db.commit()
-    return RedirectResponse(f"/versicherungen/parzellen/{parzelle_id}?jahr={jahr}", status_code=302)
+    return RedirectResponse(f"/versicherungen/parcels/{parzelle_id}?jahr={jahr}", status_code=302)
 
 
 # ---------------------------------------------------------------------------
@@ -403,7 +403,7 @@ async def versicherungen_auswertung(
         )
     )
     alle_pv = pv_result.scalars().all()
-    alle_pv.sort(key=lambda pv: pv.parzelle.gartennummer if pv.parzelle else "")
+    alle_pv.sort(key=lambda pv: pv.parzelle.plot_number if pv.parzelle else "")
 
     zeilen = []
     summe_gesamt = Decimal("0")
@@ -452,12 +452,12 @@ async def versicherungen_auswertung_csv(
         )
     )
     alle_pv = pv_result.scalars().all()
-    alle_pv.sort(key=lambda pv: pv.parzelle.gartennummer if pv.parzelle else "")
+    alle_pv.sort(key=lambda pv: pv.parzelle.plot_number if pv.parzelle else "")
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
     writer.writerow([
-        "Parzelle", "Sachversicherung", "Sach-Paket", "Sach-Kosten (EUR)",
+        "Parcel", "Sachversicherung", "Sach-Paket", "Sach-Kosten (EUR)",
         "Unfallversicherung", "Zusatzpersonen", "Unfall-Kosten (EUR)", "Gesamt (EUR)"
     ])
 
@@ -465,7 +465,7 @@ async def versicherungen_auswertung_csv(
         pv = eintrag
         kosten = berechne_versicherungskosten(pv, konfiguration)
         writer.writerow([
-            pv.parzelle.gartennummer if pv.parzelle else "",
+            pv.parzelle.plot_number if pv.parzelle else "",
             "Ja" if pv.hat_sachversicherung else "Nein",
             pv.sach_paket.bezeichnung if pv.sach_paket else "",
             f"{kosten['sach_kosten']:.2f}".replace(".", ","),

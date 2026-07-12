@@ -28,7 +28,7 @@ async def test_arbeitseinsatz_und_teilnahme(client, admin_benutzer):
     headers = auth_header(token)
 
     mitglied = (await client.post(
-        "/api/v1/mitglieder", json={"vorname": "Klaus", "nachname": "Fleissig"}, headers=headers
+        "/api/v1/members", json={"first_name": "Klaus", "last_name": "Fleissig"}, headers=headers
     )).json()
 
     einsatz = (await client.post(
@@ -48,8 +48,8 @@ async def test_arbeitseinsatz_und_teilnahme(client, admin_benutzer):
 async def test_befreiung_gilt_fuer_ganze_parzelle_bei_pro_pachtvertrag(client, admin_benutzer):
     """
     Wichtigster Regressionstest für die 'any() statt all()'-Entscheidung:
-    Ist EIN Pächter einer Parzelle als Vorstand befreit, muss die GANZE
-    Parzelle als befreit gelten – auch der andere (nicht befreite) Pächter.
+    Ist EIN Pächter einer Parcel als Vorstand befreit, muss die GANZE
+    Parcel als befreit gelten – auch der andere (nicht befreite) Pächter.
     """
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -57,23 +57,23 @@ async def test_befreiung_gilt_fuer_ganze_parzelle_bei_pro_pachtvertrag(client, a
     await _erstelle_konfiguration(client, headers, jahr=2026, modus="pro_pachtvertrag")
 
     befreiter = (await client.post(
-        "/api/v1/mitglieder", json={"vorname": "Christian", "nachname": "Vorstand"}, headers=headers
+        "/api/v1/members", json={"first_name": "Christian", "last_name": "Vorstand"}, headers=headers
     )).json()
     mitpaechter = (await client.post(
-        "/api/v1/mitglieder", json={"vorname": "Alexandra", "nachname": "Mitpaechter"}, headers=headers
+        "/api/v1/members", json={"first_name": "Alexandra", "last_name": "Mitpaechter"}, headers=headers
     )).json()
     parzelle = (await client.post(
-        "/api/v1/parzellen", json={"gartennummer": "G100"}, headers=headers
+        "/api/v1/parcels", json={"plot_number": "G100"}, headers=headers
     )).json()
 
     await client.post(
-        f"/api/v1/parzellen/{parzelle['id']}/zuordnungen",
-        json={"mitglied_id": befreiter["id"], "parzelle_id": parzelle["id"], "ist_hauptpaechter": True},
+        f"/api/v1/parcels/{parzelle['id']}/assignments",
+        json={"member_id": befreiter["id"], "parcel_id": parzelle["id"], "is_primary_tenant": True},
         headers=headers,
     )
     await client.post(
-        f"/api/v1/parzellen/{parzelle['id']}/zuordnungen",
-        json={"mitglied_id": mitpaechter["id"], "parzelle_id": parzelle["id"], "ist_hauptpaechter": False},
+        f"/api/v1/parcels/{parzelle['id']}/assignments",
+        json={"member_id": mitpaechter["id"], "parcel_id": parzelle["id"], "is_primary_tenant": False},
         headers=headers,
     )
 

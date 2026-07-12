@@ -9,7 +9,7 @@ from typing import Optional
 from datetime import date
 
 from app.database import get_db
-from app.models import Mitglied, Parzelle, ParzelleStatus, MitgliedParzelle
+from app.models import Member, Parcel, ParcelStatus, MemberParcel
 from app.auth import get_current_user
 from fastapi import Request
 
@@ -17,74 +17,74 @@ router = APIRouter(prefix="/api/v1/stats", tags=["API: Statistiken"])
 
 
 class DashboardStats(BaseModel):
-    mitglieder_gesamt: int
-    mitglieder_aktiv: int
-    parzellen_gesamt: int
-    parzellen_aktiv: int
-    parzellen_gekuendigt: int
-    parzellen_unbesetzt: int
-    flaeche_gesamt_qm: float
-    flaeche_gekuendigt_qm: float
+    members_total: int
+    members_active: int
+    parcels_total: int
+    parcels_active: int
+    parcels_terminated: int
+    parcels_vacant: int
+    area_total_sqm: float
+    area_terminated_sqm: float
 
 
 @router.get("", response_model=DashboardStats, summary="Dashboard-Statistiken")
 async def dashboard_stats(db: AsyncSession = Depends(get_db)):
-    # Mitglieder
-    mitglieder_gesamt = await db.scalar(
-        select(func.count()).where(Mitglied.deleted_at.is_(None))
+    # Members
+    members_total = await db.scalar(
+        select(func.count()).where(Member.deleted_at.is_(None))
     )
-    mitglieder_aktiv = await db.scalar(
+    members_active = await db.scalar(
         select(func.count()).where(
-            Mitglied.deleted_at.is_(None),
-            Mitglied.mitglied_bis.is_(None) | (Mitglied.mitglied_bis >= date.today())
+            Member.deleted_at.is_(None),
+            Member.member_until.is_(None) | (Member.member_until >= date.today())
         )
     )
 
-    # Parzellen nach Status
-    parzellen_gesamt = await db.scalar(
-        select(func.count()).select_from(Parzelle).where(
-            Parzelle.status != ParzelleStatus.GELOESCHT
+    # Parcels nach Status
+    parcels_total = await db.scalar(
+        select(func.count()).select_from(Parcel).where(
+            Parcel.status != ParcelStatus.DELETED
         )
     )
-    parzellen_aktiv = await db.scalar(
-        select(func.count()).select_from(Parzelle).where(
-            Parzelle.status == ParzelleStatus.AKTIV
+    parcels_active = await db.scalar(
+        select(func.count()).select_from(Parcel).where(
+            Parcel.status == ParcelStatus.ACTIVE
         )
     )
-    parzellen_gekuendigt = await db.scalar(
-        select(func.count()).select_from(Parzelle).where(
-            Parzelle.status == ParzelleStatus.GEKUENDIGT
+    parcels_terminated = await db.scalar(
+        select(func.count()).select_from(Parcel).where(
+            Parcel.status == ParcelStatus.TERMINATED
         )
     )
 
-    # Unbesetzte Parzellen (aktiv, aber kein Mitglied zugeordnet)
-    besetzte_ids = select(MitgliedParzelle.parzelle_id).distinct()
-    parzellen_unbesetzt = await db.scalar(
-        select(func.count()).select_from(Parzelle).where(
-            Parzelle.status == ParzelleStatus.AKTIV,
-            Parzelle.id.not_in(besetzte_ids)
+    # Unbesetzte Parcels (aktiv, aber kein Member zugeordnet)
+    besetzte_ids = select(MemberParcel.parcel_id).distinct()
+    parcels_vacant = await db.scalar(
+        select(func.count()).select_from(Parcel).where(
+            Parcel.status == ParcelStatus.ACTIVE,
+            Parcel.id.not_in(besetzte_ids)
         )
     )
 
     # Flächen
-    flaeche_gesamt = await db.scalar(
-        select(func.coalesce(func.sum(Parzelle.flaeche_qm), 0)).where(
-            Parzelle.status == ParzelleStatus.AKTIV
+    area_total = await db.scalar(
+        select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(
+            Parcel.status == ParcelStatus.ACTIVE
         )
     )
-    flaeche_gekuendigt = await db.scalar(
-        select(func.coalesce(func.sum(Parzelle.flaeche_qm), 0)).where(
-            Parzelle.status == ParzelleStatus.GEKUENDIGT
+    area_terminated = await db.scalar(
+        select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(
+            Parcel.status == ParcelStatus.TERMINATED
         )
     )
 
     return DashboardStats(
-        mitglieder_gesamt=mitglieder_gesamt or 0,
-        mitglieder_aktiv=mitglieder_aktiv or 0,
-        parzellen_gesamt=parzellen_gesamt or 0,
-        parzellen_aktiv=parzellen_aktiv or 0,
-        parzellen_gekuendigt=parzellen_gekuendigt or 0,
-        parzellen_unbesetzt=parzellen_unbesetzt or 0,
-        flaeche_gesamt_qm=float(flaeche_gesamt or 0),
-        flaeche_gekuendigt_qm=float(flaeche_gekuendigt or 0),
+        members_total=members_total or 0,
+        members_active=members_active or 0,
+        parcels_total=parcels_total or 0,
+        parcels_active=parcels_active or 0,
+        parcels_terminated=parcels_terminated or 0,
+        parcels_vacant=parcels_vacant or 0,
+        area_total_sqm=float(area_total or 0),
+        area_terminated_sqm=float(area_terminated or 0),
     )

@@ -143,7 +143,7 @@
                         <select name="mitglied_id" class="form-select form-select-sm" required>
                             <option value="">– bitte wählen –</option>
                             {% for m in alle_mitglieder %}
-                            <option value="{{ m.id }}">{{ m.vollname }}</option>
+                            <option value="{{ m.id }}">{{ m.full_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -191,8 +191,8 @@
                         {% for z in zuordnungen %}
                         <tr>
                             <td>
-                                <a href="/mitglieder/{{ z.mitglied.id }}" class="text-decoration-none fw-semibold"
-                                   style="color: var(--gv-gruen);">{{ z.mitglied.vollname }}</a>
+                                <a href="/members/{{ z.mitglied.id }}" class="text-decoration-none fw-semibold"
+                                   style="color: var(--gv-gruen);">{{ z.mitglied.full_name }}</a>
                             </td>
                             <td>
                                 <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">

@@ -3,7 +3,7 @@
 {% block page_title %}Pachtverhältnis bearbeiten{% endblock %}
 
 {% block topbar_actions %}
-<a href="/parzellen/{{ parzelle.id }}" class="btn btn-sm btn-outline-secondary">
+<a href="/parcels/{{ parzelle.id }}" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>Zurück
 </a>
 {% endblock %}
@@ -14,32 +14,32 @@
         <div class="card">
             <div class="card-header">
                 <i class="bi bi-person-badge me-2"></i>
-                {{ zuordnung.mitglied.vollname }} – Parzelle {{ parzelle.gartennummer }}
+                {{ zuordnung.member.full_name }} – Parzelle {{ parzelle.plot_number }}
             </div>
             <div class="card-body">
-                <form method="post" action="/parzellen/{{ parzelle.id }}/mitglied/{{ zuordnung.id }}/bearbeiten">
+                <form method="post" action="/parcels/{{ parzelle.id }}/mitglied/{{ zuordnung.id }}/bearbeiten">
                     <div class="mb-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="ist_hauptpaechter"
-                                   id="hp-check" {% if zuordnung.ist_hauptpaechter %}checked{% endif %}>
+                            <input class="form-check-input" type="checkbox" name="is_primary_tenant"
+                                   id="hp-check" {% if zuordnung.is_primary_tenant %}checked{% endif %}>
                             <label class="form-check-label" for="hp-check">Hauptpächter</label>
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-semibold">Pächter seit</label>
-                            <input type="date" name="zuordnung_von" class="form-control"
-                                   value="{{ zuordnung.zuordnung_von.isoformat() if zuordnung.zuordnung_von else '' }}">
+                            <input type="date" name="assigned_from" class="form-control"
+                                   value="{{ zuordnung.assigned_from.isoformat() if zuordnung.assigned_from else '' }}">
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-semibold">Pächter bis</label>
-                            <input type="date" name="zuordnung_bis" class="form-control"
-                                   value="{{ zuordnung.zuordnung_bis.isoformat() if zuordnung.zuordnung_bis else '' }}">
+                            <input type="date" name="assigned_until" class="form-control"
+                                   value="{{ zuordnung.assigned_until.isoformat() if zuordnung.assigned_until else '' }}">
                             <div class="form-text">Leer = aktuell noch Pächter</div>
                         </div>
                     </div>
                     <div class="d-flex gap-2 justify-content-end">
-                        <a href="/parzellen/{{ parzelle.id }}" class="btn btn-outline-secondary">Abbrechen</a>
+                        <a href="/parcels/{{ parzelle.id }}" class="btn btn-outline-secondary">Abbrechen</a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check-lg me-1"></i>Änderungen speichern
                         </button>

@@ -16,9 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db, aktives_mitglied_filter
+from app.database import get_db, active_member_filter
 from app.models import (
-    Ticket, TicketNachricht, TicketStatus, NachrichtRichtung, Benutzer, Mitglied,
+    Ticket, TicketNachricht, TicketStatus, NachrichtRichtung, Benutzer, Member,
 )
 from app.auth import require_user
 from app.module_flags import require_modul
@@ -167,7 +167,7 @@ async def ticket_detail(
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
 
-    # Mögliche Mitglied-Kandidaten (falls Absender-Adresse mehreren gehört
+    # Mögliche Member-Kandidaten (falls Absender-Adresse mehreren gehört
     # oder noch keinem zugeordnet ist)
     kandidaten = await finde_mitglieder_per_email(db, ticket.absender_email)
 
@@ -275,7 +275,7 @@ async def ticket_status_aendern(
 
 
 # ---------------------------------------------------------------------------
-# Mitglied manuell zuordnen
+# Member manuell zuordnen
 # ---------------------------------------------------------------------------
 
 @router.post("/{ticket_id}/mitglied")

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Parzelle {{ parzelle.gartennummer }}{% endblock %}
-{% block page_title %}Parzelle {{ parzelle.gartennummer }}{% endblock %}
+{% block title %}Parzelle {{ parzelle.plot_number }}{% endblock %}
+{% block page_title %}Parzelle {{ parzelle.plot_number }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2">
-    <a href="/parzellen/{{ parzelle.id }}/bearbeiten" class="btn btn-sm btn-primary">
+    <a href="/parcels/{{ parzelle.id }}/bearbeiten" class="btn btn-sm btn-primary">
         <i class="bi bi-pencil me-1"></i>Bearbeiten
     </a>
-    <a href="/parzellen/" class="btn btn-sm btn-outline-secondary">
+    <a href="/parcels/" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Zurück
     </a>
 </div>
@@ -23,12 +23,12 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-sm-5 text-muted">Gartennummer</dt>
-                    <dd class="col-sm-7 fw-bold" style="font-size: 1.1rem;">{{ parzelle.gartennummer }}</dd>
+                    <dd class="col-sm-7 fw-bold" style="font-size: 1.1rem;">{{ parzelle.plot_number }}</dd>
 
                     <dt class="col-sm-5 text-muted">Fläche</dt>
                     <dd class="col-sm-7">
-                        {% if parzelle.flaeche_qm %}
-                        <span class="fw-semibold">{{ '%g' % parzelle.flaeche_qm }} qm</span>
+                        {% if parzelle.area_sqm %}
+                        <span class="fw-semibold">{{ '%g' % parzelle.area_sqm }} qm</span>
                         {% else %}–{% endif %}
                     </dd>
 
@@ -43,9 +43,9 @@
                     <dd class="col-sm-7">{{ kuendigung_eintrag.geaendert_am.strftime('%d.%m.%Y') }}</dd>
                     {% endif %}
 
-                    {% if parzelle.kuendigung_notiz %}
+                    {% if parzelle.termination_note %}
                     <dt class="col-sm-5 text-muted">Kündigungsnotiz</dt>
-                    <dd class="col-sm-7">{{ parzelle.kuendigung_notiz }}</dd>
+                    <dd class="col-sm-7">{{ parzelle.termination_note }}</dd>
                     {% endif %}
 
                     <dt class="col-sm-5 text-muted">Angelegt</dt>
@@ -54,10 +54,10 @@
                     </dd>
                 </dl>
 
-                {% if parzelle.notizen %}
+                {% if parzelle.notes %}
                 <hr>
                 <p class="text-muted mb-1" style="font-size: 0.82rem;">Notizen</p>
-                <p class="mb-0">{{ parzelle.notizen }}</p>
+                <p class="mb-0">{{ parzelle.notes }}</p>
                 {% endif %}
             </div>
         </div>
@@ -78,29 +78,29 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for z in parzelle.mitglieder_zuordnungen if z.zuordnung_bis is none %}
+                        {% for z in parzelle.member_assignments if z.assigned_until is none %}
                         <tr>
                             <td>
-                                <a href="/mitglieder/{{ z.mitglied.id }}" class="text-decoration-none fw-semibold"
+                                <a href="/members/{{ z.member.id }}" class="text-decoration-none fw-semibold"
                                    style="color: var(--gv-gruen);">
-                                    {{ z.mitglied.vollname }}
+                                    {{ z.member.full_name }}
                                 </a>
                             </td>
                             <td>
-                                {% if z.ist_hauptpaechter %}
+                                {% if z.is_primary_tenant %}
                                 <span class="badge badge-aktiv">Hauptpächter</span>
                                 {% else %}
                                 <span class="text-muted">Mitpächter</span>
                                 {% endif %}
                             </td>
-                            <td class="text-muted">{{ z.zuordnung_von.strftime('%d.%m.%Y') if z.zuordnung_von else '–' }}</td>
+                            <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
                             <td class="text-end">
-                                <a href="/parzellen/{{ parzelle.id }}/mitglied/{{ z.id }}/bearbeiten"
+                                <a href="/parcels/{{ parzelle.id }}/mitglied/{{ z.id }}/bearbeiten"
                                    class="btn btn-sm btn-outline-secondary border-0">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post"
-                                      action="/parzellen/{{ parzelle.id }}/mitglied/{{ z.id }}/entfernen"
+                                      action="/parcels/{{ parzelle.id }}/mitglied/{{ z.id }}/entfernen"
                                       class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                             onclick="return confirm('Pachtverhältnis beenden? (Historie bleibt erhalten)')"
@@ -121,17 +121,17 @@
                 </table>
             </div>
             <div class="card-footer">
-                <form method="post" action="/parzellen/{{ parzelle.id }}/mitglied/zuordnen"
+                <form method="post" action="/parcels/{{ parzelle.id }}/mitglied/zuordnen"
                       class="d-flex gap-2 flex-wrap align-items-center">
                     <select name="mitglied_id" class="form-select form-select-sm" style="max-width: 220px;" required>
                         <option value="">Mitglied wählen…</option>
                         {% for m in alle_mitglieder %}
-                        <option value="{{ m.id }}">{{ m.vollname }}</option>
+                        <option value="{{ m.id }}">{{ m.full_name }}</option>
                         {% endfor %}
                     </select>
-                    <input type="date" name="zuordnung_von" class="form-control form-control-sm" style="max-width: 150px;" placeholder="Datum">
+                    <input type="date" name="assigned_from" class="form-control form-control-sm" style="max-width: 150px;" placeholder="Datum">
                     <div class="form-check form-check-inline my-auto">
-                        <input class="form-check-input" type="checkbox" name="ist_hauptpaechter" id="hp-check" checked>
+                        <input class="form-check-input" type="checkbox" name="is_primary_tenant" id="hp-check" checked>
                         <label class="form-check-label small" for="hp-check">Hauptpächter</label>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">
@@ -143,7 +143,7 @@
     </div>
 
     <!-- Pächter-Historie -->
-    {% set fruehere = parzelle.mitglieder_zuordnungen | selectattr('zuordnung_bis') | list %}
+    {% set fruehere = parzelle.member_assignments | selectattr('assigned_until') | list %}
     {% if fruehere %}
     <div class="col-12">
         <div class="card">
@@ -160,17 +160,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for z in fruehere | sort(attribute='zuordnung_bis', reverse=true) %}
+                        {% for z in fruehere | sort(attribute='assigned_until', reverse=true) %}
                         <tr class="text-muted">
                             <td>
-                                <a href="/mitglieder/{{ z.mitglied.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ z.mitglied.vollname }}</a>
+                                <a href="/members/{{ z.member.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ z.member.full_name }}</a>
                             </td>
-                            <td>{% if z.ist_hauptpaechter %}Hauptpächter{% else %}Mitpächter{% endif %}</td>
-                            <td>{{ z.zuordnung_von.strftime('%d.%m.%Y') if z.zuordnung_von else '–' }}</td>
-                            <td>{{ z.zuordnung_bis.strftime('%d.%m.%Y') }}</td>
+                            <td>{% if z.is_primary_tenant %}Hauptpächter{% else %}Mitpächter{% endif %}</td>
+                            <td>{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
+                            <td>{{ z.assigned_until.strftime('%d.%m.%Y') }}</td>
                             <td class="text-end">
-                                <a href="/parzellen/{{ parzelle.id }}/mitglied/{{ z.id }}/bearbeiten"
+                                <a href="/parcels/{{ parzelle.id }}/mitglied/{{ z.id }}/bearbeiten"
                                    class="btn btn-sm btn-outline-secondary border-0" title="Zeitraum korrigieren">
                                     <i class="bi bi-pencil"></i>
                                 </a>

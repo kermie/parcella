@@ -93,11 +93,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for t in einsatz.teilnahmen | sort(attribute='mitglied.nachname') %}
+                        {% for t in einsatz.teilnahmen | sort(attribute='mitglied.last_name') %}
                         <tr>
                             <td>
-                                <a href="/mitglieder/{{ t.mitglied.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ t.mitglied.vollname }}</a>
+                                <a href="/members/{{ t.mitglied.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ t.mitglied.full_name }}</a>
                             </td>
                             <td>
                                 <form method="post"
@@ -155,7 +155,7 @@
                         <option value="">Mitglied wählen…</option>
                         {% for m in alle_mitglieder %}
                         {% if m.id not in bereits_eingetragen %}
-                        <option value="{{ m.id }}">{{ m.vollname }}</option>
+                        <option value="{{ m.id }}">{{ m.full_name }}</option>
                         {% endif %}
                         {% endfor %}
                     </select>

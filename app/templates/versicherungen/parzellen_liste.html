@@ -24,7 +24,7 @@
             <tbody>
                 {% for z in zeilen %}
                 <tr>
-                    <td class="fw-semibold">{{ z.parzelle.gartennummer }}</td>
+                    <td class="fw-semibold">{{ z.parzelle.plot_number }}</td>
                     <td>
                         {% if z.pv and z.pv.hat_sachversicherung %}
                         <span class="badge badge-aktiv">{{ z.pv.sach_paket.bezeichnung if z.pv.sach_paket else 'Ja' }}</span>
@@ -43,7 +43,7 @@
                     </td>
                     <td class="fw-semibold">{{ "%.2f"|format(z.kosten.gesamt) }} €</td>
                     <td class="text-end">
-                        <a href="/versicherungen/parzellen/{{ z.parzelle.id }}?jahr={{ jahr }}"
+                        <a href="/versicherungen/parcels/{{ z.parzelle.id }}?jahr={{ jahr }}"
                            class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-pencil"></i>
                         </a>

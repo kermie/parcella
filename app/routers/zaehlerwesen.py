@@ -26,7 +26,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import (
     Zaehlpunkt, ZaehlpunktTyp, ZaehlerMedium, Zaehler, Zaehlerstand,
-    Parzelle, ParzelleStatus,
+    Parcel, ParcelStatus,
 )
 from app.auth import require_user
 from app.module_flags import require_modul
@@ -124,11 +124,11 @@ def erstelle_zaehler_router(
 
         alle = await _lade_alle_zaehlpunkte(db)
         haupt = [a for a in alle if a.typ == ZaehlpunktTyp.HAUPTZAEHLER]
-        parzellen = [a for a in alle if a.typ == ZaehlpunktTyp.PARZELLE]
+        parcels = [a for a in alle if a.typ == ZaehlpunktTyp.PARZELLE]
         verein = [a for a in alle if a.typ == ZaehlpunktTyp.VEREIN]
 
         v_haupt = gesamtverbrauch_fuer_typ(haupt, jahr)
-        v_parzellen = gesamtverbrauch_fuer_typ(parzellen, jahr)
+        v_parzellen = gesamtverbrauch_fuer_typ(parcels, jahr)
         v_verein = gesamtverbrauch_fuer_typ(verein, jahr)
 
         warnung = None
@@ -156,7 +156,7 @@ def erstelle_zaehler_router(
             "request": request, "benutzer": benutzer, "jahr": jahr,
             "verfuegbare_jahre": verfuegbare_jahre,
             "anzahl_hauptzaehler": len(haupt),
-            "anzahl_parzellen": len(parzellen),
+            "anzahl_parzellen": len(parcels),
             "anzahl_verein": len(verein),
             "verbrauch_haupt": v_haupt,
             "verbrauch_parzellen": v_parzellen,
@@ -178,7 +178,7 @@ def erstelle_zaehler_router(
             if a.typ == ZaehlpunktTyp.HAUPTZAEHLER:
                 return (0, "")
             if a.typ == ZaehlpunktTyp.PARZELLE:
-                return (1, a.parzelle.gartennummer if a.parzelle else "")
+                return (1, a.parzelle.plot_number if a.parzelle else "")
             return (2, a.bezeichnung or "")
 
         alle.sort(key=sortkey)
@@ -194,7 +194,7 @@ def erstelle_zaehler_router(
     async def zaehlpunkt_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
         benutzer = await require_user(request, db)
         result = await db.execute(
-            select(Parzelle).where(Parzelle.status == ParzelleStatus.AKTIV).order_by(Parzelle.gartennummer)
+            select(Parcel).where(Parcel.status == ParcelStatus.ACTIVE).order_by(Parcel.plot_number)
         )
         alle_parzellen = result.scalars().all()
 
@@ -466,7 +466,7 @@ def erstelle_zaehler_router(
         hauptzaehler_zeilen = aufbereiten(ZaehlpunktTyp.HAUPTZAEHLER)
         parzellen_zeilen = sorted(
             aufbereiten(ZaehlpunktTyp.PARZELLE),
-            key=lambda z: z["zaehlpunkt"].parzelle.gartennummer if z["zaehlpunkt"].parzelle else ""
+            key=lambda z: z["zaehlpunkt"].parzelle.plot_number if z["zaehlpunkt"].parzelle else ""
         )
         verein_zeilen = aufbereiten(ZaehlpunktTyp.VEREIN)
 
@@ -508,7 +508,7 @@ def erstelle_zaehler_router(
         hauptzaehler_zeilen = zeilen_fuer_typ(ZaehlpunktTyp.HAUPTZAEHLER)
         parzellen_zeilen = sorted(
             zeilen_fuer_typ(ZaehlpunktTyp.PARZELLE),
-            key=lambda z: z["zaehlpunkt"].parzelle.gartennummer if z["zaehlpunkt"].parzelle else ""
+            key=lambda z: z["zaehlpunkt"].parzelle.plot_number if z["zaehlpunkt"].parzelle else ""
         )
         verein_zeilen = zeilen_fuer_typ(ZaehlpunktTyp.VEREIN)
 
@@ -560,7 +560,7 @@ def erstelle_zaehler_router(
 
         typ_label = {
             ZaehlpunktTyp.HAUPTZAEHLER: "Hauptzähler",
-            ZaehlpunktTyp.PARZELLE: "Parzelle",
+            ZaehlpunktTyp.PARZELLE: "Parcel",
             ZaehlpunktTyp.VEREIN: "Verein",
         }
 

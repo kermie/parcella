@@ -34,7 +34,7 @@
                         <select name="mitglied_id" class="form-select">
                             <option value="">– noch nicht vergeben –</option>
                             {% for m in alle_mitglieder %}
-                            <option value="{{ m.id }}">{{ m.vollname }}</option>
+                            <option value="{{ m.id }}">{{ m.full_name }}</option>
                             {% endfor %}
                         </select>
                         <div class="form-text">Kann später zugeordnet werden.</div>
@@ -119,8 +119,8 @@
                             {% endif %}
                             <td>
                                 {% if p.mitglied %}
-                                <a href="/mitglieder/{{ p.mitglied.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ p.mitglied.vollname }}</a>
+                                <a href="/members/{{ p.mitglied.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ p.mitglied.full_name }}</a>
                                 {% else %}
                                 <span class="text-muted fst-italic">noch nicht vergeben</span>
                                 {% endif %}

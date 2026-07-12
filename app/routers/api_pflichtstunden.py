@@ -16,7 +16,7 @@ from app.models import (
     PflichtstundenKonfiguration, PflichtstundenModus,
     Vereinsrolle, MitgliedVereinsrolle, BefreiungsGrund,
     Arbeitseinsatz, EinsatzTeilnahme, EinsatzTyp, TeilnahmeStatus,
-    Patenschaft, Mitglied, Parzelle, ParzelleStatus, MitgliedParzelle, Benutzer,
+    Patenschaft, Member, Parcel, ParcelStatus, MemberParcel, Benutzer,
 )
 from app.api_auth import get_current_api_user, require_schreibzugriff
 from app.module_flags import require_modul
@@ -162,7 +162,7 @@ async def vereinsrolle_aktualisieren(
 @router.delete(
     "/vereinsrollen/{rolle_id}", status_code=status.HTTP_204_NO_CONTENT,
     summary="Vereinsrolle löschen",
-    description="Löscht die Rolle inkl. aller Mitglied-Zuordnungen (Cascade).",
+    description="Löscht die Rolle inkl. aller Member-Zuordnungen (Cascade).",
 )
 async def vereinsrolle_loeschen(
     rolle_id: str,
@@ -178,7 +178,7 @@ async def vereinsrolle_loeschen(
 
 @router.get(
     "/vereinsrollen/zuordnungen", response_model=List[MitgliedVereinsrolleOut],
-    summary="Mitglied-Vereinsrolle-Zuordnungen auflisten",
+    summary="Member-Vereinsrolle-Zuordnungen auflisten",
 )
 async def zuordnungen_auflisten(
     jahr: Optional[int] = Query(None),
@@ -197,7 +197,7 @@ async def zuordnungen_auflisten(
 
 @router.post(
     "/vereinsrollen/zuordnungen", response_model=MitgliedVereinsrolleOut,
-    status_code=status.HTTP_201_CREATED, summary="Mitglied einer Vereinsrolle zuordnen",
+    status_code=status.HTTP_201_CREATED, summary="Member einer Vereinsrolle zuordnen",
 )
 async def zuordnung_erstellen(
     daten: MitgliedVereinsrolleCreate,
@@ -356,7 +356,7 @@ async def teilnahme_erstellen(
         )
     )
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=409, detail="Mitglied ist bereits eingetragen")
+        raise HTTPException(status_code=409, detail="Member ist bereits eingetragen")
 
     teilnahme = EinsatzTeilnahme(
         einsatz_id=einsatz_id, mitglied_id=daten.mitglied_id,
@@ -525,18 +525,18 @@ async def auswertung_abrufen(
 
     if config.modus == PflichtstundenModus.PRO_PACHTVERTRAG:
         result = await db.execute(
-            select(Parzelle)
-            .options(selectinload(Parzelle.mitglieder_zuordnungen).selectinload(MitgliedParzelle.mitglied))
-            .where(Parzelle.status == ParzelleStatus.AKTIV)
-            .order_by(Parzelle.gartennummer)
+            select(Parcel)
+            .options(selectinload(Parcel.member_assignments).selectinload(MemberParcel.member))
+            .where(Parcel.status == ParcelStatus.ACTIVE)
+            .order_by(Parcel.plot_number)
         )
         for parzelle in result.scalars().all():
-            paechter = [z.mitglied for z in parzelle.mitglieder_zuordnungen]
+            paechter = [z.member for z in parzelle.member_assignments]
             if not paechter:
                 continue
             gesamt = Decimal("0")
             # Vier-Augen-freundliche Regel: EIN befreiter Pächter genügt, um
-            # die gesamte Parzelle zu befreien (any(), nicht all() – siehe
+            # die gesamte Parcel zu befreien (any(), nicht all() – siehe
             # docs/architektur-entscheidungen.md).
             ist_befreit = False
             for m in paechter:
@@ -546,17 +546,17 @@ async def auswertung_abrufen(
                     ist_befreit = True
             offen = max(Decimal("0"), pflicht - gesamt) if not ist_befreit else Decimal("0")
             zeilen.append(AuswertungZeileOut(
-                bezeichnung=parzelle.gartennummer,
+                bezeichnung=parzelle.plot_number,
                 pflicht_stunden=pflicht, geleistete_stunden=gesamt, offen_stunden=offen,
                 schuldbetrag_eur=offen * Decimal(str(config.stundensatz_eur)),
                 befreit=ist_befreit, erfuellt=ist_befreit or gesamt >= pflicht,
             ))
     else:
         result = await db.execute(
-            select(Mitglied)
-            .options(selectinload(Mitglied.parzellen_zuordnungen))
-            .where(Mitglied.deleted_at.is_(None), Mitglied.parzellen_zuordnungen.any())
-            .order_by(Mitglied.nachname, Mitglied.vorname)
+            select(Member)
+            .options(selectinload(Member.parcel_assignments))
+            .where(Member.deleted_at.is_(None), Member.parcel_assignments.any())
+            .order_by(Member.last_name, Member.first_name)
         )
         for m in result.scalars().all():
             stand = await _berechne_stunden_fuer_mitglied(db, m.id, jahr)
@@ -564,7 +564,7 @@ async def auswertung_abrufen(
             gesamt = Decimal(str(stand["gesamt"]))
             offen = max(Decimal("0"), pflicht - gesamt) if not befreit else Decimal("0")
             zeilen.append(AuswertungZeileOut(
-                bezeichnung=m.vollname,
+                bezeichnung=m.full_name,
                 pflicht_stunden=pflicht, geleistete_stunden=gesamt, offen_stunden=offen,
                 schuldbetrag_eur=offen * Decimal(str(config.stundensatz_eur)),
                 befreit=befreit, erfuellt=befreit or gesamt >= pflicht,

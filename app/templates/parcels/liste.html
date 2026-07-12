@@ -7,10 +7,10 @@
     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#csvImportModal">
         <i class="bi bi-upload me-1"></i>CSV Import
     </button>
-    <a href="/parzellen/export/csv" class="btn btn-sm btn-outline-secondary">
+    <a href="/parcels/export/csv" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-download me-1"></i>CSV Export
     </a>
-    <a href="/parzellen/neu" class="btn btn-sm btn-primary">
+    <a href="/parcels/neu" class="btn btn-sm btn-primary">
         <i class="bi bi-plus-lg me-1"></i>Neue Parzelle
     </a>
 </div>
@@ -40,7 +40,7 @@
             </select>
             <button type="submit" class="btn btn-sm btn-primary">Suchen</button>
             {% if suche or status_filter %}
-            <a href="/parzellen/" class="btn btn-sm btn-outline-secondary">Zurücksetzen</a>
+            <a href="/parcels/" class="btn btn-sm btn-outline-secondary">Zurücksetzen</a>
             {% endif %}
         </form>
     </div>
@@ -64,28 +64,28 @@
                     {% for p in parzellen %}
                     <tr>
                         <td>
-                            <a href="/parzellen/{{ p.id }}" class="fw-semibold text-decoration-none"
-                               style="color: var(--gv-gruen);">{{ p.gartennummer }}</a>
+                            <a href="/parcels/{{ p.id }}" class="fw-semibold text-decoration-none"
+                               style="color: var(--gv-gruen);">{{ p.plot_number }}</a>
                         </td>
                         <td class="text-muted">
-                            {{ '%g' % p.flaeche_qm if p.flaeche_qm else '–' }}{% if p.flaeche_qm %} qm{% endif %}
+                            {{ '%g' % p.area_sqm if p.area_sqm else '–' }}{% if p.area_sqm %} qm{% endif %}
                         </td>
                         <td>
                             <span class="badge badge-{{ p.status.value|lower }}">{{ p.status.value|lower }}</span>
                         </td>
                         <td>
-                            {% set aktuelle_paechter = p.mitglieder_zuordnungen | selectattr('zuordnung_bis', 'none') | list %}
+                            {% set aktuelle_paechter = p.member_assignments | selectattr('assigned_until', 'none') | list %}
                             {% for z in aktuelle_paechter %}
-                            <a href="/mitglieder/{{ z.mitglied.id }}" class="text-decoration-none"
+                            <a href="/members/{{ z.member.id }}" class="text-decoration-none"
                                style="color: var(--gv-gruen);">
-                                {{ z.mitglied.vorname }} {{ z.mitglied.nachname }}{% if z.ist_hauptpaechter %}<i class="bi bi-star-fill text-warning ms-1" style="font-size: 0.7rem;"></i>{% endif %}
+                                {{ z.member.first_name }} {{ z.member.last_name }}{% if z.is_primary_tenant %}<i class="bi bi-star-fill text-warning ms-1" style="font-size: 0.7rem;"></i>{% endif %}
                             </a>{% if not loop.last %}, {% endif %}
                             {% else %}
                             <span class="text-muted">–</span>
                             {% endfor %}
                         </td>
                         <td class="text-end">
-                            <a href="/parzellen/{{ p.id }}" class="btn btn-sm btn-outline-secondary">
+                            <a href="/parcels/{{ p.id }}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-eye"></i>
                             </a>
                         </td>
@@ -95,7 +95,7 @@
                         <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-grid-3x3 d-block mb-2" style="font-size: 1.5rem;"></i>
                             Keine Parzellen gefunden.<br>
-                            <a href="/parzellen/neu" class="btn btn-sm btn-primary mt-2">Erste Parzelle anlegen</a>
+                            <a href="/parcels/neu" class="btn btn-sm btn-primary mt-2">Erste Parzelle anlegen</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -106,7 +106,7 @@
     {% if parzellen %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">
         {{ parzellen | length }} Parzelle{{ 'n' if parzellen | length != 1 else '' }}
-        {% set gesamt_flaeche = parzellen | selectattr('flaeche_qm') | sum(attribute='flaeche_qm') %}
+        {% set gesamt_flaeche = parzellen | selectattr('area_sqm') | sum(attribute='area_sqm') %}
         {% if gesamt_flaeche > 0 %} · Gesamtfläche: {{ '%g' % gesamt_flaeche }} qm{% endif %}
     </div>
     {% endif %}
@@ -121,7 +121,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="post" action="/parzellen/import/csv" enctype="multipart/form-data"
+                <form method="post" action="/parcels/import/csv" enctype="multipart/form-data"
                       class="d-flex gap-2 align-items-center">
                     <input type="file" name="datei" accept=".csv" class="form-control form-control-sm" required style="max-width: 300px;">
                     <button type="submit" class="btn btn-sm btn-outline-primary">

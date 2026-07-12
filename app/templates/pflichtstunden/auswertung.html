@@ -95,14 +95,14 @@
 
                         {% if config.modus.value == 'pro_pachtvertrag' %}
                         <td>
-                            <a href="/parzellen/{{ z.parzelle.id }}" class="fw-bold text-decoration-none"
-                               style="color: var(--gv-gruen);">{{ z.parzelle.gartennummer }}</a>
+                            <a href="/parcels/{{ z.parzelle.id }}" class="fw-bold text-decoration-none"
+                               style="color: var(--gv-gruen);">{{ z.parzelle.plot_number }}</a>
                         </td>
                         <td>
                             {% for pd in z.paechter_details %}
                             <div style="font-size: 0.85rem;">
-                                <a href="/mitglieder/{{ pd.mitglied.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ pd.mitglied.vollname }}</a>
+                                <a href="/members/{{ pd.mitglied.id }}" class="text-decoration-none"
+                                   style="color: var(--gv-gruen);">{{ pd.mitglied.full_name }}</a>
                                 {% if pd.befreit %}<span class="badge ms-1" style="background: #dbeafe; color: #1e40af; font-size: 0.7rem;">befreit</span>{% endif %}
                                 <span class="text-muted">({{ "%.1f"|format(pd.stand.gesamt) }}h)</span>
                             </div>
@@ -117,8 +117,8 @@
 
                         {% else %}
                         <td>
-                            <a href="/mitglieder/{{ z.mitglied.id }}" class="text-decoration-none fw-semibold"
-                               style="color: var(--gv-gruen);">{{ z.mitglied.vollname }}</a>
+                            <a href="/members/{{ z.mitglied.id }}" class="text-decoration-none fw-semibold"
+                               style="color: var(--gv-gruen);">{{ z.mitglied.full_name }}</a>
                         </td>
                         <td>{{ z.pflicht_stunden | int }} h</td>
                         <td>{{ "%.1f"|format(z.stand.einsatz_stunden) }} h</td>

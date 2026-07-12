@@ -9,161 +9,161 @@ from sqlalchemy import select, or_, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Mitglied, MitgliedTelefon, MitgliedEmail, MitgliedParzelle
+from app.models import Member, MemberPhone, MemberEmail, MemberParcel
 from app.api_auth import get_current_api_user, require_schreibzugriff
 from app.schemas import (
-    MitgliedOut, MitgliedDetailOut, MitgliedCreate, MitgliedUpdate,
-    TelefonOut, TelefonCreate, EmailAdresseOut, EmailAdresseCreate,
-    PaginierteAntwort,
+    MemberOut, MemberDetailOut, MemberCreate, MemberUpdate,
+    PhoneOut, PhoneCreate, EmailAddressOut, EmailAddressCreate,
+    PaginierteAntwort, MemberAssignmentBrief,
 )
 from app.models import Benutzer
 
-router = APIRouter(prefix="/api/v1/mitglieder", tags=["API: Mitglieder"])
+router = APIRouter(prefix="/api/v1/members", tags=["API: Members"])
 
 
-async def _hole_mitglied_oder_404(db: AsyncSession, mitglied_id: str, mit_details: bool = False) -> Mitglied:
-    query = select(Mitglied).where(Mitglied.id == mitglied_id, Mitglied.deleted_at.is_(None))
+async def _hole_member_oder_404(db: AsyncSession, member_id: str, mit_details: bool = False) -> Member:
+    query = select(Member).where(Member.id == member_id, Member.deleted_at.is_(None))
     if mit_details:
         query = query.options(
-            selectinload(Mitglied.telefonnummern),
-            selectinload(Mitglied.email_adressen),
-            selectinload(Mitglied.parzellen_zuordnungen).selectinload(MitgliedParzelle.parzelle),
+            selectinload(Member.phone_numbers),
+            selectinload(Member.email_addresses),
+            selectinload(Member.parcel_assignments).selectinload(MemberParcel.parcel),
         )
     else:
         query = query.options(
-            selectinload(Mitglied.telefonnummern),
-            selectinload(Mitglied.email_adressen),
+            selectinload(Member.phone_numbers),
+            selectinload(Member.email_addresses),
         )
     result = await db.execute(query)
-    mitglied = result.scalar_one_or_none()
-    if not mitglied:
-        raise HTTPException(status_code=404, detail="Mitglied nicht gefunden")
-    return mitglied
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member nicht gefunden")
+    return member
 
 
-def _zu_detail_schema(mitglied: Mitglied) -> MitgliedDetailOut:
-    out = MitgliedDetailOut.model_validate(mitglied)
-    out.parzellen = [
-        {
-            "parzelle_id": z.parzelle.id,
-            "gartennummer": z.parzelle.gartennummer,
-            "ist_hauptpaechter": z.ist_hauptpaechter,
-        }
-        for z in mitglied.parzellen_zuordnungen
+def _zu_detail_schema(member: Member) -> MemberDetailOut:
+    out = MemberDetailOut.model_validate(member)
+    out.parcels = [
+        MemberAssignmentBrief(
+            parcel_id=z.parcel.id,
+            plot_number=z.parcel.plot_number,
+            is_primary_tenant=z.is_primary_tenant,
+        )
+        for z in member.parcel_assignments
     ]
     return out
 
 
 @router.get(
     "",
-    response_model=List[MitgliedOut],
+    response_model=List[MemberOut],
     summary="Mitglieder auflisten",
     description="Gibt alle (nicht gelöschten) Mitglieder zurück. Unterstützt Volltextsuche und Paginierung.",
 )
 async def mitglieder_auflisten(
     suche: Optional[str] = Query(None, description="Suche in Vor-/Nachname und Ort"),
-    nur_aktive: bool = Query(False, description="Nur aktive Mitgliedschaften (mitglied_bis in der Zukunft oder leer)"),
+    nur_aktive: bool = Query(False, description="Nur aktive Mitgliedschaften (member_until in der Zukunft oder leer)"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(get_current_api_user),
 ):
     query = (
-        select(Mitglied)
-        .options(selectinload(Mitglied.telefonnummern), selectinload(Mitglied.email_adressen))
-        .where(Mitglied.deleted_at.is_(None))
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        select(Member)
+        .options(selectinload(Member.phone_numbers), selectinload(Member.email_addresses))
+        .where(Member.deleted_at.is_(None))
+        .order_by(Member.last_name, Member.first_name)
         .limit(limit)
         .offset(offset)
     )
     if suche:
         query = query.where(
             or_(
-                Mitglied.vorname.ilike(f"%{suche}%"),
-                Mitglied.nachname.ilike(f"%{suche}%"),
-                Mitglied.ort.ilike(f"%{suche}%"),
+                Member.first_name.ilike(f"%{suche}%"),
+                Member.last_name.ilike(f"%{suche}%"),
+                Member.city.ilike(f"%{suche}%"),
             )
         )
 
     result = await db.execute(query)
-    mitglieder = result.scalars().all()
+    members = result.scalars().all()
 
     if nur_aktive:
-        mitglieder = [m for m in mitglieder if m.ist_aktiv]
+        members = [m for m in members if m.is_active]
 
-    return mitglieder
+    return members
 
 
 @router.get(
-    "/{mitglied_id}",
-    response_model=MitgliedDetailOut,
-    summary="Einzelnes Mitglied abrufen",
-    description="Gibt ein Mitglied inkl. zugeordneter Parzellen, Telefonnummern und E-Mail-Adressen zurück.",
+    "/{member_id}",
+    response_model=MemberDetailOut,
+    summary="Einzelnes Member abrufen",
+    description="Gibt ein Member inkl. zugeordneter Parzellen, Telefonnummern und E-Mail-Adressen zurück.",
 )
 async def mitglied_abrufen(
-    mitglied_id: str,
+    member_id: str,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(get_current_api_user),
 ):
-    mitglied = await _hole_mitglied_oder_404(db, mitglied_id, mit_details=True)
-    return _zu_detail_schema(mitglied)
+    member = await _hole_member_oder_404(db, member_id, mit_details=True)
+    return _zu_detail_schema(member)
 
 
 @router.post(
     "",
-    response_model=MitgliedOut,
+    response_model=MemberOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Neues Mitglied anlegen",
+    summary="Neues Member anlegen",
 )
 async def mitglied_erstellen(
-    daten: MitgliedCreate,
+    daten: MemberCreate,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
-    mitglied = Mitglied(**daten.model_dump())
-    db.add(mitglied)
+    member = Member(**daten.model_dump())
+    db.add(member)
     await db.commit()
-    await db.refresh(mitglied, attribute_names=["telefonnummern", "email_adressen"])
-    return mitglied
+    await db.refresh(member, attribute_names=["phone_numbers", "email_addresses"])
+    return member
 
 
 @router.put(
-    "/{mitglied_id}",
-    response_model=MitgliedOut,
-    summary="Mitglied aktualisieren",
+    "/{member_id}",
+    response_model=MemberOut,
+    summary="Member aktualisieren",
     description="Teilupdate: nur übergebene Felder werden geändert.",
 )
 async def mitglied_aktualisieren(
-    mitglied_id: str,
-    daten: MitgliedUpdate,
+    member_id: str,
+    daten: MemberUpdate,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
-    mitglied = await _hole_mitglied_oder_404(db, mitglied_id)
+    member = await _hole_member_oder_404(db, member_id)
 
     for feld, wert in daten.model_dump(exclude_unset=True).items():
-        setattr(mitglied, feld, wert)
+        setattr(member, feld, wert)
 
     await db.commit()
-    await db.refresh(mitglied, attribute_names=["telefonnummern", "email_adressen"])
-    return mitglied
+    await db.refresh(member, attribute_names=["phone_numbers", "email_addresses"])
+    return member
 
 
 @router.delete(
-    "/{mitglied_id}",
+    "/{member_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Mitglied löschen (Soft-Delete)",
-    description="Markiert das Mitglied als gelöscht (deleted_at gesetzt). Daten bleiben in der Datenbank erhalten.",
+    summary="Member löschen (Soft-Delete)",
+    description="Markiert das Member als gelöscht (deleted_at gesetzt). Daten bleiben in der Datenbank erhalten.",
 )
 async def mitglied_loeschen(
-    mitglied_id: str,
+    member_id: str,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
     from datetime import datetime, timezone
 
-    mitglied = await _hole_mitglied_oder_404(db, mitglied_id)
-    mitglied.deleted_at = datetime.now(timezone.utc)
+    member = await _hole_member_oder_404(db, member_id)
+    member.deleted_at = datetime.now(timezone.utc)
     await db.commit()
 
 
@@ -172,19 +172,19 @@ async def mitglied_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.post(
-    "/{mitglied_id}/telefonnummern",
-    response_model=TelefonOut,
+    "/{member_id}/phone_numbers",
+    response_model=PhoneOut,
     status_code=status.HTTP_201_CREATED,
     summary="Telefonnummer hinzufügen",
 )
 async def telefon_hinzufuegen(
-    mitglied_id: str,
-    daten: TelefonCreate,
+    member_id: str,
+    daten: PhoneCreate,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
-    await _hole_mitglied_oder_404(db, mitglied_id)
-    telefon = MitgliedTelefon(mitglied_id=mitglied_id, **daten.model_dump())
+    await _hole_member_oder_404(db, member_id)
+    telefon = MemberPhone(member_id=member_id, **daten.model_dump())
     db.add(telefon)
     await db.commit()
     await db.refresh(telefon)
@@ -192,19 +192,19 @@ async def telefon_hinzufuegen(
 
 
 @router.delete(
-    "/{mitglied_id}/telefonnummern/{telefon_id}",
+    "/{member_id}/phone_numbers/{telefon_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Telefonnummer entfernen",
 )
 async def telefon_entfernen(
-    mitglied_id: str,
+    member_id: str,
     telefon_id: str,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
     result = await db.execute(
-        select(MitgliedTelefon).where(
-            MitgliedTelefon.id == telefon_id, MitgliedTelefon.mitglied_id == mitglied_id
+        select(MemberPhone).where(
+            MemberPhone.id == telefon_id, MemberPhone.member_id == member_id
         )
     )
     telefon = result.scalar_one_or_none()
@@ -219,23 +219,23 @@ async def telefon_entfernen(
 # ---------------------------------------------------------------------------
 
 @router.post(
-    "/{mitglied_id}/email-adressen",
-    response_model=EmailAdresseOut,
+    "/{member_id}/email-addresses",
+    response_model=EmailAddressOut,
     status_code=status.HTTP_201_CREATED,
     summary="E-Mail-Adresse hinzufügen",
 )
 async def email_hinzufuegen(
-    mitglied_id: str,
-    daten: EmailAdresseCreate,
+    member_id: str,
+    daten: EmailAddressCreate,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
-    await _hole_mitglied_oder_404(db, mitglied_id)
-    email_obj = MitgliedEmail(
-        mitglied_id=mitglied_id,
-        adresse=str(daten.adresse).lower(),
-        bezeichnung=daten.bezeichnung,
-        ist_primaer=daten.ist_primaer,
+    await _hole_member_oder_404(db, member_id)
+    email_obj = MemberEmail(
+        member_id=member_id,
+        address=str(daten.address).lower(),
+        label=daten.label,
+        is_primary=daten.is_primary,
     )
     db.add(email_obj)
     await db.commit()
@@ -244,19 +244,19 @@ async def email_hinzufuegen(
 
 
 @router.delete(
-    "/{mitglied_id}/email-adressen/{email_id}",
+    "/{member_id}/email-addresses/{email_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="E-Mail-Adresse entfernen",
 )
 async def email_entfernen(
-    mitglied_id: str,
+    member_id: str,
     email_id: str,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):
     result = await db.execute(
-        select(MitgliedEmail).where(
-            MitgliedEmail.id == email_id, MitgliedEmail.mitglied_id == mitglied_id
+        select(MemberEmail).where(
+            MemberEmail.id == email_id, MemberEmail.member_id == member_id
         )
     )
     email_obj = result.scalar_one_or_none()

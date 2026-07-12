@@ -175,10 +175,10 @@ MODULE_FELDER = [
      "Stromzähler, Zählerstände und Verbrauchsauswertung. "
      "Deaktivieren, falls der Verein keine eigene Stromversorgung verwaltet."),
     ("modul_versicherungen", "Versicherungsverwaltung",
-     "Sach- und Unfallversicherung pro Parzelle inkl. Jahresauswertung. "
+     "Sach- und Unfallversicherung pro Parcel inkl. Jahresauswertung. "
      "Deaktivieren, falls der Verein keine Versicherungen über das Programm abwickelt."),
     ("modul_tickets", "Ticketsystem",
-     "Support-Tickets mit Zuweisung, Status und Mitglied-Zuordnung. "
+     "Support-Tickets mit Zuweisung, Status und Member-Zuordnung. "
      "Deaktivieren, falls der Verein kein internes Ticketsystem nutzt."),
     ("modul_einkaufswuensche", "Einkaufswünsche",
      "Vier-Augen-Prinzip für Vereinsausgaben: Anträge stellen, von zwei "

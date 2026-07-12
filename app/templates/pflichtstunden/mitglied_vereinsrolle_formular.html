@@ -20,7 +20,7 @@
                         <select name="mitglied_id" class="form-select" required>
                             {% for m in alle_mitglieder %}
                             <option value="{{ m.id }}" {% if m.id == zuordnung.mitglied_id %}selected{% endif %}>
-                                {{ m.vollname }}
+                                {{ m.full_name }}
                             </option>
                             {% endfor %}
                         </select>

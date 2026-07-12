@@ -34,10 +34,10 @@ def new_uuid() -> str:
 # Enums
 # ---------------------------------------------------------------------------
 
-class ParzelleStatus(str, enum.Enum):
-    AKTIV = "AKTIV"
-    GEKUENDIGT = "GEKUENDIGT"
-    GELOESCHT = "GELOESCHT"
+class ParcelStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    TERMINATED = "TERMINATED"
+    DELETED = "DELETED"
 
 
 class BenutzerRolle(str, enum.Enum):
@@ -107,36 +107,36 @@ class Einladung(Base):
 
 
 # ---------------------------------------------------------------------------
-# Vereinsmitglieder
+# Vereinsmitglieder (Members)
 # ---------------------------------------------------------------------------
 
-class Mitglied(Base):
-    __tablename__ = "mitglieder"
+class Member(Base):
+    __tablename__ = "members"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
 
     # Persönliche Daten
-    vorname: Mapped[str] = mapped_column(String(100), nullable=False)
-    nachname: Mapped[str] = mapped_column(String(100), nullable=False)
-    geburtsdatum: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    date_of_birth: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     # Adresse
-    strasse: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    plz: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
-    ort: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    street: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    postal_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Bankdaten
     iban: Mapped[Optional[str]] = mapped_column(String(34), nullable=True)
 
     # Mitgliedschaft
-    mitglied_seit: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    mitglied_bis: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    member_since: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    member_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     # Kommunikation
-    email_benachrichtigungen: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    email_notifications: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Notizen (intern)
-    notizen: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(
@@ -148,85 +148,85 @@ class Mitglied(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Beziehungen
-    telefonnummern: Mapped[List["MitgliedTelefon"]] = relationship(
-        "MitgliedTelefon", back_populates="mitglied", cascade="all, delete-orphan"
+    phone_numbers: Mapped[List["MemberPhone"]] = relationship(
+        "MemberPhone", back_populates="member", cascade="all, delete-orphan"
     )
-    email_adressen: Mapped[List["MitgliedEmail"]] = relationship(
-        "MitgliedEmail", back_populates="mitglied", cascade="all, delete-orphan"
+    email_addresses: Mapped[List["MemberEmail"]] = relationship(
+        "MemberEmail", back_populates="member", cascade="all, delete-orphan"
     )
-    parzellen_zuordnungen: Mapped[List["MitgliedParzelle"]] = relationship(
-        "MitgliedParzelle", back_populates="mitglied"
+    parcel_assignments: Mapped[List["MemberParcel"]] = relationship(
+        "MemberParcel", back_populates="member"
     )
 
     @property
-    def vollname(self) -> str:
-        return f"{self.vorname} {self.nachname}"
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
 
     @property
-    def ist_aktiv(self) -> bool:
+    def is_active(self) -> bool:
         return self.deleted_at is None and (
-            self.mitglied_bis is None or self.mitglied_bis >= date.today()
+            self.member_until is None or self.member_until >= date.today()
         )
 
     def __repr__(self) -> str:
-        return f"<Mitglied {self.vollname}>"
+        return f"<Member {self.full_name}>"
 
 
-class MitgliedTelefon(Base):
-    """Mehrere Telefonnummern pro Mitglied."""
-    __tablename__ = "mitglied_telefon"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    mitglied_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    nummer: Mapped[str] = mapped_column(String(50), nullable=False)
-    bezeichnung: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # z.B. "Mobil", "Festnetz"
-    ist_primaer: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-
-    mitglied: Mapped["Mitglied"] = relationship("Mitglied", back_populates="telefonnummern")
-
-
-class MitgliedEmail(Base):
-    """Mehrere E-Mail-Adressen pro Mitglied."""
-    __tablename__ = "mitglied_email"
+class MemberPhone(Base):
+    """Mehrere Telefonnummern pro Member."""
+    __tablename__ = "member_phones"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    mitglied_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="CASCADE"), nullable=False, index=True
+    member_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    adresse: Mapped[str] = mapped_column(String(255), nullable=False)
-    bezeichnung: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # z.B. "Privat", "Arbeit"
-    ist_primaer: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    number: Mapped[str] = mapped_column(String(50), nullable=False)
+    label: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # z.B. "Mobil", "Festnetz"
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    mitglied: Mapped["Mitglied"] = relationship("Mitglied", back_populates="email_adressen")
+    member: Mapped["Member"] = relationship("Member", back_populates="phone_numbers")
+
+
+class MemberEmail(Base):
+    """Mehrere E-Mail-Adressen pro Member."""
+    __tablename__ = "member_emails"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    member_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    address: Mapped[str] = mapped_column(String(255), nullable=False)
+    label: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # z.B. "Privat", "Arbeit"
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    member: Mapped["Member"] = relationship("Member", back_populates="email_addresses")
 
 
 # ---------------------------------------------------------------------------
-# Parzellen
+# Parzellen (Parcels)
 # ---------------------------------------------------------------------------
 
-class Parzelle(Base):
-    __tablename__ = "parzellen"
+class Parcel(Base):
+    __tablename__ = "parcels"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
 
     # Gartennummer (z.B. "G093", "G26/27")
-    gartennummer: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
+    plot_number: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
 
     # Fläche
-    flaeche_qm: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    area_sqm: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
 
     # Status
-    status: Mapped[ParzelleStatus] = mapped_column(
-        SAEnum(ParzelleStatus), default=ParzelleStatus.AKTIV, nullable=False
+    status: Mapped[ParcelStatus] = mapped_column(
+        SAEnum(ParcelStatus), default=ParcelStatus.ACTIVE, nullable=False
     )
 
     # Kündigung (wer hat wann gekündigt)
-    kuendigung_notiz: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    termination_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Notizen
-    notizen: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Audit
     created_at: Mapped[datetime] = mapped_column(
@@ -237,54 +237,56 @@ class Parzelle(Base):
     )
 
     # Beziehungen
-    mitglieder_zuordnungen: Mapped[List["MitgliedParzelle"]] = relationship(
-        "MitgliedParzelle", back_populates="parzelle"
+    member_assignments: Mapped[List["MemberParcel"]] = relationship(
+        "MemberParcel", back_populates="parcel"
     )
     zaehlpunkte: Mapped[List["Zaehlpunkt"]] = relationship(
         "Zaehlpunkt", back_populates="parzelle"
     )
 
     def __repr__(self) -> str:
-        return f"<Parzelle {self.gartennummer}>"
+        return f"<Parcel {self.plot_number}>"
 
 
 # ---------------------------------------------------------------------------
-# Zuordnungstabelle Mitglied <-> Parzelle (m:n mit Metadaten)
+# Zuordnungstabelle Member <-> Parcel (m:n mit Metadaten)
 # ---------------------------------------------------------------------------
 
-class MitgliedParzelle(Base):
+class MemberParcel(Base):
     """
     Verbindet Mitglieder mit Parzellen.
-    Ermöglicht Doppelgärten (ein Mitglied, mehrere Parzellen)
-    sowie Gemeinschaftsgärten (mehrere Mitglieder, eine Parzelle).
+    Ermöglicht Doppelgärten (ein Member, mehrere Parzellen)
+    sowie Gemeinschaftsgärten (mehrere Mitglieder, eine Parcel).
     """
-    __tablename__ = "mitglied_parzelle"
+    __tablename__ = "member_parcels"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    mitglied_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="CASCADE"), nullable=False, index=True
+    member_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    parzelle_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("parzellen.id", ondelete="CASCADE"), nullable=False, index=True
+    parcel_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
-    # Ist dieses Mitglied der Hauptpächter?
-    ist_hauptpaechter: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Ist dieses Member der Hauptpächter?
+    is_primary_tenant: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Zeitraum der Zuordnung
-    zuordnung_von: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    zuordnung_bis: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    assigned_from: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    assigned_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    mitglied: Mapped["Mitglied"] = relationship("Mitglied", back_populates="parzellen_zuordnungen")
-    parzelle: Mapped["Parzelle"] = relationship("Parzelle", back_populates="mitglieder_zuordnungen")
+    member: Mapped["Member"] = relationship("Member", back_populates="parcel_assignments")
+    parcel: Mapped["Parcel"] = relationship("Parcel", back_populates="member_assignments")
 
     __table_args__ = (
-        UniqueConstraint("mitglied_id", "parzelle_id", name="uq_mitglied_parzelle"),
+        UniqueConstraint("member_id", "parcel_id", name="uq_member_parcel"),
     )
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -316,8 +318,8 @@ class Vereinseinstellung(Base):
 # ---------------------------------------------------------------------------
 
 class PflichtstundenModus(str, enum.Enum):
-    PRO_PACHTVERTRAG = "pro_pachtvertrag"  # Stunden gelten pro Parzelle (Standard)
-    PRO_MITGLIED = "pro_mitglied"          # Stunden gelten pro Mitglied
+    PRO_PACHTVERTRAG = "pro_pachtvertrag"  # Stunden gelten pro Parcel (Standard)
+    PRO_MITGLIED = "pro_mitglied"          # Stunden gelten pro Member
 
 
 class PflichtstundenKonfiguration(Base):
@@ -387,7 +389,7 @@ class Vereinsrolle(Base):
 
 class MitgliedVereinsrolle(Base):
     """
-    Zuordnung Mitglied → Vereinsrolle für ein bestimmtes Jahr.
+    Zuordnung Member → Vereinsrolle für ein bestimmtes Jahr.
     Die Befreiung gilt immer für das gesamte Kalenderjahr (auch wenn die
     Rolle unterjährig niedergelegt wird).
     """
@@ -395,7 +397,7 @@ class MitgliedVereinsrolle(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     mitglied_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
     vereinsrolle_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("vereinsrollen.id", ondelete="CASCADE"), nullable=False, index=True
@@ -408,7 +410,7 @@ class MitgliedVereinsrolle(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    mitglied: Mapped["Mitglied"] = relationship("Mitglied")
+    mitglied: Mapped["Member"] = relationship("Member")
     vereinsrolle: Mapped["Vereinsrolle"] = relationship("Vereinsrolle", back_populates="zuordnungen")
 
     __table_args__ = (
@@ -422,14 +424,14 @@ class MitgliedVereinsrolle(Base):
 
 class Patenschaft(Base):
     """
-    Ein Mitglied übernimmt die Patenschaft für einen Bereich (z.B. Hecke,
+    Ein Member übernimmt die Patenschaft für einen Bereich (z.B. Hecke,
     Spielplatz). Die Patenschaft gilt pauschal als Pflichtstunden-Erfüllung.
     """
     __tablename__ = "patenschaften"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     mitglied_id: Mapped[Optional[str]] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36), ForeignKey("members.id", ondelete="SET NULL"), nullable=True, index=True
     )
     bereich: Mapped[str] = mapped_column(String(255), nullable=False)
     beschreibung: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -446,7 +448,7 @@ class Patenschaft(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    mitglied: Mapped[Optional["Mitglied"]] = relationship("Mitglied")
+    mitglied: Mapped[Optional["Member"]] = relationship("Member")
 
     def __repr__(self) -> str:
         return f"<Patenschaft {self.bereich} → {self.mitglied_id}>"
@@ -524,7 +526,7 @@ class EinsatzTeilnahme(Base):
         String(36), ForeignKey("arbeitseinsaetze.id", ondelete="CASCADE"), nullable=False, index=True
     )
     mitglied_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
     status: Mapped[TeilnahmeStatus] = mapped_column(
         SAEnum(TeilnahmeStatus), default=TeilnahmeStatus.ANGEMELDET, nullable=False
@@ -539,7 +541,7 @@ class EinsatzTeilnahme(Base):
     )
 
     einsatz: Mapped["Arbeitseinsatz"] = relationship("Arbeitseinsatz", back_populates="teilnahmen")
-    mitglied: Mapped["Mitglied"] = relationship("Mitglied")
+    mitglied: Mapped["Member"] = relationship("Member")
 
     __table_args__ = (
         UniqueConstraint("einsatz_id", "mitglied_id", name="uq_einsatz_mitglied"),
@@ -553,7 +555,7 @@ class EinsatzTeilnahme(Base):
 class Aenderungshistorie(Base):
     """
     Generisches Audit-Log: protokolliert Feldänderungen an beliebigen
-    Entitäten (z.B. Parzelle.flaeche_qm). Ermöglicht Nachvollziehbarkeit
+    Entitäten (z.B. Parcel.area_sqm). Ermöglicht Nachvollziehbarkeit
     ohne für jede Tabelle eine eigene Historie-Tabelle zu brauchen.
     """
     __tablename__ = "aenderungshistorie"
@@ -582,7 +584,7 @@ class Aenderungshistorie(Base):
 # Zählerwesen: generisches Modul für Wasser- UND Stromzähler
 #
 # Ein Zaehlpunkt hat ein "medium" (WASSER oder STROM) und einen "typ"
-# (Hauptzähler, Parzelle, Vereinsanschluss). Die Verbrauchslogik ist für
+# (Hauptzähler, Parcel, Vereinsanschluss). Die Verbrauchslogik ist für
 # beide Medien identisch – nur Einheit, Anzeige-Rundung und Icon
 # unterscheiden sich (siehe app/routers/zaehlerwesen.py).
 # ---------------------------------------------------------------------------
@@ -594,17 +596,17 @@ class ZaehlerMedium(str, enum.Enum):
 
 class ZaehlpunktTyp(str, enum.Enum):
     HAUPTZAEHLER = "HAUPTZAEHLER"  # Übergabepunkt vom öffentlichen Versorger
-    PARZELLE = "PARZELLE"          # Anschluss an einer Parzelle
+    PARZELLE = "PARZELLE"          # Anschluss an einer Parcel
     VEREIN = "VEREIN"              # Vereinseigene Anschlussstelle (Vereinsheim, Waschplatz etc.)
 
 
 class Zaehlpunkt(Base):
     """
     Ein Zählpunkt für ein Medium (Wasser oder Strom). Entweder an eine
-    Parzelle gekoppelt, eine vereinseigene Anschlussstelle, oder der
+    Parcel gekoppelt, eine vereinseigene Anschlussstelle, oder der
     Hauptzähler der Gesamtversorgung vom öffentlichen Versorger.
 
-    Eine Parzelle kann sowohl einen Wasser- als auch einen Strom-Zaehlpunkt
+    Eine Parcel kann sowohl einen Wasser- als auch einen Strom-Zaehlpunkt
     haben (zwei Zeilen, unterschieden über "medium").
     """
     __tablename__ = "zaehlpunkte"
@@ -614,9 +616,9 @@ class Zaehlpunkt(Base):
     typ: Mapped[ZaehlpunktTyp] = mapped_column(SAEnum(ZaehlpunktTyp), nullable=False)
 
     parzelle_id: Mapped[Optional[str]] = mapped_column(
-        String(36), ForeignKey("parzellen.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36), ForeignKey("parcels.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    # Für HAUPTZAEHLER/VEREIN-Zaehlpunkte (keine Parzelle): freier Name.
+    # Für HAUPTZAEHLER/VEREIN-Zaehlpunkte (keine Parcel): freier Name.
     bezeichnung: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     notizen: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -627,7 +629,7 @@ class Zaehlpunkt(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    parzelle: Mapped[Optional["Parzelle"]] = relationship("Parzelle", back_populates="zaehlpunkte")
+    parzelle: Mapped[Optional["Parcel"]] = relationship("Parcel", back_populates="zaehlpunkte")
     zaehler: Mapped[List["Zaehler"]] = relationship(
         "Zaehler", back_populates="zaehlpunkt", cascade="all, delete-orphan"
     )
@@ -635,7 +637,7 @@ class Zaehlpunkt(Base):
     @property
     def anzeigename(self) -> str:
         if self.parzelle:
-            return f"Parzelle {self.parzelle.gartennummer}"
+            return f"Parcel {self.parzelle.plot_number}"
         return self.bezeichnung or "Unbenannter Zählpunkt"
 
     @property
@@ -719,7 +721,7 @@ class Zaehlerstand(Base):
 
 
 # ---------------------------------------------------------------------------
-# Versicherungsmodul: Sach- und Unfallversicherung pro Parzelle
+# Versicherungsmodul: Sach- und Unfallversicherung pro Parcel
 # ---------------------------------------------------------------------------
 
 class SachversicherungPaket(Base):
@@ -775,7 +777,7 @@ class VersicherungsKonfiguration(Base):
 
 class ParzelleVersicherung(Base):
     """
-    Versicherungsstatus einer Parzelle für ein bestimmtes Jahr:
+    Versicherungsstatus einer Parcel für ein bestimmtes Jahr:
     Sachversicherung (optional, mit gewähltem Paket) und Unfallversicherung
     (optional, Grundbetrag deckt den Haushalt des Hauptpächters ab).
     """
@@ -783,7 +785,7 @@ class ParzelleVersicherung(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     parzelle_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("parzellen.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
     )
     jahr: Mapped[int] = mapped_column(Integer, nullable=False)
 
@@ -801,7 +803,7 @@ class ParzelleVersicherung(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    parzelle: Mapped["Parzelle"] = relationship("Parzelle")
+    parzelle: Mapped["Parcel"] = relationship("Parcel")
     sach_paket: Mapped[Optional["SachversicherungPaket"]] = relationship("SachversicherungPaket")
     zusatzpersonen: Mapped[List["UnfallversicherungZusatzperson"]] = relationship(
         "UnfallversicherungZusatzperson", back_populates="parzelle_versicherung", cascade="all, delete-orphan"
@@ -817,8 +819,8 @@ class ParzelleVersicherung(Base):
 
 class UnfallversicherungZusatzperson(Base):
     """
-    Ein Mitglied, das zusätzlich zum Haushalt des Hauptpächters gegen
-    Aufpreis in die Unfallversicherung der Parzelle aufgenommen wurde
+    Ein Member, das zusätzlich zum Haushalt des Hauptpächters gegen
+    Aufpreis in die Unfallversicherung der Parcel aufgenommen wurde
     (z.B. ein Mitpächter, der nicht am selben Wohnort lebt).
     """
     __tablename__ = "unfallversicherung_zusatzpersonen"
@@ -828,7 +830,7 @@ class UnfallversicherungZusatzperson(Base):
         String(36), ForeignKey("parzelle_versicherung.id", ondelete="CASCADE"), nullable=False, index=True
     )
     mitglied_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -837,7 +839,7 @@ class UnfallversicherungZusatzperson(Base):
     parzelle_versicherung: Mapped["ParzelleVersicherung"] = relationship(
         "ParzelleVersicherung", back_populates="zusatzpersonen"
     )
-    mitglied: Mapped["Mitglied"] = relationship("Mitglied")
+    mitglied: Mapped["Member"] = relationship("Member")
 
     __table_args__ = (
         UniqueConstraint("parzelle_versicherung_id", "mitglied_id", name="uq_versicherung_mitglied"),
@@ -883,7 +885,7 @@ class Ticket(Base):
     # Automatischer Abgleich per Absender-E-Mail; überschreibbar/manuell korrigierbar,
     # falls die Adresse mehreren Mitgliedern gehört oder unbekannt ist.
     mitglied_id: Mapped[Optional[str]] = mapped_column(
-        String(36), ForeignKey("mitglieder.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36), ForeignKey("members.id", ondelete="SET NULL"), nullable=True, index=True
     )
     absender_email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     absender_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -906,7 +908,7 @@ class Ticket(Base):
     geschlossen_am: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     zugewiesen_an: Mapped[Optional["Benutzer"]] = relationship("Benutzer")
-    mitglied: Mapped[Optional["Mitglied"]] = relationship("Mitglied")
+    mitglied: Mapped[Optional["Member"]] = relationship("Member")
     nachrichten: Mapped[List["TicketNachricht"]] = relationship(
         "TicketNachricht", back_populates="ticket", cascade="all, delete-orphan",
         order_by="TicketNachricht.erstellt_am",

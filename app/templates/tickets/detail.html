@@ -151,8 +151,8 @@
             <div class="card-body">
                 {% if ticket.mitglied %}
                 <p class="mb-2">
-                    <a href="/mitglieder/{{ ticket.mitglied.id }}" class="text-decoration-none fw-semibold"
-                       style="color: var(--gv-gruen);">{{ ticket.mitglied.vollname }}</a>
+                    <a href="/members/{{ ticket.mitglied.id }}" class="text-decoration-none fw-semibold"
+                       style="color: var(--gv-gruen);">{{ ticket.mitglied.full_name }}</a>
                 </p>
                 {% else %}
                 <p class="text-muted mb-2" style="font-size: 0.85rem;">Kein Mitglied zugeordnet.</p>
@@ -164,7 +164,7 @@
                         <option value="">– keine Zuordnung –</option>
                         {% for m in kandidaten %}
                         <option value="{{ m.id }}" {% if ticket.mitglied_id == m.id %}selected{% endif %}>
-                            {{ m.vollname }}
+                            {{ m.full_name }}
                         </option>
                         {% endfor %}
                     </select>

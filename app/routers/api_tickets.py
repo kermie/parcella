@@ -18,7 +18,7 @@ from app.ticket_mailer import sende_ticket_antwort
 from app.email_service import sende_email
 from app.schemas import (
     TicketCreate, TicketOut, TicketDetailOut, TicketStatusUpdate,
-    TicketZuweisungUpdate, TicketMitgliedUpdate, TicketSpamUpdate,
+    TicketZuweisungUpdate, TicketMemberUpdate, TicketSpamUpdate,
     TicketNachrichtCreate, TicketNachrichtOut,
 )
 
@@ -79,8 +79,8 @@ async def ticket_abrufen(
     "", response_model=TicketDetailOut, status_code=status.HTTP_201_CREATED,
     summary="Ticket anlegen",
     description="Legt ein Ticket mit erster Nachricht an. Der Absender wird automatisch "
-                "einem Mitglied zugeordnet, falls die E-Mail-Adresse eindeutig einem "
-                "Mitglied zugeordnet werden kann.",
+                "einem Member zugeordnet, falls die E-Mail-Adresse eindeutig einem "
+                "Member zugeordnet werden kann.",
 )
 async def ticket_erstellen(
     daten: TicketCreate,
@@ -178,10 +178,10 @@ async def zuweisung_aendern(
     return ticket
 
 
-@router.put("/{ticket_id}/mitglied", response_model=TicketOut, summary="Mitglied-Zuordnung setzen")
-async def mitglied_zuordnen(
+@router.put("/{ticket_id}/mitglied", response_model=TicketOut, summary="Member-Zuordnung setzen")
+async def member_zuordnen(
     ticket_id: str,
-    daten: TicketMitgliedUpdate,
+    daten: TicketMemberUpdate,
     db: AsyncSession = Depends(get_db),
     benutzer: Benutzer = Depends(require_schreibzugriff),
 ):

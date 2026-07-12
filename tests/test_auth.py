@@ -28,5 +28,5 @@ async def test_login_unbekannte_email(client):
 
 
 async def test_geschuetzter_endpunkt_ohne_token(client):
-    response = await client.get("/api/v1/mitglieder")
+    response = await client.get("/api/v1/members")
     assert response.status_code == 401

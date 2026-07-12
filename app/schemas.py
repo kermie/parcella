@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
-from app.models import ParzelleStatus, BenutzerRolle
+from app.models import ParcelStatus, BenutzerRolle
 
 
 # ---------------------------------------------------------------------------
@@ -39,167 +39,165 @@ class BenutzerOut(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Telefon / E-Mail (Unterobjekte von Mitglied)
+# Telefon / E-Mail (Unterobjekte von Member)
 # ---------------------------------------------------------------------------
 
-class TelefonBase(BaseModel):
-    nummer: str = Field(..., max_length=50)
-    bezeichnung: Optional[str] = Field(None, max_length=50)
-    ist_primaer: bool = False
+class PhoneBase(BaseModel):
+    number: str = Field(..., max_length=50)
+    label: Optional[str] = Field(None, max_length=50)
+    is_primary: bool = False
 
 
-class TelefonCreate(TelefonBase):
+class PhoneCreate(PhoneBase):
     pass
 
 
-class TelefonOut(TelefonBase):
+class PhoneOut(PhoneBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
 
 
-class EmailAdresseBase(BaseModel):
-    adresse: EmailStr
-    bezeichnung: Optional[str] = Field(None, max_length=50)
-    ist_primaer: bool = False
+class EmailAddressBase(BaseModel):
+    address: EmailStr
+    label: Optional[str] = Field(None, max_length=50)
+    is_primary: bool = False
 
 
-class EmailAdresseCreate(EmailAdresseBase):
+class EmailAddressCreate(EmailAddressBase):
     pass
 
 
-class EmailAdresseOut(BaseModel):
+class EmailAddressOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    adresse: str
-    bezeichnung: Optional[str] = None
-    ist_primaer: bool
+    address: str
+    label: Optional[str] = None
+    is_primary: bool
 
 
 # ---------------------------------------------------------------------------
-# Mitglied
+# Member
 # ---------------------------------------------------------------------------
 
-class MitgliedBase(BaseModel):
-    vorname: str = Field(..., max_length=100)
-    nachname: str = Field(..., max_length=100)
-    geburtsdatum: Optional[date] = None
-    strasse: Optional[str] = Field(None, max_length=255)
-    plz: Optional[str] = Field(None, max_length=10)
-    ort: Optional[str] = Field(None, max_length=100)
+class MemberBase(BaseModel):
+    first_name: str = Field(..., max_length=100)
+    last_name: str = Field(..., max_length=100)
+    date_of_birth: Optional[date] = None
+    street: Optional[str] = Field(None, max_length=255)
+    postal_code: Optional[str] = Field(None, max_length=10)
+    city: Optional[str] = Field(None, max_length=100)
     iban: Optional[str] = Field(None, max_length=34)
-    mitglied_seit: Optional[date] = None
-    mitglied_bis: Optional[date] = None
-    email_benachrichtigungen: bool = True
-    notizen: Optional[str] = None
+    member_since: Optional[date] = None
+    member_until: Optional[date] = None
+    email_notifications: bool = True
+    notes: Optional[str] = None
 
 
-class MitgliedCreate(MitgliedBase):
+class MemberCreate(MemberBase):
     pass
 
 
-class MitgliedUpdate(BaseModel):
+class MemberUpdate(BaseModel):
     """Alle Felder optional – für PATCH-artige Teilupdates via PUT."""
-    vorname: Optional[str] = Field(None, max_length=100)
-    nachname: Optional[str] = Field(None, max_length=100)
-    geburtsdatum: Optional[date] = None
-    strasse: Optional[str] = Field(None, max_length=255)
-    plz: Optional[str] = Field(None, max_length=10)
-    ort: Optional[str] = Field(None, max_length=100)
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
+    date_of_birth: Optional[date] = None
+    street: Optional[str] = Field(None, max_length=255)
+    postal_code: Optional[str] = Field(None, max_length=10)
+    city: Optional[str] = Field(None, max_length=100)
     iban: Optional[str] = Field(None, max_length=34)
-    mitglied_seit: Optional[date] = None
-    mitglied_bis: Optional[date] = None
-    email_benachrichtigungen: Optional[bool] = None
-    notizen: Optional[str] = None
+    member_since: Optional[date] = None
+    member_until: Optional[date] = None
+    email_notifications: Optional[bool] = None
+    notes: Optional[str] = None
 
 
-class ParzelleZuordnungKurz(BaseModel):
-    """Kompakte Parzelleninfo innerhalb einer Mitglied-Antwort."""
+class MemberAssignmentBrief(BaseModel):
+    """Kompakte Parcel-Info innerhalb einer Member-Antwort."""
     model_config = ConfigDict(from_attributes=True)
-    parzelle_id: str
-    gartennummer: str
-    ist_hauptpaechter: bool
+    parcel_id: str
+    plot_number: str
+    is_primary_tenant: bool
 
 
-class MitgliedOut(MitgliedBase):
+class MemberOut(MemberBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
     created_at: datetime
     updated_at: datetime
-    ist_aktiv: bool
-    telefonnummern: List[TelefonOut] = []
-    email_adressen: List[EmailAdresseOut] = []
+    is_active: bool
+    phone_numbers: List[PhoneOut] = []
+    email_addresses: List[EmailAddressOut] = []
 
 
-class MitgliedDetailOut(MitgliedOut):
-    """Erweiterte Ansicht inkl. zugeordneter Parzellen, für GET /mitglieder/{id}."""
-    parzellen: List[ParzelleZuordnungKurz] = []
+class MemberDetailOut(MemberOut):
+    """Erweiterte Ansicht inkl. zugeordneter Parzellen, für GET /members/{id}."""
+    parcels: List[MemberAssignmentBrief] = []
 
 
 # ---------------------------------------------------------------------------
-# Parzelle
+# Parcel
 # ---------------------------------------------------------------------------
 
-class ParzelleBase(BaseModel):
-    gartennummer: str = Field(..., max_length=20)
-    flaeche_qm: Optional[Decimal] = None
-    notizen: Optional[str] = None
+class ParcelBase(BaseModel):
+    plot_number: str = Field(..., max_length=20)
+    area_sqm: Optional[Decimal] = None
+    notes: Optional[str] = None
 
 
-class ParzelleCreate(ParzelleBase):
+class ParcelCreate(ParcelBase):
     pass
 
 
-class ParzelleUpdate(BaseModel):
-    gartennummer: Optional[str] = Field(None, max_length=20)
-    flaeche_qm: Optional[Decimal] = None
-    status: Optional[ParzelleStatus] = None
-    kuendigung_datum: Optional[date] = None
-    kuendigung_notiz: Optional[str] = None
-    notizen: Optional[str] = None
+class ParcelUpdate(BaseModel):
+    plot_number: Optional[str] = Field(None, max_length=20)
+    area_sqm: Optional[Decimal] = None
+    status: Optional[ParcelStatus] = None
+    termination_note: Optional[str] = None
+    notes: Optional[str] = None
 
 
-class MitgliedZuordnungKurz(BaseModel):
-    """Kompakte Mitgliedinfo innerhalb einer Parzelle-Antwort."""
+class ParcelAssignmentBrief(BaseModel):
+    """Kompakte Member-Info innerhalb einer Parcel-Antwort."""
     model_config = ConfigDict(from_attributes=True)
-    mitglied_id: str
+    member_id: str
     name: str
-    ist_hauptpaechter: bool
+    is_primary_tenant: bool
 
 
-class ParzelleOut(ParzelleBase):
+class ParcelOut(ParcelBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    status: ParzelleStatus
-    kuendigung_datum: Optional[date] = None
-    kuendigung_notiz: Optional[str] = None
+    status: ParcelStatus
+    termination_note: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
 
-class ParzelleDetailOut(ParzelleOut):
-    mitglieder: List[MitgliedZuordnungKurz] = []
+class ParcelDetailOut(ParcelOut):
+    members: List[ParcelAssignmentBrief] = []
 
 
 # ---------------------------------------------------------------------------
-# Mitglied-Parzelle-Zuordnung
+# Member-Parcel-Zuordnung
 # ---------------------------------------------------------------------------
 
-class ZuordnungCreate(BaseModel):
-    mitglied_id: str
-    parzelle_id: str
-    ist_hauptpaechter: bool = True
-    zuordnung_von: Optional[date] = None
-    zuordnung_bis: Optional[date] = None
+class AssignmentCreate(BaseModel):
+    member_id: str
+    parcel_id: str
+    is_primary_tenant: bool = True
+    assigned_from: Optional[date] = None
+    assigned_until: Optional[date] = None
 
 
-class ZuordnungOut(BaseModel):
+class AssignmentOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    mitglied_id: str
-    parzelle_id: str
-    ist_hauptpaechter: bool
-    zuordnung_von: Optional[date] = None
-    zuordnung_bis: Optional[date] = None
+    member_id: str
+    parcel_id: str
+    is_primary_tenant: bool
+    assigned_from: Optional[date] = None
+    assigned_until: Optional[date] = None
 
 
 # ---------------------------------------------------------------------------
@@ -549,7 +547,7 @@ class TicketZuweisungUpdate(BaseModel):
     benutzer_id: Optional[str] = Field(None, description="Leer/None = Zuweisung aufheben")
 
 
-class TicketMitgliedUpdate(BaseModel):
+class TicketMemberUpdate(BaseModel):
     mitglied_id: Optional[str] = None
 
 

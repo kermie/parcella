@@ -13,24 +13,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db, aktives_mitglied_filter
+from app.database import get_db, active_member_filter
 from app.models import (
-    Parzelle, ParzelleStatus, MitgliedParzelle, Mitglied, Aenderungshistorie
+    Parcel, ParcelStatus, MemberParcel, Member, Aenderungshistorie
 )
 from app.auth import require_user
 from app.aenderungstracker import AenderungsTracker
 
-router = APIRouter(prefix="/parzellen", tags=["parzellen"])
+router = APIRouter(prefix="/parcels", tags=["parcels"])
 templates = Jinja2Templates(directory="app/templates")
 
 
-async def _get_parzelle_mit_details(db: AsyncSession, parzelle_id: str) -> Optional[Parzelle]:
+async def _get_parcel_mit_details(db: AsyncSession, parcel_id: str) -> Optional[Parcel]:
     result = await db.execute(
-        select(Parzelle)
+        select(Parcel)
         .options(
-            selectinload(Parzelle.mitglieder_zuordnungen).selectinload(MitgliedParzelle.mitglied)
+            selectinload(Parcel.member_assignments).selectinload(MemberParcel.member)
         )
-        .where(Parzelle.id == parzelle_id)
+        .where(Parcel.id == parcel_id)
     )
     return result.scalar_one_or_none()
 
@@ -45,31 +45,31 @@ async def parzellen_liste(
     benutzer = await require_user(request, db)
 
     query = (
-        select(Parzelle)
+        select(Parcel)
         .options(
-            selectinload(Parzelle.mitglieder_zuordnungen).selectinload(MitgliedParzelle.mitglied)
+            selectinload(Parcel.member_assignments).selectinload(MemberParcel.member)
         )
-        .order_by(Parzelle.gartennummer)
+        .order_by(Parcel.plot_number)
     )
 
     if suche:
-        query = query.where(Parzelle.gartennummer.ilike(f"%{suche}%"))
+        query = query.where(Parcel.plot_number.ilike(f"%{suche}%"))
 
-    if status_filter and status_filter in [s.value for s in ParzelleStatus]:
-        query = query.where(Parzelle.status == status_filter)
+    if status_filter and status_filter in [s.value for s in ParcelStatus]:
+        query = query.where(Parcel.status == status_filter)
 
     result = await db.execute(query)
-    parzellen = result.scalars().all()
+    parcels = result.scalars().all()
 
     return templates.TemplateResponse(
         "parcels/liste.html",
         {
             "request": request,
             "benutzer": benutzer,
-            "parzellen": parzellen,
+            "parcels": parcels,
             "suche": suche,
             "status_filter": status_filter,
-            "ParzelleStatus": ParzelleStatus,
+            "ParcelStatus": ParcelStatus,
         },
     )
 
@@ -79,23 +79,23 @@ async def parzelle_neu_seite(request: Request, db: AsyncSession = Depends(get_db
     benutzer = await require_user(request, db)
     return templates.TemplateResponse(
         "parcels/formular.html",
-        {"request": request, "benutzer": benutzer, "parzelle": None},
+        {"request": request, "benutzer": benutzer, "parcel": None},
     )
 
 
 @router.post("/neu")
 async def parzelle_erstellen(
     request: Request,
-    gartennummer: str = Form(...),
-    flaeche_qm: str = Form(""),
-    notizen: str = Form(""),
+    plot_number: str = Form(...),
+    area_sqm: str = Form(""),
+    notes: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
 
     # Doppelte Gartennummer prüfen
     existing = await db.execute(
-        select(Parzelle).where(Parzelle.gartennummer == gartennummer.strip().upper())
+        select(Parcel).where(Parcel.plot_number == plot_number.strip().upper())
     )
     if existing.scalar_one_or_none():
         benutzer_result = await require_user(request, db)
@@ -104,47 +104,47 @@ async def parzelle_erstellen(
             {
                 "request": request,
                 "benutzer": benutzer_result,
-                "parzelle": None,
-                "fehler": f"Gartennummer '{gartennummer}' existiert bereits.",
+                "parcel": None,
+                "fehler": f"Gartennummer '{plot_number}' existiert bereits.",
             },
             status_code=400,
         )
 
     flaeche = None
-    if flaeche_qm.strip():
+    if area_sqm.strip():
         try:
-            flaeche = float(flaeche_qm.replace(",", "."))
+            flaeche = float(area_sqm.replace(",", "."))
         except ValueError:
             pass
 
-    parzelle = Parzelle(
-        gartennummer=gartennummer.strip().upper(),
-        flaeche_qm=flaeche,
-        notizen=notizen.strip() or None,
+    parcel = Parcel(
+        plot_number=plot_number.strip().upper(),
+        area_sqm=flaeche,
+        notes=notes.strip() or None,
     )
-    db.add(parzelle)
+    db.add(parcel)
     await db.commit()
 
-    return RedirectResponse(f"/parzellen/{parzelle.id}", status_code=302)
+    return RedirectResponse(f"/parcels/{parcel.id}", status_code=302)
 
 
-@router.get("/{parzelle_id}", response_class=HTMLResponse)
+@router.get("/{parcel_id}", response_class=HTMLResponse)
 async def parzelle_detail(
-    parzelle_id: str,
+    parcel_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
-    parzelle = await _get_parzelle_mit_details(db, parzelle_id)
+    parcel = await _get_parcel_mit_details(db, parcel_id)
 
-    if not parzelle:
-        raise HTTPException(status_code=404, detail="Parzelle nicht gefunden")
+    if not parcel:
+        raise HTTPException(status_code=404, detail="Parcel nicht gefunden")
 
     # Alle Mitglieder für Zuordnung
     mitglieder_result = await db.execute(
-        select(Mitglied)
-        .where(aktives_mitglied_filter())
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        select(Member)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
     )
     alle_mitglieder = mitglieder_result.scalars().all()
 
@@ -153,8 +153,8 @@ async def parzelle_detail(
         select(Aenderungshistorie)
         .options(selectinload(Aenderungshistorie.geaendert_von))
         .where(
-            Aenderungshistorie.entitaet_typ == "Parzelle",
-            Aenderungshistorie.entitaet_id == parzelle_id,
+            Aenderungshistorie.entitaet_typ == "Parcel",
+            Aenderungshistorie.entitaet_id == parcel_id,
         )
         .order_by(Aenderungshistorie.geaendert_am.desc())
     )
@@ -165,164 +165,164 @@ async def parzelle_detail(
         {
             "request": request,
             "benutzer": benutzer,
-            "parzelle": parzelle,
+            "parcel": parcel,
             "alle_mitglieder": alle_mitglieder,
             "aenderungen": aenderungen,
-            "ParzelleStatus": ParzelleStatus,
+            "ParcelStatus": ParcelStatus,
         },
     )
 
 
-@router.get("/{parzelle_id}/bearbeiten", response_class=HTMLResponse)
+@router.get("/{parcel_id}/bearbeiten", response_class=HTMLResponse)
 async def parzelle_bearbeiten_seite(
-    parzelle_id: str,
+    parcel_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
-    parzelle = await _get_parzelle_mit_details(db, parzelle_id)
+    parcel = await _get_parcel_mit_details(db, parcel_id)
 
-    if not parzelle:
+    if not parcel:
         raise HTTPException(status_code=404)
 
     return templates.TemplateResponse(
         "parcels/formular.html",
-        {"request": request, "benutzer": benutzer, "parzelle": parzelle},
+        {"request": request, "benutzer": benutzer, "parcel": parcel},
     )
 
 
-@router.post("/{parzelle_id}/bearbeiten")
+@router.post("/{parcel_id}/bearbeiten")
 async def parzelle_aktualisieren(
-    parzelle_id: str,
+    parcel_id: str,
     request: Request,
-    gartennummer: str = Form(...),
-    flaeche_qm: str = Form(""),
-    status: str = Form("AKTIV"),
-    kuendigung_notiz: str = Form(""),
-    notizen: str = Form(""),
+    plot_number: str = Form(...),
+    area_sqm: str = Form(""),
+    status: str = Form("ACTIVE"),
+    termination_note: str = Form(""),
+    notes: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
-    parzelle = await _get_parzelle_mit_details(db, parzelle_id)
+    parcel = await _get_parcel_mit_details(db, parcel_id)
 
-    if not parzelle:
+    if not parcel:
         raise HTTPException(status_code=404)
 
     tracker = AenderungsTracker(
-        parzelle, "Parzelle",
-        ["gartennummer", "flaeche_qm", "status", "kuendigung_notiz", "notizen"]
+        parcel, "Parcel",
+        ["plot_number", "area_sqm", "status", "termination_note", "notes"]
     )
 
     flaeche = None
-    if flaeche_qm.strip():
+    if area_sqm.strip():
         try:
-            flaeche = float(flaeche_qm.replace(",", "."))
+            flaeche = float(area_sqm.replace(",", "."))
         except ValueError:
             pass
 
-    parzelle.gartennummer = gartennummer.strip().upper()
-    parzelle.flaeche_qm = flaeche
-    parzelle.notizen = notizen.strip() or None
+    parcel.plot_number = plot_number.strip().upper()
+    parcel.area_sqm = flaeche
+    parcel.notes = notes.strip() or None
 
-    if status in [s.value for s in ParzelleStatus]:
-        parzelle.status = ParzelleStatus(status)
+    if status in [s.value for s in ParcelStatus]:
+        parcel.status = ParcelStatus(status)
 
-    parzelle.kuendigung_notiz = kuendigung_notiz.strip() or None
+    parcel.termination_note = termination_note.strip() or None
 
     await tracker.commit(db, benutzer.id)
     await db.commit()
-    return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+    return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
-@router.post("/{parzelle_id}/endgueltig-loeschen")
+@router.post("/{parcel_id}/endgueltig-loeschen")
 async def parzelle_endgueltig_loeschen(
-    parzelle_id: str,
+    parcel_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Löscht eine Parzelle unwiderruflich aus der Datenbank – anders als der
+    Löscht eine Parcel unwiderruflich aus der Datenbank – anders als der
     Status "Gelöscht" (Soft-Delete), der die Historie erhält. Gedacht für
     versehentlich angelegte Test-/Demo-Datensätze, nicht für den
     Normalbetrieb.
     """
     await require_user(request, db)
 
-    parzelle = await _get_parzelle_mit_details(db, parzelle_id)
-    if not parzelle:
+    parcel = await _get_parcel_mit_details(db, parcel_id)
+    if not parcel:
         raise HTTPException(status_code=404)
 
-    await db.delete(parzelle)
+    await db.delete(parcel)
     await db.commit()
     import urllib.parse
-    meldung = urllib.parse.quote(f"Parzelle {parzelle.gartennummer} endgültig gelöscht")
-    return RedirectResponse(f"/parzellen/?meldung={meldung}", status_code=302)
+    meldung = urllib.parse.quote(f"Parcel {parcel.plot_number} endgültig gelöscht")
+    return RedirectResponse(f"/parcels/?meldung={meldung}", status_code=302)
 
 
 # ---------------------------------------------------------------------------
 # Mitglieder-Zuordnung
 # ---------------------------------------------------------------------------
 
-@router.post("/{parzelle_id}/mitglied/zuordnen")
+@router.post("/{parcel_id}/member/assign")
 async def mitglied_zuordnen(
-    parzelle_id: str,
+    parcel_id: str,
     request: Request,
-    mitglied_id: str = Form(...),
-    ist_hauptpaechter: bool = Form(False),
-    zuordnung_von: str = Form(""),
+    member_id: str = Form(...),
+    is_primary_tenant: bool = Form(False),
+    assigned_from: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
 
     # Bereits (auch historisch) zugeordnet?
     existing = await db.execute(
-        select(MitgliedParzelle).where(
-            MitgliedParzelle.parzelle_id == parzelle_id,
-            MitgliedParzelle.mitglied_id == mitglied_id,
+        select(MemberParcel).where(
+            MemberParcel.parcel_id == parcel_id,
+            MemberParcel.member_id == member_id,
         )
     )
     zuordnung = existing.scalar_one_or_none()
 
     if zuordnung:
-        if zuordnung.zuordnung_bis is None:
+        if zuordnung.assigned_until is None:
             # Bereits aktiv zugeordnet, nichts zu tun
-            return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+            return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
         # Frühere (beendete) Zuordnung reaktivieren statt Duplikat anzulegen
-        zuordnung.zuordnung_bis = None
-        zuordnung.zuordnung_von = date.fromisoformat(zuordnung_von) if zuordnung_von else date.today()
-        zuordnung.ist_hauptpaechter = ist_hauptpaechter
+        zuordnung.assigned_until = None
+        zuordnung.assigned_from = date.fromisoformat(assigned_from) if assigned_from else date.today()
+        zuordnung.is_primary_tenant = is_primary_tenant
     else:
-        zuordnung = MitgliedParzelle(
-            parzelle_id=parzelle_id,
-            mitglied_id=mitglied_id,
-            ist_hauptpaechter=ist_hauptpaechter,
-            zuordnung_von=date.fromisoformat(zuordnung_von) if zuordnung_von else None,
+        zuordnung = MemberParcel(
+            parcel_id=parcel_id,
+            member_id=member_id,
+            is_primary_tenant=is_primary_tenant,
+            assigned_from=date.fromisoformat(assigned_from) if assigned_from else None,
         )
         db.add(zuordnung)
 
     await db.commit()
-    return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+    return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
-@router.get("/{parzelle_id}/mitglied/{zuordnung_id}/bearbeiten", response_class=HTMLResponse)
+@router.get("/{parcel_id}/member/{assignment_id}/bearbeiten", response_class=HTMLResponse)
 async def mitglied_zuordnung_bearbeiten_seite(
-    parzelle_id: str,
-    zuordnung_id: str,
+    parcel_id: str,
+    assignment_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
 
     result = await db.execute(
-        select(MitgliedParzelle)
-        .options(selectinload(MitgliedParzelle.mitglied))
-        .where(MitgliedParzelle.id == zuordnung_id, MitgliedParzelle.parzelle_id == parzelle_id)
+        select(MemberParcel)
+        .options(selectinload(MemberParcel.member))
+        .where(MemberParcel.id == assignment_id, MemberParcel.parcel_id == parcel_id)
     )
     zuordnung = result.scalar_one_or_none()
     if not zuordnung:
         raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
 
-    parzelle = await _get_parzelle_mit_details(db, parzelle_id)
+    parcel = await _get_parcel_mit_details(db, parcel_id)
 
     return templates.TemplateResponse(
         "parcels/zuordnung_formular.html",
@@ -330,64 +330,64 @@ async def mitglied_zuordnung_bearbeiten_seite(
             "request": request,
             "benutzer": benutzer,
             "zuordnung": zuordnung,
-            "parzelle": parzelle,
+            "parcel": parcel,
         },
     )
 
 
-@router.post("/{parzelle_id}/mitglied/{zuordnung_id}/bearbeiten")
+@router.post("/{parcel_id}/member/{assignment_id}/bearbeiten")
 async def mitglied_zuordnung_aktualisieren(
-    parzelle_id: str,
-    zuordnung_id: str,
+    parcel_id: str,
+    assignment_id: str,
     request: Request,
-    ist_hauptpaechter: bool = Form(False),
-    zuordnung_von: str = Form(""),
-    zuordnung_bis: str = Form(""),
+    is_primary_tenant: bool = Form(False),
+    assigned_from: str = Form(""),
+    assigned_until: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
 
     result = await db.execute(
-        select(MitgliedParzelle).where(
-            MitgliedParzelle.id == zuordnung_id, MitgliedParzelle.parzelle_id == parzelle_id
+        select(MemberParcel).where(
+            MemberParcel.id == assignment_id, MemberParcel.parcel_id == parcel_id
         )
     )
     zuordnung = result.scalar_one_or_none()
     if not zuordnung:
         raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
 
-    zuordnung.ist_hauptpaechter = ist_hauptpaechter
-    zuordnung.zuordnung_von = date.fromisoformat(zuordnung_von) if zuordnung_von.strip() else None
-    zuordnung.zuordnung_bis = date.fromisoformat(zuordnung_bis) if zuordnung_bis.strip() else None
+    zuordnung.is_primary_tenant = is_primary_tenant
+    zuordnung.assigned_from = date.fromisoformat(assigned_from) if assigned_from.strip() else None
+    zuordnung.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
 
     await db.commit()
-    return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+    return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
-@router.post("/{parzelle_id}/mitglied/{zuordnung_id}/entfernen")
+@router.post("/{parcel_id}/member/{assignment_id}/entfernen")
 async def mitglied_entfernen(
-    parzelle_id: str,
-    zuordnung_id: str,
+    parcel_id: str,
+    assignment_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Beendet eine Pächter-Zuordnung (setzt zuordnung_bis), löscht sie aber
+    Beendet eine Pächter-Zuordnung (setzt assigned_until), löscht sie aber
     NICHT aus der Datenbank – so bleibt die Historie erhalten (wer war
-    von wann bis wann Pächter dieser Parzelle).
+    von wann bis wann Pächter dieser Parcel).
     """
     await require_user(request, db)
     result = await db.execute(
-        select(MitgliedParzelle).where(
-            MitgliedParzelle.id == zuordnung_id,
-            MitgliedParzelle.parzelle_id == parzelle_id,
+        select(MemberParcel).where(
+            MemberParcel.id == assignment_id,
+            MemberParcel.parcel_id == parcel_id,
         )
     )
     zuordnung = result.scalar_one_or_none()
-    if zuordnung and zuordnung.zuordnung_bis is None:
-        zuordnung.zuordnung_bis = date.today()
+    if zuordnung and zuordnung.assigned_until is None:
+        zuordnung.assigned_until = date.today()
         await db.commit()
-    return RedirectResponse(f"/parzellen/{parzelle_id}", status_code=302)
+    return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
 # ---------------------------------------------------------------------------
@@ -399,13 +399,13 @@ async def parzellen_export_csv(request: Request, db: AsyncSession = Depends(get_
     await require_user(request, db)
 
     result = await db.execute(
-        select(Parzelle)
+        select(Parcel)
         .options(
-            selectinload(Parzelle.mitglieder_zuordnungen).selectinload(MitgliedParzelle.mitglied)
+            selectinload(Parcel.member_assignments).selectinload(MemberParcel.member)
         )
-        .order_by(Parzelle.gartennummer)
+        .order_by(Parcel.plot_number)
     )
-    parzellen = result.scalars().all()
+    parcels = result.scalars().all()
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
@@ -415,25 +415,25 @@ async def parzellen_export_csv(request: Request, db: AsyncSession = Depends(get_
         "Mitglieder (Hauptpächter zuerst)", "Notizen"
     ])
 
-    for p in parzellen:
+    for p in parcels:
         mitglieder_str = "; ".join(
-            f"{z.mitglied.vollname}{'*' if z.ist_hauptpaechter else ''}"
-            for z in sorted(p.mitglieder_zuordnungen, key=lambda z: not z.ist_hauptpaechter)
+            f"{z.member.full_name}{'*' if z.is_primary_tenant else ''}"
+            for z in sorted(p.member_assignments, key=lambda z: not z.is_primary_tenant)
         )
         writer.writerow([
-            p.gartennummer,
-            str(p.flaeche_qm).replace(".", ",") if p.flaeche_qm else "",
+            p.plot_number,
+            str(p.area_sqm).replace(".", ",") if p.area_sqm else "",
             p.status.value,
-            p.kuendigung_notiz or "",
+            p.termination_note or "",
             mitglieder_str,
-            p.notizen or "",
+            p.notes or "",
         ])
 
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=parzellen.csv"},
+        headers={"Content-Disposition": "attachment; filename=parcels.csv"},
     )
 
 
@@ -469,13 +469,13 @@ async def parzellen_import_csv(
     fehlende_gartennummer = 0
 
     for zeile in reader:
-        gartennummer = (zeile.get("Gartennummer") or "").strip().upper()
-        if not gartennummer:
+        plot_number = (zeile.get("Gartennummer") or "").strip().upper()
+        if not plot_number:
             fehlende_gartennummer += 1
             continue
 
         existing = await db.execute(
-            select(Parzelle).where(Parzelle.gartennummer == gartennummer)
+            select(Parcel).where(Parcel.plot_number == plot_number)
         )
         if existing.scalar_one_or_none():
             uebersprungen += 1
@@ -489,18 +489,18 @@ async def parzellen_import_csv(
             except ValueError:
                 pass
 
-        status_str = (zeile.get("Status") or "AKTIV").strip().upper()
-        status = ParzelleStatus.AKTIV
-        if status_str in [s.value for s in ParzelleStatus]:
-            status = ParzelleStatus(status_str)
+        status_str = (zeile.get("Status") or "ACTIVE").strip().upper()
+        status = ParcelStatus.ACTIVE
+        if status_str in [s.value for s in ParcelStatus]:
+            status = ParcelStatus(status_str)
 
-        parzelle = Parzelle(
-            gartennummer=gartennummer,
-            flaeche_qm=flaeche,
+        parcel = Parcel(
+            plot_number=plot_number,
+            area_sqm=flaeche,
             status=status,
-            notizen=(zeile.get("Notizen") or "").strip() or None,
+            notes=(zeile.get("Notizen") or "").strip() or None,
         )
-        db.add(parzelle)
+        db.add(parcel)
         erstellt += 1
 
     await db.commit()
@@ -511,6 +511,6 @@ async def parzellen_import_csv(
 
     import urllib.parse
     return RedirectResponse(
-        f"/parzellen/?meldung={urllib.parse.quote(meldung)}",
+        f"/parcels/?meldung={urllib.parse.quote(meldung)}",
         status_code=302,
     )

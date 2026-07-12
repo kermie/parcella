@@ -13,23 +13,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db, aktives_mitglied_filter
-from app.models import Mitglied, MitgliedTelefon, MitgliedEmail, MitgliedParzelle, Parzelle
+from app.database import get_db, active_member_filter
+from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
 from app.auth import get_current_user, require_user
 
-router = APIRouter(prefix="/mitglieder", tags=["mitglieder"])
+router = APIRouter(prefix="/members", tags=["members"])
 templates = Jinja2Templates(directory="app/templates")
 
 
-async def _get_mitglied_mit_details(db: AsyncSession, mitglied_id: str) -> Optional[Mitglied]:
+async def _get_member_mit_details(db: AsyncSession, member_id: str) -> Optional[Member]:
     result = await db.execute(
-        select(Mitglied)
+        select(Member)
         .options(
-            selectinload(Mitglied.telefonnummern),
-            selectinload(Mitglied.email_adressen),
-            selectinload(Mitglied.parzellen_zuordnungen).selectinload(MitgliedParzelle.parzelle),
+            selectinload(Member.phone_numbers),
+            selectinload(Member.email_addresses),
+            selectinload(Member.parcel_assignments).selectinload(MemberParcel.parcel),
         )
-        .where(Mitglied.id == mitglied_id, Mitglied.deleted_at.is_(None))
+        .where(Member.id == member_id, Member.deleted_at.is_(None))
     )
     return result.scalar_one_or_none()
 
@@ -44,38 +44,38 @@ async def mitglieder_liste(
     benutzer = await require_user(request, db)
 
     query = (
-        select(Mitglied)
+        select(Member)
         .options(
-            selectinload(Mitglied.email_adressen),
-            selectinload(Mitglied.parzellen_zuordnungen).selectinload(MitgliedParzelle.parzelle),
+            selectinload(Member.email_addresses),
+            selectinload(Member.parcel_assignments).selectinload(MemberParcel.parcel),
         )
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        .order_by(Member.last_name, Member.first_name)
     )
 
     if auch_inaktive:
         # Alle nicht-gelöschten Mitglieder (inkl. abgelaufene Mitgliedschaften)
-        query = query.where(Mitglied.deleted_at.is_(None))
+        query = query.where(Member.deleted_at.is_(None))
     else:
-        query = query.where(aktives_mitglied_filter())
+        query = query.where(active_member_filter())
 
     if suche:
         query = query.where(
             or_(
-                Mitglied.vorname.ilike(f"%{suche}%"),
-                Mitglied.nachname.ilike(f"%{suche}%"),
-                Mitglied.ort.ilike(f"%{suche}%"),
+                Member.first_name.ilike(f"%{suche}%"),
+                Member.last_name.ilike(f"%{suche}%"),
+                Member.city.ilike(f"%{suche}%"),
             )
         )
 
     result = await db.execute(query)
-    mitglieder = result.scalars().all()
+    members = result.scalars().all()
 
     return templates.TemplateResponse(
         "members/liste.html",
         {
             "request": request,
             "benutzer": benutzer,
-            "mitglieder": mitglieder,
+            "members": members,
             "suche": suche,
             "auch_inaktive": auch_inaktive,
         },
@@ -87,24 +87,24 @@ async def mitglied_neu_seite(request: Request, db: AsyncSession = Depends(get_db
     benutzer = await require_user(request, db)
     return templates.TemplateResponse(
         "members/formular.html",
-        {"request": request, "benutzer": benutzer, "mitglied": None},
+        {"request": request, "benutzer": benutzer, "member": None},
     )
 
 
 @router.post("/neu")
 async def mitglied_erstellen(
     request: Request,
-    vorname: str = Form(...),
-    nachname: str = Form(...),
-    strasse: str = Form(""),
-    plz: str = Form(""),
-    ort: str = Form(""),
-    geburtsdatum: str = Form(""),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    street: str = Form(""),
+    postal_code: str = Form(""),
+    city: str = Form(""),
+    date_of_birth: str = Form(""),
     iban: str = Form(""),
-    mitglied_seit: str = Form(""),
-    mitglied_bis: str = Form(""),
-    email_benachrichtigungen: bool = Form(False),
-    notizen: str = Form(""),
+    member_since: str = Form(""),
+    member_until: str = Form(""),
+    email_notifications: bool = Form(False),
+    notes: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
@@ -117,40 +117,40 @@ async def mitglied_erstellen(
                 pass
         return None
 
-    mitglied = Mitglied(
-        vorname=vorname.strip(),
-        nachname=nachname.strip(),
-        strasse=strasse.strip() or None,
-        plz=plz.strip() or None,
-        ort=ort.strip() or None,
-        geburtsdatum=parse_datum(geburtsdatum),
+    member = Member(
+        first_name=first_name.strip(),
+        last_name=last_name.strip(),
+        street=street.strip() or None,
+        postal_code=postal_code.strip() or None,
+        city=city.strip() or None,
+        date_of_birth=parse_datum(date_of_birth),
         iban=iban.strip() or None,
-        mitglied_seit=parse_datum(mitglied_seit),
-        mitglied_bis=parse_datum(mitglied_bis),
-        email_benachrichtigungen=email_benachrichtigungen,
-        notizen=notizen.strip() or None,
+        member_since=parse_datum(member_since),
+        member_until=parse_datum(member_until),
+        email_notifications=email_notifications,
+        notes=notes.strip() or None,
     )
-    db.add(mitglied)
+    db.add(member)
     await db.commit()
 
-    return RedirectResponse(f"/mitglieder/{mitglied.id}", status_code=302)
+    return RedirectResponse(f"/members/{member.id}", status_code=302)
 
 
-@router.get("/{mitglied_id}", response_class=HTMLResponse)
+@router.get("/{member_id}", response_class=HTMLResponse)
 async def mitglied_detail(
-    mitglied_id: str,
+    member_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
-    mitglied = await _get_mitglied_mit_details(db, mitglied_id)
+    member = await _get_member_mit_details(db, member_id)
 
-    if not mitglied:
-        raise HTTPException(status_code=404, detail="Mitglied nicht gefunden")
+    if not member:
+        raise HTTPException(status_code=404, detail="Member nicht gefunden")
 
     # Alle aktiven Parzellen für Zuordnung
     parzellen_result = await db.execute(
-        select(Parzelle).order_by(Parzelle.gartennummer)
+        select(Parcel).order_by(Parcel.plot_number)
     )
     alle_parzellen = parzellen_result.scalars().all()
 
@@ -159,51 +159,51 @@ async def mitglied_detail(
         {
             "request": request,
             "benutzer": benutzer,
-            "mitglied": mitglied,
+            "member": member,
             "alle_parzellen": alle_parzellen,
         },
     )
 
 
-@router.get("/{mitglied_id}/bearbeiten", response_class=HTMLResponse)
+@router.get("/{member_id}/bearbeiten", response_class=HTMLResponse)
 async def mitglied_bearbeiten_seite(
-    mitglied_id: str,
+    member_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     benutzer = await require_user(request, db)
-    mitglied = await _get_mitglied_mit_details(db, mitglied_id)
+    member = await _get_member_mit_details(db, member_id)
 
-    if not mitglied:
-        raise HTTPException(status_code=404, detail="Mitglied nicht gefunden")
+    if not member:
+        raise HTTPException(status_code=404, detail="Member nicht gefunden")
 
     return templates.TemplateResponse(
         "members/formular.html",
-        {"request": request, "benutzer": benutzer, "mitglied": mitglied},
+        {"request": request, "benutzer": benutzer, "member": member},
     )
 
 
-@router.post("/{mitglied_id}/bearbeiten")
+@router.post("/{member_id}/bearbeiten")
 async def mitglied_aktualisieren(
-    mitglied_id: str,
+    member_id: str,
     request: Request,
-    vorname: str = Form(...),
-    nachname: str = Form(...),
-    strasse: str = Form(""),
-    plz: str = Form(""),
-    ort: str = Form(""),
-    geburtsdatum: str = Form(""),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    street: str = Form(""),
+    postal_code: str = Form(""),
+    city: str = Form(""),
+    date_of_birth: str = Form(""),
     iban: str = Form(""),
-    mitglied_seit: str = Form(""),
-    mitglied_bis: str = Form(""),
-    email_benachrichtigungen: bool = Form(False),
-    notizen: str = Form(""),
+    member_since: str = Form(""),
+    member_until: str = Form(""),
+    email_notifications: bool = Form(False),
+    notes: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
-    mitglied = await _get_mitglied_mit_details(db, mitglied_id)
+    member = await _get_member_mit_details(db, member_id)
 
-    if not mitglied:
+    if not member:
         raise HTTPException(status_code=404)
 
     def parse_datum(s: str) -> Optional[date]:
@@ -214,108 +214,108 @@ async def mitglied_aktualisieren(
                 pass
         return None
 
-    mitglied.vorname = vorname.strip()
-    mitglied.nachname = nachname.strip()
-    mitglied.strasse = strasse.strip() or None
-    mitglied.plz = plz.strip() or None
-    mitglied.ort = ort.strip() or None
-    mitglied.geburtsdatum = parse_datum(geburtsdatum)
-    mitglied.iban = iban.strip() or None
-    mitglied.mitglied_seit = parse_datum(mitglied_seit)
-    mitglied.mitglied_bis = parse_datum(mitglied_bis)
-    mitglied.email_benachrichtigungen = email_benachrichtigungen
-    mitglied.notizen = notizen.strip() or None
+    member.first_name = first_name.strip()
+    member.last_name = last_name.strip()
+    member.street = street.strip() or None
+    member.postal_code = postal_code.strip() or None
+    member.city = city.strip() or None
+    member.date_of_birth = parse_datum(date_of_birth)
+    member.iban = iban.strip() or None
+    member.member_since = parse_datum(member_since)
+    member.member_until = parse_datum(member_until)
+    member.email_notifications = email_notifications
+    member.notes = notes.strip() or None
 
     await db.commit()
-    return RedirectResponse(f"/mitglieder/{mitglied_id}", status_code=302)
+    return RedirectResponse(f"/members/{member_id}", status_code=302)
 
 
 # ---------------------------------------------------------------------------
 # Telefon / E-Mail-Verwaltung
 # ---------------------------------------------------------------------------
 
-@router.post("/{mitglied_id}/telefon/hinzufuegen")
+@router.post("/{member_id}/phone/add")
 async def telefon_hinzufuegen(
-    mitglied_id: str,
+    member_id: str,
     request: Request,
-    nummer: str = Form(...),
-    bezeichnung: str = Form(""),
-    ist_primaer: bool = Form(False),
+    number: str = Form(...),
+    label: str = Form(""),
+    is_primary: bool = Form(False),
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
-    telefon = MitgliedTelefon(
-        mitglied_id=mitglied_id,
-        nummer=nummer.strip(),
-        bezeichnung=bezeichnung.strip() or None,
-        ist_primaer=ist_primaer,
+    telefon = MemberPhone(
+        member_id=member_id,
+        number=number.strip(),
+        label=label.strip() or None,
+        is_primary=is_primary,
     )
     db.add(telefon)
     await db.commit()
-    return RedirectResponse(f"/mitglieder/{mitglied_id}", status_code=302)
+    return RedirectResponse(f"/members/{member_id}", status_code=302)
 
 
-@router.post("/{mitglied_id}/telefon/{telefon_id}/loeschen")
+@router.post("/{member_id}/phone/{phone_id}/delete")
 async def telefon_loeschen(
-    mitglied_id: str,
-    telefon_id: str,
+    member_id: str,
+    phone_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
     result = await db.execute(
-        select(MitgliedTelefon).where(
-            MitgliedTelefon.id == telefon_id,
-            MitgliedTelefon.mitglied_id == mitglied_id,
+        select(MemberPhone).where(
+            MemberPhone.id == phone_id,
+            MemberPhone.member_id == member_id,
         )
     )
     telefon = result.scalar_one_or_none()
     if telefon:
         await db.delete(telefon)
         await db.commit()
-    return RedirectResponse(f"/mitglieder/{mitglied_id}", status_code=302)
+    return RedirectResponse(f"/members/{member_id}", status_code=302)
 
 
-@router.post("/{mitglied_id}/email/hinzufuegen")
+@router.post("/{member_id}/email/add")
 async def email_hinzufuegen(
-    mitglied_id: str,
+    member_id: str,
     request: Request,
-    adresse: str = Form(...),
-    bezeichnung: str = Form(""),
-    ist_primaer: bool = Form(False),
+    address: str = Form(...),
+    label: str = Form(""),
+    is_primary: bool = Form(False),
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
-    email_obj = MitgliedEmail(
-        mitglied_id=mitglied_id,
-        adresse=adresse.strip().lower(),
-        bezeichnung=bezeichnung.strip() or None,
-        ist_primaer=ist_primaer,
+    email_obj = MemberEmail(
+        member_id=member_id,
+        address=address.strip().lower(),
+        label=label.strip() or None,
+        is_primary=is_primary,
     )
     db.add(email_obj)
     await db.commit()
-    return RedirectResponse(f"/mitglieder/{mitglied_id}", status_code=302)
+    return RedirectResponse(f"/members/{member_id}", status_code=302)
 
 
-@router.post("/{mitglied_id}/email/{email_id}/loeschen")
+@router.post("/{member_id}/email/{email_id}/delete")
 async def email_loeschen(
-    mitglied_id: str,
+    member_id: str,
     email_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
     result = await db.execute(
-        select(MitgliedEmail).where(
-            MitgliedEmail.id == email_id,
-            MitgliedEmail.mitglied_id == mitglied_id,
+        select(MemberEmail).where(
+            MemberEmail.id == email_id,
+            MemberEmail.member_id == member_id,
         )
     )
     email_obj = result.scalar_one_or_none()
     if email_obj:
         await db.delete(email_obj)
         await db.commit()
-    return RedirectResponse(f"/mitglieder/{mitglied_id}", status_code=302)
+    return RedirectResponse(f"/members/{member_id}", status_code=302)
 
 
 # ---------------------------------------------------------------------------
@@ -327,46 +327,46 @@ async def mitglieder_export_csv(request: Request, db: AsyncSession = Depends(get
     await require_user(request, db)
 
     result = await db.execute(
-        select(Mitglied)
+        select(Member)
         .options(
-            selectinload(Mitglied.email_adressen),
-            selectinload(Mitglied.telefonnummern),
-            selectinload(Mitglied.parzellen_zuordnungen).selectinload(MitgliedParzelle.parzelle),
+            selectinload(Member.email_addresses),
+            selectinload(Member.phone_numbers),
+            selectinload(Member.parcel_assignments).selectinload(MemberParcel.parcel),
         )
-        .where(aktives_mitglied_filter())
-        .order_by(Mitglied.nachname, Mitglied.vorname)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
     )
-    mitglieder = result.scalars().all()
+    members = result.scalars().all()
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
     writer.writerow([
         "Vorname", "Nachname", "Strasse", "PLZ", "Ort",
-        "Geburtsdatum", "IBAN", "Mitglied seit", "Mitglied bis",
+        "Geburtsdatum", "IBAN", "Member seit", "Member bis",
         "E-Mail-Benachrichtigungen", "E-Mail-Adressen", "Telefonnummern",
         "Parzellen", "Notizen"
     ])
 
-    for m in mitglieder:
-        emails = "; ".join(e.adresse for e in m.email_adressen)
-        telefone = "; ".join(t.nummer for t in m.telefonnummern)
-        parzellen = "; ".join(z.parzelle.gartennummer for z in m.parzellen_zuordnungen)
+    for m in members:
+        emails = "; ".join(e.address for e in m.email_addresses)
+        telefone = "; ".join(t.number for t in m.phone_numbers)
+        parcels = "; ".join(z.parcel.plot_number for z in m.parcel_assignments)
         writer.writerow([
-            m.vorname, m.nachname, m.strasse or "", m.plz or "", m.ort or "",
-            m.geburtsdatum.isoformat() if m.geburtsdatum else "",
+            m.first_name, m.last_name, m.street or "", m.postal_code or "", m.city or "",
+            m.date_of_birth.isoformat() if m.date_of_birth else "",
             m.iban or "",
-            m.mitglied_seit.isoformat() if m.mitglied_seit else "",
-            m.mitglied_bis.isoformat() if m.mitglied_bis else "",
-            "Ja" if m.email_benachrichtigungen else "Nein",
-            emails, telefone, parzellen,
-            m.notizen or "",
+            m.member_since.isoformat() if m.member_since else "",
+            m.member_until.isoformat() if m.member_until else "",
+            "Ja" if m.email_notifications else "Nein",
+            emails, telefone, parcels,
+            m.notes or "",
         ])
 
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=mitglieder.csv"},
+        headers={"Content-Disposition": "attachment; filename=members.csv"},
     )
 
 
@@ -417,52 +417,52 @@ async def mitglieder_import_csv(
         return None
 
     for zeilennr, zeile in enumerate(reader, start=2):
-        vorname = (zeile.get("Vorname") or "").strip()
-        nachname = (zeile.get("Nachname") or "").strip()
+        first_name = (zeile.get("Vorname") or "").strip()
+        last_name = (zeile.get("Nachname") or "").strip()
 
-        if not vorname or not nachname:
+        if not first_name or not last_name:
             fehler.append(f"Zeile {zeilennr}: Vor- oder Nachname fehlt – übersprungen.")
             continue
 
         # Duplikat-Erkennung: gleicher Vor- + Nachname + Geburtsdatum
-        geburtsdatum = parse_datum(zeile.get("Geburtsdatum") or "")
-        existing_query = select(Mitglied).where(
-            Mitglied.vorname == vorname,
-            Mitglied.nachname == nachname,
-            Mitglied.deleted_at.is_(None),
+        date_of_birth = parse_datum(zeile.get("Geburtsdatum") or "")
+        existing_query = select(Member).where(
+            Member.first_name == first_name,
+            Member.last_name == last_name,
+            Member.deleted_at.is_(None),
         )
-        if geburtsdatum:
-            existing_query = existing_query.where(Mitglied.geburtsdatum == geburtsdatum)
+        if date_of_birth:
+            existing_query = existing_query.where(Member.date_of_birth == date_of_birth)
 
         existing_result = await db.execute(existing_query)
         existing = existing_result.scalars().first()
 
         email_ben_str = (zeile.get("E-Mail-Benachrichtigungen") or "Ja").strip().lower()
-        email_benachrichtigungen = email_ben_str not in ("nein", "no", "false", "0")
+        email_notifications = email_ben_str not in ("nein", "no", "false", "0")
 
         felder = dict(
-            vorname=vorname,
-            nachname=nachname,
-            strasse=(zeile.get("Strasse") or "").strip() or None,
-            plz=(zeile.get("PLZ") or "").strip() or None,
-            ort=(zeile.get("Ort") or "").strip() or None,
-            geburtsdatum=geburtsdatum,
+            first_name=first_name,
+            last_name=last_name,
+            street=(zeile.get("Strasse") or "").strip() or None,
+            postal_code=(zeile.get("PLZ") or "").strip() or None,
+            city=(zeile.get("Ort") or "").strip() or None,
+            date_of_birth=date_of_birth,
             iban=(zeile.get("IBAN") or "").strip() or None,
-            mitglied_seit=parse_datum(zeile.get("Mitglied seit") or ""),
-            mitglied_bis=parse_datum(zeile.get("Mitglied bis") or ""),
-            email_benachrichtigungen=email_benachrichtigungen,
-            notizen=(zeile.get("Notizen") or "").strip() or None,
+            member_since=parse_datum(zeile.get("Member seit") or ""),
+            member_until=parse_datum(zeile.get("Member bis") or ""),
+            email_notifications=email_notifications,
+            notes=(zeile.get("Notizen") or "").strip() or None,
         )
 
         if existing:
-            # Vorhandenes Mitglied aktualisieren
+            # Vorhandenes Member aktualisieren
             for k, v in felder.items():
                 setattr(existing, k, v)
-            mitglied = existing
+            member = existing
             aktualisiert += 1
         else:
-            mitglied = Mitglied(**felder)
-            db.add(mitglied)
+            member = Member(**felder)
+            db.add(member)
             await db.flush()  # ID generieren für Untereinträge
             erstellt += 1
 
@@ -472,10 +472,10 @@ async def mitglieder_import_csv(
             for i, adresse in enumerate(emails_str.split(";")):
                 adresse = adresse.strip().lower()
                 if adresse:
-                    db.add(MitgliedEmail(
-                        mitglied_id=mitglied.id,
-                        adresse=adresse,
-                        ist_primaer=(i == 0),
+                    db.add(MemberEmail(
+                        member_id=member.id,
+                        address=adresse,
+                        is_primary=(i == 0),
                     ))
 
         # Telefonnummern (Semikolon-getrennt in einer Zelle)
@@ -484,10 +484,10 @@ async def mitglieder_import_csv(
             for i, nummer in enumerate(telefone_str.split(";")):
                 nummer = nummer.strip()
                 if nummer:
-                    db.add(MitgliedTelefon(
-                        mitglied_id=mitglied.id,
-                        nummer=nummer,
-                        ist_primaer=(i == 0),
+                    db.add(MemberPhone(
+                        member_id=member.id,
+                        number=nummer,
+                        is_primary=(i == 0),
                     ))
 
     await db.commit()
@@ -502,6 +502,6 @@ async def mitglieder_import_csv(
 
     import urllib.parse
     return RedirectResponse(
-        f"/mitglieder/?meldung={urllib.parse.quote(meldung)}",
+        f"/members/?meldung={urllib.parse.quote(meldung)}",
         status_code=302,
     )

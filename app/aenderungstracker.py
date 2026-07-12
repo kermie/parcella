@@ -2,8 +2,8 @@
 Hilfsfunktionen zur Protokollierung von Feldänderungen (Audit-Log).
 
 Verwendung:
-    tracker = AenderungsTracker(parzelle, "Parzelle")
-    parzelle.flaeche_qm = neuer_wert
+    tracker = AenderungsTracker(parcel, "Parcel")
+    parcel.area_sqm = neuer_wert
     await tracker.commit(db, benutzer_id)  # schreibt alle erkannten Änderungen
 """
 from typing import Any, Optional
