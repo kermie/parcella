@@ -33,7 +33,7 @@ MODULE_DEFAULTS: Dict[str, bool] = {
     "electricity": True,
     "insurance": True,
     "tickets": True,
-    "einkaufswuensche": True,
+    "purchase_requests": True,
 }
 
 

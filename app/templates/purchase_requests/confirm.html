@@ -17,25 +17,25 @@
                 </p>
                 <dl class="row mb-3">
                     <dt class="col-sm-4 text-muted">Titel</dt>
-                    <dd class="col-sm-8 fw-semibold">{{ ew.titel }}</dd>
+                    <dd class="col-sm-8 fw-semibold">{{ pr.title }}</dd>
                     <dt class="col-sm-4 text-muted">Begründung</dt>
-                    <dd class="col-sm-8" style="white-space: pre-wrap;">{{ ew.begruendung }}</dd>
-                    {% if ew.link %}
+                    <dd class="col-sm-8" style="white-space: pre-wrap;">{{ pr.justification }}</dd>
+                    {% if pr.link %}
                     <dt class="col-sm-4 text-muted">Link</dt>
-                    <dd class="col-sm-8"><a href="{{ ew.link }}" target="_blank" rel="noopener">{{ ew.link }}</a></dd>
+                    <dd class="col-sm-8"><a href="{{ pr.link }}" target="_blank" rel="noopener">{{ pr.link }}</a></dd>
                     {% endif %}
-                    {% if ew.geschaetzte_kosten_eur %}
+                    {% if pr.estimated_cost_eur %}
                     <dt class="col-sm-4 text-muted">Geschätzte Kosten</dt>
-                    <dd class="col-sm-8">{{ "%.2f"|format(ew.geschaetzte_kosten_eur|float) }} €</dd>
+                    <dd class="col-sm-8">{{ "%.2f"|format(pr.estimated_cost_eur|float) }} €</dd>
                     {% endif %}
                 </dl>
 
-                {% if ew.vom_anfragenden_bestaetigt %}
+                {% if pr.confirmed_by_requester %}
                 <div class="alert alert-success mb-0">
                     <i class="bi bi-check-circle-fill me-1"></i>Sie haben diese Angaben bereits bestätigt.
                 </div>
                 {% else %}
-                <form method="post" action="/einkaufswuensche/bestaetigen/{{ token }}">
+                <form method="post" action="/purchase-requests/confirm/{{ token }}">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-check-lg me-1"></i>Angaben bestätigen
                     </button>

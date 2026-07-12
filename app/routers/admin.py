@@ -180,7 +180,7 @@ MODULE_FELDER = [
     ("modul_tickets", "Ticketsystem",
      "Support-Tickets mit Zuweisung, Status und Member-Zuordnung. "
      "Deaktivieren, falls der Verein kein internes Ticketsystem nutzt."),
-    ("modul_einkaufswuensche", "Einkaufswünsche",
+    ("modul_purchase_requests", "Einkaufswünsche",
      "Vier-Augen-Prinzip für Vereinsausgaben: Anträge stellen, von zwei "
      "Vorstandsmitgliedern freigeben oder ablehnen lassen."),
 ]

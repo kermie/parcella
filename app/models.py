@@ -960,101 +960,101 @@ class TicketMessage(Base):
 # Einkaufswünsche (Vier-Augen-Prinzip für Vereinsausgaben)
 # ---------------------------------------------------------------------------
 
-class EinkaufswunschStatus(str, enum.Enum):
-    OFFEN = "OFFEN"
-    GENEHMIGT = "GENEHMIGT"
-    ABGELEHNT = "ABGELEHNT"
+class PurchaseRequestStatus(str, enum.Enum):
+    OPEN = "OPEN"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 
-class Einkaufswunsch(Base):
+class PurchaseRequest(Base):
     """
     Ein Antrag auf eine Vereinsausgabe. Muss von zwei unterschiedlichen
     Vorstandsmitgliedern freigegeben werden, bevor eingekauft werden darf –
     der Antragsteller selbst zählt dabei nicht als Freigeber (Vier-Augen-Prinzip).
     """
-    __tablename__ = "einkaufswuensche"
+    __tablename__ = "purchase_requests"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    titel: Mapped[str] = mapped_column(String(255), nullable=False)
-    begruendung: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    justification: Mapped[str] = mapped_column(Text, nullable=False)
     link: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    geschaetzte_kosten_eur: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    estimated_cost_eur: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
 
-    status: Mapped[EinkaufswunschStatus] = mapped_column(
-        SAEnum(EinkaufswunschStatus), default=EinkaufswunschStatus.OFFEN, nullable=False, index=True
+    status: Mapped[PurchaseRequestStatus] = mapped_column(
+        SAEnum(PurchaseRequestStatus), default=PurchaseRequestStatus.OPEN, nullable=False, index=True
     )
 
-    # Antragsteller: entweder ein Systembenutzer (angefragt_von_id) ODER eine
-    # externe Person ohne Login (anfragender_name/-email), z.B. wenn der
+    # Antragsteller: entweder ein Systembenutzer (requested_by_id) ODER eine
+    # externe Person ohne Login (requester_name/-email), z.B. wenn der
     # Vorstand stellvertretend für jemanden einen Antrag anlegt.
-    angefragt_von_id: Mapped[Optional[str]] = mapped_column(
+    requested_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
     )
-    anfragender_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    anfragender_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    requester_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    requester_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    erstellt_von_id: Mapped[Optional[str]] = mapped_column(
+    created_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
     )
 
     # Deep-Link-Bestätigung durch den (externen) Antragsteller
-    bestaetigungs_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
-    vom_anfragenden_bestaetigt: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    vom_anfragenden_bestaetigt_am: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    confirmation_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
+    confirmed_by_requester: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    confirmed_by_requester_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    ablehnungsgrund: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    abgelehnt_von_id: Mapped[Optional[str]] = mapped_column(
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    rejected_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="SET NULL"), nullable=True
     )
-    abgelehnt_am: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    genehmigt_am: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejected_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    erstellt_am: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    aktualisiert_am: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    angefragt_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer", foreign_keys=[angefragt_von_id])
-    erstellt_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer", foreign_keys=[erstellt_von_id])
-    abgelehnt_von: Mapped[Optional["Benutzer"]] = relationship("Benutzer", foreign_keys=[abgelehnt_von_id])
-    freigaben: Mapped[List["EinkaufswunschFreigabe"]] = relationship(
-        "EinkaufswunschFreigabe", back_populates="einkaufswunsch", cascade="all, delete-orphan"
+    requested_by: Mapped[Optional["Benutzer"]] = relationship("Benutzer", foreign_keys=[requested_by_id])
+    created_by: Mapped[Optional["Benutzer"]] = relationship("Benutzer", foreign_keys=[created_by_id])
+    rejected_by: Mapped[Optional["Benutzer"]] = relationship("Benutzer", foreign_keys=[rejected_by_id])
+    approvals: Mapped[List["PurchaseRequestApproval"]] = relationship(
+        "PurchaseRequestApproval", back_populates="purchase_request", cascade="all, delete-orphan"
     )
 
     @property
-    def anzeigename_anfragender(self) -> str:
-        if self.angefragt_von:
-            return self.angefragt_von.name
-        return self.anfragender_name or self.anfragender_email or "Unbekannt"
+    def requester_display_name(self) -> str:
+        if self.requested_by:
+            return self.requested_by.name
+        return self.requester_name or self.requester_email or "Unbekannt"
 
     @property
-    def anzahl_freigaben(self) -> int:
-        return len(self.freigaben)
+    def approval_count(self) -> int:
+        return len(self.approvals)
 
     def __repr__(self) -> str:
-        return f"<Einkaufswunsch {self.titel!r} ({self.status.value})>"
+        return f"<PurchaseRequest {self.title!r} ({self.status.value})>"
 
 
-class EinkaufswunschFreigabe(Base):
-    """Eine einzelne Freigabe eines Vorstandsmitglieds für einen Einkaufswunsch."""
-    __tablename__ = "einkaufswunsch_freigaben"
+class PurchaseRequestApproval(Base):
+    """Eine einzelne Freigabe eines Vorstandsmitglieds für einen PurchaseRequest."""
+    __tablename__ = "purchase_request_approvals"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    einkaufswunsch_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("einkaufswuensche.id", ondelete="CASCADE"), nullable=False, index=True
+    purchase_request_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("purchase_requests.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    benutzer_id: Mapped[str] = mapped_column(
+    user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("benutzer.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    freigegeben_am: Mapped[datetime] = mapped_column(
+    approved_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    einkaufswunsch: Mapped["Einkaufswunsch"] = relationship("Einkaufswunsch", back_populates="freigaben")
-    benutzer: Mapped["Benutzer"] = relationship("Benutzer")
+    purchase_request: Mapped["PurchaseRequest"] = relationship("PurchaseRequest", back_populates="approvals")
+    user: Mapped["Benutzer"] = relationship("Benutzer")
 
     __table_args__ = (
-        UniqueConstraint("einkaufswunsch_id", "benutzer_id", name="uq_einkaufswunsch_freigabe"),
+        UniqueConstraint("purchase_request_id", "user_id", name="uq_purchase_request_approval"),
     )

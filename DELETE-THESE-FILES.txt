@@ -1,23 +1,28 @@
 Nach dem Entpacken dieses ZIP-Archivs in dein Projektverzeichnis (Dateien
-überschreiben) bitte diese beiden alten, jetzt umbenannten Template-Dateien
+überschreiben) bitte diese alten, jetzt umbenannten/ersetzten Dateien
 manuell löschen (git kennt sie noch unter dem alten Namen, das ZIP enthält
 nur die neuen Dateien):
 
-  app/templates/tickets/uebersicht.html   (ersetzt durch overview.html)
-  app/templates/tickets/formular.html     (ersetzt durch form.html)
+  app/routers/einkaufswuensche.py       (ersetzt durch purchase_requests.py)
+  app/routers/api_einkaufswuensche.py   (ersetzt durch api_purchase_requests.py)
+  app/templates/einkaufswuensche/       (ganzer Ordner – ersetzt durch app/templates/purchase_requests/)
+  tests/test_einkaufswuensche.py        (ersetzt durch test_purchase_requests.py)
 
 Danach:
 
   git add -A
-  git commit -m "refactor: rename ticket module to English (Ticketsystem -> Tickets)"
+  git commit -m "refactor: rename purchase-requests module to English (Einkaufswuensche -> PurchaseRequest)"
   git push
-
-Der Commit wurde im Sandbox-Repo bereits mit passender Commit-Message und
-korrekter Git-Identität (Marco Steinhaeuser) vorbereitet; du kannst die
-Commit-Message oben 1:1 übernehmen oder git commit --amend nutzen, falls du
-stattdessen den vorbereiteten Commit direkt einspielen möchtest (dann bräuchtest
-du aber den vollständigen Patch statt des ZIPs – sag Bescheid, falls dir das
-lieber ist).
 
 Migration nicht vergessen, sobald der Server läuft:
   docker compose exec web alembic upgrade head
+
+Hinweis: Das Modul-Flag hat sich von "einkaufswuensche" auf
+"purchase_requests" geändert. Falls in eurer Vereinseinstellungen-Tabelle
+explizit "modul_einkaufswuensche" auf false gesetzt war, greift nach dem
+Deploy wieder der Default (true/aktiviert), weil der Code jetzt nach
+"modul_purchase_requests" sucht. Das war bei den vorherigen Modul-Umbenennungen
+(Versicherungen -> Insurance, etc.) genauso und wurde bisher nicht per
+Migration nachgezogen – falls euch das wichtig ist, sag Bescheid, dann
+ergänze ich das nachträglich für alle betroffenen Module in einer
+gemeinsamen Migration.

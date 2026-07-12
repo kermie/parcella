@@ -5,13 +5,13 @@ unterschiedlichen Vorstandsmitgliedern freigegeben werden, bevor
 eingekauft werden darf. Entstanden, weil zuvor Mitglieder frei einkauften
 und im Nachhinein abrechneten – "komplett gegen alle Regeln".
 
-Modul-Flag: `einkaufswuensche`
+Modul-Flag: `purchase_requests`
 
 ## Datenmodell
 
 ```
-einkaufswuensche          – Der Antrag: Titel, Begründung, Link, Kosten, Status
-einkaufswunsch_freigaben  – Einzelne Freigaben (wer, wann) – braucht 2 pro Antrag
+purchase_requests          – Der Antrag: Titel, Begründung, Link, Kosten, Status
+purchase_request_approvals – Einzelne Freigaben (wer, wann) – braucht 2 pro Antrag
 ```
 
 ## Wichtige Entscheidungen
@@ -23,8 +23,8 @@ VORSTAND einschließt). Das spiegelt die reale Praxis: viele stellen
 Anträge, aber eine klar abgegrenzte Gruppe entscheidet.
 
 **Selbstfreigabe ausgeschlossen.** Weder der Antragsteller
-(`angefragt_von_id`) noch die Person, die den Antrag ins System eingetragen
-hat (`erstellt_von_id`, relevant bei stellvertretender Anlage), darf eine
+(`requested_by_id`) noch die Person, die den Antrag ins System eingetragen
+hat (`created_by_id`, relevant bei stellvertretender Anlage), darf eine
 der beiden nötigen Freigaben selbst geben. Ohne diese Sperre wäre das
 Vier-Augen-Prinzip wirkungslos – wer den Antrag stellt, könnte sich sonst
 selbst mitgenehmigen.
@@ -51,15 +51,15 @@ Hat der Antragsteller einen eigenen App-Zugang und legt den Wunsch selbst
 an, entfällt der Bestätigungsschritt komplett – er hat die Angaben ja
 bereits selbst im System eingegeben.
 
-**Kostenfeld optional, aber vorgesehen.** `geschaetzte_kosten_eur` ist kein
+**Kostenfeld optional, aber vorgesehen.** `estimated_cost_eur` ist kein
 Pflichtfeld (manche Anschaffungen haben noch keinen bekannten Preis), aber
 naheliegend bei einem Ausgaben-Freigabeprozess – daher von Anfang an im
 Datenmodell statt später nachzurüsten.
 
 ## REST-API
 
-Vollständig von Anfang an (`/api/v1/einkaufswuensche`), analog zu den
-anderen Modulen. Bemerkenswert: `freigeben` und `ablehnen` nutzen
+Vollständig von Anfang an (`/api/v1/purchase-requests`), analog zu den
+anderen Modulen. Bemerkenswert: `approve` und `reject` nutzen
 `require_api_rolle(BenutzerRolle.ADMIN, BenutzerRolle.VORSTAND)` statt des
 generischen `require_schreibzugriff` (der auch Kassierer einschließt) –
 die Freigabeberechtigung ist hier bewusst enger gefasst als üblicher

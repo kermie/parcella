@@ -581,45 +581,45 @@ class TicketDetailOut(TicketOut):
 # Einkaufswünsche
 # ---------------------------------------------------------------------------
 
-class EinkaufswunschCreate(BaseModel):
-    titel: str
-    begruendung: str
+class PurchaseRequestCreate(BaseModel):
+    title: str
+    justification: str
     link: Optional[str] = None
-    geschaetzte_kosten_eur: Optional[Decimal] = None
-    anfragender_name: Optional[str] = Field(None, description="Nur wenn für eine externe Person angelegt")
-    anfragender_email: Optional[EmailStr] = Field(None, description="Nur wenn für eine externe Person angelegt")
+    estimated_cost_eur: Optional[Decimal] = None
+    requester_name: Optional[str] = Field(None, description="Nur wenn für eine externe Person angelegt")
+    requester_email: Optional[EmailStr] = Field(None, description="Nur wenn für eine externe Person angelegt")
 
 
-class EinkaufswunschAblehnenRequest(BaseModel):
-    ablehnungsgrund: str
+class PurchaseRequestRejectRequest(BaseModel):
+    rejection_reason: str
 
 
-class EinkaufswunschFreigabeOut(BaseModel):
+class PurchaseRequestApprovalOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    benutzer_id: str
-    freigegeben_am: datetime
+    user_id: str
+    approved_at: datetime
 
 
-class EinkaufswunschOut(BaseModel):
+class PurchaseRequestOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    titel: str
-    begruendung: str
+    title: str
+    justification: str
     link: Optional[str] = None
-    geschaetzte_kosten_eur: Optional[Decimal] = None
+    estimated_cost_eur: Optional[Decimal] = None
     status: str
-    angefragt_von_id: Optional[str] = None
-    anfragender_name: Optional[str] = None
-    anfragender_email: Optional[str] = None
-    erstellt_von_id: Optional[str] = None
-    vom_anfragenden_bestaetigt: bool
-    ablehnungsgrund: Optional[str] = None
-    abgelehnt_von_id: Optional[str] = None
-    abgelehnt_am: Optional[datetime] = None
-    genehmigt_am: Optional[datetime] = None
-    erstellt_am: datetime
+    requested_by_id: Optional[str] = None
+    requester_name: Optional[str] = None
+    requester_email: Optional[str] = None
+    created_by_id: Optional[str] = None
+    confirmed_by_requester: bool
+    rejection_reason: Optional[str] = None
+    rejected_by_id: Optional[str] = None
+    rejected_at: Optional[datetime] = None
+    approved_at: Optional[datetime] = None
+    created_at: datetime
 
 
-class EinkaufswunschDetailOut(EinkaufswunschOut):
-    freigaben: List[EinkaufswunschFreigabeOut] = []
+class PurchaseRequestDetailOut(PurchaseRequestOut):
+    approvals: List[PurchaseRequestApprovalOut] = []
