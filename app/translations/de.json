@@ -10,7 +10,14 @@
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
     "user_not_found": "Benutzer nicht gefunden",
-    "deferred_date_required": "Datum für Zurückstellung erforderlich"
+    "deferred_date_required": "Datum für Zurückstellung erforderlich",
+    "invalid_credentials": "E-Mail oder Passwort falsch.",
+    "account_deactivated": "Ihr Konto ist deaktiviert.",
+    "passwords_do_not_match": "Passwörter stimmen nicht überein.",
+    "password_too_short": "Passwort muss mindestens 8 Zeichen haben.",
+    "email_already_registered": "E-Mail bereits registriert",
+    "invitation_sent": "Einladung gesendet",
+    "own_account_cannot_deactivate": "Eigenes Konto nicht deaktivierbar"
   },
   "tickets": {
     "overview": {
@@ -75,6 +82,120 @@
       "member_no_assignment_option": "– keine Zuordnung –",
       "member_save_button": "Zuordnung speichern",
       "member_multiple_candidates_help": "Mehrere Mitglieder nutzen diese E-Mail-Adresse – bitte manuell auswählen."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Anmelden – Gartenverein",
+      "app_title": "Gartenverein Verwaltung",
+      "subtitle": "Bitte melden Sie sich an",
+      "label_email": "E-Mail",
+      "label_password": "Passwort",
+      "button_submit": "Anmelden",
+      "no_account_notice": "Kein Konto? Eine Einladung ist erforderlich."
+    },
+    "invitation": {
+      "title": "Einladung annehmen",
+      "heading": "Konto einrichten",
+      "subtitle": "Einladung für {email}",
+      "label_name": "Name",
+      "name_placeholder": "Vor- und Nachname",
+      "label_password": "Passwort",
+      "password_placeholder": "Mindestens 8 Zeichen",
+      "label_password_confirm": "Passwort wiederholen",
+      "button_submit": "Konto anlegen"
+    },
+    "invitation_expired": {
+      "title": "Einladung abgelaufen",
+      "heading": "Einladung abgelaufen",
+      "message": "Dieser Einladungslink ist nicht mehr gültig oder wurde bereits verwendet.",
+      "contact_admin": "Bitte wenden Sie sich an einen Administrator.",
+      "back_to_login": "Zur Anmeldung"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "page_title": "Administration",
+      "heading": "Benutzerverwaltung",
+      "dev_mode_label": "Entwicklungsmodus:",
+      "invite_header": "Benutzer einladen",
+      "label_email": "E-Mail-Adresse",
+      "label_role": "Rolle",
+      "role_readonly": "Lesend (nur anschauen)",
+      "role_treasurer": "Kassierer",
+      "role_board": "Vorstand",
+      "role_admin": "Administrator",
+      "button_send_invite": "Einladung senden",
+      "pending_invitations_header": "Ausstehende Einladungen",
+      "valid_until": "Gültig bis {date}",
+      "status_pending": "ausstehend",
+      "users_header": "Registrierte Benutzer",
+      "col_name": "Name",
+      "col_email": "E-Mail",
+      "col_role": "Rolle",
+      "col_status": "Status",
+      "status_active": "aktiv",
+      "status_inactive": "inaktiv",
+      "button_deactivate": "Deaktivieren",
+      "button_activate": "Aktivieren",
+      "self_label": "Ich"
+    },
+    "settings": {
+      "page_title": "Einstellungen",
+      "heading": "Vereinseinstellungen",
+      "saved_message": "Einstellungen gespeichert.",
+      "language_header": "Sprache",
+      "language_help": "Gilt für die gesamte Installation (alle Benutzer sehen dieselbe Sprache). Fehlt eine Übersetzung für ein bestimmtes Modul, wird automatisch die deutsche Zeichenkette angezeigt.",
+      "module_header": "Funktionsbereiche",
+      "module_help": "Nicht jeder Verein nutzt jeden Funktionsbereich. Deaktivierte Module verschwinden aus der Navigation – die Daten bleiben dabei erhalten und tauchen nach erneutem Aktivieren wieder auf.",
+      "club_data_header": "Vereinsdaten",
+      "areas_header": "Flächen (qm)",
+      "email_header": "E-Mail (SMTP + IMAP)",
+      "email_help": "Ein einziges Postfach für alles: System-E-Mails (Einladungen) werden per SMTP versendet, das Ticketsystem nutzt dasselbe Postfach zum Senden von Antworten und ruft es zusätzlich per IMAP ab, um eingehende Anfragen als Tickets zu erfassen.",
+      "spam_header": "Spam-Filter (Ticketsystem)",
+      "spam_help": "Eingebaute Heuristiken (Domain-/Schlüsselwort-Sperrliste, Link-Anzahl) laufen sofort ohne externen Dienst. Eine externe Prüf-API ist optional und wird nur genutzt, wenn eine URL hinterlegt ist – ein Ausfall der externen API blockiert nie die Ticketerstellung.",
+      "password_set_placeholder": "•••••••• (gesetzt – neu eingeben zum Ändern)",
+      "password_unset_placeholder": "Noch nicht gesetzt",
+      "save_button": "Einstellungen speichern",
+      "fields": {
+        "club_name": "Name des Vereins",
+        "street": "Straße",
+        "postal_code": "PLZ",
+        "city": "Ort",
+        "club_number": "Vereinsnummer",
+        "register_court": "Registergericht",
+        "total_area": "Gesamtfläche (qm)",
+        "area_a": "A-Fläche (Stadt, qm)",
+        "area_b": "B-Fläche (Gemeinschaft, qm)",
+        "area_c": "C-Fläche (Parzellen, qm)",
+        "smtp_host": "SMTP-Server",
+        "smtp_port": "SMTP-Port",
+        "smtp_user": "SMTP-Benutzer",
+        "smtp_password": "SMTP-Passwort",
+        "sender_email": "Absender-E-Mail",
+        "imap_host": "IMAP-Server (für Ticket-Postfach)",
+        "imap_port": "IMAP-Port",
+        "imap_ssl": "IMAP SSL (true/false)",
+        "spam_domain_blocklist": "Spam: gesperrte Absender-Domains (kommagetrennt)",
+        "spam_keyword_blocklist": "Spam: gesperrte Schlüsselwörter (kommagetrennt)",
+        "spam_threshold": "Spam: Schwellenwert (0.0–1.0, Standard 0.5)",
+        "spam_api_url": "Spam: externe Prüf-API-URL (optional)",
+        "spam_api_key": "Spam: externer API-Key (optional)"
+      },
+      "modules": {
+        "work_hours_name": "Pflichtstunden-Verwaltung",
+        "work_hours_desc": "Arbeitseinsätze, Patenschaften, Vereinsrollen und Jahresauswertung. Deaktivieren, falls der Verein keine Pflichtstunden erhebt.",
+        "water_name": "Wasserverwaltung",
+        "water_desc": "Wasserzähler, Zählerstände und Verbrauchsauswertung. Deaktivieren, falls der Verein keine eigene Wasserversorgung verwaltet.",
+        "electricity_name": "Stromverwaltung",
+        "electricity_desc": "Stromzähler, Zählerstände und Verbrauchsauswertung. Deaktivieren, falls der Verein keine eigene Stromversorgung verwaltet.",
+        "insurance_name": "Versicherungsverwaltung",
+        "insurance_desc": "Sach- und Unfallversicherung pro Parcel inkl. Jahresauswertung. Deaktivieren, falls der Verein keine Versicherungen über das Programm abwickelt.",
+        "tickets_name": "Ticketsystem",
+        "tickets_desc": "Support-Tickets mit Zuweisung, Status und Member-Zuordnung. Deaktivieren, falls der Verein kein internes Ticketsystem nutzt.",
+        "purchase_requests_name": "Einkaufswünsche",
+        "purchase_requests_desc": "Vier-Augen-Prinzip für Vereinsausgaben: Anträge stellen, von zwei Vorstandsmitgliedern freigeben oder ablehnen lassen."
+      }
     }
   }
 }

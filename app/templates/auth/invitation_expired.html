@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Einladung abgelaufen{% endblock %}
+{% block title %}{{ t('auth.invitation_expired.title') }}{% endblock %}
 {% block content %}
 <div class="min-vh-100 d-flex align-items-center justify-content-center">
     <div class="text-center">
         <div style="font-size: 3rem; color: #9ca3af;"><i class="bi bi-clock-history"></i></div>
-        <h2 class="mt-2">Einladung abgelaufen</h2>
-        <p class="text-muted">Dieser Einladungslink ist nicht mehr gültig oder wurde bereits verwendet.<br>
-        Bitte wenden Sie sich an einen Administrator.</p>
-        <a href="/auth/login" class="btn btn-outline-primary mt-2">Zur Anmeldung</a>
+        <h2 class="mt-2">{{ t('auth.invitation_expired.heading') }}</h2>
+        <p class="text-muted">{{ t('auth.invitation_expired.message') }}<br>
+        {{ t('auth.invitation_expired.contact_admin') }}</p>
+        <a href="/auth/login" class="btn btn-outline-primary mt-2">{{ t('auth.invitation_expired.back_to_login') }}</a>
     </div>
 </div>
 {% endblock %}

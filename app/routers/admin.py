@@ -2,6 +2,7 @@
 Admin-Router: Benutzerverwaltung, Einladungen, Vereinseinstellungen.
 """
 from datetime import datetime, timedelta, timezone
+import urllib.parse
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -13,7 +14,7 @@ from app.models import User, Invitation, InvitationStatus, UserRole, ClubSetting
 from app.auth import require_admin, create_invitation_token, hash_password
 from app.email_service import sende_email
 from app.crypto_utils import verschluesseln
-from app.i18n import AVAILABLE_LANGUAGES
+from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -62,7 +63,24 @@ async def user_invite(
     # Bereits registriert?
     existing = await db.execute(select(User).where(User.email == email))
     if existing.scalar_one_or_none():
-        return RedirectResponse("/admin/?fehler=E-Mail+bereits+registriert", status_code=302)
+        return RedirectResponse(
+            f"/admin/?fehler={urllib.parse.quote(t_for(request, 'errors.email_already_registered'))}",
+            status_code=302,
+        )
+
+    # Bereits eine ausstehende Einladung für diese Adresse? Dann die alte
+    # ungültig machen, statt eine zweite parallel bestehen zu lassen (sonst
+    # kollidiert der neue Token in seltenen Fällen mit dem alten, wenn beide
+    # innerhalb derselben Sekunde erzeugt werden, und der Insert schlägt mit
+    # einem harten Datenbankfehler fehl statt einer verständlichen Meldung).
+    pending = await db.execute(
+        select(Invitation).where(
+            Invitation.email == email,
+            Invitation.status == InvitationStatus.PENDING,
+        )
+    )
+    for old_invitation in pending.scalars().all():
+        old_invitation.status = InvitationStatus.EXPIRED
 
     if role not in [r.value for r in UserRole]:
         role = "readonly"
@@ -109,7 +127,10 @@ async def user_invite(
             f"/admin/?info=Einladungslink+%28Dev%29%3A+{einladungslink}", status_code=302
         )
 
-    return RedirectResponse("/admin/?erfolg=Einladung+gesendet", status_code=302)
+    return RedirectResponse(
+        f"/admin/?erfolg={urllib.parse.quote(t_for(request, 'errors.invitation_sent'))}",
+        status_code=302,
+    )
 
 
 @router.post("/users/{user_id}/deactivate")
@@ -121,7 +142,10 @@ async def user_deactivate(
     admin = await require_admin(request, db)
 
     if user_id == admin.id:
-        return RedirectResponse("/admin/?fehler=Eigenes+Konto+nicht+deaktivierbar", status_code=302)
+        return RedirectResponse(
+            f"/admin/?fehler={urllib.parse.quote(t_for(request, 'errors.own_account_cannot_deactivate'))}",
+            status_code=302,
+        )
 
     result = await db.execute(select(User).where(User.id == user_id))
     target = result.scalar_one_or_none()
@@ -137,52 +161,41 @@ async def user_deactivate(
 # ---------------------------------------------------------------------------
 
 SETTINGS_FIELDS = [
-    ("verein_name", "Name des Vereins"),
-    ("verein_strasse", "Straße"),
-    ("verein_plz", "PLZ"),
-    ("verein_ort", "Ort"),
-    ("vereinsnummer", "Vereinsnummer"),
-    ("registergericht", "Registergericht"),
-    ("flaeche_gesamt_qm", "Gesamtfläche (qm)"),
-    ("flaeche_a_qm", "A-Fläche (Stadt, qm)"),
-    ("flaeche_b_qm", "B-Fläche (Gemeinschaft, qm)"),
-    ("flaeche_c_qm", "C-Fläche (Parzellen, qm)"),
-    ("smtp_host", "SMTP-Server"),
-    ("smtp_port", "SMTP-Port"),
-    ("smtp_user", "SMTP-Benutzer"),
-    ("smtp_password", "SMTP-Passwort"),
-    ("smtp_from", "Absender-E-Mail"),
-    ("imap_host", "IMAP-Server (für Ticket-Postfach)"),
-    ("imap_port", "IMAP-Port"),
-    ("imap_ssl", "IMAP SSL (true/false)"),
-    ("spam_domain_blocklist", "Spam: gesperrte Absender-Domains (kommagetrennt)"),
-    ("spam_keyword_blocklist", "Spam: gesperrte Schlüsselwörter (kommagetrennt)"),
-    ("spam_schwellenwert", "Spam: Schwellenwert (0.0–1.0, Standard 0.5)"),
-    ("spam_api_url", "Spam: externe Prüf-API-URL (optional)"),
-    ("spam_api_key", "Spam: externer API-Key (optional)"),
+    ("verein_name", "admin.settings.fields.club_name"),
+    ("verein_strasse", "admin.settings.fields.street"),
+    ("verein_plz", "admin.settings.fields.postal_code"),
+    ("verein_ort", "admin.settings.fields.city"),
+    ("vereinsnummer", "admin.settings.fields.club_number"),
+    ("registergericht", "admin.settings.fields.register_court"),
+    ("flaeche_gesamt_qm", "admin.settings.fields.total_area"),
+    ("flaeche_a_qm", "admin.settings.fields.area_a"),
+    ("flaeche_b_qm", "admin.settings.fields.area_b"),
+    ("flaeche_c_qm", "admin.settings.fields.area_c"),
+    ("smtp_host", "admin.settings.fields.smtp_host"),
+    ("smtp_port", "admin.settings.fields.smtp_port"),
+    ("smtp_user", "admin.settings.fields.smtp_user"),
+    ("smtp_password", "admin.settings.fields.smtp_password"),
+    ("smtp_from", "admin.settings.fields.sender_email"),
+    ("imap_host", "admin.settings.fields.imap_host"),
+    ("imap_port", "admin.settings.fields.imap_port"),
+    ("imap_ssl", "admin.settings.fields.imap_ssl"),
+    ("spam_domain_blocklist", "admin.settings.fields.spam_domain_blocklist"),
+    ("spam_keyword_blocklist", "admin.settings.fields.spam_keyword_blocklist"),
+    ("spam_schwellenwert", "admin.settings.fields.spam_threshold"),
+    ("spam_api_url", "admin.settings.fields.spam_api_url"),
+    ("spam_api_key", "admin.settings.fields.spam_api_key"),
 ]
 
 # Optionale Funktionsbereiche, die sich pro Verein ein-/ausschalten lassen.
 # Schlüssel folgen der Konvention "modul_<n>" (siehe app/module_flags.py).
+# Name/Beschreibung werden über Übersetzungsschlüssel aufgelöst (siehe unten).
 MODULE_FELDER = [
-    ("modul_work_hours", "Pflichtstunden-Verwaltung",
-     "Arbeitseinsätze, Patenschaften, Vereinsrollen und Jahresauswertung. "
-     "Deaktivieren, falls der Verein keine Pflichtstunden erhebt."),
-    ("modul_water", "Wasserverwaltung",
-     "Wasserzähler, Zählerstände und Verbrauchsauswertung. "
-     "Deaktivieren, falls der Verein keine eigene Wasserversorgung verwaltet."),
-    ("modul_electricity", "Stromverwaltung",
-     "Stromzähler, Zählerstände und Verbrauchsauswertung. "
-     "Deaktivieren, falls der Verein keine eigene Stromversorgung verwaltet."),
-    ("modul_insurance", "Versicherungsverwaltung",
-     "Sach- und Unfallversicherung pro Parcel inkl. Jahresauswertung. "
-     "Deaktivieren, falls der Verein keine Versicherungen über das Programm abwickelt."),
-    ("modul_tickets", "Ticketsystem",
-     "Support-Tickets mit Zuweisung, Status und Member-Zuordnung. "
-     "Deaktivieren, falls der Verein kein internes Ticketsystem nutzt."),
-    ("modul_purchase_requests", "Einkaufswünsche",
-     "Vier-Augen-Prinzip für Vereinsausgaben: Anträge stellen, von zwei "
-     "Vorstandsmitgliedern freigeben oder ablehnen lassen."),
+    ("modul_work_hours", "admin.settings.modules.work_hours_name", "admin.settings.modules.work_hours_desc"),
+    ("modul_water", "admin.settings.modules.water_name", "admin.settings.modules.water_desc"),
+    ("modul_electricity", "admin.settings.modules.electricity_name", "admin.settings.modules.electricity_desc"),
+    ("modul_insurance", "admin.settings.modules.insurance_name", "admin.settings.modules.insurance_desc"),
+    ("modul_tickets", "admin.settings.modules.tickets_name", "admin.settings.modules.tickets_desc"),
+    ("modul_purchase_requests", "admin.settings.modules.purchase_requests_name", "admin.settings.modules.purchase_requests_desc"),
 ]
 
 
@@ -193,14 +206,20 @@ async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_d
     result = await db.execute(select(ClubSetting))
     settings_map = {e.key: e.value for e in result.scalars().all()}
 
+    resolved_felder = [(key, t_for(request, label_key)) for key, label_key in SETTINGS_FIELDS]
+    resolved_module_felder = [
+        (key, t_for(request, name_key), t_for(request, desc_key))
+        for key, name_key, desc_key in MODULE_FELDER
+    ]
+
     return templates.TemplateResponse(
         "admin/settings.html",
         {
             "request": request,
             "user": user,
             "einstellungen": settings_map,
-            "felder": SETTINGS_FIELDS,
-            "module_felder": MODULE_FELDER,
+            "felder": resolved_felder,
+            "module_felder": resolved_module_felder,
             "available_languages": AVAILABLE_LANGUAGES,
         },
     )

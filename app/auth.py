@@ -28,13 +28,19 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def create_invitation_token(email: str) -> str:
-    return serializer.dumps(email, salt="einladung")
+    # secrets.token_urlsafe sorgt dafür, dass zwei Einladungen an dieselbe
+    # Adresse innerhalb derselben Sekunde garantiert unterschiedliche Tokens
+    # bekommen (itsdangerous' eigener Zeitstempel hat nur Sekunden-Genauigkeit
+    # und wäre bei reinem email+Zeitstempel sonst deterministisch identisch).
+    nonce = secrets.token_urlsafe(8)
+    return serializer.dumps(f"{email}:{nonce}", salt="einladung")
 
 
 def verify_invitation_token(token: str, max_age: int = INVITATION_VALID_DAYS * 86400) -> Optional[str]:
     try:
-        email = serializer.loads(token, salt="einladung", max_age=max_age)
-        return email
+        payload = serializer.loads(token, salt="einladung", max_age=max_age)
+        email, _, _nonce = payload.rpartition(":")
+        return email or payload  # Rückwärtskompatibel mit älteren Tokens ohne Nonce
     except (BadSignature, SignatureExpired):
         return None
 

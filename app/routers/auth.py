@@ -15,6 +15,7 @@ from app.auth import (
     verify_invitation_token, create_invitation_token, get_current_user, require_admin
 )
 from app.config import settings
+from app.i18n import t_for
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 from app.templating import templates
@@ -41,14 +42,14 @@ async def login(
     if not user or not user.password_hash or not verify_password(password, user.password_hash):
         return templates.TemplateResponse(
             "auth/login.html",
-            {"request": request, "fehler": "E-Mail oder Passwort falsch."},
+            {"request": request, "fehler": t_for(request, "errors.invalid_credentials")},
             status_code=401,
         )
 
     if not user.is_active:
         return templates.TemplateResponse(
             "auth/login.html",
-            {"request": request, "fehler": "Ihr Konto ist deaktiviert."},
+            {"request": request, "fehler": t_for(request, "errors.account_deactivated")},
             status_code=403,
         )
 
@@ -130,7 +131,7 @@ async def invitation_accept(
                 "request": request,
                 "token": token,
                 "email": invitation.email,
-                "fehler": "Passwörter stimmen nicht überein.",
+                "fehler": t_for(request, "errors.passwords_do_not_match"),
             },
         )
 
@@ -141,7 +142,7 @@ async def invitation_accept(
                 "request": request,
                 "token": token,
                 "email": invitation.email,
-                "fehler": "Passwort muss mindestens 8 Zeichen haben.",
+                "fehler": t_for(request, "errors.password_too_short"),
             },
         )
 

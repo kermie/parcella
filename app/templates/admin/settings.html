@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Einstellungen{% endblock %}
-{% block page_title %}Vereinseinstellungen{% endblock %}
+{% block title %}{{ t('admin.settings.page_title') }}{% endblock %}
+{% block page_title %}{{ t('admin.settings.heading') }}{% endblock %}
 
 {% block content %}
 {% if request.query_params.get('erfolg') %}
 <div class="alert alert-success d-flex gap-2 align-items-center mb-3">
-    <i class="bi bi-check-circle-fill"></i> Einstellungen gespeichert.
+    <i class="bi bi-check-circle-fill"></i> {{ t('admin.settings.saved_message') }}
 </div>
 {% endif %}
 
@@ -14,12 +14,10 @@
 
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-translate me-2"></i>Sprache</div>
+            <div class="card-header"><i class="bi bi-translate me-2"></i>{{ t('admin.settings.language_header') }}</div>
             <div class="card-body">
                 <p class="text-muted" style="font-size: 0.85rem;">
-                    Gilt für die gesamte Installation (alle Benutzer sehen dieselbe Sprache).
-                    Fehlt eine Übersetzung für ein bestimmtes Modul, wird automatisch die
-                    deutsche Zeichenkette angezeigt.
+                    {{ t('admin.settings.language_help') }}
                 </p>
                 <select name="language" class="form-select" style="max-width: 280px;">
                     {% for code, label in available_languages.items() %}
@@ -34,12 +32,10 @@
 
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-toggles me-2"></i>Funktionsbereiche</div>
+            <div class="card-header"><i class="bi bi-toggles me-2"></i>{{ t('admin.settings.module_header') }}</div>
             <div class="card-body">
                 <p class="text-muted" style="font-size: 0.85rem;">
-                    Nicht jeder Verein nutzt jeden Funktionsbereich. Deaktivierte Module
-                    verschwinden aus der Navigation – die Daten bleiben dabei erhalten
-                    und tauchen nach erneutem Aktivieren wieder auf.
+                    {{ t('admin.settings.module_help') }}
                 </p>
                 <div class="row g-3">
                     {% for schluessel, name, hinweis in module_felder %}
@@ -65,7 +61,7 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><i class="bi bi-building me-2"></i>Vereinsdaten</div>
+            <div class="card-header"><i class="bi bi-building me-2"></i>{{ t('admin.settings.club_data_header') }}</div>
             <div class="card-body">
                 {% for schluessel, label in felder[:6] %}
                 <div class="mb-3">
@@ -80,7 +76,7 @@
 
     <div class="col-lg-6">
         <div class="card mb-3">
-            <div class="card-header"><i class="bi bi-rulers me-2"></i>Flächen (qm)</div>
+            <div class="card-header"><i class="bi bi-rulers me-2"></i>{{ t('admin.settings.areas_header') }}</div>
             <div class="card-body">
                 {% for schluessel, label in felder[6:10] %}
                 <div class="mb-3">
@@ -94,13 +90,10 @@
         </div>
 
         <div class="card">
-            <div class="card-header"><i class="bi bi-envelope-at me-2"></i>E-Mail (SMTP + IMAP)</div>
+            <div class="card-header"><i class="bi bi-envelope-at me-2"></i>{{ t('admin.settings.email_header') }}</div>
             <div class="card-body">
                 <p class="text-muted mb-3" style="font-size: 0.82rem;">
-                    Ein einziges Postfach für alles: System-E-Mails (Einladungen)
-                    werden per SMTP versendet, das Ticketsystem nutzt dasselbe
-                    Postfach zum Senden von Antworten und ruft es zusätzlich per
-                    IMAP ab, um eingehende Anfragen als Tickets zu erfassen.
+                    {{ t('admin.settings.email_help') }}
                 </p>
                 {% for schluessel, label in felder[10:18] %}
                 <div class="mb-3">
@@ -108,7 +101,7 @@
                     <input type="{{ 'password' if ('password' in schluessel or 'api_key' in schluessel) else 'text' }}"
                            name="{{ schluessel }}" class="form-control"
                            value="{{ '' if ('password' in schluessel or 'api_key' in schluessel) else (einstellungen.get(schluessel, '') or '') }}"
-                           {% if 'password' in schluessel or 'api_key' in schluessel %}placeholder="{% if einstellungen.get(schluessel) %}•••••••• (gesetzt – neu eingeben zum Ändern){% else %}Noch nicht gesetzt{% endif %}"
+                           {% if 'password' in schluessel or 'api_key' in schluessel %}placeholder="{% if einstellungen.get(schluessel) %}{{ t('admin.settings.password_set_placeholder') }}{% else %}{{ t('admin.settings.password_unset_placeholder') }}{% endif %}"
                            {% elif 'ssl' in schluessel or 'tls' in schluessel %}placeholder="true oder false"
                            {% endif %}>
                 </div>
@@ -117,13 +110,10 @@
         </div>
 
         <div class="card mt-3">
-            <div class="card-header"><i class="bi bi-shield-exclamation me-2"></i>Spam-Filter (Ticketsystem)</div>
+            <div class="card-header"><i class="bi bi-shield-exclamation me-2"></i>{{ t('admin.settings.spam_header') }}</div>
             <div class="card-body">
                 <p class="text-muted mb-3" style="font-size: 0.82rem;">
-                    Eingebaute Heuristiken (Domain-/Schlüsselwort-Sperrliste, Link-Anzahl)
-                    laufen sofort ohne externen Dienst. Eine externe Prüf-API ist optional
-                    und wird nur genutzt, wenn eine URL hinterlegt ist – ein Ausfall der
-                    externen API blockiert nie die Ticketerstellung.
+                    {{ t('admin.settings.spam_help') }}
                 </p>
                 {% for schluessel, label in felder[18:] %}
                 <div class="mb-3">
@@ -131,7 +121,7 @@
                     <input type="{{ 'password' if ('password' in schluessel or 'api_key' in schluessel) else 'text' }}"
                            name="{{ schluessel }}" class="form-control"
                            value="{{ '' if ('password' in schluessel or 'api_key' in schluessel) else (einstellungen.get(schluessel, '') or '') }}"
-                           {% if 'password' in schluessel or 'api_key' in schluessel %}placeholder="{% if einstellungen.get(schluessel) %}•••••••• (gesetzt – neu eingeben zum Ändern){% else %}Noch nicht gesetzt{% endif %}"
+                           {% if 'password' in schluessel or 'api_key' in schluessel %}placeholder="{% if einstellungen.get(schluessel) %}{{ t('admin.settings.password_set_placeholder') }}{% else %}{{ t('admin.settings.password_unset_placeholder') }}{% endif %}"
                            {% elif 'schwellenwert' in schluessel %}placeholder="0.5"
                            {% endif %}>
                 </div>
@@ -142,7 +132,7 @@
 
     <div class="col-12">
         <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-lg me-1"></i>Einstellungen speichern
+            <i class="bi bi-check-lg me-1"></i>{{ t('admin.settings.save_button') }}
         </button>
     </div>
 

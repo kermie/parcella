@@ -10,7 +10,14 @@
   "errors": {
     "ticket_not_found": "Ticket not found",
     "user_not_found": "User not found",
-    "deferred_date_required": "A date is required to defer this ticket"
+    "deferred_date_required": "A date is required to defer this ticket",
+    "invalid_credentials": "Email or password is incorrect.",
+    "account_deactivated": "Your account has been deactivated.",
+    "passwords_do_not_match": "Passwords do not match.",
+    "password_too_short": "Password must be at least 8 characters.",
+    "email_already_registered": "Email already registered",
+    "invitation_sent": "Invitation sent",
+    "own_account_cannot_deactivate": "Cannot deactivate your own account"
   },
   "tickets": {
     "overview": {
@@ -75,6 +82,120 @@
       "member_no_assignment_option": "– no assignment –",
       "member_save_button": "Save assignment",
       "member_multiple_candidates_help": "Multiple members use this email address – please choose manually."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login – Gartenverein",
+      "app_title": "Gartenverein Management",
+      "subtitle": "Please sign in",
+      "label_email": "Email",
+      "label_password": "Password",
+      "button_submit": "Sign in",
+      "no_account_notice": "No account? An invitation is required."
+    },
+    "invitation": {
+      "title": "Accept invitation",
+      "heading": "Set up your account",
+      "subtitle": "Invitation for {email}",
+      "label_name": "Name",
+      "name_placeholder": "First and last name",
+      "label_password": "Password",
+      "password_placeholder": "At least 8 characters",
+      "label_password_confirm": "Confirm password",
+      "button_submit": "Create account"
+    },
+    "invitation_expired": {
+      "title": "Invitation expired",
+      "heading": "Invitation expired",
+      "message": "This invitation link is no longer valid or has already been used.",
+      "contact_admin": "Please contact an administrator.",
+      "back_to_login": "Back to login"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "page_title": "Administration",
+      "heading": "User management",
+      "dev_mode_label": "Development mode:",
+      "invite_header": "Invite user",
+      "label_email": "Email address",
+      "label_role": "Role",
+      "role_readonly": "Read-only (view only)",
+      "role_treasurer": "Treasurer",
+      "role_board": "Board",
+      "role_admin": "Administrator",
+      "button_send_invite": "Send invitation",
+      "pending_invitations_header": "Pending invitations",
+      "valid_until": "Valid until {date}",
+      "status_pending": "pending",
+      "users_header": "Registered users",
+      "col_name": "Name",
+      "col_email": "Email",
+      "col_role": "Role",
+      "col_status": "Status",
+      "status_active": "active",
+      "status_inactive": "inactive",
+      "button_deactivate": "Deactivate",
+      "button_activate": "Activate",
+      "self_label": "Me"
+    },
+    "settings": {
+      "page_title": "Settings",
+      "heading": "Club settings",
+      "saved_message": "Settings saved.",
+      "language_header": "Language",
+      "language_help": "Applies to the whole installation (all users see the same language). If a translation is missing for a given module, the German text is shown automatically.",
+      "module_header": "Feature areas",
+      "module_help": "Not every club uses every feature area. Disabled modules disappear from the navigation -- the data is preserved and reappears once re-enabled.",
+      "club_data_header": "Club data",
+      "areas_header": "Areas (sqm)",
+      "email_header": "Email (SMTP + IMAP)",
+      "email_help": "A single mailbox for everything: system emails (invitations) are sent via SMTP, and the ticket system uses the same mailbox to send replies and additionally polls it via IMAP to capture incoming requests as tickets.",
+      "spam_header": "Spam filter (ticket system)",
+      "spam_help": "Built-in heuristics (sender-domain/keyword blocklist, link count) run immediately with no external service. An external check API is optional and only used if a URL is configured -- an outage of the external API never blocks ticket creation.",
+      "password_set_placeholder": "•••••••• (set -- re-enter to change)",
+      "password_unset_placeholder": "Not set yet",
+      "save_button": "Save settings",
+      "fields": {
+        "club_name": "Club name",
+        "street": "Street",
+        "postal_code": "Postal code",
+        "city": "City",
+        "club_number": "Club registration number",
+        "register_court": "Register court",
+        "total_area": "Total area (sqm)",
+        "area_a": "Area A (municipal, sqm)",
+        "area_b": "Area B (communal, sqm)",
+        "area_c": "Area C (parcels, sqm)",
+        "smtp_host": "SMTP server",
+        "smtp_port": "SMTP port",
+        "smtp_user": "SMTP user",
+        "smtp_password": "SMTP password",
+        "sender_email": "Sender email",
+        "imap_host": "IMAP server (for ticket inbox)",
+        "imap_port": "IMAP port",
+        "imap_ssl": "IMAP SSL (true/false)",
+        "spam_domain_blocklist": "Spam: blocked sender domains (comma-separated)",
+        "spam_keyword_blocklist": "Spam: blocked keywords (comma-separated)",
+        "spam_threshold": "Spam: threshold (0.0-1.0, default 0.5)",
+        "spam_api_url": "Spam: external check API URL (optional)",
+        "spam_api_key": "Spam: external API key (optional)"
+      },
+      "modules": {
+        "work_hours_name": "Work-hours management",
+        "work_hours_desc": "Work sessions, sponsorships, club roles, and annual report. Disable if the club doesn't collect mandatory work hours.",
+        "water_name": "Water management",
+        "water_desc": "Water meters, readings, and consumption reports. Disable if the club doesn't manage its own water supply.",
+        "electricity_name": "Electricity management",
+        "electricity_desc": "Electricity meters, readings, and consumption reports. Disable if the club doesn't manage its own electricity supply.",
+        "insurance_name": "Insurance management",
+        "insurance_desc": "Property and accident insurance per parcel, incl. annual report. Disable if the club doesn't handle insurance through the software.",
+        "tickets_name": "Ticket system",
+        "tickets_desc": "Support tickets with assignment, status, and member matching. Disable if the club doesn't use an internal ticket system.",
+        "purchase_requests_name": "Purchase requests",
+        "purchase_requests_desc": "Two-person approval principle for club expenses: submit requests, have them approved or rejected by two board members."
+      }
     }
   }
 }

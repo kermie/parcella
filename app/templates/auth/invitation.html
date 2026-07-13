@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Einladung annehmen{% endblock %}
+{% block title %}{{ t('auth.invitation.title') }}{% endblock %}
 
 {% block content %}
 <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: #f4f7f4;">
     <div style="width: 100%; max-width: 420px; padding: 1rem;">
         <div class="text-center mb-4">
             <div style="font-size: 3rem; color: var(--gv-gruen);"><i class="bi bi-envelope-open-heart"></i></div>
-            <h1 style="font-size: 1.3rem; font-weight: 700; color: var(--gv-gruen);">Konto einrichten</h1>
-            <p class="text-muted" style="font-size: 0.85rem;">Einladung für <strong>{{ email }}</strong></p>
+            <h1 style="font-size: 1.3rem; font-weight: 700; color: var(--gv-gruen);">{{ t('auth.invitation.heading') }}</h1>
+            <p class="text-muted" style="font-size: 0.85rem;">{{ t('auth.invitation.subtitle', email=email) }}</p>
         </div>
 
         {% if fehler %}
@@ -20,22 +20,22 @@
             <div class="card-body p-4">
                 <form method="post" action="/auth/invitation/{{ token }}">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Name</label>
+                        <label class="form-label fw-semibold">{{ t('auth.invitation.label_name') }}</label>
                         <input type="text" name="name" class="form-control"
-                               placeholder="Vor- und Nachname" required autofocus>
+                               placeholder="{{ t('auth.invitation.name_placeholder') }}" required autofocus>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Passwort</label>
+                        <label class="form-label fw-semibold">{{ t('auth.invitation.label_password') }}</label>
                         <input type="password" name="password" class="form-control"
-                               placeholder="Mindestens 8 Zeichen" required minlength="8">
+                               placeholder="{{ t('auth.invitation.password_placeholder') }}" required minlength="8">
                     </div>
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Passwort wiederholen</label>
+                        <label class="form-label fw-semibold">{{ t('auth.invitation.label_password_confirm') }}</label>
                         <input type="password" name="password_confirm" class="form-control"
                                placeholder="••••••••" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-check-circle me-1"></i> Konto anlegen
+                        <i class="bi bi-check-circle me-1"></i> {{ t('auth.invitation.button_submit') }}
                     </button>
                 </form>
             </div>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Administration{% endblock %}
-{% block page_title %}Benutzerverwaltung{% endblock %}
+{% block title %}{{ t('admin.dashboard.page_title') }}{% endblock %}
+{% block page_title %}{{ t('admin.dashboard.heading') }}{% endblock %}
 
 {% block content %}
 
@@ -17,7 +17,7 @@
 {% if request.query_params.get('info') %}
 <div class="alert alert-info mb-3">
     <i class="bi bi-info-circle me-2"></i>
-    <strong>Entwicklungsmodus:</strong> {{ request.query_params.get('info') }}
+    <strong>{{ t('admin.dashboard.dev_mode_label') }}</strong> {{ request.query_params.get('info') }}
 </div>
 {% endif %}
 
@@ -26,25 +26,25 @@
     <!-- Einladen -->
     <div class="col-lg-5">
         <div class="card">
-            <div class="card-header"><i class="bi bi-envelope-plus me-2"></i>Benutzer einladen</div>
+            <div class="card-header"><i class="bi bi-envelope-plus me-2"></i>{{ t('admin.dashboard.invite_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/admin/invite">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">E-Mail-Adresse</label>
+                        <label class="form-label fw-semibold">{{ t('admin.dashboard.label_email') }}</label>
                         <input type="email" name="email" class="form-control"
                                placeholder="person@beispiel.de" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Rolle</label>
+                        <label class="form-label fw-semibold">{{ t('admin.dashboard.label_role') }}</label>
                         <select name="role" class="form-select">
-                            <option value="readonly">Lesend (nur anschauen)</option>
-                            <option value="treasurer">Kassierer</option>
-                            <option value="board">Vorstand</option>
-                            <option value="admin">Administrator</option>
+                            <option value="readonly">{{ t('admin.dashboard.role_readonly') }}</option>
+                            <option value="treasurer">{{ t('admin.dashboard.role_treasurer') }}</option>
+                            <option value="board">{{ t('admin.dashboard.role_board') }}</option>
+                            <option value="admin">{{ t('admin.dashboard.role_admin') }}</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-send me-1"></i>Einladung senden
+                        <i class="bi bi-send me-1"></i>{{ t('admin.dashboard.button_send_invite') }}
                     </button>
                 </form>
             </div>
@@ -53,15 +53,15 @@
         <!-- Offene Einladungen -->
         {% if open_invitations %}
         <div class="card mt-3">
-            <div class="card-header"><i class="bi bi-clock-history me-2"></i>Ausstehende Einladungen</div>
+            <div class="card-header"><i class="bi bi-clock-history me-2"></i>{{ t('admin.dashboard.pending_invitations_header') }}</div>
             <ul class="list-group list-group-flush">
                 {% for e in open_invitations %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <div>{{ e.email }}</div>
-                        <small class="text-muted">{{ e.role.value }} · Gültig bis {{ e.expires_at.strftime('%d.%m.%Y') }}</small>
+                        <small class="text-muted">{{ e.role.value }} · {{ t('admin.dashboard.valid_until', date=e.expires_at.strftime('%d.%m.%Y')) }}</small>
                     </div>
-                    <span class="badge" style="background: #fef3c7; color: #92400e;">ausstehend</span>
+                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('admin.dashboard.status_pending') }}</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -72,16 +72,16 @@
     <!-- Benutzerliste -->
     <div class="col-lg-7">
         <div class="card">
-            <div class="card-header"><i class="bi bi-people me-2"></i>Registrierte Benutzer</div>
+            <div class="card-header"><i class="bi bi-people me-2"></i>{{ t('admin.dashboard.users_header') }}</div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>E-Mail</th>
-                            <th>Rolle</th>
-                            <th>Status</th>
+                            <th>{{ t('admin.dashboard.col_name') }}</th>
+                            <th>{{ t('admin.dashboard.col_email') }}</th>
+                            <th>{{ t('admin.dashboard.col_role') }}</th>
+                            <th>{{ t('admin.dashboard.col_status') }}</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -97,21 +97,21 @@
                             </td>
                             <td>
                                 {% if b.is_active %}
-                                <span class="badge badge-aktiv">aktiv</span>
+                                <span class="badge badge-aktiv">{{ t('admin.dashboard.status_active') }}</span>
                                 {% else %}
-                                <span class="badge" style="background: #fee2e2; color: #991b1b;">inaktiv</span>
+                                <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('admin.dashboard.status_inactive') }}</span>
                                 {% endif %}
                             </td>
                             <td class="text-end">
                                 {% if b.id != user.id %}
                                 <form method="post" action="/admin/users/{{ b.id }}/deactivate" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-secondary"
-                                            title="{{ 'Deaktivieren' if b.is_active else 'Aktivieren' }}">
+                                            title="{{ t('admin.dashboard.button_deactivate') if b.is_active else t('admin.dashboard.button_activate') }}">
                                         <i class="bi bi-{{ 'toggle-on' if b.is_active else 'toggle-off' }}"></i>
                                     </button>
                                 </form>
                                 {% else %}
-                                <span class="text-muted" style="font-size: 0.8rem;">Ich</span>
+                                <span class="text-muted" style="font-size: 0.8rem;">{{ t('admin.dashboard.self_label') }}</span>
                                 {% endif %}
                             </td>
                         </tr>

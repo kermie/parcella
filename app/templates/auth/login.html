@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Anmelden – Gartenverein{% endblock %}
+{% block title %}{{ t('auth.login.title') }}{% endblock %}
 
 {% block content %}
 <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: #f4f7f4;">
@@ -8,8 +8,8 @@
             <div style="font-size: 3rem; color: var(--gv-gruen);">
                 <i class="bi bi-tree"></i>
             </div>
-            <h1 style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">Gartenverein Verwaltung</h1>
-            <p class="text-muted" style="font-size: 0.85rem;">Bitte melden Sie sich an</p>
+            <h1 style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">{{ t('auth.login.app_title') }}</h1>
+            <p class="text-muted" style="font-size: 0.85rem;">{{ t('auth.login.subtitle') }}</p>
         </div>
 
         {% if fehler %}
@@ -23,24 +23,24 @@
             <div class="card-body p-4">
                 <form method="post" action="/auth/login">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold" for="email">E-Mail</label>
+                        <label class="form-label fw-semibold" for="email">{{ t('auth.login.label_email') }}</label>
                         <input type="email" id="email" name="email" class="form-control"
                                placeholder="ihre@email.de" required autofocus>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label fw-semibold" for="password">Passwort</label>
+                        <label class="form-label fw-semibold" for="password">{{ t('auth.login.label_password') }}</label>
                         <input type="password" id="password" name="password" class="form-control"
                                placeholder="••••••••" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-box-arrow-in-right me-1"></i> Anmelden
+                        <i class="bi bi-box-arrow-in-right me-1"></i> {{ t('auth.login.button_submit') }}
                     </button>
                 </form>
             </div>
         </div>
 
         <p class="text-center text-muted mt-3" style="font-size: 0.8rem;">
-            Kein Konto? Eine Einladung ist erforderlich.
+            {{ t('auth.login.no_account_notice') }}
         </p>
     </div>
 </div>
