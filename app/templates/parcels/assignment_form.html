@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Pachtverhältnis bearbeiten{% endblock %}
-{% block page_title %}Pachtverhältnis bearbeiten{% endblock %}
+{% block title %}{{ t('parcels_assignment_form.title') }}{% endblock %}
+{% block page_title %}{{ t('parcels_assignment_form.title') }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/parcels/{{ parcel.id }}" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('parcels_assignment_form.back') }}
 </a>
 {% endblock %}
 
@@ -14,7 +14,7 @@
         <div class="card">
             <div class="card-header">
                 <i class="bi bi-person-badge me-2"></i>
-                {{ zuordnung.member.full_name }} – Parzelle {{ parcel.plot_number }}
+                {{ t('parcels_assignment_form.card_header', member=zuordnung.member.full_name, plot_number=parcel.plot_number) }}
             </div>
             <div class="card-body">
                 <form method="post" action="/parcels/{{ parcel.id }}/member/{{ zuordnung.id }}/edit">
@@ -22,26 +22,26 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_primary_tenant"
                                    id="hp-check" {% if zuordnung.is_primary_tenant %}checked{% endif %}>
-                            <label class="form-check-label" for="hp-check">Hauptpächter</label>
+                            <label class="form-check-label" for="hp-check">{{ t('parcels_assignment_form.is_primary_tenant_label') }}</label>
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
-                            <label class="form-label fw-semibold">Pächter seit</label>
+                            <label class="form-label fw-semibold">{{ t('parcels_assignment_form.label_tenant_since') }}</label>
                             <input type="date" name="assigned_from" class="form-control"
                                    value="{{ zuordnung.assigned_from.isoformat() if zuordnung.assigned_from else '' }}">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label fw-semibold">Pächter bis</label>
+                            <label class="form-label fw-semibold">{{ t('parcels_assignment_form.label_tenant_until') }}</label>
                             <input type="date" name="assigned_until" class="form-control"
                                    value="{{ zuordnung.assigned_until.isoformat() if zuordnung.assigned_until else '' }}">
-                            <div class="form-text">Leer = aktuell noch Pächter</div>
+                            <div class="form-text">{{ t('parcels_assignment_form.tenant_until_help') }}</div>
                         </div>
                     </div>
                     <div class="d-flex gap-2 justify-content-end">
-                        <a href="/parcels/{{ parcel.id }}" class="btn btn-outline-secondary">Abbrechen</a>
+                        <a href="/parcels/{{ parcel.id }}" class="btn btn-outline-secondary">{{ t('parcels_assignment_form.cancel') }}</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i>Änderungen speichern
+                            <i class="bi bi-check-lg me-1"></i>{{ t('parcels_assignment_form.button_save_changes') }}
                         </button>
                     </div>
                 </form>

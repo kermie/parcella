@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Parzellen{% endblock %}
-{% block page_title %}Parzellen{% endblock %}
+{% block title %}{{ t('parcels.list.title') }}{% endblock %}
+{% block page_title %}{{ t('parcels.list.title') }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 flex-wrap">
     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#csvImportModal">
-        <i class="bi bi-upload me-1"></i>CSV Import
+        <i class="bi bi-upload me-1"></i>{{ t('parcels.list.csv_import') }}
     </button>
     <a href="/parcels/export/csv" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-download me-1"></i>CSV Export
+        <i class="bi bi-download me-1"></i>{{ t('parcels.list.csv_export') }}
     </a>
     <a href="/parcels/new" class="btn btn-sm btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Neue Parzelle
+        <i class="bi bi-plus-lg me-1"></i>{{ t('parcels.list.new_parcel') }}
     </a>
 </div>
 {% endblock %}
@@ -30,17 +30,17 @@
         <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
             <i class="bi bi-search text-muted"></i>
             <input type="text" name="suche" value="{{ suche }}" class="form-control form-control-sm border-0"
-                   placeholder="Gartennummer suchen…" style="box-shadow: none; max-width: 200px;">
+                   placeholder="{{ t('parcels.list.search_placeholder') }}" style="box-shadow: none; max-width: 200px;">
             <select name="status_filter" class="form-select form-select-sm" style="max-width: 160px;"
                     onchange="this.form.submit()">
-                <option value="">Alle Status</option>
-                <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Aktiv</option>
-                <option value="TERMINATED" {% if status_filter == 'TERMINATED' %}selected{% endif %}>Gekündigt</option>
-                <option value="DELETED" {% if status_filter == 'DELETED' %}selected{% endif %}>Gelöscht</option>
+                <option value="">{{ t('parcels.list.all_statuses') }}</option>
+                <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>{{ t('parcels.status.active') }}</option>
+                <option value="TERMINATED" {% if status_filter == 'TERMINATED' %}selected{% endif %}>{{ t('parcels.status.terminated') }}</option>
+                <option value="DELETED" {% if status_filter == 'DELETED' %}selected{% endif %}>{{ t('parcels.status.deleted') }}</option>
             </select>
-            <button type="submit" class="btn btn-sm btn-primary">Suchen</button>
+            <button type="submit" class="btn btn-sm btn-primary">{{ t('parcels.list.search_button') }}</button>
             {% if suche or status_filter %}
-            <a href="/parcels/" class="btn btn-sm btn-outline-secondary">Zurücksetzen</a>
+            <a href="/parcels/" class="btn btn-sm btn-outline-secondary">{{ t('parcels.list.reset_button') }}</a>
             {% endif %}
         </form>
     </div>
@@ -53,10 +53,10 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Gartennummer</th>
-                        <th>Fläche</th>
-                        <th>Status</th>
-                        <th>Pächter</th>
+                        <th>{{ t('parcels.list.col_plot_number') }}</th>
+                        <th>{{ t('parcels.list.col_area') }}</th>
+                        <th>{{ t('parcels.list.col_status') }}</th>
+                        <th>{{ t('parcels.list.col_tenant') }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -71,7 +71,13 @@
                             {{ '%g' % p.area_sqm if p.area_sqm else '–' }}{% if p.area_sqm %} qm{% endif %}
                         </td>
                         <td>
-                            <span class="badge badge-{{ p.status.value|lower }}">{{ p.status.value|lower }}</span>
+                            {% if p.status.value == 'ACTIVE' %}
+                            <span class="badge badge-aktiv">{{ t('parcels.status.active') }}</span>
+                            {% elif p.status.value == 'TERMINATED' %}
+                            <span class="badge badge-gekuendigt">{{ t('parcels.status.terminated') }}</span>
+                            {% else %}
+                            <span class="badge badge-geloescht">{{ t('parcels.status.deleted') }}</span>
+                            {% endif %}
                         </td>
                         <td>
                             {% set aktuelle_paechter = p.member_assignments | selectattr('assigned_until', 'none') | list %}
@@ -94,8 +100,8 @@
                     <tr>
                         <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-grid-3x3 d-block mb-2" style="font-size: 1.5rem;"></i>
-                            Keine Parzellen gefunden.<br>
-                            <a href="/parcels/new" class="btn btn-sm btn-primary mt-2">Erste Parzelle anlegen</a>
+                            {{ t('parcels.list.empty') }}<br>
+                            <a href="/parcels/new" class="btn btn-sm btn-primary mt-2">{{ t('parcels.list.create_first') }}</a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -105,9 +111,9 @@
     </div>
     {% if parcels %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">
-        {{ parcels | length }} Parzelle{{ 'n' if parcels | length != 1 else '' }}
+        {{ parcels | length }} {{ t('parcels.list.count_suffix_singular') if parcels | length == 1 else t('parcels.list.count_suffix_plural') }}
         {% set gesamt_flaeche = parcels | selectattr('area_sqm') | sum(attribute='area_sqm') %}
-        {% if gesamt_flaeche > 0 %} · Gesamtfläche: {{ '%g' % gesamt_flaeche }} qm{% endif %}
+        {% if gesamt_flaeche > 0 %}{{ t('parcels.list.total_area_suffix', area='%g' % gesamt_flaeche) }}{% endif %}
     </div>
     {% endif %}
 </div>
@@ -117,7 +123,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>CSV-Import</h5>
+                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>{{ t('parcels.list.csv_import_modal_title') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -125,10 +131,10 @@
                       class="d-flex gap-2 align-items-center">
                     <input type="file" name="datei" accept=".csv" class="form-control form-control-sm" required style="max-width: 300px;">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-upload me-1"></i>Importieren
+                        <i class="bi bi-upload me-1"></i>{{ t('parcels.list.csv_import_button') }}
                     </button>
                 </form>
-                <div class="form-text mt-1">Format: Semikolon-getrennte CSV mit Spalten: Gartennummer; Fläche (qm); Status; Notizen</div>
+                <div class="form-text mt-1">{{ t('parcels.list.csv_format_help') }}</div>
             </div>
         </div>
     </div>

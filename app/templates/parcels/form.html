@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{% if parcel %}{{ parcel.plot_number }} bearbeiten{% else %}Neue Parzelle{% endif %}{% endblock %}
-{% block page_title %}{% if parcel %}Parzelle bearbeiten{% else %}Neue Parzelle{% endif %}{% endblock %}
+{% block title %}{% if parcel %}{{ t('parcels.form.title_edit', plot_number=parcel.plot_number) }}{% else %}{{ t('parcels.form.title_new') }}{% endif %}{% endblock %}
+{% block page_title %}{% if parcel %}{{ t('parcels.form.heading_edit') }}{% else %}{{ t('parcels.form.heading_new') }}{% endif %}{% endblock %}
 
 {% block topbar_actions %}
 <a href="{% if parcel %}/parcels/{{ parcel.id }}{% else %}/parcels/{% endif %}"
    class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Abbrechen
+    <i class="bi bi-arrow-left me-1"></i>{{ t('parcels.form.cancel') }}
 </a>
 {% endblock %}
 
@@ -21,18 +21,18 @@
 
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Parzellendaten</div>
+            <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>{{ t('parcels.form.data_header') }}</div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Gartennummer <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('parcels.form.label_plot_number') }} <span class="text-danger">*</span></label>
                         <input type="text" name="plot_number" class="form-control font-monospace"
-                               placeholder="z.B. G093 oder G26/27"
+                               placeholder="{{ t('parcels.form.plot_number_placeholder') }}"
                                value="{{ parcel.plot_number if parcel else '' }}" required autofocus>
-                        <div class="form-text">Wird automatisch großgeschrieben</div>
+                        <div class="form-text">{{ t('parcels.form.plot_number_help') }}</div>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Fläche (qm)</label>
+                        <label class="form-label fw-semibold">{{ t('parcels.form.label_area') }}</label>
                         <input type="text" name="area_sqm" class="form-control"
                                placeholder="z.B. 312.5"
                                value="{{ parcel.area_sqm if parcel and parcel.area_sqm else '' }}">
@@ -40,29 +40,28 @@
 
                     {% if parcel %}
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Status</label>
+                        <label class="form-label fw-semibold">{{ t('parcels.form.label_status') }}</label>
                         <select name="status" class="form-select">
-                            <option value="ACTIVE" {% if parcel.status.value == 'ACTIVE' %}selected{% endif %}>Aktiv</option>
-                            <option value="TERMINATED" {% if parcel.status.value == 'TERMINATED' %}selected{% endif %}>Gekündigt</option>
-                            <option value="DELETED" {% if parcel.status.value == 'DELETED' %}selected{% endif %}>Gelöscht</option>
+                            <option value="ACTIVE" {% if parcel.status.value == 'ACTIVE' %}selected{% endif %}>{{ t('parcels.status.active') }}</option>
+                            <option value="TERMINATED" {% if parcel.status.value == 'TERMINATED' %}selected{% endif %}>{{ t('parcels.status.terminated') }}</option>
+                            <option value="DELETED" {% if parcel.status.value == 'DELETED' %}selected{% endif %}>{{ t('parcels.status.deleted') }}</option>
                         </select>
                         <div class="form-text">
-                            Der Zeitpunkt einer Statusänderung wird automatisch in der
-                            Änderungshistorie protokolliert – ein separates Kündigungsdatum ist nicht nötig.
+                            {{ t('parcels.form.status_help') }}
                         </div>
                     </div>
                     <div class="col-12">
-                        <label class="form-label fw-semibold">Kündigungsnotiz</label>
+                        <label class="form-label fw-semibold">{{ t('parcels.form.label_termination_note') }}</label>
                         <input type="text" name="termination_note" class="form-control"
-                               placeholder="Grund, Anmerkungen…"
+                               placeholder="{{ t('parcels.form.termination_note_placeholder') }}"
                                value="{{ parcel.termination_note or '' }}">
                     </div>
                     {% endif %}
 
                     <div class="col-12">
-                        <label class="form-label fw-semibold">Notizen</label>
+                        <label class="form-label fw-semibold">{{ t('parcels.form.notes_label') }}</label>
                         <textarea name="notes" class="form-control" rows="3"
-                                  placeholder="Interne Notizen zur Parzelle…">{{ parcel.notes if parcel else '' }}</textarea>
+                                  placeholder="{{ t('parcels.form.notes_placeholder') }}">{{ parcel.notes if parcel else '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -72,10 +71,10 @@
     <div class="col-12">
         <div class="d-flex gap-2 justify-content-end">
             <a href="{% if parcel %}/parcels/{{ parcel.id }}{% else %}/parcels/{% endif %}"
-               class="btn btn-outline-secondary">Abbrechen</a>
+               class="btn btn-outline-secondary">{{ t('parcels.form.cancel') }}</a>
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-lg me-1"></i>
-                {% if parcel %}Änderungen speichern{% else %}Parzelle anlegen{% endif %}
+                {% if parcel %}{{ t('parcels.form.button_save_changes') }}{% else %}{{ t('parcels.form.button_create') }}{% endif %}
             </button>
         </div>
     </div>
@@ -87,18 +86,15 @@
 <div class="row g-3 mt-2" style="max-width: 640px;">
     <div class="col-12">
         <div class="card border-danger">
-            <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Gefahrenzone</div>
+            <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('parcels.form.danger_zone_header') }}</div>
             <div class="card-body">
                 <p class="text-muted mb-3" style="font-size: 0.88rem;">
-                    Löscht die Parzelle <strong>{{ parcel.plot_number }}</strong> unwiderruflich aus der
-                    Datenbank – anders als der Status „Gelöscht", der die Historie erhält.
-                    Alle Mitgliederzuordnungen zu dieser Parzelle werden mit entfernt, Wasseranschlüsse
-                    bleiben erhalten aber ohne Parzellenbezug. Diese Aktion kann nicht rückgängig gemacht werden.
+                    {{ t('parcels.form.danger_zone_text', plot_number=parcel.plot_number) }}
                 </p>
                 <form method="post" action="/parcels/{{ parcel.id }}/permanently-delete"
-                      onsubmit="return confirm('Parzelle {{ parcel.plot_number }} wirklich UNWIDERRUFLICH löschen? Dies kann nicht rückgängig gemacht werden.')">
+                      onsubmit="return confirm('{{ t('parcels.form.delete_confirm', plot_number=parcel.plot_number) }}')">
                     <button type="submit" class="btn btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i>Parzelle endgültig löschen
+                        <i class="bi bi-trash me-1"></i>{{ t('parcels.form.button_delete_permanently') }}
                     </button>
                 </form>
             </div>

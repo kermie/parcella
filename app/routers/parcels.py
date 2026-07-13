@@ -17,6 +17,7 @@ from app.models import (
     Parcel, ParcelStatus, MemberParcel, Member, ChangeHistory
 )
 from app.auth import require_user
+from app.i18n import t_for
 from app.change_tracker import ChangeTracker
 
 router = APIRouter(prefix="/parcels", tags=["parcels"])
@@ -104,7 +105,7 @@ async def parzelle_erstellen(
                 "request": request,
                 "user": user_result,
                 "parcel": None,
-                "fehler": f"Gartennummer '{plot_number}' existiert bereits.",
+                "fehler": t_for(request, "parcels.form.duplicate_plot_number_error", plot_number=plot_number),
             },
             status_code=400,
         )
@@ -254,7 +255,9 @@ async def parzelle_endgueltig_loeschen(
     await db.delete(parcel)
     await db.commit()
     import urllib.parse
-    meldung = urllib.parse.quote(f"Parcel {parcel.plot_number} endgültig gelöscht")
+    meldung = urllib.parse.quote(
+        t_for(request, "parcels.list.delete_permanently_message", plot_number=parcel.plot_number)
+    )
     return RedirectResponse(f"/parcels/?meldung={meldung}", status_code=302)
 
 
@@ -504,9 +507,9 @@ async def parzellen_import_csv(
 
     await db.commit()
 
-    meldung = f"{erstellt} importiert, {uebersprungen} übersprungen"
+    meldung = t_for(request, "parcels.list.csv_import_summary", created=erstellt, skipped=uebersprungen)
     if fehlende_gartennummer:
-        meldung += f", {fehlende_gartennummer} ohne Gartennummer ignoriert"
+        meldung += t_for(request, "parcels.list.csv_import_missing_plot_number", count=fehlende_gartennummer)
 
     import urllib.parse
     return RedirectResponse(
