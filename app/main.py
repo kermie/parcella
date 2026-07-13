@@ -9,7 +9,6 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
@@ -19,6 +18,14 @@ from app.database import get_db, AsyncSessionLocal, active_member_filter
 from app.models import User, UserRole, Member, Parcel, ParcelStatus, MemberParcel
 from app.auth import hash_password, get_current_user
 from app.module_flags import lade_modul_flags
+from app.i18n import load_translations, load_current_language
+
+# Wird beim Modul-Import geladen (nicht erst im Lifespan-Startup-Event),
+# da ASGI-Test-Clients (z.B. httpx mit ASGITransport) Lifespan-Events
+# nicht zwingend auslösen. load_translations() ist eine reine, schnelle
+# Dateilese-Operation ohne DB-Zugriff – unproblematisch beim Import.
+load_translations()
+from app.templating import templates
 from app.ticket_mailer import process_incoming_mails
 from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, purchase_requests
 from app.routers.metering import erstelle_metering_router
@@ -108,6 +115,20 @@ async def modul_flags_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
+
+@app.middleware("http")
+async def sprache_middleware(request: Request, call_next):
+    """
+    Lädt einmal pro Request die aktuell eingestellte Sprache (siehe
+    app/i18n.py) und legt sie unter request.state.language ab. Templates
+    (über die Jinja-Funktion `t`) und Router (über t_for(request, ...))
+    lesen von dort.
+    """
+    async with AsyncSessionLocal() as db:
+        request.state.language = await load_current_language(db)
+    response = await call_next(request)
+    return response
+
 # Router registrieren – Web-UI (Jinja2)
 app.include_router(auth.router)
 app.include_router(members.router)
@@ -146,8 +167,6 @@ api_water_router = erstelle_metering_api_router(MeteringMedium.WATER, "/water", 
 api_electricity_router = erstelle_metering_api_router(MeteringMedium.ELECTRICITY, "/electricity", "electricity")
 app.include_router(api_water_router)
 app.include_router(api_electricity_router)
-
-templates = Jinja2Templates(directory="app/templates")
 
 
 @app.get("/", response_class=HTMLResponse)

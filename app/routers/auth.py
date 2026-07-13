@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -18,7 +17,7 @@ from app.auth import (
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 
 @router.get("/login", response_class=HTMLResponse)

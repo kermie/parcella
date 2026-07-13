@@ -11,7 +11,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -30,7 +29,7 @@ router = APIRouter(
     tags=["purchase-requests"],
     dependencies=[Depends(require_modul("purchase_requests"))],
 )
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 _REQUIRED_APPROVALS = 2
 

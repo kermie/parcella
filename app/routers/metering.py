@@ -18,7 +18,6 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -34,7 +33,7 @@ from app.zaehler_utils import (
     calculate_consumption, check_monotonicity, total_consumption_for_type, reading_before_year
 )
 
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 templates.env.filters["fmt"] = lambda value, stellen: f"{float(value):.{stellen}f}"
 
 

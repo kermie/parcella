@@ -11,7 +11,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
@@ -26,6 +25,7 @@ from app.change_tracker import ChangeTracker
 from app.ticket_utils import find_members_by_email
 from app.ticket_mailer import send_ticket_reply, process_incoming_mails
 from app.email_service import sende_email
+from app.i18n import t_for
 from app.config import settings
 
 router = APIRouter(
@@ -33,7 +33,7 @@ router = APIRouter(
     tags=["tickets"],
     dependencies=[Depends(require_modul("tickets"))],
 )
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 
 async def _load_ticket_with_details(db: AsyncSession, ticket_id: str) -> Optional[Ticket]:
@@ -165,7 +165,7 @@ async def ticket_detail(
     user = await require_user(request, db)
     ticket = await _load_ticket_with_details(db, ticket_id)
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "errors.ticket_not_found"))
 
     # Mögliche Member-Kandidaten (falls Absender-Adresse mehreren gehört
     # oder noch keinem zugeordnet ist)
@@ -204,7 +204,7 @@ async def ticket_assign(
         result = await db.execute(select(User).where(User.id == user_id))
         assignee = result.scalar_one_or_none()
         if not assignee:
-            raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+            raise HTTPException(status_code=404, detail=t_for(request, "errors.user_not_found"))
 
         ticket.assigned_to_id = assignee.id
         ticket.status = TicketStatus.ASSIGNED
@@ -256,7 +256,7 @@ async def ticket_status_update(
 
     if neuer_status == TicketStatus.DEFERRED:
         if not deferred_until.strip():
-            raise HTTPException(status_code=400, detail="Datum für Zurückstellung erforderlich")
+            raise HTTPException(status_code=400, detail=t_for(request, "errors.deferred_date_required"))
         ticket.deferred_until = date.fromisoformat(deferred_until)
     else:
         ticket.deferred_until = None

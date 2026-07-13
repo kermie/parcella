@@ -10,7 +10,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -29,7 +28,7 @@ router = APIRouter(
     tags=["insurance"],
     dependencies=[Depends(require_modul("insurance"))],
 )
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 
 def _parse_decimal(value: str) -> Optional[Decimal]:

@@ -8,7 +8,6 @@ from typing import Optional, List
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
@@ -29,7 +28,7 @@ router = APIRouter(
     tags=["work-hours"],
     dependencies=[Depends(require_modul("work_hours"))],
 )
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 
 # ---------------------------------------------------------------------------

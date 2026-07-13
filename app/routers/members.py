@@ -8,7 +8,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
@@ -18,7 +17,7 @@ from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
 from app.auth import get_current_user, require_user
 
 router = APIRouter(prefix="/members", tags=["members"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 
 async def _get_member_mit_details(db: AsyncSession, member_id: str) -> Optional[Member]:

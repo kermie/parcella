@@ -173,7 +173,7 @@
 
         {% if request.state.module_flags.tickets %}
         <a href="/tickets/" class="nav-top-link {% if '/tickets' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-ticket-perforated"></i> Tickets
+            <i class="bi bi-ticket-perforated"></i> {{ t('nav.tickets') }}
         </a>
         {% endif %}
 

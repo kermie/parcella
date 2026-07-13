@@ -1,0 +1,80 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "back": "Zurück"
+  },
+  "nav": {
+    "tickets": "Tickets"
+  },
+  "errors": {
+    "ticket_not_found": "Ticket nicht gefunden",
+    "user_not_found": "Benutzer nicht gefunden",
+    "deferred_date_required": "Datum für Zurückstellung erforderlich"
+  },
+  "tickets": {
+    "overview": {
+      "title": "Tickets",
+      "fetch_inbox_now": "Postfach jetzt abrufen",
+      "new_ticket": "Neues Ticket",
+      "due_notice": "{count} zurückgestellte(s) Ticket(s) ist/sind wieder fällig.",
+      "filter_active": "Aktiv",
+      "filter_mine": "Meine",
+      "filter_spam": "Verdächtig",
+      "filter_closed": "Geschlossen",
+      "filter_all": "Alle",
+      "search_placeholder": "Betreff, Absender…",
+      "search_button": "Suchen",
+      "col_subject": "Betreff",
+      "col_sender": "Absender",
+      "col_status": "Status",
+      "col_assigned_to": "Zugewiesen an",
+      "col_created": "Erstellt",
+      "spam_suspected_badge": "Spam-Verdacht",
+      "status_unassigned": "Nicht zugewiesen",
+      "status_assigned": "Zugewiesen",
+      "status_deferred": "Zurückgestellt",
+      "status_deferred_due_suffix": "(fällig!)",
+      "status_closed": "Geschlossen",
+      "empty_state": "Keine Tickets gefunden.",
+      "count_suffix": "Ticket(s)"
+    },
+    "form": {
+      "title": "Neues Ticket",
+      "info_banner": "Manuelles Anlegen für Tickets, die nicht per E-Mail eingegangen sind. Eingehende E-Mails an das konfigurierte Ticket-Postfach werden automatisch zu Tickets (Hintergrund-Abruf alle 2 Minuten).",
+      "card_header": "Ticket",
+      "label_subject": "Betreff",
+      "label_sender_email": "Absender-E-Mail",
+      "label_sender_name": "Absender-Name",
+      "label_message": "Anliegen",
+      "button_create": "Ticket anlegen"
+    },
+    "detail": {
+      "history_header": "Verlauf",
+      "internal_note_prefix": "Interne Notiz – ",
+      "unknown_author": "Unbekannt",
+      "reply_header": "Antworten / Notiz hinzufügen",
+      "reply_to_sender": "Antwort an Absender",
+      "internal_note_option": "Interne Notiz",
+      "message_placeholder": "Nachricht…",
+      "reply_help_text": "Antworten werden per E-Mail an den Absender gesendet (sofern das Ticket-Postfach unter /admin/settings konfiguriert ist). Interne Notizen werden nie versendet.",
+      "save": "Speichern",
+      "spam_header": "Spam-Verdacht",
+      "spam_score_label": "Score:",
+      "spam_not_spam_button": "Kein Spam – Verdacht aufheben",
+      "status_header": "Status",
+      "status_deferred_until_label": "Zurückgestellt bis",
+      "status_save_button": "Status speichern",
+      "status_overdue_notice": "Zurückstellung ist abgelaufen – wieder aktiv.",
+      "assignment_header": "Zuweisung",
+      "assignment_unassigned_option": "– nicht zugewiesen –",
+      "assignment_save_button": "Zuweisen",
+      "assignment_help_text": "Bei Zuweisung erhält die Person eine E-Mail-Benachrichtigung.",
+      "member_header": "Mitglied / Parzelle",
+      "member_none_assigned": "Kein Mitglied zugeordnet.",
+      "member_no_assignment_option": "– keine Zuordnung –",
+      "member_save_button": "Zuordnung speichern",
+      "member_multiple_candidates_help": "Mehrere Mitglieder nutzen diese E-Mail-Adresse – bitte manuell auswählen."
+    }
+  }
+}

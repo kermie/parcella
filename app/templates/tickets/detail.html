@@ -4,7 +4,7 @@
 
 {% block topbar_actions %}
 <a href="/tickets/" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
 </a>
 {% endblock %}
 
@@ -15,7 +15,7 @@
     <div class="col-lg-8">
         <div class="card mb-3">
             <div class="card-header">
-                <i class="bi bi-chat-left-text me-2"></i>Verlauf
+                <i class="bi bi-chat-left-text me-2"></i>{{ t('tickets.detail.history_header') }}
                 <span class="text-muted ms-1" style="font-size: 0.82rem;">
                     {{ ticket.sender_name or ticket.sender_email }} &lt;{{ ticket.sender_email }}&gt;
                 </span>
@@ -30,9 +30,9 @@
                             {% if n.direction.value == 'INCOMING' %}
                             <i class="bi bi-arrow-down-left-circle me-1"></i>{{ ticket.sender_name or ticket.sender_email }}
                             {% elif n.direction.value == 'INTERNAL' %}
-                            <i class="bi bi-sticky me-1"></i>Interne Notiz – {{ n.authored_by.name if n.authored_by else 'Unbekannt' }}
+                            <i class="bi bi-sticky me-1"></i>{{ t('tickets.detail.internal_note_prefix') }}{{ n.authored_by.name if n.authored_by else t('tickets.detail.unknown_author') }}
                             {% else %}
-                            <i class="bi bi-arrow-up-right-circle me-1"></i>{{ n.authored_by.name if n.authored_by else 'Unbekannt' }}
+                            <i class="bi bi-arrow-up-right-circle me-1"></i>{{ n.authored_by.name if n.authored_by else t('tickets.detail.unknown_author') }}
                             {% endif %}
                         </span>
                         <span class="text-muted" style="font-size: 0.78rem;">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
@@ -45,26 +45,24 @@
 
         {% if ticket.status.value != 'CLOSED' %}
         <div class="card">
-            <div class="card-header"><i class="bi bi-reply me-2"></i>Antworten / Notiz hinzufügen</div>
+            <div class="card-header"><i class="bi bi-reply me-2"></i>{{ t('tickets.detail.reply_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/tickets/{{ ticket.id }}/message">
                     <div class="mb-2">
                         <div class="btn-group btn-group-sm" role="group">
                             <input type="radio" class="btn-check" name="direction" id="r-aus" value="OUTGOING" checked>
-                            <label class="btn btn-outline-primary" for="r-aus">Antwort an Absender</label>
+                            <label class="btn btn-outline-primary" for="r-aus">{{ t('tickets.detail.reply_to_sender') }}</label>
                             <input type="radio" class="btn-check" name="direction" id="r-intern" value="INTERNAL">
-                            <label class="btn btn-outline-warning" for="r-intern">Interne Notiz</label>
+                            <label class="btn btn-outline-warning" for="r-intern">{{ t('tickets.detail.internal_note_option') }}</label>
                         </div>
                     </div>
                     <textarea name="content" class="form-control mb-2" rows="4" required
-                              placeholder="Nachricht…"></textarea>
+                              placeholder="{{ t('tickets.detail.message_placeholder') }}"></textarea>
                     <div class="form-text mb-2">
-                        Antworten werden per E-Mail an den Absender gesendet (sofern das
-                        Ticket-Postfach unter /admin/einstellungen konfiguriert ist).
-                        Interne Notizen werden nie versendet.
+                        {{ t('tickets.detail.reply_help_text') }}
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">
-                        <i class="bi bi-send me-1"></i>Speichern
+                        <i class="bi bi-send me-1"></i>{{ t('tickets.detail.save') }}
                     </button>
                 </form>
             </div>
@@ -76,11 +74,11 @@
     <div class="col-lg-4">
         {% if ticket.spam_suspected %}
         <div class="card mb-3 border-danger">
-            <div class="card-header text-danger"><i class="bi bi-shield-exclamation me-2"></i>Spam-Verdacht</div>
+            <div class="card-header text-danger"><i class="bi bi-shield-exclamation me-2"></i>{{ t('tickets.detail.spam_header') }}</div>
             <div class="card-body">
                 {% if ticket.spam_score is not none %}
                 <p class="mb-1" style="font-size: 0.85rem;">
-                    <strong>Score:</strong> {{ ticket.spam_score }}
+                    <strong>{{ t('tickets.detail.spam_score_label') }}</strong> {{ ticket.spam_score }}
                 </p>
                 {% endif %}
                 {% if ticket.spam_reasoning %}
@@ -88,7 +86,7 @@
                 {% endif %}
                 <form method="post" action="/tickets/{{ ticket.id }}/not-spam">
                     <button type="submit" class="btn btn-sm btn-outline-danger w-100">
-                        <i class="bi bi-check-lg me-1"></i>Kein Spam – Verdacht aufheben
+                        <i class="bi bi-check-lg me-1"></i>{{ t('tickets.detail.spam_not_spam_button') }}
                     </button>
                 </form>
             </div>
@@ -96,40 +94,40 @@
         {% endif %}
 
         <div class="card mb-3">
-            <div class="card-header"><i class="bi bi-flag me-2"></i>Status</div>
+            <div class="card-header"><i class="bi bi-flag me-2"></i>{{ t('tickets.detail.status_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/tickets/{{ ticket.id }}/status">
                     <select name="status_neu" class="form-select form-select-sm mb-2"
                             onchange="document.getElementById('zurueckstell-datum').style.display = this.value === 'DEFERRED' ? '' : 'none';">
-                        <option value="UNASSIGNED" {% if ticket.status.value == 'UNASSIGNED' %}selected{% endif %}>Nicht zugewiesen</option>
-                        <option value="ASSIGNED" {% if ticket.status.value == 'ASSIGNED' %}selected{% endif %}>Zugewiesen</option>
-                        <option value="DEFERRED" {% if ticket.status.value == 'DEFERRED' %}selected{% endif %}>Zurückgestellt</option>
-                        <option value="CLOSED" {% if ticket.status.value == 'CLOSED' %}selected{% endif %}>Geschlossen</option>
+                        <option value="UNASSIGNED" {% if ticket.status.value == 'UNASSIGNED' %}selected{% endif %}>{{ t('tickets.overview.status_unassigned') }}</option>
+                        <option value="ASSIGNED" {% if ticket.status.value == 'ASSIGNED' %}selected{% endif %}>{{ t('tickets.overview.status_assigned') }}</option>
+                        <option value="DEFERRED" {% if ticket.status.value == 'DEFERRED' %}selected{% endif %}>{{ t('tickets.overview.status_deferred') }}</option>
+                        <option value="CLOSED" {% if ticket.status.value == 'CLOSED' %}selected{% endif %}>{{ t('tickets.overview.status_closed') }}</option>
                     </select>
                     <div id="zurueckstell-datum" class="mb-2"
                          style="{% if ticket.status.value != 'DEFERRED' %}display: none;{% endif %}">
-                        <label class="form-label small mb-1">Zurückgestellt bis</label>
+                        <label class="form-label small mb-1">{{ t('tickets.detail.status_deferred_until_label') }}</label>
                         <input type="date" name="deferred_until" class="form-control form-control-sm"
                                value="{{ ticket.deferred_until.isoformat() if ticket.deferred_until else '' }}">
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary w-100">
-                        <i class="bi bi-check-lg me-1"></i>Status speichern
+                        <i class="bi bi-check-lg me-1"></i>{{ t('tickets.detail.status_save_button') }}
                     </button>
                 </form>
                 {% if ticket.is_due %}
                 <div class="alert alert-warning mt-2 mb-0 py-2" style="font-size: 0.82rem;">
-                    <i class="bi bi-alarm me-1"></i>Zurückstellung ist abgelaufen – wieder aktiv.
+                    <i class="bi bi-alarm me-1"></i>{{ t('tickets.detail.status_overdue_notice') }}
                 </div>
                 {% endif %}
             </div>
         </div>
 
         <div class="card mb-3">
-            <div class="card-header"><i class="bi bi-person-check me-2"></i>Zuweisung</div>
+            <div class="card-header"><i class="bi bi-person-check me-2"></i>{{ t('tickets.detail.assignment_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/tickets/{{ ticket.id }}/assign">
                     <select name="user_id" class="form-select form-select-sm mb-2">
-                        <option value="">– nicht zugewiesen –</option>
+                        <option value="">{{ t('tickets.detail.assignment_unassigned_option') }}</option>
                         {% for b in all_users %}
                         <option value="{{ b.id }}" {% if ticket.assigned_to_id == b.id %}selected{% endif %}>
                             {{ b.name }}
@@ -137,17 +135,17 @@
                         {% endfor %}
                     </select>
                     <button type="submit" class="btn btn-sm btn-primary w-100">
-                        <i class="bi bi-check-lg me-1"></i>Zuweisen
+                        <i class="bi bi-check-lg me-1"></i>{{ t('tickets.detail.assignment_save_button') }}
                     </button>
                 </form>
                 <div class="form-text mt-2">
-                    Bei Zuweisung erhält die Person eine E-Mail-Benachrichtigung.
+                    {{ t('tickets.detail.assignment_help_text') }}
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Mitglied / Parzelle</div>
+            <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>{{ t('tickets.detail.member_header') }}</div>
             <div class="card-body">
                 {% if ticket.member %}
                 <p class="mb-2">
@@ -155,13 +153,13 @@
                        style="color: var(--gv-gruen);">{{ ticket.member.full_name }}</a>
                 </p>
                 {% else %}
-                <p class="text-muted mb-2" style="font-size: 0.85rem;">Kein Mitglied zugeordnet.</p>
+                <p class="text-muted mb-2" style="font-size: 0.85rem;">{{ t('tickets.detail.member_none_assigned') }}</p>
                 {% endif %}
 
                 {% if candidates %}
                 <form method="post" action="/tickets/{{ ticket.id }}/member">
                     <select name="member_id" class="form-select form-select-sm mb-2">
-                        <option value="">– keine Zuordnung –</option>
+                        <option value="">{{ t('tickets.detail.member_no_assignment_option') }}</option>
                         {% for m in candidates %}
                         <option value="{{ m.id }}" {% if ticket.member_id == m.id %}selected{% endif %}>
                             {{ m.full_name }}
@@ -169,12 +167,12 @@
                         {% endfor %}
                     </select>
                     <button type="submit" class="btn btn-sm btn-outline-primary w-100">
-                        <i class="bi bi-check-lg me-1"></i>Zuordnung speichern
+                        <i class="bi bi-check-lg me-1"></i>{{ t('tickets.detail.member_save_button') }}
                     </button>
                 </form>
                 {% if candidates | length > 1 %}
                 <div class="form-text mt-2">
-                    Mehrere Mitglieder nutzen diese E-Mail-Adresse – bitte manuell auswählen.
+                    {{ t('tickets.detail.member_multiple_candidates_help') }}
                 </div>
                 {% endif %}
                 {% endif %}

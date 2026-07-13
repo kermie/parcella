@@ -14,6 +14,26 @@
 
     <div class="col-12">
         <div class="card">
+            <div class="card-header"><i class="bi bi-translate me-2"></i>Sprache</div>
+            <div class="card-body">
+                <p class="text-muted" style="font-size: 0.85rem;">
+                    Gilt für die gesamte Installation (alle Benutzer sehen dieselbe Sprache).
+                    Fehlt eine Übersetzung für ein bestimmtes Modul, wird automatisch die
+                    deutsche Zeichenkette angezeigt.
+                </p>
+                <select name="language" class="form-select" style="max-width: 280px;">
+                    {% for code, label in available_languages.items() %}
+                    <option value="{{ code }}" {% if einstellungen.get('language', 'de') == code %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
             <div class="card-header"><i class="bi bi-toggles me-2"></i>Funktionsbereiche</div>
             <div class="card-body">
                 <p class="text-muted" style="font-size: 0.85rem;">

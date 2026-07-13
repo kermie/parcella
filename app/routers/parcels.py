@@ -8,7 +8,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
@@ -21,7 +20,7 @@ from app.auth import require_user
 from app.change_tracker import ChangeTracker
 
 router = APIRouter(prefix="/parcels", tags=["parcels"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 
 async def _get_parcel_mit_details(db: AsyncSession, parcel_id: str) -> Optional[Parcel]:

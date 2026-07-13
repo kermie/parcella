@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -14,10 +13,11 @@ from app.models import User, Invitation, InvitationStatus, UserRole, ClubSetting
 from app.auth import require_admin, create_invitation_token, hash_password
 from app.email_service import sende_email
 from app.crypto_utils import verschluesseln
+from app.i18n import AVAILABLE_LANGUAGES
 from app.config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templating import templates
 
 INVITATION_DAYS = 7
 
@@ -201,6 +201,7 @@ async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_d
             "einstellungen": settings_map,
             "felder": SETTINGS_FIELDS,
             "module_felder": MODULE_FELDER,
+            "available_languages": AVAILABLE_LANGUAGES,
         },
     )
 
@@ -257,6 +258,18 @@ async def einstellungen_speichern(
                 value=value,
                 description=description,
             ))
+
+    # Sprache: eigenes Feld (Dropdown, kein Freitext) – gegen die Liste
+    # bekannter Sprachen validiert, damit kein ungültiger Code landen kann,
+    # für den es keine Übersetzungsdatei gibt.
+    language_value = form.get("language", "").strip()
+    if language_value in AVAILABLE_LANGUAGES:
+        result = await db.execute(select(ClubSetting).where(ClubSetting.key == "language"))
+        entry = result.scalar_one_or_none()
+        if entry:
+            entry.value = language_value
+        else:
+            db.add(ClubSetting(key="language", value=language_value, description="Sprache der Oberfläche"))
 
     await db.commit()
     return RedirectResponse("/admin/settings?erfolg=1", status_code=302)
