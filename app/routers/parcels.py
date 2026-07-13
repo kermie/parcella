@@ -73,7 +73,7 @@ async def parzellen_liste(
     )
 
 
-@router.get("/neu", response_class=HTMLResponse)
+@router.get("/new", response_class=HTMLResponse)
 async def parzelle_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
@@ -82,7 +82,7 @@ async def parzelle_neu_seite(request: Request, db: AsyncSession = Depends(get_db
     )
 
 
-@router.post("/neu")
+@router.post("/new")
 async def parzelle_erstellen(
     request: Request,
     plot_number: str = Form(...),
@@ -172,7 +172,7 @@ async def parzelle_detail(
     )
 
 
-@router.get("/{parcel_id}/bearbeiten", response_class=HTMLResponse)
+@router.get("/{parcel_id}/edit", response_class=HTMLResponse)
 async def parzelle_bearbeiten_seite(
     parcel_id: str,
     request: Request,
@@ -190,7 +190,7 @@ async def parzelle_bearbeiten_seite(
     )
 
 
-@router.post("/{parcel_id}/bearbeiten")
+@router.post("/{parcel_id}/edit")
 async def parzelle_aktualisieren(
     parcel_id: str,
     request: Request,
@@ -233,7 +233,7 @@ async def parzelle_aktualisieren(
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
-@router.post("/{parcel_id}/endgueltig-loeschen")
+@router.post("/{parcel_id}/permanently-delete")
 async def parzelle_endgueltig_loeschen(
     parcel_id: str,
     request: Request,
@@ -303,7 +303,7 @@ async def mitglied_zuordnen(
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
-@router.get("/{parcel_id}/member/{assignment_id}/bearbeiten", response_class=HTMLResponse)
+@router.get("/{parcel_id}/member/{assignment_id}/edit", response_class=HTMLResponse)
 async def mitglied_zuordnung_bearbeiten_seite(
     parcel_id: str,
     assignment_id: str,
@@ -334,7 +334,7 @@ async def mitglied_zuordnung_bearbeiten_seite(
     )
 
 
-@router.post("/{parcel_id}/member/{assignment_id}/bearbeiten")
+@router.post("/{parcel_id}/member/{assignment_id}/edit")
 async def mitglied_zuordnung_aktualisieren(
     parcel_id: str,
     assignment_id: str,
@@ -363,7 +363,7 @@ async def mitglied_zuordnung_aktualisieren(
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
-@router.post("/{parcel_id}/member/{assignment_id}/entfernen")
+@router.post("/{parcel_id}/member/{assignment_id}/remove")
 async def mitglied_entfernen(
     parcel_id: str,
     assignment_id: str,

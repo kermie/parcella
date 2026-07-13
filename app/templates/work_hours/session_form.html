@@ -11,7 +11,7 @@
 
 {% block content %}
 <form method="post"
-      action="{% if session %}/work-hours/sessions/{{ session.id }}/edit{% else %}/work-hours/sessions/neu{% endif %}">
+      action="{% if session %}/work-hours/sessions/{{ session.id }}/edit{% else %}/work-hours/sessions/new{% endif %}">
 <div class="row g-3" style="max-width: 640px;">
     <div class="col-12">
         <div class="card">

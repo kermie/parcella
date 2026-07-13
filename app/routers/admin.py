@@ -82,7 +82,7 @@ async def user_invite(
 
     # Link zusammenbauen
     base_url = str(request.base_url).rstrip("/")
-    einladungslink = f"{base_url}/auth/einladung/{token}"
+    einladungslink = f"{base_url}/auth/invitation/{token}"
 
     betreff = f"Einladung zur {settings.app_name}"
     html = f"""

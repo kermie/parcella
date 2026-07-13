@@ -16,7 +16,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="{% if member %}/members/{{ member.id }}/bearbeiten{% else %}/members/neu{% endif %}">
+<form method="post" action="{% if member %}/members/{{ member.id }}/edit{% else %}/members/new{% endif %}">
 <div class="row g-3">
 
     <div class="col-lg-6">

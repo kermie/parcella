@@ -80,7 +80,7 @@ async def logout():
 # Einladungssystem
 # ---------------------------------------------------------------------------
 
-@router.get("/einladung/{token}", response_class=HTMLResponse)
+@router.get("/invitation/{token}", response_class=HTMLResponse)
 async def invitation_page(token: str, request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(Invitation).where(
@@ -101,7 +101,7 @@ async def invitation_page(token: str, request: Request, db: AsyncSession = Depen
     )
 
 
-@router.post("/einladung/{token}")
+@router.post("/invitation/{token}")
 async def invitation_accept(
     token: str,
     request: Request,

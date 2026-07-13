@@ -364,7 +364,7 @@ def erstelle_metering_router(
         metering_point_id: str,
         request: Request,
         year: int = Form(...),
-        date: str = Form(...),
+        date_value: str = Form(..., alias="date"),
         reading: str = Form(...),
         note: str = Form(""),
         rueck_url: str = Form(f"{url_prefix}/readings"),
@@ -390,14 +390,14 @@ def erstelle_metering_router(
         existing = next((z for z in zaehler.readings if z.year == year), None)
         if existing:
             existing.reading = neuer_stand
-            existing.date = date.fromisoformat(date)
+            existing.date = date.fromisoformat(date_value)
             existing.note = note.strip() or None
             existing.recorded_by_id = user.id
         else:
             db.add(MeterReading(
                 meter_id=zaehler.id,
                 year=year,
-                date=date.fromisoformat(date),
+                date=date.fromisoformat(date_value),
                 reading=neuer_stand,
                 note=note.strip() or None,
                 recorded_by_id=user.id,

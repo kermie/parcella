@@ -4,7 +4,7 @@
 
 {% block topbar_actions %}
 <div class="d-flex gap-2">
-    <a href="/parcels/{{ parcel.id }}/bearbeiten" class="btn btn-sm btn-primary">
+    <a href="/parcels/{{ parcel.id }}/edit" class="btn btn-sm btn-primary">
         <i class="bi bi-pencil me-1"></i>Bearbeiten
     </a>
     <a href="/parcels/" class="btn btn-sm btn-outline-secondary">
@@ -95,12 +95,12 @@
                             </td>
                             <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
                             <td class="text-end">
-                                <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/bearbeiten"
+                                <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/edit"
                                    class="btn btn-sm btn-outline-secondary border-0">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post"
-                                      action="/parcels/{{ parcel.id }}/member/{{ z.id }}/entfernen"
+                                      action="/parcels/{{ parcel.id }}/member/{{ z.id }}/remove"
                                       class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                             onclick="return confirm('Pachtverhältnis beenden? (Historie bleibt erhalten)')"
@@ -170,7 +170,7 @@
                             <td>{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
                             <td>{{ z.assigned_until.strftime('%d.%m.%Y') }}</td>
                             <td class="text-end">
-                                <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/bearbeiten"
+                                <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/edit"
                                    class="btn btn-sm btn-outline-secondary border-0" title="Zeitraum korrigieren">
                                     <i class="bi bi-pencil"></i>
                                 </a>

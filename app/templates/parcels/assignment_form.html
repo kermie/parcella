@@ -17,7 +17,7 @@
                 {{ zuordnung.member.full_name }} – Parzelle {{ parcel.plot_number }}
             </div>
             <div class="card-body">
-                <form method="post" action="/parcels/{{ parcel.id }}/member/{{ zuordnung.id }}/bearbeiten">
+                <form method="post" action="/parcels/{{ parcel.id }}/member/{{ zuordnung.id }}/edit">
                     <div class="mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="is_primary_tenant"

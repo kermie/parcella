@@ -81,7 +81,7 @@ async def mitglieder_liste(
     )
 
 
-@router.get("/neu", response_class=HTMLResponse)
+@router.get("/new", response_class=HTMLResponse)
 async def mitglied_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
@@ -90,7 +90,7 @@ async def mitglied_neu_seite(request: Request, db: AsyncSession = Depends(get_db
     )
 
 
-@router.post("/neu")
+@router.post("/new")
 async def mitglied_erstellen(
     request: Request,
     first_name: str = Form(...),
@@ -164,7 +164,7 @@ async def mitglied_detail(
     )
 
 
-@router.get("/{member_id}/bearbeiten", response_class=HTMLResponse)
+@router.get("/{member_id}/edit", response_class=HTMLResponse)
 async def mitglied_bearbeiten_seite(
     member_id: str,
     request: Request,
@@ -182,7 +182,7 @@ async def mitglied_bearbeiten_seite(
     )
 
 
-@router.post("/{member_id}/bearbeiten")
+@router.post("/{member_id}/edit")
 async def mitglied_aktualisieren(
     member_id: str,
     request: Request,

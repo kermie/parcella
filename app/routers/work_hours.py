@@ -301,7 +301,7 @@ async def einsatz_erstellen(
     title: str = Form(...),
     description: str = Form(""),
     type: str = Form("STANDARD"),
-    date: str = Form(...),
+    date_value: str = Form(..., alias="date"),
     time_from: str = Form(""),
     time_until: str = Form(""),
     max_participants: str = Form(""),
@@ -314,7 +314,7 @@ async def einsatz_erstellen(
         title=title.strip(),
         description=description.strip() or None,
         type=SessionType(type),
-        date=date.fromisoformat(date),
+        date=date.fromisoformat(date_value),
         time_from=time_from.strip() or None,
         time_until=time_until.strip() or None,
         max_participants=int(max_participants) if max_participants.strip() else None,
@@ -357,7 +357,7 @@ async def einsatz_aktualisieren(
     title: str = Form(...),
     description: str = Form(""),
     type: str = Form("STANDARD"),
-    date: str = Form(...),
+    date_value: str = Form(..., alias="date"),
     time_from: str = Form(""),
     time_until: str = Form(""),
     max_participants: str = Form(""),
@@ -374,7 +374,7 @@ async def einsatz_aktualisieren(
     session.title = title.strip()
     session.description = description.strip() or None
     session.type = SessionType(type)
-    session.date = date.fromisoformat(date)
+    session.date = date.fromisoformat(date_value)
     session.time_from = time_from.strip() or None
     session.time_until = time_until.strip() or None
     session.max_participants = int(max_participants) if max_participants.strip() else None

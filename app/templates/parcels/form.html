@@ -16,7 +16,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="{% if parcel %}/parcels/{{ parcel.id }}/bearbeiten{% else %}/parcels/neu{% endif %}">
+<form method="post" action="{% if parcel %}/parcels/{{ parcel.id }}/edit{% else %}/parcels/new{% endif %}">
 <div class="row g-3" style="max-width: 640px;">
 
     <div class="col-12">
@@ -95,7 +95,7 @@
                     Alle Mitgliederzuordnungen zu dieser Parzelle werden mit entfernt, Wasseranschlüsse
                     bleiben erhalten aber ohne Parzellenbezug. Diese Aktion kann nicht rückgängig gemacht werden.
                 </p>
-                <form method="post" action="/parcels/{{ parcel.id }}/endgueltig-loeschen"
+                <form method="post" action="/parcels/{{ parcel.id }}/permanently-delete"
                       onsubmit="return confirm('Parzelle {{ parcel.plot_number }} wirklich UNWIDERRUFLICH löschen? Dies kann nicht rückgängig gemacht werden.')">
                     <button type="submit" class="btn btn-outline-danger">
                         <i class="bi bi-trash me-1"></i>Parzelle endgültig löschen
