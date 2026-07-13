@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Mitglieder{% endblock %}
-{% block page_title %}Mitglieder{% endblock %}
+{% block title %}{{ t('members.list.title') }}{% endblock %}
+{% block page_title %}{{ t('members.list.title') }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 flex-wrap">
     <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#csvImportModal">
-        <i class="bi bi-upload me-1"></i>CSV Import
+        <i class="bi bi-upload me-1"></i>{{ t('members.list.csv_import') }}
     </button>
     <a href="/members/export/csv" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-download me-1"></i>CSV Export
+        <i class="bi bi-download me-1"></i>{{ t('members.list.csv_export') }}
     </a>
     <a href="/members/new" class="btn btn-sm btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Neues Mitglied
+        <i class="bi bi-plus-lg me-1"></i>{{ t('members.list.new_member') }}
     </a>
 </div>
 {% endblock %}
@@ -30,18 +30,18 @@
         <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
             <i class="bi bi-search text-muted"></i>
             <input type="text" name="suche" value="{{ suche }}" class="form-control form-control-sm border-0"
-                   placeholder="Nach Name oder Ort suchen…" style="box-shadow: none; max-width: 260px;">
+                   placeholder="{{ t('members.list.search_placeholder') }}" style="box-shadow: none; max-width: 260px;">
             <div class="form-check form-check-inline my-auto ms-1">
                 <input class="form-check-input" type="checkbox" name="auch_inaktive" id="auch-inaktive"
                        value="true" {% if auch_inaktive %}checked{% endif %}
                        onchange="this.form.submit()">
                 <label class="form-check-label text-muted" for="auch-inaktive" style="font-size: 0.85rem;">
-                    Inaktive anzeigen
+                    {{ t('members.list.show_inactive') }}
                 </label>
             </div>
-            <button type="submit" class="btn btn-sm btn-primary">Suchen</button>
+            <button type="submit" class="btn btn-sm btn-primary">{{ t('members.list.search_button') }}</button>
             {% if suche or auch_inaktive %}
-            <a href="/members/" class="btn btn-sm btn-outline-secondary">Zurücksetzen</a>
+            <a href="/members/" class="btn btn-sm btn-outline-secondary">{{ t('members.list.reset_button') }}</a>
             {% endif %}
         </form>
     </div>
@@ -49,7 +49,7 @@
 {% if auch_inaktive %}
 <div class="alert alert-info d-flex gap-2 align-items-center mb-3" style="font-size: 0.875rem;">
     <i class="bi bi-info-circle-fill"></i>
-    Inaktive Mitglieder werden angezeigt (Mitgliedschaft abgelaufen).
+    {{ t('members.list.inactive_notice') }}
 </div>
 {% endif %}
 
@@ -60,11 +60,11 @@
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Ort</th>
-                        <th>Mitglied seit</th>
-                        <th>Parzellen</th>
-                        <th>Status</th>
+                        <th>{{ t('members.list.col_name') }}</th>
+                        <th>{{ t('members.list.col_city') }}</th>
+                        <th>{{ t('members.list.col_member_since') }}</th>
+                        <th>{{ t('members.list.col_parcels') }}</th>
+                        <th>{{ t('members.list.col_status') }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -94,11 +94,11 @@
                         </td>
                         <td>
                             {% if m.is_active %}
-                            <span class="badge badge-aktiv">aktiv</span>
+                            <span class="badge badge-aktiv">{{ t('members.list.status_active') }}</span>
                             {% else %}
-                            <span class="badge badge-gekuendigt">inaktiv</span>
+                            <span class="badge badge-gekuendigt">{{ t('members.list.status_inactive') }}</span>
                             {% if m.member_until %}
-                            <div class="text-muted" style="font-size: 0.72rem;">seit {{ m.member_until.strftime('%d.%m.%Y') }}</div>
+                            <div class="text-muted" style="font-size: 0.72rem;">{{ t('members.list.inactive_since', date=m.member_until.strftime('%d.%m.%Y')) }}</div>
                             {% endif %}
                             {% endif %}
                         </td>
@@ -113,11 +113,11 @@
                         <td colspan="6" class="text-center py-5 text-muted">
                             {% if suche %}
                             <i class="bi bi-search d-block mb-2" style="font-size: 1.5rem;"></i>
-                            Keine Mitglieder gefunden für „{{ suche }}"
+                            {{ t('members.list.empty_search', query=suche) }}
                             {% else %}
                             <i class="bi bi-people d-block mb-2" style="font-size: 1.5rem;"></i>
-                            Noch keine Mitglieder angelegt.<br>
-                            <a href="/members/new" class="btn btn-sm btn-primary mt-2">Erstes Mitglied anlegen</a>
+                            {{ t('members.list.empty_none') }}<br>
+                            <a href="/members/new" class="btn btn-sm btn-primary mt-2">{{ t('members.list.create_first') }}</a>
                             {% endif %}
                         </td>
                     </tr>
@@ -128,7 +128,7 @@
     </div>
     {% if members %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">
-        {{ members | length }} Mitglied{{ 'er' if members | length != 1 else '' }}
+        {{ members | length }} {{ t('members.list.count_suffix_singular') if members | length == 1 else t('members.list.count_suffix_plural') }}
     </div>
     {% endif %}
 </div>
@@ -138,7 +138,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>CSV-Import</h5>
+                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>{{ t('members.list.csv_import_modal_title') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -147,18 +147,17 @@
                     <input type="file" name="datei" accept=".csv" class="form-control form-control-sm"
                            required style="max-width: 300px;">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-upload me-1"></i>Importieren
+                        <i class="bi bi-upload me-1"></i>{{ t('members.list.csv_import_button') }}
                     </button>
                 </form>
                 <div class="form-text mt-2">
-                    Format: Semikolon-getrennte CSV mit Spalten:
+                    {{ t('members.list.csv_format_help') }}
                     <code>Vorname; Nachname; Strasse; PLZ; Ort; Geburtsdatum; IBAN;
                     Mitglied seit; Mitglied bis; E-Mail-Benachrichtigungen;
                     E-Mail-Adressen; Telefonnummern; Notizen</code><br>
-                    Datumsformat: <code>JJJJ-MM-TT</code> oder <code>TT.MM.JJJJ</code>.
-                    Mehrere E-Mail-Adressen / Telefonnummern jeweils durch Semikolon trennen.<br>
-                    Tipp: Einfach einen <a href="/members/export/csv">CSV-Export</a>
-                    als Vorlage verwenden.
+                    {{ t('members.list.csv_date_format_help', iso='JJJJ-MM-TT', de='TT.MM.JJJJ') }}
+                    {{ t('members.list.csv_multi_help') }}<br>
+                    {{ t('members.list.csv_template_tip', link='<a href="/members/export/csv">' ~ t('members.list.csv_export_link_text') ~ '</a>') | safe }}
                 </div>
             </div>
         </div>

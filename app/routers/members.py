@@ -15,6 +15,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db, active_member_filter
 from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
 from app.auth import get_current_user, require_user
+from app.i18n import t_for
 
 router = APIRouter(prefix="/members", tags=["members"])
 from app.templating import templates
@@ -491,13 +492,13 @@ async def mitglieder_import_csv(
 
     await db.commit()
 
-    meldung = f"{erstellt} neu importiert, {aktualisiert} aktualisiert"
+    meldung = t_for(request, "members.list.csv_import_summary", created=erstellt, updated=aktualisiert)
     if fehler:
-        meldung += f", {len(fehler)} Fehler"
+        meldung += t_for(request, "members.list.csv_import_errors_suffix", count=len(fehler))
         # Erste paar Fehlerdetails anzeigen, damit man die Ursache sofort sieht
         meldung += " – " + " | ".join(fehler[:3])
         if len(fehler) > 3:
-            meldung += f" (und {len(fehler) - 3} weitere)"
+            meldung += t_for(request, "members.list.csv_import_more_errors", count=len(fehler) - 3)
 
     import urllib.parse
     return RedirectResponse(

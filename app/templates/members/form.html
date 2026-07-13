@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{% if member %}{{ member.full_name }} bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
-{% block page_title %}{% if member %}Mitglied bearbeiten{% else %}Neues Mitglied{% endif %}{% endblock %}
+{% block title %}{% if member %}{{ t('members.form.title_edit', name=member.full_name) }}{% else %}{{ t('members.form.title_new') }}{% endif %}{% endblock %}
+{% block page_title %}{% if member %}{{ t('members.form.heading_edit') }}{% else %}{{ t('members.form.heading_new') }}{% endif %}{% endblock %}
 
 {% block topbar_actions %}
 <a href="{% if member %}/members/{{ member.id }}{% else %}/members/{% endif %}"
    class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Abbrechen
+    <i class="bi bi-arrow-left me-1"></i>{{ t('members.form.cancel') }}
 </a>
 {% endblock %}
 
@@ -21,26 +21,26 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><i class="bi bi-person me-2"></i>Persönliche Daten</div>
+            <div class="card-header"><i class="bi bi-person me-2"></i>{{ t('members.form.personal_data_header') }}</div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Vorname <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_first_name') }} <span class="text-danger">*</span></label>
                         <input type="text" name="first_name" class="form-control"
                                value="{{ member.first_name if member else '' }}" required autofocus>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Nachname <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_last_name') }} <span class="text-danger">*</span></label>
                         <input type="text" name="last_name" class="form-control"
                                value="{{ member.last_name if member else '' }}" required>
                     </div>
                     <div class="col-12">
-                        <label class="form-label fw-semibold">Geburtsdatum</label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_date_of_birth') }}</label>
                         <input type="date" name="date_of_birth" class="form-control"
                                value="{{ member.date_of_birth.isoformat() if member and member.date_of_birth else '' }}">
                     </div>
                     <div class="col-12">
-                        <label class="form-label fw-semibold">IBAN</label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_iban') }}</label>
                         <input type="text" name="iban" class="form-control font-monospace"
                                placeholder="DE00 0000 0000 0000 0000 00"
                                value="{{ member.iban if member else '' }}">
@@ -52,21 +52,21 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><i class="bi bi-house me-2"></i>Adresse</div>
+            <div class="card-header"><i class="bi bi-house me-2"></i>{{ t('members.form.address_header') }}</div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-12">
-                        <label class="form-label fw-semibold">Straße und Hausnummer</label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_street') }}</label>
                         <input type="text" name="street" class="form-control"
                                value="{{ member.street if member else '' }}">
                     </div>
                     <div class="col-sm-4">
-                        <label class="form-label fw-semibold">PLZ</label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_postal_code') }}</label>
                         <input type="text" name="postal_code" class="form-control" maxlength="10"
                                value="{{ member.postal_code if member else '' }}">
                     </div>
                     <div class="col-sm-8">
-                        <label class="form-label fw-semibold">Ort</label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_city') }}</label>
                         <input type="text" name="city" class="form-control"
                                value="{{ member.city if member else '' }}">
                     </div>
@@ -77,19 +77,19 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><i class="bi bi-calendar me-2"></i>Mitgliedschaft</div>
+            <div class="card-header"><i class="bi bi-calendar me-2"></i>{{ t('members.form.membership_header') }}</div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Mitglied seit</label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_member_since') }}</label>
                         <input type="date" name="member_since" class="form-control"
                                value="{{ member.member_since.isoformat() if member and member.member_since else '' }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Mitglied bis</label>
+                        <label class="form-label fw-semibold">{{ t('members.form.label_member_until') }}</label>
                         <input type="date" name="member_until" class="form-control"
                                value="{{ member.member_until.isoformat() if member and member.member_until else '' }}">
-                        <div class="form-text">Leer lassen = aktives Mitglied</div>
+                        <div class="form-text">{{ t('members.form.member_until_help') }}</div>
                     </div>
                     <div class="col-12">
                         <div class="form-check">
@@ -97,7 +97,7 @@
                                    id="email-info"
                                    {% if not member or member.email_notifications %}checked{% endif %}>
                             <label class="form-check-label" for="email-info">
-                                Darf per E-Mail Informationen erhalten
+                                {{ t('members.form.label_email_notifications') }}
                             </label>
                         </div>
                     </div>
@@ -108,10 +108,10 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><i class="bi bi-sticky me-2"></i>Notizen</div>
+            <div class="card-header"><i class="bi bi-sticky me-2"></i>{{ t('members.form.notes_header') }}</div>
             <div class="card-body">
                 <textarea name="notes" class="form-control" rows="5"
-                          placeholder="Interne Notizen…">{{ member.notes if member else '' }}</textarea>
+                          placeholder="{{ t('members.form.notes_placeholder') }}">{{ member.notes if member else '' }}</textarea>
             </div>
         </div>
     </div>
@@ -119,10 +119,10 @@
     <div class="col-12">
         <div class="d-flex gap-2 justify-content-end">
             <a href="{% if member %}/members/{{ member.id }}{% else %}/members/{% endif %}"
-               class="btn btn-outline-secondary">Abbrechen</a>
+               class="btn btn-outline-secondary">{{ t('members.form.cancel') }}</a>
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-lg me-1"></i>
-                {% if member %}Änderungen speichern{% else %}Mitglied anlegen{% endif %}
+                {% if member %}{{ t('members.form.button_save_changes') }}{% else %}{{ t('members.form.button_create') }}{% endif %}
             </button>
         </div>
     </div>

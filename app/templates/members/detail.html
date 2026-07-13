@@ -5,10 +5,10 @@
 {% block topbar_actions %}
 <div class="d-flex gap-2">
     <a href="/members/{{ member.id }}/edit" class="btn btn-sm btn-primary">
-        <i class="bi bi-pencil me-1"></i>Bearbeiten
+        <i class="bi bi-pencil me-1"></i>{{ t('members.detail.button_edit') }}
     </a>
     <a href="/members/" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Zurück
+        <i class="bi bi-arrow-left me-1"></i>{{ t('members.detail.button_back') }}
     </a>
 </div>
 {% endblock %}
@@ -19,40 +19,40 @@
     <!-- Stammdaten -->
     <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header"><i class="bi bi-person me-2"></i>Stammdaten</div>
+            <div class="card-header"><i class="bi bi-person me-2"></i>{{ t('members.detail.master_data_header') }}</div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-5 text-muted">Name</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('members.detail.label_name') }}</dt>
                     <dd class="col-sm-7 fw-semibold">{{ member.full_name }}</dd>
 
-                    <dt class="col-sm-5 text-muted">Geburtsdatum</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('members.detail.label_date_of_birth') }}</dt>
                     <dd class="col-sm-7">{{ member.date_of_birth.strftime('%d.%m.%Y') if member.date_of_birth else '–' }}</dd>
 
-                    <dt class="col-sm-5 text-muted">Adresse</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('members.detail.label_address') }}</dt>
                     <dd class="col-sm-7">
                         {% if member.street %}{{ member.street }}<br>{% endif %}
                         {% if member.postal_code or member.city %}{{ member.postal_code or '' }} {{ member.city or '' }}{% else %}–{% endif %}
                     </dd>
 
-                    <dt class="col-sm-5 text-muted">IBAN</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('members.detail.label_iban') }}</dt>
                     <dd class="col-sm-7">
                         {% if member.iban %}
                         <code>{{ member.iban }}</code>
                         {% else %}–{% endif %}
                     </dd>
 
-                    <dt class="col-sm-5 text-muted">Mitglied seit</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('members.detail.label_member_since') }}</dt>
                     <dd class="col-sm-7">{{ member.member_since.strftime('%d.%m.%Y') if member.member_since else '–' }}</dd>
 
-                    <dt class="col-sm-5 text-muted">Mitglied bis</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('members.detail.label_member_until') }}</dt>
                     <dd class="col-sm-7">{{ member.member_until.strftime('%d.%m.%Y') if member.member_until else '–' }}</dd>
 
-                    <dt class="col-sm-5 text-muted">E-Mail-Info</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('members.detail.label_email_info') }}</dt>
                     <dd class="col-sm-7">
                         {% if member.email_notifications %}
-                        <span class="badge badge-aktiv"><i class="bi bi-check me-1"></i>Ja</span>
+                        <span class="badge badge-aktiv"><i class="bi bi-check me-1"></i>{{ t('members.detail.yes') }}</span>
                         {% else %}
-                        <span class="badge" style="background: #f3f4f6; color: #6b7280;">Nein</span>
+                        <span class="badge" style="background: #f3f4f6; color: #6b7280;">{{ t('members.detail.no') }}</span>
                         {% endif %}
                     </dd>
                 </dl>
@@ -64,21 +64,21 @@
     <div class="col-lg-6">
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-telephone me-2"></i>Telefonnummern</span>
+                <span><i class="bi bi-telephone me-2"></i>{{ t('members.detail.phones_header') }}</span>
             </div>
             <div class="card-body p-0">
                 <ul class="list-group list-group-flush">
-                    {% for t in member.phone_numbers %}
+                    {% for t_num in member.phone_numbers %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>{{ t.number }}</span>
-                        <form method="post" action="/members/{{ member.id }}/phone/{{ t.id }}/delete" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Entfernen">
+                        <span>{{ t_num.number }}</span>
+                        <form method="post" action="/members/{{ member.id }}/phone/{{ t_num.id }}/delete" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="{{ t('members.detail.remove_tooltip') }}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
                     </li>
                     {% else %}
-                    <li class="list-group-item text-muted">Keine Telefonnummern</li>
+                    <li class="list-group-item text-muted">{{ t('members.detail.no_phones') }}</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -92,7 +92,7 @@
         </div>
 
         <div class="card">
-            <div class="card-header"><i class="bi bi-envelope me-2"></i>E-Mail-Adressen</div>
+            <div class="card-header"><i class="bi bi-envelope me-2"></i>{{ t('members.detail.emails_header') }}</div>
             <div class="card-body p-0">
                 <ul class="list-group list-group-flush">
                     {% for e in member.email_addresses %}
@@ -105,7 +105,7 @@
                         </form>
                     </li>
                     {% else %}
-                    <li class="list-group-item text-muted">Keine E-Mail-Adressen</li>
+                    <li class="list-group-item text-muted">{{ t('members.detail.no_emails') }}</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -122,17 +122,17 @@
     <!-- Parzellen -->
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Zugeordnete Parzellen</div>
+            <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>{{ t('members.detail.parcels_header') }}</div>
             <div class="card-body p-0">
                 <div class="table-responsive">
 <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Gartennummer</th>
-                                <th>Fläche</th>
-                                <th>Status</th>
-                                <th>Rolle</th>
-                                <th>Seit</th>
+                                <th>{{ t('members.detail.col_plot_number') }}</th>
+                                <th>{{ t('members.detail.col_area') }}</th>
+                                <th>{{ t('members.detail.col_status') }}</th>
+                                <th>{{ t('members.detail.col_role') }}</th>
+                                <th>{{ t('members.detail.col_since') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -145,9 +145,15 @@
                                 </td>
                                 <td>{{ z.parcel.area_sqm | round(1) if z.parcel.area_sqm else '–' }} {% if z.parcel.area_sqm %}qm{% endif %}</td>
                                 <td>
-                                    <span class="badge badge-{{ z.parcel.status.value|lower }}">{{ z.parcel.status.value|lower }}</span>
+                                    {% if z.parcel.status.value == 'ACTIVE' %}
+                                    <span class="badge badge-aktiv">{{ t('parcels.status.active') }}</span>
+                                    {% elif z.parcel.status.value == 'TERMINATED' %}
+                                    <span class="badge badge-gekuendigt">{{ t('parcels.status.terminated') }}</span>
+                                    {% else %}
+                                    <span class="badge badge-geloescht">{{ t('parcels.status.deleted') }}</span>
+                                    {% endif %}
                                 </td>
-                                <td>{% if z.is_primary_tenant %}<span class="badge badge-aktiv">Hauptpächter</span>{% else %}<span class="text-muted">Mitpächter</span>{% endif %}</td>
+                                <td>{% if z.is_primary_tenant %}<span class="badge badge-aktiv">{{ t('members.detail.primary_tenant') }}</span>{% else %}<span class="text-muted">{{ t('members.detail.co_tenant') }}</span>{% endif %}</td>
                                 <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
                                 <td class="text-end">
                                     <a href="/parcels/{{ z.parcel.id }}" class="btn btn-sm btn-outline-secondary">
@@ -157,7 +163,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-3">Keine Parzellen zugeordnet</td>
+                                <td colspan="6" class="text-center text-muted py-3">{{ t('members.detail.no_parcels') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -169,7 +175,7 @@
                       class="d-flex gap-2 flex-wrap align-items-center" id="form-parzelle-zuordnen">
                     <select name="parzelle_id" class="form-select form-select-sm" style="max-width: 180px;" required
                             onchange="document.getElementById('form-parzelle-zuordnen').action='/parcels/'+this.value+'/member/assign'">
-                        <option value="">Parzelle wählen…</option>
+                        <option value="">{{ t('members.detail.select_parcel_placeholder') }}</option>
                         {% for p in alle_parzellen %}
                         <option value="{{ p.id }}">{{ p.plot_number }}</option>
                         {% endfor %}
@@ -177,10 +183,10 @@
                     <input type="hidden" name="member_id" value="{{ member.id }}">
                     <div class="form-check form-check-inline my-auto">
                         <input class="form-check-input" type="checkbox" name="is_primary_tenant" id="ist-hp" checked>
-                        <label class="form-check-label small" for="ist-hp">Hauptpächter</label>
+                        <label class="form-check-label small" for="ist-hp">{{ t('members.detail.is_primary_tenant_label') }}</label>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i>Zuordnen
+                        <i class="bi bi-plus-lg me-1"></i>{{ t('members.detail.assign_button') }}
                     </button>
                 </form>
             </div>
@@ -191,7 +197,7 @@
     {% if member.notes %}
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-sticky me-2"></i>Notizen</div>
+            <div class="card-header"><i class="bi bi-sticky me-2"></i>{{ t('members.detail.notes_header') }}</div>
             <div class="card-body">{{ member.notes }}</div>
         </div>
     </div>
