@@ -1,82 +1,82 @@
-# Modul: Pflichtstunden (Work Hours)
+# Module: Work Hours (Pflichtstunden)
 
-> **Hinweis zur Umbenennung:** Der Code (Modelle, Tabellen, URLs,
-> API-Endpunkte) wurde vollständig auf Englisch umgestellt:
-> `Arbeitseinsatz` → `WorkSession`, `Vereinsrolle` → `ClubRole`,
-> `Patenschaft` → `Sponsorship`, `/pflichtstunden/` → `/work-hours/`.
-> Details und Lehren dazu in
-> [Architektur-Entscheidungen](./architektur-entscheidungen.md).
-> Diese Seite beschreibt weiterhin die fachliche Logik, die sich dabei
-> nicht geändert hat.
+> **Note on the renaming:** the code (models, tables, URLs, API
+> endpoints) has been fully converted to English:
+> `Arbeitseinsatz` -> `WorkSession`, `Vereinsrolle` -> `ClubRole`,
+> `Patenschaft` -> `Sponsorship`, `/pflichtstunden/` -> `/work-hours/`.
+> Details and lessons learned in
+> [Architecture Decisions](./architektur-entscheidungen.md).
+> This page continues to describe the domain logic, which did not
+> change in the process.
 
-Verwaltet die jährliche Arbeitsstunden-Pflicht: Standard- und
-Sondereinsätze, Patenschaften als Alternative, Vereinsrollen mit
-automatischer Befreiung.
+Manages the annual mandatory work-hours requirement: standard and special
+work sessions, sponsorships as an alternative, club roles with automatic
+exemption.
 
-Modul-Flag: `work_hours` (siehe `app/module_flags.py`)
+Module flag: `work_hours` (see `app/module_flags.py`)
 
-## Datenmodell
+## Data model
 
 ```
-pflichtstunden_konfiguration – Jahresbasierte Stunden/Satz-Konfiguration
-vereinsrollen                – Vereinsämter (Vorstand, erweiterter Vorstand etc.)
-mitglied_vereinsrolle        – Zuordnung Mitglied → Vereinsrolle (jahresbasiert)
-arbeitseinsaetze             – Standard- und Besondere Einsätze
-einsatz_teilnahmen           – Wer war bei welchem Einsatz, mit Stunden
-patenschaften                – Bereichsverantwortlichkeiten (pauschale Anrechnung)
+work_hours_configuration – year-based hours/rate configuration
+club_roles                – club offices (board, extended board, etc.)
+member_club_roles         – member -> club role assignment (year-based)
+work_sessions             – standard and special sessions
+session_participations    – who attended which session, with hours
+sponsorships              – area responsibilities (flat-rate credit)
 ```
 
-## Wichtige Entscheidungen
+## Key decisions
 
-**Konfigurierbarer Abrechnungsmodus.** Manche Vereine rechnen Pflichtstunden
-pro Mitglied ab, andere pro Pachtvertrag (Parzelle). Beides ist über
-`PflichtstundenModus` (`PRO_MITGLIED` / `PRO_PACHTVERTRAG`) einstellbar,
-statt fest einprogrammiert zu sein – ein Beispiel für "was gehört
-generisch ins Produkt, nicht nur in unseren Verein".
+**Configurable billing mode.** Some associations bill mandatory hours per
+member, others per lease (parcel). Both are configurable via
+`WorkHoursMode` (`PER_MEMBER` / `PER_PARCEL`) instead of being hard-coded
+-- an example of "what belongs generically in the product, not just in
+our association".
 
-**Pächter-Gruppen bei PRO_PACHTVERTRAG.** Wenn mehrere Personen dieselbe
-Parzelle pachten, zählen ihre Stunden zusammen gegen die eine Pflicht der
-Parzelle (nicht jeder einzeln). Ein Pächter kann z.B. 2 Stunden leisten,
-der andere 3 – zusammen sind die 5 Stunden erfüllt.
+**Tenant groups under PER_PARCEL.** When several people lease the same
+parcel, their hours are added together against the parcel's single
+requirement (not counted individually per person). One tenant might
+contribute 2 hours, the other 3 -- together the 5 hours are fulfilled.
 
-**Vereinsrollen-Befreiung gilt für die ganze Parzelle.** Wenn ein Mitglied
-im (erweiterten) Vorstand ist und dadurch von Pflichtstunden befreit ist,
-gilt diese Befreiung für die **gesamte Parzelle**, nicht nur für die
-befreite Person – die Überlegung: der Vorstandsposten "hält dem Rest der
-Familie/Mitpächter den Rücken frei". Umgesetzt als `any()` (mindestens ein
-Pächter befreit → ganze Parzelle befreit), nicht `all()`.
+**Club-role exemption applies to the whole parcel.** If a member is on the
+(extended) board and is therefore exempt from mandatory hours, that
+exemption applies to the **entire parcel**, not just to the exempt
+person -- the reasoning: the board position "covers" the rest of the
+family/co-tenants. Implemented as `any()` (at least one tenant exempt ->
+whole parcel exempt), not `all()`.
 
-**Befreiung gilt pro Kalenderjahr, nicht tagesgenau.** Legt ein Vorstand
-sein Amt im Oktober nieder, gilt die Befreiung trotzdem für das ganze
-Jahr. Erst das Folgejahr unterliegt wieder der normalen Pflicht. Die
-Tabelle `mitglied_vereinsrolle` hat ein `jahr`-Feld statt reiner
-Datumsspannen, genau aus diesem Grund.
+**Exemption applies per calendar year, not to the exact day.** If a board
+member steps down in October, the exemption still applies for the whole
+year. Only the following year is subject to the normal requirement again.
+The `member_club_roles` table has a `year` field instead of pure date
+ranges for exactly this reason.
 
-**Patenschaften sind Projekte, keine Zuordnungen.** Ursprünglich zwang die
-Oberfläche dazu, beim Anlegen einer Patenschaft sofort ein Mitglied
-zuzuordnen. Das wurde geändert: Patenschaften ("Bereiche") können ohne
-Mitglied angelegt werden ("noch nicht vergeben") – der reale Workflow ist,
-dass der Verein zuerst Patenschaften ausschreibt und dann Bewerber
-zuordnet. Mehrere Mitglieder können sich einen Bereich teilen, indem
-mehrere Patenschaft-Zeilen mit demselben Bereichsnamen (Autovervollständigung
-via `<datalist>`) angelegt werden – jedes bekommt die volle Stundenanrechnung.
+**Sponsorships are projects, not assignments.** Originally the UI forced
+you to assign a member immediately when creating a sponsorship. That was
+changed: sponsorships ("areas") can be created without a member ("not yet
+assigned") -- the real-world workflow is that the association first
+advertises sponsorship areas and then assigns applicants. Multiple members
+can share an area by creating multiple sponsorship rows with the same
+area name (autocomplete via `<datalist>`) -- each gets the full hour
+credit.
 
-**Anrechenbare Stunden werden aus der aktuellen Konfiguration vorbefüllt**,
-bleiben aber frei editierbar (z.B. falls eine Patenschaft mehr Aufwand
-macht als die Standard-Pflicht).
+**Creditable hours are pre-filled from the current configuration**, but
+remain freely editable (e.g. in case a sponsorship takes more effort than
+the standard requirement).
 
-## Bekannte Fallstricke
+## Known pitfalls
 
-- `EinsatzTyp` und `TeilnahmeStatus` mussten (wie mehrere andere Enums)
-  nachträglich auf Großschreibung korrigiert werden – siehe
-  [Architektur-Entscheidungen](./architektur-entscheidungen.md) für die
-  ausführliche Erklärung dieses wiederkehrenden Bugs.
+- `SessionType` and `ParticipationStatus` had to be corrected to uppercase
+  after the fact (like several other enums) -- see
+  [Architecture Decisions](./architektur-entscheidungen.md) for the full
+  explanation of this recurring bug.
 
-## REST-API
+## REST API
 
-Dieses Modul verfügt (nachträglich ergänzt) über es für dieses Modul vollständige
-REST-API-Endpunkte (JWT-authentifiziert, siehe `/api/docs`). Siehe README
-für die Endpunkt-Übersicht. Hintergrund: anfangs wurden neue Module nur
-als Web-Oberfläche gebaut, die API wurde nachträglich nachgezogen – seither
-gilt die Regel, dass jedes neue Modul **von Anfang an** sowohl Web-UI als
-auch API-Endpunkte bekommt (siehe Architektur-Entscheidungen).
+This module has (added after the fact) a complete set of REST API
+endpoints for this module (JWT-authenticated, see `/api/docs`). See the
+README for the endpoint overview. Background: early modules were
+initially built as web UI only, with the API added later -- since then
+the rule is that every new module gets **both** the web UI and API
+endpoints **from the start** (see Architecture Decisions).

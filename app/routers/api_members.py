@@ -57,12 +57,12 @@ def _zu_detail_schema(member: Member) -> MemberDetailOut:
 @router.get(
     "",
     response_model=List[MemberOut],
-    summary="Mitglieder auflisten",
-    description="Gibt alle (nicht gelöschten) Mitglieder zurück. Unterstützt Volltextsuche und Paginierung.",
+    summary="List members",
+    description="Returns all (non-deleted) members. Supports full-text search and pagination.",
 )
 async def mitglieder_auflisten(
-    suche: Optional[str] = Query(None, description="Suche in Vor-/Nachname und Ort"),
-    nur_aktive: bool = Query(False, description="Nur aktive Mitgliedschaften (member_until in der Zukunft oder leer)"),
+    suche: Optional[str] = Query(None, description="Search in first/last name and city"),
+    nur_aktive: bool = Query(False, description="Only active memberships (member_until in the future or empty)"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -97,8 +97,8 @@ async def mitglieder_auflisten(
 @router.get(
     "/{member_id}",
     response_model=MemberDetailOut,
-    summary="Einzelnes Member abrufen",
-    description="Gibt ein Member inkl. zugeordneter Parzellen, Telefonnummern und E-Mail-Adressen zurück.",
+    summary="Retrieve a single member",
+    description="Returns a member including assigned parcels, phone numbers, and email addresses.",
 )
 async def mitglied_abrufen(
     member_id: str,
@@ -113,7 +113,7 @@ async def mitglied_abrufen(
     "",
     response_model=MemberOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Neues Member anlegen",
+    summary="Create new member",
 )
 async def mitglied_erstellen(
     daten: MemberCreate,
@@ -130,8 +130,8 @@ async def mitglied_erstellen(
 @router.put(
     "/{member_id}",
     response_model=MemberOut,
-    summary="Member aktualisieren",
-    description="Teilupdate: nur übergebene Felder werden geändert.",
+    summary="Update member",
+    description="Partial update: only the fields provided are changed.",
 )
 async def mitglied_aktualisieren(
     member_id: str,
@@ -152,8 +152,8 @@ async def mitglied_aktualisieren(
 @router.delete(
     "/{member_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Member löschen (Soft-Delete)",
-    description="Markiert das Member als gelöscht (deleted_at gesetzt). Daten bleiben in der Datenbank erhalten.",
+    summary="Delete member (soft delete)",
+    description="Marks the member as deleted (deleted_at set). Data remains in the database.",
 )
 async def mitglied_loeschen(
     member_id: str,
@@ -175,7 +175,7 @@ async def mitglied_loeschen(
     "/{member_id}/phone_numbers",
     response_model=PhoneOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Telefonnummer hinzufügen",
+    summary="Add phone number",
 )
 async def telefon_hinzufuegen(
     member_id: str,
@@ -194,7 +194,7 @@ async def telefon_hinzufuegen(
 @router.delete(
     "/{member_id}/phone_numbers/{telefon_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Telefonnummer entfernen",
+    summary="Remove phone number",
 )
 async def telefon_entfernen(
     member_id: str,
@@ -222,7 +222,7 @@ async def telefon_entfernen(
     "/{member_id}/email-addresses",
     response_model=EmailAddressOut,
     status_code=status.HTTP_201_CREATED,
-    summary="E-Mail-Adresse hinzufügen",
+    summary="Add email address",
 )
 async def email_hinzufuegen(
     member_id: str,
@@ -246,7 +246,7 @@ async def email_hinzufuegen(
 @router.delete(
     "/{member_id}/email-addresses/{email_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="E-Mail-Adresse entfernen",
+    summary="Remove email address",
 )
 async def email_entfernen(
     member_id: str,

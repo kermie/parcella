@@ -1,73 +1,72 @@
-# Modul: Versicherungen (Insurance)
+# Module: Insurance (Versicherungen)
 
-> **Hinweis zur Umbenennung:** Der Code (Modelle, Tabellen, URLs,
-> API-Endpunkte) wurde vollständig auf Englisch umgestellt:
-> `SachversicherungPaket` → `PropertyInsurancePackage`,
-> `VersicherungsKonfiguration` → `InsuranceConfiguration`,
-> `ParzelleVersicherung` → `ParcelInsurance`,
-> `UnfallversicherungZusatzperson` → `AccidentInsuranceAdditionalPerson`,
-> `/versicherungen/` → `/insurance/`. Details und Lehren dazu in
-> [Architektur-Entscheidungen](./architektur-entscheidungen.md).
-> Diese Seite beschreibt weiterhin die fachliche Logik, die sich dabei
-> nicht geändert hat.
+> **Note on the renaming:** the code (models, tables, URLs, API
+> endpoints) has been fully converted to English:
+> `SachversicherungPaket` -> `PropertyInsurancePackage`,
+> `VersicherungsKonfiguration` -> `InsuranceConfiguration`,
+> `ParzelleVersicherung` -> `ParcelInsurance`,
+> `UnfallversicherungZusatzperson` -> `AccidentInsuranceAdditionalPerson`,
+> `/versicherungen/` -> `/insurance/`. Details and lessons learned in
+> [Architecture Decisions](./architektur-entscheidungen.md).
+> This page continues to describe the domain logic, which did not
+> change in the process.
 
-Verwaltet zwei optionale, pro Parzelle abzuschließende Versicherungen:
-Sachversicherung/property insurance (wählbares Paket) und
-Unfallversicherung/accident insurance (mit automatischer
-Haushalts-Erkennung).
+Manages two optional insurance types taken out per parcel: property
+insurance (selectable package) and accident insurance (with automatic
+household detection).
 
-Modul-Flag: `insurance`
+Module flag: `insurance`
 
-## Datenmodell
+## Data model
 
 ```
-property_insurance_packages         – Konfigurierbare Pakete pro Jahr (z.B. 40/60/80/100 €)
-insurance_configuration              – Jahresbasis: Unfall-Grund- und Zusatzbetrag
-parcel_insurance                     – Versicherungsstatus einer Parzelle für ein Jahr
-accident_insurance_additional_persons – Wer zusätzlich zum Haushalt mitversichert ist
+property_insurance_packages         – configurable packages per year (e.g. 40/60/80/100 EUR)
+insurance_configuration              – year basis: accident base and additional amount
+parcel_insurance                     – insurance status of a parcel for a year
+accident_insurance_additional_persons – who is additionally insured beyond the household
 ```
 
-## Wichtige Entscheidung: Haushalts-Erkennung per Adressvergleich
+## Key decision: household detection via address comparison
 
-Die Unfallversicherung deckt automatisch alle Pächter einer Parzelle ab,
-die **dieselbe Adresse** wie der Hauptpächter haben (Straße, PLZ, Ort im
-Mitgliederdatensatz) – ohne Aufpreis, weil sie im selben Haushalt leben.
+Accident insurance automatically covers all tenants of a parcel who have
+**the same address** as the primary tenant (street, postal code, city in
+the member record) -- at no extra cost, since they live in the same
+household.
 
-Pächter mit **abweichender Adresse** werden als Kandidaten angezeigt, aber
-**nicht automatisch** hinzugefügt – der Verein entscheidet bewusst pro
-Person (Checkbox), ob sie gegen den Zusatzbetrag mitversichert werden
-sollen. Das war eine explizite Anforderung: "können mitversichert werden"
-bedeutet Opt-in, kein Automatismus.
+Tenants with a **different address** are shown as candidates but **not**
+added automatically -- the association deliberately decides per person
+(checkbox) whether they should be additionally insured for the extra
+amount. This was an explicit requirement: "can be additionally insured"
+means opt-in, not automatic.
 
-Die Erkennung passiert in `household_grouping()`
-(`app/insurance_utils.py`) und ist bewusst **nur eine Anzeige-Hilfe**,
-keine harte Regel in der Datenbank – die tatsächliche Abrechnung basiert
-auf der expliziten Auswahl in `accident_insurance_additional_persons`,
-nicht auf einer Live-Berechnung der Adressen. Das bedeutet: ändert sich
-später die Adresse eines Mitglieds, ändert sich nicht rückwirkend die
-Abrechnung vergangener Jahre.
+The detection happens in `household_grouping()`
+(`app/insurance_utils.py`) and is deliberately **just a display aid**,
+not a hard rule in the database -- the actual billing is based on the
+explicit selection in `accident_insurance_additional_persons`, not on a
+live calculation of addresses. This means: if a member's address changes
+later, past years' billing is not retroactively affected.
 
-## Konfigurierbare Pakete statt fester Werte
+## Configurable packages instead of fixed values
 
-Die Sachversicherungs-Pakete (aktuell 40/60/80/100 €) sind eine
-eigenständige Tabelle (`property_insurance_packages`), jahresbasiert, mit
-frei editierbarer Anzahl und Beträgen – kein hartkodiertes Vier-Pakete-Modell.
-Das folgt demselben Prinzip wie die Pflichtstunden-Konfiguration: Werte,
-die sich jährlich ändern können, gehören in eine Tabelle, nicht in Code.
+The property insurance packages (currently 40/60/80/100 EUR) are their
+own table (`property_insurance_packages`), year-based, with a freely
+editable number of packages and amounts -- not a hard-coded four-package
+model. This follows the same principle as the work-hours configuration:
+values that can change annually belong in a table, not in code.
 
-## Bekannte Fallstricke
+## Known pitfalls
 
-- Gleicher `MissingGreenlet`-Fallstrick wie im Zählerwesen-Modul: beim
-  erstmaligen Anlegen einer `ParcelInsurance` (wenn eine Parzelle zum
-  ersten Mal für ein Jahr geöffnet wird) müssen die Beziehungen nach dem
-  Commit explizit neu geladen werden, bevor auf `property_package` oder
-  `additional_persons` zugegriffen wird. Siehe `_get_or_create_pi()`.
+- Same `MissingGreenlet` pitfall as in the metering module: when a
+  `ParcelInsurance` is created for the first time (when a parcel is
+  opened for a year for the first time), the relationships must be
+  explicitly reloaded after the commit before accessing `property_package`
+  or `additional_persons`. See `_get_or_create_pi()`.
 
-## REST-API
+## REST API
 
-Dieses Modul verfügt (nachträglich ergänzt) über es für dieses Modul vollständige
-REST-API-Endpunkte (JWT-authentifiziert, siehe `/api/docs`). Siehe README
-für die Endpunkt-Übersicht. Hintergrund: anfangs wurden neue Module nur
-als Web-Oberfläche gebaut, die API wurde nachträglich nachgezogen – seither
-gilt die Regel, dass jedes neue Modul **von Anfang an** sowohl Web-UI als
-auch API-Endpunkte bekommt (siehe Architektur-Entscheidungen).
+This module has (added after the fact) a complete set of REST API
+endpoints for this module (JWT-authenticated, see `/api/docs`). See the
+README for the endpoint overview. Background: early modules were
+initially built as web UI only, with the API added later -- since then
+the rule is that every new module gets **both** the web UI and API
+endpoints **from the start** (see Architecture Decisions).

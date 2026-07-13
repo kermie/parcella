@@ -1,92 +1,112 @@
-# Gartenverein Verwaltung
+# Gartenmanager
 
-[![Lizenz: AGPL v3](https://img.shields.io/badge/Lizenz-AGPL%20v3-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12-blue)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://postgresql.org)
 
-Eine Open-Source Webanwendung zur Verwaltung von Kleingärtnervereinen: Mitglieder, Parzellen, Pachtverwaltung und Pflichtstunden.
+An open-source web application for managing allotment garden associations
+("Kleingartenverein" / "Schrebergarten" associations): members, parcels,
+lease administration, and mandatory work hours.
 
-Entstanden als Vibe-Coding-Projekt mit dem Ziel, proprietäre Vereinssoftware zu ersetzen – generisch genug für beliebige Kleingärtnervereine.
+Started as a vibe-coding project with the goal of replacing proprietary
+association software -- generic enough for any allotment garden
+association, in any country.
 
-📖 **Ausführliche Dokumentation im [Wiki](../../wiki)**
-
----
-
-## Lizenz
-
-Dieses Projekt steht unter der **GNU Affero General Public License v3.0**
-(siehe [LICENSE](./LICENSE)). Das bedeutet insbesondere: Wer eine
-modifizierte Version dieser Software als Netzwerkdienst (z.B. SaaS für
-andere Vereine) betreibt, muss den Quellcode der modifizierten Version
-öffentlich zugänglich machen. Details und Mitwirkungshinweise in [CONTRIBUTING.md](./CONTRIBUTING.md).
+📖 **Detailed documentation in the [Wiki](../../wiki)**
 
 ---
 
-## Funktionen (aktueller Stand)
+## License
 
-- ✅ Benutzeranmeldung per Session (Cookie-basiert)
-- ✅ Einladungssystem (kein öffentliches Registrieren)
-- ✅ Rollensystem: Admin, Vorstand, Kassierer, Lesend
-- ✅ Mitgliederverwaltung (Stammdaten, mehrere Telefonnummern, mehrere E-Mail-Adressen, IBAN)
-- ✅ Parzellentverwaltung (Status: aktiv/gekündigt/gelöscht, Fläche, Kündigung)
-- ✅ m:n-Zuordnung Mitglied ↔ Parzelle (Haupt-/Mitpächter, Doppelgärten)
-- ✅ CSV-Export und -Import (Mitglieder, Parzellen) mit Duplikaterkennung
-- ✅ Vereinseinstellungen (Flächen A/B/C, SMTP-Konfiguration)
-- ✅ Dashboard mit Live-Statistiken (Mitglieder, Parzellen, Flächen)
-- ✅ Pflichtstunden-System (Jahresbasierte Konfiguration, konfigurierbar pro Parzelle oder pro Mitglied)
-- ✅ Arbeitseinsätze (Standard und Besondere), Teilnehmerverwaltung mit Stunden-Erfassung
-- ✅ Patenschaften (pauschale Stundenanrechnung für Bereichsverantwortliche)
-- ✅ Vereinsrollen / erweiterter Vorstand mit Pflichtstunden-Befreiung
-- ✅ Jahresauswertung Pflichtstunden mit CSV-Export
-- ✅ REST-API mit JWT-Authentifizierung und Swagger-Dokumentation
-- ✅ Datenbankmigrationen via Alembic
-
-## Geplant (nächste Phasen)
-
-- Passwort ändern für eingeloggte Benutzer
-- Mitglied einer Vereinsrolle zuordnen (UI)
-- Rechnungsstellung (per Parzelle, Fläche, Mitglied)
-- Strom- und Wasserabrechnung
-- Dokumentenverwaltung
-- Serienbriefe / E-Mail-Kampagnen
-- WordPress-Integration (Arbeitseinsatz-Anmeldungen per API)
-- i18n (Englische Oberfläche)
+This project is licensed under the **GNU Affero General Public License
+v3.0** (see [LICENSE](./LICENSE)). In particular, this means: anyone who
+runs a modified version of this software as a network service (e.g. SaaS
+for other associations) must make the source code of that modified
+version publicly available. Details and contribution guidelines in
+[CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
-## Tech-Stack
+## Features (current state)
 
-| Komponente | Technologie |
+- ✅ Session-based login (cookie-based)
+- ✅ Invitation system (no public sign-up)
+- ✅ Role system: Admin, Board, Treasurer, Read-only
+- ✅ Member management (core data, multiple phone numbers, multiple email
+  addresses, IBAN)
+- ✅ Parcel management (status: active/terminated/deleted, area, termination)
+- ✅ Many-to-many member ↔ parcel assignment (primary/co-tenant, multiple
+  parcels per member)
+- ✅ CSV export and import (members, parcels) with duplicate detection
+- ✅ Club settings (A/B/C area sizes, SMTP configuration)
+- ✅ Dashboard with live statistics (members, parcels, areas)
+- ✅ Work-hours system (year-based configuration, configurable per parcel
+  or per member)
+- ✅ Work sessions (standard and special), participant management with
+  hours tracking
+- ✅ Sponsorships (flat-rate hour credit for area coordinators)
+- ✅ Club roles / extended board with work-hours exemption
+- ✅ Annual work-hours report with CSV export
+- ✅ Water and electricity metering (metering points, meters, readings,
+  consumption reports)
+- ✅ Property and accident insurance tracking per parcel, with annual
+  report
+- ✅ Ticket system with automatic member matching, spam heuristics, and
+  IMAP inbox polling
+- ✅ Purchase requests with a two-person approval principle (two distinct
+  board members must approve before a purchase is made)
+- ✅ REST API with JWT authentication and Swagger documentation
+- ✅ Database migrations via Alembic
+- ✅ i18n foundation: one language per installation (German/English),
+  switchable in admin settings, JSON-based translation catalogs
+
+## Planned (next phases)
+
+- Password change for logged-in users
+- Assign a member to a club role (UI)
+- Invoicing (per parcel, area, or member)
+- Document management
+- Mail merge / email campaigns
+- WordPress integration (work-session sign-up via API)
+- Complete the i18n rollout: translate every module's UI text (currently
+  only the Tickets module is fully translated as a worked example; all
+  other modules still show German UI text even when English is selected)
+
+---
+
+## Tech stack
+
+| Component | Technology |
 |---|---|
 | Backend | Python 3.12 + FastAPI |
-| Templates | Jinja2 (Server-Side Rendering) |
+| Templates | Jinja2 (server-side rendering) |
 | CSS | Bootstrap 5 |
-| Datenbank | PostgreSQL 16 |
-| Migrationen | Alembic |
+| Database | PostgreSQL 16 |
+| Migrations | Alembic |
 | Container | Docker + docker compose |
 
 ---
 
-## Schnellstart (Entwicklung)
+## Quick start (development)
 
-### 1. Repository klonen und konfigurieren
+### 1. Clone and configure the repository
 
 ```bash
 git clone https://github.com/kermie/gartenverein.git
 cd gartenverein
 cp .env.example .env
-# .env nach Bedarf anpassen (Passwörter, SMTP etc.)
+# adjust .env as needed (passwords, SMTP, etc.)
 ```
 
-### 2. UID/GID eintragen (verhindert root-Dateien auf dem Host)
+### 2. Set UID/GID (avoids root-owned files on the host)
 
 ```bash
 echo "UID=$(id -u)" >> .env
 echo "GID=$(id -g)" >> .env
 ```
 
-### 3. Docker-Container bauen, Datenbank migrieren und starten
+### 3. Build the Docker container, migrate the database, and start
 
 ```bash
 docker compose build web
@@ -94,120 +114,130 @@ docker compose run --rm --entrypoint alembic web upgrade head
 docker compose up -d
 ```
 
-Die Anwendung ist nun unter **http://localhost:8000** erreichbar.
-API-Dokumentation: **http://localhost:8000/api/docs**
+The application is now available at **http://localhost:8000**.
+API documentation: **http://localhost:8000/api/docs**
 
-### 4. Erster Login
+### 4. First login
 
-Beim ersten Start wird automatisch ein Admin-Konto angelegt:
+An admin account is created automatically on first startup:
 
-- **E-Mail:** `admin@gartenverein.local`
-- **Passwort:** `admin1234`
+- **Email:** `admin@gartenverein.local`
+- **Password:** `admin1234`
 
-⚠️ **Bitte sofort nach dem ersten Login das Passwort ändern!**
+⚠️ **Please change the password immediately after your first login!**
 
 ---
 
-## REST-API
+## REST API
 
-Neben der Web-Oberfläche gibt es eine vollständige REST-API unter `/api/v1/`.
+Alongside the web UI, there is a full REST API under `/api/v1/`.
 
-**Interaktive Dokumentation:**
+**Interactive documentation:**
 - Swagger UI: http://localhost:8000/api/docs
 - ReDoc: http://localhost:8000/api/redoc
-- OpenAPI-Schema (JSON): http://localhost:8000/api/openapi.json
+- OpenAPI schema (JSON): http://localhost:8000/api/openapi.json
 
-### Authentifizierung (JWT)
+### Authentication (JWT)
 
 ```bash
-# Token anfordern
+# Request a token
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@gartenverein.local", "passwort": "admin1234"}'
+  -d '{"email": "admin@gartenverein.local", "password": "admin1234"}'
 
-# Antwort: {"access_token": "...", "token_type": "bearer", "expires_in_minuten": 1440}
+# Response: {"access_token": "...", "token_type": "bearer", "expires_in_minutes": 1440}
 
-# Token verwenden
-curl http://localhost:8000/api/v1/mitglieder \
+# Use the token
+curl http://localhost:8000/api/v1/members \
   -H "Authorization: Bearer <access_token>"
 ```
 
-Tokens sind 24 Stunden gültig. Die Swagger-UI hat einen "Authorize"-Button für bequemes Testen.
+Tokens are valid for 24 hours. The Swagger UI has an "Authorize" button
+for convenient testing.
 
-### Wichtigste Endpunkte
+### Key endpoints
 
-| Methode | Pfad | Beschreibung |
+| Method | Path | Description |
 |---|---|---|
-| POST | `/api/v1/auth/login` | Token anfordern (JSON) |
-| GET | `/api/v1/auth/me` | Eigenes Profil abrufen |
-| GET | `/api/v1/stats` | Dashboard-Statistiken |
-| GET | `/api/v1/mitglieder` | Mitglieder auflisten (Suche, Paginierung) |
-| GET | `/api/v1/mitglieder/{id}` | Mitglied inkl. Parzellen abrufen |
-| POST | `/api/v1/mitglieder` | Mitglied anlegen |
-| PUT | `/api/v1/mitglieder/{id}` | Mitglied aktualisieren (Teilupdate) |
-| DELETE | `/api/v1/mitglieder/{id}` | Mitglied löschen (Soft-Delete) |
-| POST | `/api/v1/mitglieder/{id}/telefonnummern` | Telefonnummer hinzufügen |
-| POST | `/api/v1/mitglieder/{id}/email-adressen` | E-Mail-Adresse hinzufügen |
-| GET | `/api/v1/parzellen` | Parzellen auflisten (Status-Filter) |
-| GET | `/api/v1/parzellen/{id}` | Parzelle inkl. Mitgliedern abrufen |
-| POST | `/api/v1/parzellen` | Parzelle anlegen |
-| PUT | `/api/v1/parzellen/{id}` | Parzelle aktualisieren (auch Status/Kündigung) |
-| POST | `/api/v1/parzellen/{id}/zuordnungen` | Mitglied zuordnen |
-| DELETE | `/api/v1/parzellen/{id}/zuordnungen/{zid}` | Zuordnung entfernen |
-| GET | `/api/v1/einstellungen` | Vereinseinstellungen abrufen |
-| PUT | `/api/v1/einstellungen/{schluessel}` | Einstellung setzen (nur Admin/Vorstand) |
-| GET/PUT | `/api/v1/pflichtstunden/konfiguration/{jahr}` | Pflichtstunden-Konfiguration |
-| GET/POST/PUT/DELETE | `/api/v1/pflichtstunden/vereinsrollen` | Vereinsrollen + Zuordnungen |
-| GET/POST/PUT/DELETE | `/api/v1/pflichtstunden/einsaetze` | Arbeitseinsätze + Teilnahmen |
-| GET/POST/PUT/DELETE | `/api/v1/pflichtstunden/patenschaften` | Patenschaften |
-| GET | `/api/v1/pflichtstunden/auswertung/{jahr}` | Jahresauswertung |
-| GET/POST/PUT/DELETE | `/api/v1/wasser/zaehlpunkte` | Wasser-Zählpunkte + Zähler |
-| POST | `/api/v1/wasser/zaehlpunkte/{id}/tauschen` | Wasserzähler tauschen |
-| GET/POST/DELETE | `/api/v1/wasser/zaehlpunkte/{id}/zaehlerstaende` | Wasser-Ablesungen |
-| GET | `/api/v1/wasser/auswertung/{jahr}` | Wasser-Verbrauchsauswertung |
-| GET/POST/PUT/DELETE | `/api/v1/strom/zaehlpunkte` | Strom-Zählpunkte + Zähler (analog Wasser) |
-| GET/POST/PUT/DELETE | `/api/v1/versicherungen/pakete` | Sachversicherungs-Pakete |
-| GET/PUT | `/api/v1/versicherungen/konfiguration/{jahr}` | Unfallversicherungs-Beträge |
-| GET/PUT | `/api/v1/versicherungen/parzellen/{id}/{jahr}` | Versicherungsstatus einer Parzelle |
-| GET | `/api/v1/versicherungen/auswertung/{jahr}` | Jahresauswertung |
+| POST | `/api/v1/auth/login` | Request token (JSON) |
+| GET | `/api/v1/auth/me` | Retrieve own profile |
+| GET | `/api/v1/stats` | Dashboard statistics |
+| GET | `/api/v1/members` | List members (search, pagination) |
+| GET | `/api/v1/members/{id}` | Retrieve member incl. parcels |
+| POST | `/api/v1/members` | Create member |
+| PUT | `/api/v1/members/{id}` | Update member (partial update) |
+| DELETE | `/api/v1/members/{id}` | Delete member (soft delete) |
+| POST | `/api/v1/members/{id}/phones` | Add phone number |
+| POST | `/api/v1/members/{id}/emails` | Add email address |
+| GET | `/api/v1/parcels` | List parcels (status filter) |
+| GET | `/api/v1/parcels/{id}` | Retrieve parcel incl. members |
+| POST | `/api/v1/parcels` | Create parcel |
+| PUT | `/api/v1/parcels/{id}` | Update parcel (also status/termination) |
+| POST | `/api/v1/parcels/{id}/assignments` | Assign a member |
+| DELETE | `/api/v1/parcels/{id}/assignments/{aid}` | Remove assignment |
+| GET | `/api/v1/club-settings` | Retrieve club settings |
+| PUT | `/api/v1/club-settings/{key}` | Set a setting (admin/board only) |
+| GET/PUT | `/api/v1/work-hours/configuration/{year}` | Work-hours configuration |
+| GET/POST/PUT/DELETE | `/api/v1/work-hours/club-roles` | Club roles + assignments |
+| GET/POST/PUT/DELETE | `/api/v1/work-hours/sessions` | Work sessions + participations |
+| GET/POST/PUT/DELETE | `/api/v1/work-hours/sponsorships` | Sponsorships |
+| GET | `/api/v1/work-hours/evaluation/{year}` | Annual report |
+| GET/POST/PUT/DELETE | `/api/v1/water/metering-points` | Water metering points + meters |
+| POST | `/api/v1/water/metering-points/{id}/meter/exchange` | Exchange water meter |
+| GET/POST/DELETE | `/api/v1/water/metering-points/{id}/readings` | Water readings |
+| GET | `/api/v1/water/evaluation/{year}` | Water consumption report |
+| GET/POST/PUT/DELETE | `/api/v1/electricity/metering-points` | Electricity metering points + meters (same shape as water) |
+| GET/POST/PUT/DELETE | `/api/v1/insurance/packages` | Property insurance packages |
+| GET/PUT | `/api/v1/insurance/configuration/{year}` | Accident insurance amounts |
+| GET/PUT | `/api/v1/insurance/parcels/{id}/{year}` | Insurance status of a parcel |
+| GET | `/api/v1/insurance/evaluation/{year}` | Annual report |
+| GET/POST | `/api/v1/tickets` | List/create tickets |
+| GET/PUT | `/api/v1/tickets/{id}` | Ticket detail / status / assignment |
+| GET/POST | `/api/v1/tickets/{id}/messages` | Ticket messages |
+| GET/POST | `/api/v1/purchase-requests` | List/create purchase requests |
+| POST | `/api/v1/purchase-requests/{id}/approve` | Approve (two distinct approvals needed) |
+| POST | `/api/v1/purchase-requests/{id}/reject` | Reject (single rejection is enough) |
 
-Schreibzugriff (POST/PUT/DELETE) erfordert die Rolle `admin`, `vorstand` oder `kassierer`.
-Lesezugriff ist für alle authentifizierten Benutzer (auch `lesend`) erlaubt.
+Write access (POST/PUT/DELETE) requires the role `admin`, `board`, or
+`treasurer`. Read access is available to all authenticated users
+(including `readonly`).
 
 ---
 
-## Datenbankmigrationen (Alembic)
+## Database migrations (Alembic)
 
-Schemaänderungen laufen über Alembic statt automatischem `create_all()`.
+Schema changes go through Alembic rather than automatic `create_all()`.
 
 ```bash
-# Migrationen anwenden (läuft auch automatisch beim Containerstart)
+# Apply migrations (also runs automatically on container startup)
 docker compose run --rm --entrypoint alembic web upgrade head
 
-# Neue Migration nach Modelländerung erzeugen
-docker compose run --rm web alembic revision --autogenerate -m "Kurzbeschreibung"
+# Generate a new migration after a model change
+docker compose run --rm web alembic revision --autogenerate -m "Short description"
 ```
 
-Bei bestehender Installation vor Alembic-Einführung: siehe [MIGRATION-HINWEIS.md](./MIGRATION-HINWEIS.md).
+For an existing installation predating Alembic: see
+[MIGRATION-HINWEIS.md](./MIGRATION-HINWEIS.md).
 
 ---
 
-## Produktion (Hetzner)
+## Production (Hetzner)
 
-Für Produktion `ENVIRONMENT=production` setzen:
+For production, set `ENVIRONMENT=production`:
 
 ```bash
-SECRET_KEY=<langer-zufaelliger-string>
+SECRET_KEY=<long-random-string>
 ENVIRONMENT=production
-POSTGRES_PASSWORD=<sicheres-passwort>
+POSTGRES_PASSWORD=<secure-password>
 ```
 
-Empfehlung: Nginx als Reverse Proxy mit Let's Encrypt (Certbot) vorschalten.
+Recommended: put Nginx in front as a reverse proxy with Let's Encrypt
+(Certbot).
 
 ```nginx
 server {
     listen 443 ssl;
-    server_name verwaltung.meinverein.de;
+    server_name verwaltung.myassociation.example;
     location / {
         proxy_pass http://localhost:8000;
         proxy_set_header Host $host;
@@ -218,21 +248,30 @@ server {
 
 ---
 
-## Datenbankstruktur
+## Database structure
 
 ```
-benutzer                    – Anwendungsbenutzer (nicht Vereinsmitglieder)
-einladungen                 – Einladungstoken per E-Mail
-mitglieder                  – Vereinsmitglieder
-mitglied_telefon            – n Telefonnummern pro Mitglied
-mitglied_email              – n E-Mail-Adressen pro Mitglied
-parzellen                   – Gartenparzellen
-mitglied_parzelle           – m:n Zuordnung Mitglied ↔ Parzelle (mit Metadaten)
-vereinseinstellungen        – Key-Value für Vereinsstammdaten
-pflichtstunden_konfiguration – Jahresbasierte Stunden/Satz-Konfiguration
-vereinsrollen               – Vereinsämter (Vorstand, erweiterter Vorstand etc.)
-mitglied_vereinsrolle       – Zuordnung Mitglied → Vereinsrolle (jahresbasiert)
-arbeitseinsaetze            – Standard- und Besondere Einsätze
-einsatz_teilnahmen          – Wer war bei welchem Einsatz (mit Stunden)
-patenschaften               – Bereichsverantwortlichkeiten (pauschale Stundenanrechnung)
+users                         – application users (not club members)
+invitations                   – email invitation tokens
+members                       – club members
+member_phones                 – n phone numbers per member
+member_emails                 – n email addresses per member
+parcels                       – garden parcels
+member_parcels                – m:n member <-> parcel assignment (with metadata)
+club_settings                 – key-value store for club master data
+work_hours_configuration      – year-based hours/rate configuration
+club_roles                    – club offices (board, extended board, etc.)
+member_club_roles             – member -> club role assignment (year-based)
+work_sessions                 – standard and special work sessions
+session_participations        – who attended which session (with hours)
+sponsorships                  – area responsibilities (flat-rate hour credit)
+change_history                 – generic audit log for field changes
+metering_points, meters,
+meter_readings                 – water/electricity metering
+property_insurance_packages,
+insurance_configuration,
+parcel_insurance                – insurance tracking per parcel/year
+tickets, ticket_messages        – support ticket system
+purchase_requests,
+purchase_request_approvals      – purchase requests with two-person approval
 ```

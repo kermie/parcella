@@ -1,35 +1,35 @@
-# Mitwirken an der Gartenverein-Verwaltung
+# Contributing to Gartenmanager
 
-Danke für dein Interesse an diesem Projekt! Es ist als Open-Source-Software
-für Kleingärtnervereine gedacht – generisch genug, um über den
-ursprünglichen Verein hinaus nützlich zu sein.
+Thanks for your interest in this project! It's intended as open-source
+software for allotment garden associations -- generic enough to be useful
+beyond the association it originated from.
 
-## Lizenz und was das für dich bedeutet
+## License and what that means for you
 
-Dieses Projekt steht unter der **GNU Affero General Public License v3.0
-(AGPL-3.0)**. Kurz zusammengefasst:
+This project is licensed under the **GNU Affero General Public License
+v3.0 (AGPL-3.0)**. In short:
 
-- Du darfst den Code frei nutzen, verändern und weiterverbreiten.
-- Wenn du eine modifizierte Version **als Netzwerkdienst** (z.B. SaaS für
-  andere Vereine) betreibst, musst du den Quellcode deiner Version
-  öffentlich zugänglich machen – auch ohne klassische Weitergabe.
-- Abgeleitete Werke müssen ebenfalls unter AGPL-3.0 stehen (Copyleft).
+- You may freely use, modify, and redistribute the code.
+- If you run a modified version **as a network service** (e.g. SaaS for
+  other associations), you must make the source code of your version
+  publicly available -- even without classic redistribution.
+- Derivative works must likewise be licensed under AGPL-3.0 (copyleft).
 
-Mit deinem Beitrag (Pull Request) erklärst du dich einverstanden, dass
-dein Code unter denselben Bedingungen (AGPL-3.0) lizenziert wird.
+By contributing (pull request), you agree that your code is licensed
+under the same terms (AGPL-3.0).
 
-## Wie du mitwirken kannst
+## How you can contribute
 
-1. **Issues**: Fehler gefunden oder eine Idee? Lege ein Issue an, bevor du
-   größere Änderungen beginnst – so vermeiden wir doppelte Arbeit.
-2. **Fork & Branch**: Erstelle einen Fork, arbeite in einem
-   Feature-Branch (`git checkout -b feature/meine-aenderung`).
-3. **Pull Request**: Beschreibe kurz, was sich ändert und warum.
+1. **Issues**: found a bug or have an idea? Open an issue before starting
+   larger changes -- this avoids duplicate work.
+2. **Fork & branch**: create a fork, work in a feature branch
+   (`git checkout -b feature/my-change`).
+3. **Pull request**: briefly describe what changes and why.
 
-## Entwicklungsumgebung
+## Development environment
 
 ```bash
-git clone <dein-fork-url>
+git clone <your-fork-url>
 cd gartenverein
 cp .env.example .env
 docker compose build web
@@ -37,35 +37,45 @@ docker compose run --rm --entrypoint alembic web upgrade head
 docker compose up -d
 ```
 
-App läuft dann unter http://localhost:8000, API-Doku unter
+The app then runs at http://localhost:8000, API docs at
 http://localhost:8000/api/docs.
 
-## Code-Konventionen
+## Code conventions
 
-- **Sprache**: Variablennamen, Funktionsnamen und UI-Texte sind auf
-  Deutsch (Domänensprache des Projekts: Mitglied, Parzelle, Verein...).
-  Code-Kommentare ebenfalls Deutsch.
-- **Generizität**: Neue Felder/Funktionen sollten, wo sinnvoll, nicht nur
-  für den Ursprungsverein passen, sondern für Kleingärtnervereine
-  allgemein (z.B. konfigurierbare Flächentypen statt hartcodierter
-  A/B/C-Logik, falls andere Vereine andere Kategorien brauchen).
-- **Migrationen**: Jede Modelländerung in `app/models.py` braucht eine
-  begleitende Alembic-Migration:
+- **Language**: technical identifiers (class/table/column names,
+  function names, URLs, API endpoints) are in **English**. User-facing UI
+  text (labels, error messages, email content) stays in **German**, since
+  the software's audience is German-speaking club members -- see
+  [Architecture Decisions](./docs/architektur-entscheidungen.md) for the
+  reasoning and history of this split. Code comments and docstrings are
+  also generally German, matching the maintainers' primary language.
+- **Genericity**: new fields/functions should, where sensible, not only
+  fit the originating association but allotment garden associations in
+  general (e.g. configurable area types instead of hard-coded A/B/C
+  logic, in case other associations need different categories).
+- **Migrations**: every model change in `app/models.py` needs an
+  accompanying Alembic migration:
   ```bash
-  docker compose run --rm web alembic revision --autogenerate -m "Kurzbeschreibung"
+  docker compose run --rm web alembic revision --autogenerate -m "Short description"
   ```
-  Migration immer manuell prüfen, bevor sie committet wird – Autogenerate
-  übersieht gelegentlich Dinge (z.B. Umbenennungen werden als
-  Drop+Create erkannt).
-- **API-Schemas**: Neue/geänderte Modelle sollten passende
-  Pydantic-Schemas in `app/schemas.py` bekommen, damit sie über die
-  REST-API verfügbar sind.
+  Always review a migration manually before committing it --
+  autogenerate occasionally misses things (e.g. renames are detected as
+  drop+create).
+- **API schemas**: new/changed models should get matching Pydantic
+  schemas in `app/schemas.py`, so they're available via the REST API.
+- **Tests**: new modules should come with a `tests/test_<module>.py` file
+  with at least one happy-path test (see [docs/testing.md](./docs/testing.md)
+  for the testing philosophy and how to run the suite).
 
-## Was uns besonders hilft
+## What helps us most
 
-- Tests (aktuell noch nicht vorhanden – ein guter erster Beitrag!)
-- Übersetzung der UI ins Englische (i18n-Grundgerüst existiert noch nicht)
-- Dokumentation für weitere Deployment-Szenarien
-- Barrierefreiheit (a11y) der Templates
+- Translating module UI text into English (the i18n foundation exists --
+  one language per installation, switchable in admin settings -- but only
+  the Tickets module's UI text is fully translated so far; every other
+  module still shows German text even when English is selected; see
+  `app/i18n.py` and `app/translations/`)
+- Documentation for additional deployment scenarios
+- Accessibility (a11y) of the templates
+- Additional language translations (adding a new `app/translations/<code>.json`)
 
-Bei Fragen: Issue aufmachen, wir schauen drauf.
+If you have questions: open an issue, we'll take a look.

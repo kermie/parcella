@@ -36,7 +36,7 @@ async def _load_with_details(db: AsyncSession, request_id: str) -> Optional[Purc
     return result.scalar_one_or_none()
 
 
-@router.get("", response_model=List[PurchaseRequestOut], summary="Purchase Requests auflisten")
+@router.get("", response_model=List[PurchaseRequestOut], summary="List purchase requests")
 async def purchase_requests_list(
     status_filter: Optional[str] = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
@@ -51,7 +51,7 @@ async def purchase_requests_list(
 
 @router.get(
     "/{request_id}", response_model=PurchaseRequestDetailOut,
-    summary="Purchase Request inkl. Freigaben abrufen",
+    summary="Retrieve purchase request incl. approvals",
 )
 async def purchase_request_get(
     request_id: str,
@@ -66,10 +66,10 @@ async def purchase_request_get(
 
 @router.post(
     "", response_model=PurchaseRequestOut, status_code=status.HTTP_201_CREATED,
-    summary="Purchase Request anlegen",
-    description="Ohne requester_email wird der aufrufende Benutzer selbst als Antragsteller "
-                "eingetragen. Mit requester_email wird ein Bestätigungslink per E-Mail "
-                "verschickt (Deep-Link-Bestätigung ohne Login).",
+    summary="Create purchase request",
+    description="Without requester_email, the calling user is registered as the requester "
+                "themselves. With requester_email, a confirmation link is sent by email "
+                "(deep-link confirmation without login).",
 )
 async def purchase_request_create(
     daten: PurchaseRequestCreate,
@@ -111,9 +111,9 @@ async def purchase_request_create(
 
 @router.post(
     "/{request_id}/approve", response_model=PurchaseRequestDetailOut,
-    summary="Freigabe erteilen",
-    description="Nur Vorstand/Admin. Der Antragsteller darf nicht selbst freigeben. "
-                "Bei Erreichen von 2 unterschiedlichen Freigaben wechselt der Status auf APPROVED.",
+    summary="Grant approval",
+    description="Board/admin only. The requester may not approve their own request. "
+                "Once 2 distinct approvals are reached, the status switches to APPROVED.",
 )
 async def purchase_request_approve(
     request_id: str,
@@ -149,8 +149,8 @@ async def purchase_request_approve(
 
 @router.post(
     "/{request_id}/reject", response_model=PurchaseRequestOut,
-    summary="Purchase Request ablehnen",
-    description="Nur Vorstand/Admin. Eine einzelne Ablehnung genügt (Veto-Prinzip).",
+    summary="Reject purchase request",
+    description="Board/admin only. A single rejection is enough (veto principle).",
 )
 async def purchase_request_reject(
     request_id: str,

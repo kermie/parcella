@@ -10,17 +10,17 @@ from app.api_auth import authenticate_user, create_access_token, ACCESS_TOKEN_VA
 from app.schemas import TokenResponse, LoginRequest, UserOut
 from app.models import User
 
-router = APIRouter(prefix="/api/v1/auth", tags=["API: Authentifizierung"])
+router = APIRouter(prefix="/api/v1/auth", tags=["API: Auth"])
 
 
 @router.post(
     "/token",
     response_model=TokenResponse,
-    summary="Zugriffstoken anfordern",
+    summary="Request access token",
     description=(
-        "Authentifiziert sich mit E-Mail und Passwort und gibt ein JWT-Bearer-Token zurück. "
-        "Kompatibel mit OAuth2-Password-Flow (für Swagger-UI „Authorize“-Button) UND "
-        "mit JSON-Body (für programmatische Clients, siehe /api/v1/auth/login)."
+        "Authenticates with email and password and returns a JWT bearer token. "
+        "Compatible with the OAuth2 password flow (for the Swagger UI \"Authorize\" button) AND "
+        "with a JSON body (for programmatic clients, see /api/v1/auth/login)."
     ),
 )
 async def token_anfordern(
@@ -40,8 +40,8 @@ async def token_anfordern(
 @router.post(
     "/login",
     response_model=TokenResponse,
-    summary="Zugriffstoken anfordern (JSON)",
-    description="Wie /token, aber mit JSON-Body statt Formulardaten – praktischer für die meisten HTTP-Clients.",
+    summary="Request access token (JSON)",
+    description="Like /token, but with a JSON body instead of form data -- more convenient for most HTTP clients.",
 )
 async def login_json(
     daten: LoginRequest,
@@ -60,7 +60,7 @@ async def login_json(
 @router.get(
     "/me",
     response_model=UserOut,
-    summary="Eigenes Benutzerprofil abrufen",
+    summary="Retrieve own user profile",
 )
 async def eigenes_profil(user: User = Depends(get_current_api_user)):
     return user

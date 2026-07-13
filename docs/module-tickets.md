@@ -1,195 +1,193 @@
-# Modul: Ticketsystem
+# Module: Ticket System
 
-Support-Ticketsystem, angelehnt an [Freescout](https://github.com/freescout-help-desk/freescout).
-Wird in drei Etappen gebaut – diese Seite beschreibt **Etappe 1**
-(Datenmodell + manuelle Ticketverwaltung).
+Support ticket system, modeled loosely after
+[Freescout](https://github.com/freescout-help-desk/freescout).
+Built in three stages -- this page describes **stage 1**
+(data model + manual ticket management) plus the two stages that
+followed.
 
-Modul-Flag: `tickets`
+Module flag: `tickets`
 
-## Etappen-Überblick
+## Stage overview
 
-1. **Datenmodell + manuelle Ticketverwaltung** (fertig) – Tickets, Verlauf,
-   Zuweisung, Status, Mitglied-Abgleich. Noch kein automatischer E-Mail-Abruf.
-2. **E-Mail-Integration** (fertig) – IMAP-Postfach-Konfiguration,
-   Hintergrund-Polling (alle 2 Min.), eingehende Mails werden zu
-   Tickets/Nachrichten, ausgehende Antworten werden per SMTP versendet.
-3. **Spam-Schnittstelle** (fertig) – eingebaute Heuristiken plus optionale
-   externe API, konfigurierbar unter `/admin/settings`.
+1. **Data model + manual ticket management** (done) -- tickets, history,
+   assignment, status, member matching. No automatic email fetching yet.
+2. **Email integration** (done) -- IMAP inbox configuration,
+   background polling (every 2 min.), incoming mail becomes
+   tickets/messages, outgoing replies are sent via SMTP.
+3. **Spam interface** (done) -- built-in heuristics plus an optional
+   external API, configurable under `/admin/settings`.
 
-## Etappe 3: Spam-Filter
+## Stage 3: spam filter
 
-**Zwei kombinierte Ebenen.** Eingebaute Heuristiken laufen sofort, ohne
-externen Dienst: Absender-Domain-Sperrliste, Schlüsselwort-Sperrliste,
-Anzahl Links im Text. Eine optionale externe API (`app/spam_filter.py`,
-`_externe_pruefung()`) wird nur genutzt, wenn eine URL konfiguriert ist –
-sie muss lediglich `{"spam_score": 0.0-1.0}` als JSON zurückgeben, damit
-beliebige Dienste (Akismet, ein selbst gehosteter Filter, ein kleiner
-Adapter vor einem bezahlten Dienst) angebunden werden können, ohne
-Aufrufer-Code anzufassen. Der finale Score ist das Maximum aus Heuristik-
-und externem Score; schlägt der externe Aufruf fehl, wird stillschweigend
-auf die Heuristiken zurückgefallen – ein Ausfall des externen Diensts darf
-niemals die Ticketerstellung blockieren.
+**Two combined layers.** Built-in heuristics run immediately, with no
+external service: sender-domain blocklist, keyword blocklist, number of
+links in the text. An optional external API (`app/spam_filter.py`,
+`_externe_pruefung()`) is only used if a URL is configured -- it merely
+needs to return `{"spam_score": 0.0-1.0}` as JSON, so that any service
+(Akismet, a self-hosted filter, a small adapter in front of a paid
+service) can be connected without touching caller code. The final score
+is the maximum of the heuristic and the external score; if the external
+call fails, it silently falls back to the heuristics -- an outage of the
+external service must never block ticket creation.
 
-**Transparenz statt stillem Aussortieren.** Als Spam markierte Tickets
-werden nicht gelöscht, sondern nur aus dem Standard-Filter "Aktiv"
-ausgeblendet. Ein eigener Filter-Tab "Verdächtig" (mit Zähler-Badge) zeigt
-sie weiterhin an, inklusive Score und einer nachvollziehbaren Begründung
-(`spam_reasoning`, z.B. "Schlüsselwörter gefunden: casino, gewinn").
-Jedes Ticket lässt sich mit einem Klick als "kein Spam" (falsch-positiv)
-freigeben – wichtig, weil Heuristiken nie perfekt sind und ein Verein
-niemals ein echtes Anliegen versehentlich für immer verlieren soll.
+**Transparency instead of silently sorting things out.** Tickets marked
+as spam are not deleted, only hidden from the default "Active" filter. A
+dedicated "Suspected" filter tab (with a count badge) still shows them,
+including the score and a traceable justification (`spam_reasoning`, e.g.
+"keywords found: casino, prize"). Every ticket can be cleared as
+"not spam" (false positive) with a single click -- important because
+heuristics are never perfect, and an association should never accidentally
+lose a genuine inquiry forever.
 
-**Spam-Prüfung nur bei neuen Tickets, nicht bei Antworten.** Antwortet
-jemand auf ein bereits bestehendes (per Threading zugeordnetes) Ticket,
-läuft keine erneute Spam-Prüfung – spart unnötige (ggf. kostenpflichtige)
-externe Aufrufe und ist inhaltlich korrekt: eine bereits als legitim
-erkannte Konversation muss nicht bei jeder Antwort neu bewertet werden.
+**Spam checking only runs on new tickets, not replies.** If someone
+replies to an already-existing (thread-matched) ticket, no new spam check
+runs -- this avoids unnecessary (potentially paid) external calls and is
+also correct in substance: a conversation already recognized as
+legitimate does not need to be re-evaluated with every reply.
 
-**Neue Abhängigkeit:** `httpx` (für die optionale externe API) wurde zu
-`requirements.txt` hinzugefügt – erfordert `docker compose build`, nicht
-nur `restart`.
+**New dependency:** `httpx` (for the optional external API) was added to
+`requirements.txt` -- requires `docker compose build`, not just
+`restart`.
 
-## Etappe 2: E-Mail-Integration
+## Stage 2: email integration
 
-**Ein Postfach für IMAP-Abruf und SMTP-Versand**, getrennt von der
-allgemeinen Vereins-SMTP-Konfiguration (die nur für Einladungs-E-Mails
-dient). Konfiguration unter `/admin/settings`, Karte
-"Ticket-Postfach (IMAP/SMTP)". Beide Passwörter werden verschlüsselt
-gespeichert (siehe `app/crypto_utils.py`) – die Passwort-Sonderbehandlung
-beim Speichern (leer = unverändert lassen) wurde dafür generalisiert
-(`if schluessel.endswith("_password")` statt einem hartkodierten Einzelfall).
+**One inbox for both IMAP fetching and SMTP sending**, separate from the
+general club SMTP configuration (which is only used for invitation
+emails). Configured under `/admin/settings`, in the "Ticket inbox
+(IMAP/SMTP)" card. Both passwords are stored encrypted (see
+`app/crypto_utils.py`) -- the special-case handling for passwords on save
+(empty = leave unchanged) was generalized for this
+(`if key.endswith("_password")` instead of one hard-coded special case).
 
-**Hintergrund-Polling ohne neuen Dienst.** Ein `asyncio`-Task, gestartet
-in der `lifespan`-Funktion von `main.py`, ruft alle 2 Minuten
-`process_incoming_mails()` auf. Kein Celery, kein Redis, kein
-separater Container – passt zum "klein und robust"-Anspruch des Projekts.
-Zusätzlich gibt es einen manuellen "Postfach jetzt abrufen"-Button für
-sofortiges Testen, ohne auf den nächsten Zyklus zu warten.
+**Background polling without a new service.** An `asyncio` task, started
+in the `lifespan` function of `main.py`, calls `process_incoming_mails()`
+every 2 minutes. No Celery, no Redis, no separate container -- fits the
+project's "small and robust" philosophy. There is also a manual
+"Fetch inbox now" button for immediate testing, without waiting for the
+next cycle.
 
-**Ein einziges Postfach für alles – auf Wunsch des Vereins.** Ursprünglich
-war die Ticket-Postfach-Konfiguration komplett getrennt von der
-allgemeinen SMTP-Konfiguration (eigene Felder für Host/Port/Benutzer/
-Passwort). Der Verein hat das bewusst vereinfacht: "Wenn ich ein
-Ticketsystem sinnvoll nutzen will, braucht es nur eine einzige
-E-Mail-Adresse, ein einziges Postfach. Alles andere würde ich auf dem
-Server nutzen und ggf. Weiterleitungen einrichten." Die SMTP-Zugangsdaten
-(Host, Port, Benutzer, Passwort) werden daher jetzt **einmal** gepflegt
-(`app/email_service.py`, `lade_smtp_konfiguration()`) und für Einladungen
-**und** Ticket-Antworten wiederverwendet (`app/ticket_mailer.py` importiert
-diese Funktion direkt, statt eigene SMTP-Felder zu duplizieren). Nur für
-den IMAP-Abruf (Empfang) gibt es zusätzliche Felder (`imap_host`,
-`imap_port`, `imap_ssl`) – IMAP-Benutzer/-Passwort sind identisch mit den
-SMTP-Zugangsdaten, da es sich um dasselbe Postfach handelt.
+**A single inbox for everything -- at the association's request.**
+Originally, the ticket-inbox configuration was completely separate from
+the general SMTP configuration (its own host/port/user/password fields).
+The association deliberately simplified this: "If I want to use a ticket
+system sensibly, it only needs a single email address, a single inbox.
+Anything else I'd handle on the server and set up forwarding if needed."
+The SMTP credentials (host, port, user, password) are therefore now
+maintained **once** (`app/email_service.py`, `lade_smtp_konfiguration()`)
+and reused for both invitations **and** ticket replies
+(`app/ticket_mailer.py` imports that function directly instead of
+duplicating its own SMTP fields). Only for IMAP fetching (receiving) are
+there additional fields (`imap_host`, `imap_port`, `imap_ssl`) -- the IMAP
+user/password are identical to the SMTP credentials, since it's the same
+inbox.
 
-**Erstsynchronisierung überspringt bestehende E-Mails.** Ein Postfach, das
-schon lange in Betrieb ist, kann tausende E-Mails enthalten. Der allererste
-Abruf würde ohne Sonderbehandlung versuchen, **alle** davon einzeln per
-`UID FETCH` abzurufen – das führte in der Praxis zu einem `socket error:
-EOF` (Verbindungsabbruch durch den Mailserver bei zu vielen Befehlen in
-einer Sitzung). Die Lösung: Ist `ticket_imap_letzte_uid` noch nicht
-gesetzt, wird beim ersten Abruf **nur die aktuell höchste UID ermittelt**
-(eine einzelne `SEARCH`, kein `FETCH`) und als Startpunkt gespeichert –
-ohne eine einzige Mail zu verarbeiten. Ab dem nächsten Zyklus werden dann
-ausschließlich neu eingehende E-Mails verarbeitet. Das entspricht auch dem
-erwarteten Verhalten: niemand möchte, dass das jahrelange Mail-Archiv
-plötzlich komplett als Tickets im System auftaucht.
+**Initial sync skips existing emails.** An inbox that has been in use for
+a long time can contain thousands of emails. Without special handling, the
+very first fetch would try to retrieve **all** of them individually via
+`UID FETCH` -- in practice this caused a `socket error: EOF` (connection
+dropped by the mail server due to too many commands in one session). The
+fix: if `ticket_imap_letzte_uid` is not yet set, the first fetch only
+**determines the current highest UID** (a single `SEARCH`, no `FETCH`)
+and stores it as the starting point -- without processing a single email.
+From the next cycle onward, only newly arriving emails are processed.
+This also matches the expected behavior: nobody wants a years-old mail
+archive to suddenly show up in full as tickets in the system.
 
-**Lehre:** Bei jeder Art von "seit dem letzten Mal"-Verarbeitung (IMAP,
-aber auch denkbar für andere Polling-Szenarien) den Sonderfall "es gab
-noch nie ein 'letztes Mal'" explizit behandeln, statt ihn implizit als
-"alles seit Anfang der Zeit" zu interpretieren.
+**Lesson:** for any kind of "since last time" processing (IMAP, but this
+also applies to other polling scenarios), explicitly handle the special
+case of "there has never been a 'last time'" instead of implicitly
+interpreting it as "everything since the beginning of time".
 
-**IMAP läuft synchron in einem Thread, nicht async.** Es gibt keine
-ausgereifte async-IMAP-Bibliothek in den Standard-Abhängigkeiten. Statt
-eine neue hinzuzufügen, nutzt `app/ticket_mailer.py` Python-Bordmittel
-(`imaplib`, `email`) synchron, ausgeführt über `asyncio.to_thread(...)`,
-damit der Event-Loop währenddessen nicht blockiert.
+**IMAP runs synchronously in a thread, not async.** There is no mature
+async IMAP library among the standard dependencies. Instead of adding a
+new one, `app/ticket_mailer.py` uses Python's built-in tools (`imaplib`,
+`email`) synchronously, executed via `asyncio.to_thread(...)` so the
+event loop isn't blocked in the meantime.
 
-**Betriebsdaten in der bestehenden Vereinseinstellungen-Tabelle.** Die
-zuletzt verarbeitete IMAP-UID und der letzte Fehler landen als
-`ticket_imap_letzte_uid` / `ticket_imap_letzter_fehler` in derselben
-Key-Value-Tabelle, die auch Modul-Flags und SMTP-Einstellungen speichert –
-keine zusätzliche Tabelle/Migration nur für diesen Zweck.
+**Operational data lives in the existing club-settings table.** The most
+recently processed IMAP UID and the last error end up as
+`ticket_imap_letzte_uid` / `ticket_imap_letzter_fehler` in the same
+key-value table that also stores module flags and SMTP settings -- no
+additional table/migration just for this purpose.
 
-**Threading über Message-ID, mit Fallback.** Eingehende Antworten werden
-zuerst über `In-Reply-To`/`References`-Header gegen gespeicherte
-`message_id`-Werte vorheriger `TicketMessage`-Einträge abgeglichen.
-Schlägt das fehl (z.B. weil der Kunde eine neue Mail statt zu antworten
-schreibt, aber mit gleichem Betreff), wird ersatzweise nach Absender-
-Adresse + bereinigtem Betreff (ohne "Re:"/"AW:"-Präfix) in offenen
-Tickets gesucht. Ohne Treffer entsteht ein neues Ticket.
+**Threading via message ID, with a fallback.** Incoming replies are first
+matched via the `In-Reply-To`/`References` headers against stored
+`message_id` values of previous `TicketMessage` entries. If that fails
+(e.g. because the customer writes a new email instead of replying, but
+with the same subject), the fallback is to search open tickets by sender
+address + normalized subject (with the "Re:"/"Fwd:" prefix stripped). If
+no match is found, a new ticket is created.
 
-**Geschlossene Tickets öffnen sich bei neuer Antwort automatisch
-wieder** – der Status springt zurück auf `ASSIGNED` (falls weiterhin
-zugewiesen) oder `UNASSIGNED`.
+**Closed tickets automatically reopen on a new reply** -- the status
+jumps back to `ASSIGNED` (if still assigned) or `UNASSIGNED`.
 
-**Spam-Prüfung wird bereits aufgerufen, obwohl sie noch ein No-Op ist.**
-`pruefe_auf_spam()` aus Etappe 1 wird bei jeder eingehenden Mail bereits
-aufgerufen und das Ergebnis in `spam_suspected`/`spam_score` gespeichert –
-nur die eigentliche Prüflogik ist noch leer. In Etappe 3 muss daher nur
-noch diese eine Funktion ausgetauscht werden, keine Aufrufer.
+**Spam checking is already called, even though it's still a no-op.**
+`pruefe_auf_spam()` from stage 1 is already called for every incoming
+email, and the result is stored in `spam_suspected`/`spam_score` -- only
+the actual check logic is still empty. In stage 3, therefore, only this
+one function needs to be swapped out, with no changes to callers.
 
-## Datenmodell (Etappe 1)
+## Data model (stage 1)
 
 ```
-tickets            – Ein Anliegen: Betreff, Status, Zuweisung, Absender,
-                      optionale Mitglied-Zuordnung
-ticket_messages     – Der Gesprächsverlauf eines Tickets (eingehend/
-                      ausgehend/intern)
+tickets            – a request: subject, status, assignment, sender,
+                      optional member link
+ticket_messages     – the conversation history of a ticket (incoming/
+                      outgoing/internal)
 ```
 
-## Wichtige Entscheidungen
+## Key decisions
 
-**Zugriffsrecht über bestehende `UserRole`**, nicht über ein neues,
-unabhängiges Berechtigungssystem – der Verein plant, die Rollen später
-ohnehin zu erweitern (z.B. um eine echte "erweiterter Vorstand"-Rolle).
-Ein separates Ticket-Zugriffsrecht hätte diese Erweiterung nur verkompliziert.
+**Access rights via the existing `UserRole`**, not a new, independent
+permission system -- the association plans to extend the roles later
+anyway (e.g. with a real "extended board" role). A separate ticket
+permission system would only have complicated that extension.
 
-**Status als explizite Zustandsmaschine**, nicht implizit aus der
-Zuweisung abgeleitet:
+**Status as an explicit state machine**, not implicitly derived from the
+assignment:
 ```
-UNASSIGNED → ASSIGNED → CLOSED
-     ↘ DEFERRED (bis Datum) ↗
+UNASSIGNED -> ASSIGNED -> CLOSED
+     ↘ DEFERRED (until date) ↗
 ```
-Wird ein Ticket zugewiesen, springt der Status automatisch auf
-`ASSIGNED`; wird die Zuweisung aufgehoben, zurück auf `UNASSIGNED`.
+When a ticket is assigned, the status automatically jumps to `ASSIGNED`;
+when the assignment is cleared, it goes back to `UNASSIGNED`.
 
-**"Zurückgestellt bis" ist rein berechnet, kein Hintergrundjob.** Ein
-Ticket mit Status `DEFERRED`, dessen Datum erreicht ist, wird nicht
-automatisch in der Datenbank auf einen anderen Status umgeschaltet.
-Stattdessen berechnet die Property `Ticket.is_due` das bei jedem
-Anzeigen live (`status == DEFERRED and deferred_until <= heute`).
-Das spart einen Hintergrundjob nur für diesen Zweck – der einzige
-tatsächlich nötige Hintergrundjob (E-Mail-Polling) kommt ohnehin in Etappe 2.
+**"Deferred until" is purely computed, not a background job.** A ticket
+with status `DEFERRED` whose date has been reached is not automatically
+switched to another status in the database. Instead, the `Ticket.is_due`
+property computes this live on every view (`status == DEFERRED and
+deferred_until <= today`). This avoids a background job that would only
+exist for this purpose -- the one background job that's actually needed
+(email polling) arrives in stage 2 anyway.
 
-**Mitglied-Abgleich per E-Mail-Adresse ist bewusst vorsichtig.** Analog
-zur Unfallversicherungs-Logik: Ist die Absender-Adresse **eindeutig** einem
-Mitglied zuordenbar, geschieht das automatisch. Teilen sich mehrere
-Mitglieder dieselbe Adresse (z.B. Ehepaare), trifft die Automatik **keine
-Entscheidung** – die Oberfläche zeigt alle Kandidaten zur manuellen Auswahl
-an (`find_members_by_email()` in `app/ticket_utils.py`).
+**Member matching by email address is deliberately cautious.** Similar to
+the accident-insurance logic: if the sender address can be **uniquely**
+matched to a member, that happens automatically. If multiple members
+share the same address (e.g. couples), the automation makes **no
+decision** -- the UI shows all candidates for manual selection
+(`find_members_by_email()` in `app/ticket_utils.py`).
 
-**Zuweisungs-Benachrichtigung nutzt die bestehende SMTP-Infrastruktur**,
-nicht das erst in Etappe 2 kommende Ticket-Postfach. Die allgemeine
-Vereins-SMTP-Konfiguration (siehe Wasser/Strom-übergreifende
-`app/email_service.py`) reicht dafür bereits aus – ein weiterer Beleg
-dafür, dass sich frühere Infrastruktur-Entscheidungen auszahlen.
+**Assignment notifications use the existing SMTP infrastructure**, not
+the ticket inbox that only arrives in stage 2. The general club SMTP
+configuration (see the water/electricity-spanning `app/email_service.py`)
+is already sufficient for this -- another example of earlier
+infrastructure decisions paying off.
 
-**Spam-Felder existieren bereits in der Datenbank** (`spam_suspected`,
-`spam_score`), obwohl die eigentliche Prüfung (`app/spam_filter.py`)
-noch ein reines No-Op ist. Damit entfällt in Etappe 3 eine weitere
-Migration – nur die Prüffunktion selbst muss ausgetauscht werden.
+**Spam fields already exist in the database** (`spam_suspected`,
+`spam_score`), even though the actual check (`app/spam_filter.py`) is
+still a pure no-op. This avoids another migration in stage 3 -- only the
+check function itself needs to be swapped out.
 
-**Änderungshistorie wiederverwendet.** Status- und Zuweisungswechsel
-werden über den bereits bestehenden generischen `AenderungsTracker`
-protokolliert (`entitaet_typ="Ticket"`) – keine eigene Historie-Tabelle
-nötig.
+**Change history is reused.** Status and assignment changes are logged
+via the existing generic `ChangeTracker` (`entity_type="Ticket"`) -- no
+dedicated history table needed.
 
-## REST-API
+## REST API
 
-Vollständige API von Anfang an (`/api/v1/tickets`), gemäß der Regel
-"API-first ab sofort verbindlich" (siehe Architektur-Entscheidungen).
-Tickets anlegen, Status/Zuweisung ändern, Nachrichten hinzufügen – alles
-auch programmatisch möglich, z.B. für eine spätere Automatisierung des
-E-Mail-Imports in Etappe 2 (die dann wahrscheinlich intern dieselben
-Funktionen wie die API nutzt, statt eigene Logik zu duplizieren).
+Complete API from the start (`/api/v1/tickets`), following the "API-first
+is now mandatory" rule (see Architecture Decisions). Creating tickets,
+changing status/assignment, adding messages -- all also possible
+programmatically, e.g. for a later automation of the email import in
+stage 2 (which would then likely reuse the same functions internally as
+the API, rather than duplicating its own logic).

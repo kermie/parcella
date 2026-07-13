@@ -1,59 +1,59 @@
-# Betrieb
+# Operations
 
-Praktische Befehle und Fehlerbehebung für den laufenden Betrieb.
+Practical commands and troubleshooting for day-to-day operation.
 
-## Docker-Grundbefehle
+## Basic Docker commands
 
 ```bash
-# Container bauen (nötig nach Änderungen an requirements.txt oder Dockerfile)
+# Build the container (needed after changes to requirements.txt or Dockerfile)
 docker compose build web
 
-# Container starten
+# Start the container
 docker compose up -d
 
-# Container neu starten (reicht bei reinen Python-Code-/Template-Änderungen,
-# da uvicorn im --reload-Modus läuft)
+# Restart the container (sufficient for pure Python code/template changes,
+# since uvicorn runs in --reload mode)
 docker compose restart web
 
-# Logs ansehen
+# View logs
 docker compose logs web --tail=30
 
-# Status prüfen
+# Check status
 docker compose ps
 ```
 
-## Datenbankmigrationen
+## Database migrations
 
 ```bash
-# Migrationen anwenden (läuft auch automatisch beim Containerstart)
+# Apply migrations (also runs automatically on container startup)
 docker compose run --rm --entrypoint alembic web upgrade head
 
-# Neue Migration nach Modelländerung erzeugen
-docker compose run --rm web alembic revision --autogenerate -m "Kurzbeschreibung"
+# Generate a new migration after a model change
+docker compose run --rm web alembic revision --autogenerate -m "Short description"
 
-# Aktuellen Stand prüfen
+# Check the current state
 docker compose run --rm --entrypoint alembic web current
 
-# Alle "Köpfe" prüfen (bei "Multiple head revisions"-Fehler)
+# Check all "heads" (in case of a "Multiple head revisions" error)
 docker compose run --rm --entrypoint alembic web heads
 ```
 
-**Wichtig:** Revisionsnamen (`revision: str = "..."`) müssen unter 32
-Zeichen bleiben – die `alembic_version`-Tabelle hat eine `VARCHAR(32)`-Spalte.
+**Important:** revision names (`revision: str = "..."`) must stay under
+32 characters -- the `alembic_version` table has a `VARCHAR(32)` column.
 
-**Bei "Multiple head revisions"-Fehler:** Meist entstanden durch zwei
-parallel erstellte Migrationen mit demselben `down_revision`. Lösung: eine
-der beiden Migrationsdateien löschen, ggf. den `alembic_version`-Eintrag in
-der DB direkt korrigieren:
+**On a "Multiple head revisions" error:** usually caused by two migrations
+created in parallel with the same `down_revision`. Fix: delete one of the
+two migration files, and if necessary correct the `alembic_version` entry
+in the DB directly:
 ```bash
-docker compose exec db psql -U gartenverein -c "UPDATE alembic_version SET version_num = '<korrekte_revision>' WHERE version_num = '<falsche_revision>';"
+docker compose exec db psql -U gartenverein -c "UPDATE alembic_version SET version_num = '<correct_revision>' WHERE version_num = '<wrong_revision>';"
 ```
 
-## SMTP-Einrichtung
+## SMTP setup
 
-SMTP-Zugangsdaten können unter `/admin/settings` eingetragen werden
-(Datenbank hat Vorrang) oder per `.env`-Datei (Fallback, falls DB-Werte
-fehlen):
+SMTP credentials can be entered under `/admin/settings` (the database
+takes precedence) or via the `.env` file (fallback if DB values are
+missing):
 
 ```
 SMTP_HOST=smtp.example.com
@@ -64,29 +64,30 @@ SMTP_FROM=verein@example.com
 SMTP_TLS=true
 ```
 
-Das SMTP-Passwort wird in der Datenbank verschlüsselt gespeichert (siehe
-[Architektur-Entscheidungen](./architektur-entscheidungen.md)). Ein
-SMTP-Server kann bedenkenlos eingetragen werden, auch während die App noch
-unter `localhost` läuft – der Versand ist eine ausgehende Verbindung vom
-Container zum Mailserver, unabhängig davon, wie die App selbst erreichbar ist.
+The SMTP password is stored encrypted in the database (see
+[Architecture Decisions](./architektur-entscheidungen.md)). An SMTP
+server can safely be configured even while the app is still running
+under `localhost` -- sending mail is an outbound connection from the
+container to the mail server, independent of how the app itself is
+reached.
 
-## Erster Login
+## First login
 
-Beim allerersten Start (leere `benutzer`-Tabelle) wird automatisch ein
-Admin-Konto angelegt:
+On the very first startup (empty `users` table), an admin account is
+created automatically:
 
-- E-Mail: `admin@gartenverein.local`
-- Passwort: `admin1234`
+- Email: `admin@gartenverein.local`
+- Password: `admin1234`
 
-Bitte sofort nach dem ersten Login ändern.
+Please change it immediately after your first login.
 
-## Häufige Fehlerbilder
+## Common failure patterns
 
-| Symptom | Wahrscheinliche Ursache |
+| Symptom | Likely cause |
 |---|---|
-| `invalid input value for enum` | Enum-Wert in Python ≠ Enum-Wert in DB (Groß-/Kleinschreibung) |
-| `MultipleResultsFound` | `scalar_one_or_none()` bei einer Abfrage verwendet, die mehrere Treffer liefern kann |
-| `MissingGreenlet` beim Start/Neustart | `scalar_one_or_none()` auf einer Tabelle mit mehreren Zeilen (z.B. Benutzer-Zähl-Check) |
-| `MissingGreenlet` bei einzelner Seite | Lazy-Load auf frisch angelegtem Objekt ohne eager-geladene Beziehungen |
-| CSV-Import: alle Zeilen "Fehler" | Trennzeichen-Mismatch (Excel speichert ggf. mit Komma statt Semikolon) |
-| Docker: root-Dateien im Projektordner | Container lief als root; `UID`/`GID` in `.env` setzen (siehe `docker-compose.yml`) |
+| `invalid input value for enum` | Enum value in Python != enum value in DB (case mismatch) |
+| `MultipleResultsFound` | `scalar_one_or_none()` used on a query that can return multiple hits |
+| `MissingGreenlet` on start/restart | `scalar_one_or_none()` on a table with multiple rows (e.g. a user-count check) |
+| `MissingGreenlet` on a single page | Lazy-load on a freshly created object without eagerly loaded relationships |
+| CSV import: every row shows "error" | Delimiter mismatch (Excel may save with comma instead of semicolon) |
+| Docker: root-owned files in the project folder | Container ran as root; set `UID`/`GID` in `.env` (see `docker-compose.yml`) |

@@ -1,66 +1,65 @@
-# Modul: Einkaufswünsche (Vier-Augen-Prinzip)
+# Module: Purchase Requests (Two-Person Approval)
 
-Kontrollmechanismus für Vereinsausgaben: Ein Antrag muss von zwei
-unterschiedlichen Vorstandsmitgliedern freigegeben werden, bevor
-eingekauft werden darf. Entstanden, weil zuvor Mitglieder frei einkauften
-und im Nachhinein abrechneten – "komplett gegen alle Regeln".
+A control mechanism for club expenses: a request must be approved by two
+different board members before a purchase may be made. Created because
+members previously bought things freely and settled up afterwards --
+"completely against the rules".
 
-Modul-Flag: `purchase_requests`
+Module flag: `purchase_requests`
 
-## Datenmodell
+## Data model
 
 ```
-purchase_requests          – Der Antrag: Titel, Begründung, Link, Kosten, Status
-purchase_request_approvals – Einzelne Freigaben (wer, wann) – braucht 2 pro Antrag
+purchase_requests          – the request: title, justification, link, cost, status
+purchase_request_approvals – individual approvals (who, when) -- needs 2 per request
 ```
 
-## Wichtige Entscheidungen
+## Key decisions
 
-**Wer darf was.** Jeder eingeloggte Benutzer kann einen Einkaufswunsch
-anlegen – nur Freigeben/Ablehnen ist Vorstand/Admin vorbehalten
-(`require_admin` aus `app/auth.py`, das trotz des Namens auch die Rolle
-VORSTAND einschließt). Das spiegelt die reale Praxis: viele stellen
-Anträge, aber eine klar abgegrenzte Gruppe entscheidet.
+**Who can do what.** Any logged-in user can create a purchase request --
+only approving/rejecting is reserved for board/admin (`require_admin` in
+`app/auth.py`, which despite its name also covers the BOARD role). This
+mirrors real practice: many people submit requests, but a clearly defined
+group decides.
 
-**Selbstfreigabe ausgeschlossen.** Weder der Antragsteller
-(`requested_by_id`) noch die Person, die den Antrag ins System eingetragen
-hat (`created_by_id`, relevant bei stellvertretender Anlage), darf eine
-der beiden nötigen Freigaben selbst geben. Ohne diese Sperre wäre das
-Vier-Augen-Prinzip wirkungslos – wer den Antrag stellt, könnte sich sonst
-selbst mitgenehmigen.
+**Self-approval excluded.** Neither the requester (`requested_by_id`) nor
+the person who entered the request into the system (`created_by_id`,
+relevant when created on someone else's behalf) may give either of the
+two required approvals themselves. Without this restriction, the two-
+person principle would be meaningless -- whoever files the request could
+otherwise approve it themselves.
 
-**Ablehnung braucht nur eine Person (Veto-Prinzip), Freigabe braucht
-zwei.** Bewusst asymmetrisch: Die Freigabe von Geld soll ein Konsens von
-zwei Personen sein (Schutz vor Fehlentscheidungen), aber jede einzelne
-Person im Vorstand soll einen Antrag stoppen können, ohne dafür eine
-zweite Person überzeugen zu müssen. Ein Veto ist eine Schutzmaßnahme, kein
-Machtinstrument, das absichtlich erschwert werden sollte.
+**Rejection needs only one person (veto principle), approval needs two.**
+Deliberately asymmetric: approving money should require the consensus of
+two people (protection against bad decisions), but any single board member
+should be able to stop a request without having to convince a second
+person. A veto is a safeguard, not a power tool that should deliberately
+be made harder to use.
 
-**Deep-Link-Bestätigung für Antragsteller ohne Login.** Wenn der Vorstand
-einen Antrag stellvertretend für jemanden anlegt (z.B. weil die Person
-keinen App-Zugang hat oder den Wunsch nur mündlich/telefonisch geäußert
-hat), wird ein Bestätigungs-Token erzeugt (`itsdangerous`-Serializer,
-gleiches Muster wie die Einladungs-Tokens in `app/auth.py`) und per E-Mail
-verschickt. Der Link führt zu einer **öffentlichen** Seite (kein Login
-nötig) auf der die Person die Angaben bestätigen kann. Diese Bestätigung
-ist rein informativ für den Vorstand ("hat die Person das wirklich so
-gemeint?") – sie ist keine Voraussetzung für die Freigabe durch den
-Vorstand selbst, sondern zusätzliche Transparenz.
+**Deep-link confirmation for requesters without a login.** When the board
+creates a request on someone's behalf (e.g. because that person has no
+app access, or only voiced the request verbally/by phone), a confirmation
+token is generated (`itsdangerous` serializer, the same pattern as the
+invitation tokens in `app/auth.py`) and sent by email. The link leads to a
+**public** page (no login required) where the person can confirm the
+details. This confirmation is purely informational for the board ("did
+this person really mean it this way?") -- it is not a prerequisite for
+the board's own approval, just added transparency.
 
-Hat der Antragsteller einen eigenen App-Zugang und legt den Wunsch selbst
-an, entfällt der Bestätigungsschritt komplett – er hat die Angaben ja
-bereits selbst im System eingegeben.
+If the requester has their own app access and creates the request
+themselves, the confirmation step is skipped entirely -- they already
+entered the details into the system themselves.
 
-**Kostenfeld optional, aber vorgesehen.** `estimated_cost_eur` ist kein
-Pflichtfeld (manche Anschaffungen haben noch keinen bekannten Preis), aber
-naheliegend bei einem Ausgaben-Freigabeprozess – daher von Anfang an im
-Datenmodell statt später nachzurüsten.
+**Cost field optional, but planned for.** `estimated_cost_eur` is not a
+required field (some purchases don't have a known price yet), but it's an
+obvious fit for an expense-approval process -- hence built into the data
+model from the start instead of retrofitted later.
 
-## REST-API
+## REST API
 
-Vollständig von Anfang an (`/api/v1/purchase-requests`), analog zu den
-anderen Modulen. Bemerkenswert: `approve` und `reject` nutzen
-`require_api_role(UserRole.ADMIN, UserRole.BOARD)` statt des
-generischen `require_schreibzugriff` (der auch Kassierer einschließt) –
-die Freigabeberechtigung ist hier bewusst enger gefasst als üblicher
-Schreibzugriff.
+Complete from the start (`/api/v1/purchase-requests`), following the same
+pattern as the other modules. Notably, `approve` and `reject` use
+`require_api_role(UserRole.ADMIN, UserRole.BOARD)` instead of the
+generic `require_write_access` (which also covers the treasurer role) --
+approval authority here is deliberately narrower than the usual write
+access.

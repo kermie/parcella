@@ -1,241 +1,232 @@
-# Automatisierte Tests
+# Automated Tests
 
-## Philosophie
+## Philosophy
 
-**Kein Anspruch auf 100% Testabdeckung.** Das wäre für ein Projekt dieser
-Größe ein eigenes Fass ohne Boden. Stattdessen:
+**No claim to 100% test coverage.** For a project of this size, that
+would be its own bottomless pit. Instead:
 
-1. **Ein "Happy Path"-Test pro Modul** – die grundlegende Funktionalität
-   funktioniert (anlegen, abrufen, verknüpfen).
-2. **Gezielte Tests für die Stellen mit dem höchsten Regressionsrisiko** –
-   also genau die Logik, die schon mal Kopfzerbrechen bereitet hat oder
-   bei der ein stiller Fehler besonders schlimm wäre:
-   - Vier-Augen-Prinzip bei Einkaufswünschen (Selbstfreigabe-Sperre,
-     Doppel-Freigabe-Sperre, Veto-Ablehnung)
-   - Zählerstand-Monotonie-Prüfung (darf nicht sinken)
-   - Pflichtstunden-Gruppenbefreiung (`any()` statt `all()` bei Parzellen)
-   - Versicherungskosten-Berechnung (Grund- + Zusatzbeträge)
+1. **One "happy path" test per module** -- the basic functionality works
+   (create, retrieve, link).
+2. **Targeted tests for the spots with the highest regression risk** --
+   that is, exactly the logic that has already caused headaches, or where
+   a silent bug would be especially bad:
+   - Two-person approval principle for purchase requests (self-approval
+     lock, double-approval lock, veto rejection)
+   - Meter-reading monotonicity check (must not decrease)
+   - Work-hours group exemption (`any()` instead of `all()` for parcels)
+   - Insurance cost calculation (base + additional amounts)
 
-## Warum echtes PostgreSQL, nicht SQLite
+## Why real PostgreSQL, not SQLite
 
-Mehrere Bugs in diesem Projekt traten **ausschließlich mit PostgreSQL**
-auf (z.B. die Enum-Großschreibungs-Problematik, siehe
-[Architektur-Entscheidungen](./architektur-entscheidungen.md)). Ein
-Testlauf gegen SQLite hätte solche Bugs unsichtbar gemacht, statt sie zu
-fangen – SQLite ist in vielen Dingen (Typsystem, Enum-Handling,
-Constraint-Durchsetzung) großzügiger als PostgreSQL. Tests laufen daher
-gegen eine echte, aber komplett wegwerfbare PostgreSQL-Instanz.
+Several bugs in this project occurred **exclusively with PostgreSQL**
+(e.g. the enum-casing issue, see
+[Architecture Decisions](./architektur-entscheidungen.md)). A test run
+against SQLite would have made such bugs invisible instead of catching
+them -- SQLite is more lenient than PostgreSQL in many respects (type
+system, enum handling, constraint enforcement). Tests therefore run
+against a real, but entirely disposable, PostgreSQL instance.
 
-## Ausführen
+## Running the tests
 
 ```bash
 ./run_tests.sh
 ```
 
-Das Skript kapselt den kompletten Ablauf: startet eine isolierte
-Test-Datenbank (`tmpfs`, verschwindet beim Stoppen), installiert
-Test-Abhängigkeiten, führt `pytest` aus, räumt danach auf – auch wenn
-Tests fehlschlagen.
+The script wraps the whole process: starts an isolated test database
+(`tmpfs`, disappears on stop), installs test dependencies, runs `pytest`,
+and cleans up afterward -- even if tests fail.
 
-Die Test-Datenbank läuft nur mit `docker compose --profile test`, taucht
-also bei normalem `docker compose up` nicht auf und stört den laufenden
-Betrieb nie.
+The test database only runs with `docker compose --profile test`, so it
+never shows up with a normal `docker compose up` and never interferes
+with the running instance.
 
-## Automatisch bei jedem Push
+## Automatically on every push
 
-`.github/workflows/tests.yml` führt dieselbe Test-Suite bei jedem Push
-und Pull Request auf GitHub aus (eigene, isolierte PostgreSQL-Instanz als
-GitHub-Actions-Service, kein Docker-Compose nötig auf CI-Seite). Ein
-fehlgeschlagener Test ist dort direkt im Pull Request sichtbar, bevor
-etwas nach `main` gemerged wird.
+`.github/workflows/tests.yml` runs the same test suite on every push and
+pull request on GitHub (its own isolated PostgreSQL instance as a GitHub
+Actions service, no Docker Compose needed on the CI side). A failed test
+is visible directly in the pull request, before anything is merged into
+`main`.
 
-## Wie die Testdatenbank funktioniert
+## How the test database works
 
-`tests/conftest.py` setzt `DATABASE_URL` auf die Testdatenbank, **bevor**
-irgendein Teil der App importiert wird. Das ist wichtig: Python cached
-Modul-Importe, und `app/database.py` erstellt die Datenbankverbindung
-beim ersten Import aus `settings.database_url` – würde die App vorher
-schon einmal mit der Produktions-URL importiert, würden auch interne
-Mechanismen (die Modul-Flags-Middleware, die Admin-Anlegen-Logik beim
-Start) die falsche Datenbank verwenden. Weil wir die Umgebungsvariable
-ganz am Anfang von `conftest.py` setzen, funktioniert das automatisch
-richtig, ohne dass wir jede einzelne Stelle im Code eigens überschreiben
-müssten.
+`tests/conftest.py` sets `DATABASE_URL` to the test database **before**
+any part of the app is imported. This matters: Python caches module
+imports, and `app/database.py` creates the database connection on first
+import from `settings.database_url` -- if the app had already been
+imported once with the production URL, internal mechanisms too (the
+module-flags middleware, the admin-creation logic at startup) would use
+the wrong database. Because we set the environment variable right at the
+top of `conftest.py`, this works correctly automatically, without having
+to override every single spot in the code ourselves.
 
-Vor jedem einzelnen Test werden alle Tabellen geleert (nicht: verschachtelte
-Transaktionen mit Rollback). Das ist bewusst die einfachere Lösung: die
-Anwendung committet an vielen Stellen selbst mittendrin (z.B. nach jeder
-Freigabe eines Einkaufswunsches) – das würde mit reinen
-Test-Transaktionen, die am Ende zurückgerollt werden, zu Konflikten
-führen. Tabellen leeren ist weniger elegant, aber robust und leicht
-nachvollziehbar.
+Before every individual test, all tables are emptied (not: nested
+transactions with rollback). This is deliberately the simpler solution:
+the application itself commits in many places along the way (e.g. after
+every purchase-request approval) -- that would conflict with pure test
+transactions that get rolled back at the end. Emptying tables is less
+elegant, but robust and easy to reason about.
 
-## Lehren aus dem ersten echten Testlauf
+## Lessons from the first real test run
 
-Zwei Probleme traten beim allerersten Ausführen auf – beide behoben,
-aber dokumentiert, damit sie nicht wiederkehren:
+Two problems came up the very first time the tests ran -- both fixed, but
+documented so they don't recur:
 
-**Test-E-Mail-Adressen dürfen keine reservierten Sonder-Domains
-verwenden.** `admin@test.local` wurde von Pydantics `EmailStr`-Validierung
-abgelehnt, weil `.local` auf der Liste reservierter Sonder-Namen
-(`localhost`, `local`, `test`, `example`, `invalid`, `onion`) steht, die
-die zugrunde liegende `email-validator`-Bibliothek als TLD ablehnt.
-Test-Adressen verwenden seither `@example.com` – das ist eine ganz normale
-`.com`-Domain (nur der zweite Teil heißt zufällig "example"), keine
-Sonder-TLD, und Pydantic prüft standardmäßig ohnehin keine tatsächliche
-Zustellbarkeit (kein DNS-Lookup).
+**Test email addresses must not use reserved special-use domains.**
+`admin@test.local` was rejected by Pydantic's `EmailStr` validation,
+because `.local` is on the list of reserved special-use names
+(`localhost`, `local`, `test`, `example`, `invalid`, `onion`) that the
+underlying `email-validator` library rejects as a TLD. Test addresses
+have used `@example.com` ever since -- that's a perfectly normal `.com`
+domain (only the second part happens to be called "example"), not a
+special-use TLD, and by default Pydantic doesn't check actual
+deliverability anyway (no DNS lookup).
 
-**`pytest-asyncio` gibt jeder Testfunktion einen eigenen Event-Loop –
-das kollidiert mit unserer Singleton-Datenbank-Engine.** Unsere
-Datenbank-Engine (`app.database.engine`) ist ein Singleton, das beim
-Modul-Import einmalig Verbindungen aufbaut. Läuft jeder Test in einem
-eigenen Loop, versucht die Engine irgendwann, eine Verbindung aus einem
-bereits beendeten Loop wiederzuverwenden – das äußert sich als
-`RuntimeError: ... attached to a different loop`.
+**`pytest-asyncio` gives every test function its own event loop -- which
+collides with our singleton database engine.** Our database engine
+(`app.database.engine`) is a singleton that establishes connections once
+on module import. If every test runs in its own loop, the engine
+eventually tries to reuse a connection from an already-closed loop --
+which shows up as `RuntimeError: ... attached to a different loop`.
 
-Zwei Lösungsversuche über einen eigenen `event_loop`-Fixture-Override
-scheiterten an pytest-asyncio-Versionsproblemen: Version 0.24 ignoriert
-einen solchen Override für Testfunktionen selbst (nur Fixtures
-respektieren ihn); ein Downgrade auf 0.21.1 wiederum ist inkompatibel
-mit `pytest` 8.x (`AttributeError: 'FixtureDef' object has no attribute
-'unittest'`).
+Two attempted fixes via a custom `event_loop` fixture override failed due
+to pytest-asyncio version issues: version 0.24 ignores such an override
+for test functions themselves (only fixtures respect it); downgrading to
+0.21.1, in turn, is incompatible with `pytest` 8.x
+(`AttributeError: 'FixtureDef' object has no attribute 'unittest'`).
 
-**Die robuste, versionsunabhängige Lösung:** Statt gegen
-pytest-asyncios internes Loop-Verhalten anzukämpfen, wird der
-Connection-Pool der Engine vor **jedem einzelnen Test** verworfen
-(`await engine.dispose()`, als autouse-Fixture `_frische_verbindung`).
-Danach entstehen neue Verbindungen automatisch im gerade aktiven Loop,
-sobald sie das nächste Mal gebraucht werden – unabhängig davon, welche
-pytest-asyncio-Version oder Loop-Scope-Konfiguration gerade gilt. Diese
-Fixture muss vor der tabellenleerenden Fixture laufen; das wird über
-eine explizite Fixture-Abhängigkeit erzwungen
-(`_tabellen_leeren(_frische_verbindung)`), statt sich auf die
-Definitionsreihenfolge zu verlassen.
+**The robust, version-independent solution:** instead of fighting
+pytest-asyncio's internal loop behavior, the engine's connection pool is
+discarded before **every single test** (`await engine.dispose()`, as an
+autouse fixture `_frische_verbindung`). New connections then automatically
+arise in whichever loop is currently active the next time they're needed
+-- regardless of which pytest-asyncio version or loop-scope configuration
+happens to be in effect. This fixture must run before the table-emptying
+fixture; that's enforced via an explicit fixture dependency
+(`_tabellen_leeren(_frische_verbindung)`), rather than relying on
+definition order.
 
-**Lehre:** Bei hartnäckigen Event-Loop-Problemen mit async Datenbank-
-Bibliotheken lohnt es sich oft mehr, die Ressource (hier: den
-Connection-Pool) explizit zurückzusetzen, als das Verhalten des
-Test-Frameworks exakt nachzuvollziehen – letzteres ändert sich
-erfahrungsgemäß zwischen Versionen, ersteres nicht.
+**Lesson:** with stubborn event-loop issues in async database libraries,
+it's often more worthwhile to explicitly reset the resource (here: the
+connection pool) than to try to exactly replicate the test framework's
+behavior -- the latter tends to change between versions, the former
+doesn't.
 
-## SQLAlchemy Identity Map: veraltete Beziehungen trotz erneuter Abfrage
+## SQLAlchemy identity map: stale relationships despite a fresh query
 
-**`_zu_kosten_schema()` zeigte weiterhin 0 € Sachversicherungskosten**,
-obwohl der erste `MissingGreenlet`-Fix bereits griff. Ursache: die
-Beziehung `pv.sach_paket` wurde einmal geladen (mit Wert `None`), **bevor**
-`sach_paket_id` überhaupt gesetzt wurde (nämlich beim Neuanlegen der Zeile
-weiter oben in der Funktion). SQLAlchemys **Identity Map** sorgt dafür,
-dass ein und dasselbe Python-Objekt innerhalb derselben Session für
-denselben Primärschlüssel wiederverwendet wird – ein erneutes Abfragen
-mit `selectinload(sach_paket)` überschreibt eine **bereits als geladen
-markierte** Beziehung NICHT automatisch, selbst nach einem `commit()`,
-solange `expire_on_commit=False` gesetzt ist (was wir bewusst so
-konfiguriert haben, um andere Greenlet-Probleme zu vermeiden).
+**`_zu_kosten_schema()` kept showing 0 EUR in property-insurance costs**,
+even though the first `MissingGreenlet` fix was already in place. Cause:
+the relationship `pv.sach_paket` had already been loaded once (with the
+value `None`) **before** `sach_paket_id` was even set (namely, when the
+row was newly created earlier in the function). SQLAlchemy's **identity
+map** ensures that the same Python object is reused within the same
+session for the same primary key -- re-querying with
+`selectinload(sach_paket)` does NOT automatically overwrite a relationship
+already **marked as loaded**, even after a `commit()`, as long as
+`expire_on_commit=False` is set (which we deliberately configured to
+avoid other greenlet issues).
 
-**Lösung:** `await db.refresh(pv, attribute_names=["sach_paket",
-"zusatzpersonen"])` statt erneutem `select(...)` – `refresh()` erzwingt
-gezielt das Neuladen genau der angegebenen Beziehungen aus der
-Datenbank, unabhängig vom bisherigen (u.U. veralteten) Ladezustand des
-Objekts.
+**Fix:** `await db.refresh(pv, attribute_names=["sach_paket",
+"zusatzpersonen"])` instead of a fresh `select(...)` -- `refresh()`
+specifically forces exactly the given relationships to be reloaded from
+the database, regardless of the object's previous (possibly stale)
+loaded state.
 
-**Einordnung:** Das ist eine dritte, eigenständige Variante der
-"frisch angelegtes Objekt + fehlendes Beziehungs-Reload"-Problemfamilie,
-die uns in diesem Projekt schon mehrfach begegnet ist (Ticketsystem,
-Versicherungs-Anlegen) – diesmal nicht als komplett fehlendes Reload,
-sondern als ein Reload, das durch die Identity Map wirkungslos blieb.
-Bei jedem "Objekt X, dann Feld Y setzen, dann Beziehung Z lesen"-Muster
-lohnt sich die Frage: wurde Z schon VOR dem Setzen von Y geladen?
+**Context:** this is a third, distinct variant of the "freshly created
+object + missing relationship reload" family of problems that we've
+already run into several times in this project (ticket system, insurance
+creation) -- this time not as a completely missing reload, but as a
+reload that was rendered ineffective by the identity map. Whenever the
+pattern "object X, then set field Y, then read relationship Z" occurs,
+it's worth asking: was Z already loaded BEFORE Y was set?
 
-## Weitere Testläufe: ein ernster Geschäftslogik-Bug gefunden
+## Further test runs: found a serious business-logic bug
 
-**Die "any() statt all()"-Regel war an zwei von drei Stellen falsch
-herum implementiert.** Die Web-Auswertungsseite in `pflichtstunden.py`
-hatte die Regel korrekt umgesetzt (`any(p["befreit"] for p in
-paechter_details)`), aber sowohl der **CSV-Export** (ebenfalls in
-`pflichtstunden.py`) als auch die **REST-API** (`api_pflichtstunden.py`)
-implementierten sie beim Nachbau versehentlich als `all()`: eine Variable
-namens `alle_befreit` wurde mit `True` initialisiert und bei jedem
-nicht-befreiten Pächter auf `False` gesetzt – das ist "ALLE müssen
-befreit sein", nicht "MINDESTENS EINER". Der irreführende Variablenname
-war vermutlich die Ursache: er wurde offenbar kopiert, ohne die
-tatsächliche `any()`-Logik mitzukopieren.
+**The "any() instead of all()" rule was implemented backwards in two out
+of three places.** The web evaluation page in `pflichtstunden.py` had
+implemented the rule correctly (`any(p["befreit"] for p in
+paechter_details)`), but both the **CSV export** (also in
+`pflichtstunden.py`) and the **REST API** (`api_pflichtstunden.py`)
+accidentally implemented it as `all()` when rebuilding it: a variable
+named `alle_befreit` was initialized with `True` and set to `False` for
+every non-exempt tenant -- that's "ALL must be exempt", not "AT LEAST
+ONE". The misleading variable name was likely the cause: it was
+apparently copied without also copying the actual `any()` logic.
 
-**Das ist kein kosmetischer Bug.** Für Parzellen mit einem befreiten und
-einem nicht-befreiten Pächter hätte der CSV-Export (der für die
-tatsächliche Abrechnung genutzt wird!) einen Schuldbetrag ausgewiesen,
-wo eigentlich keiner fällig ist. Genau diese Art Fehler automatisiert zu
-finden, bevor sie in einer echten Abrechnung auftaucht, ist der Grund,
-warum wir überhaupt angefangen haben, Tests zu schreiben.
+**This is not a cosmetic bug.** For parcels with one exempt and one
+non-exempt tenant, the CSV export (which is used for the actual billing!)
+would have shown an amount owed where none was actually due. Finding
+exactly this kind of error automatically, before it shows up in a real
+billing run, is the whole reason we started writing tests in the first
+place.
 
-**Behoben an beiden Stellen**, und die durchweg korrekte Variable in der
-Web-Auswertungsseite von `alle_befreit` zu `ist_befreit` umbenannt – der
-alte Name lud förmlich dazu ein, beim nächsten Kopieren wieder falsch
-verstanden zu werden.
+**Fixed in both places**, and the consistently correct variable in the web
+evaluation page was renamed from `alle_befreit` to `ist_befreit` -- the
+old name practically invited being misunderstood again the next time it
+was copied.
 
-**Zusätzlich:** Ein Pydantic-Validierungsfehler in
-`api_versicherungen.py`s `_zu_kosten_schema()` – `model_validate(pv)`
-wurde direkt auf das Zielschema mit den *berechneten* Kostenfeldern
-aufgerufen, die aber keine echten ORM-Spalten sind. Pydantic verlangte
-diese Felder deshalb schon beim Validieren, nicht erst beim
-nachträglichen Setzen. Behoben, indem zuerst das Basis-Schema (nur echte
-Spalten) validiert und die berechneten Felder erst beim Konstruieren des
-vollständigen Zielschemas ergänzt werden.
+**Additionally:** a Pydantic validation error in `api_versicherungen.py`'s
+`_zu_kosten_schema()` -- `model_validate(pv)` was called directly on the
+target schema with the *calculated* cost fields, which aren't real ORM
+columns. Pydantic therefore demanded these fields already during
+validation, rather than only when they were set afterward. Fixed by first
+validating the base schema (only real columns), and only adding the
+calculated fields when constructing the complete target schema.
 
-## Erste echte Testläufe: zwei App-Bugs gefunden (nicht nur Test-Infrastruktur)
+## First real test runs: found two app bugs (not just test infrastructure)
 
-Nachdem die Event-Loop-Infrastruktur stand, deckten die ersten
-tatsächlich laufenden Tests zwei echte, bis dahin unbemerkte Probleme auf:
+Once the event-loop infrastructure was in place, the first tests that
+actually ran uncovered two real, previously unnoticed problems:
 
-**`PflichtstundenModus` ist kleingeschrieben, alle anderen Enums
-großgeschrieben.** Dieser Enum stammt aus Phase 1 (Migration
-`0002_pflichtstunden`), bevor die "Enum-Werte immer großschreiben"-
-Konvention eingeführt wurde (siehe Architektur-Entscheidungen). Er wurde
-bei der Umstellung nicht nachgezogen. Das ist kein Bug im Sinne von
-"funktioniert falsch" – der Code ist intern konsistent (Modell und
-Migration verwenden beide `pro_pachtvertrag`) – aber eine **Falle für
-alle, die zukünftig Enum-Werte verwenden und großgeschrieben erwarten**,
-weil es der einzige Ausreißer im gesamten Projekt ist. Bewusst NICHT
-nachträglich vereinheitlicht (das wäre eine weitere Migration nur für
-Konsistenz, ohne funktionalen Nutzen) – stattdessen hier dokumentiert,
-damit niemand erneut darüber stolpert. Die Tests wurden entsprechend
-angepasst (`modus="pro_pachtvertrag"`, klein).
+**`PflichtstundenModus` is lowercase, every other enum is uppercase.**
+This enum dates back to phase 1 (migration `0002_pflichtstunden`), before
+the "enum values always uppercase" convention was introduced (see
+Architecture Decisions). It wasn't caught up during that conversion. This
+isn't a bug in the sense of "behaves incorrectly" -- the code is
+internally consistent (model and migration both use
+`pro_pachtvertrag`) -- but it's a **trap for anyone who uses enum values
+in the future and expects uppercase**, since it's the only outlier in the
+entire project. Deliberately NOT retroactively unified (that would be
+another migration purely for consistency, with no functional benefit) --
+instead documented here so nobody stumbles over it again. Tests were
+adjusted accordingly (`modus="pro_pachtvertrag"`, lowercase).
 
-**`MissingGreenlet` auch im Versicherungsmodul, nicht nur im
-Ticketsystem.** `api_versicherungen.py`s `versicherung_setzen()` legte
-bei Bedarf eine neue `ParzelleVersicherung`-Zeile an, griff aber direkt
-danach auf `pv.zusatzpersonen` zu, ohne die Zeile mit `selectinload` neu
-zu laden – exakt das gleiche Muster, das wir beim Ticketsystem schon
-einmal gefunden und behoben hatten (siehe Architektur-Entscheidungen).
-Es war schlicht nicht konsequent auf alle Stellen im Code angewendet
-worden, an denen "neu anlegen, dann sofort Beziehung lesen" passiert.
-Behoben nach demselben Muster: nach dem Anlegen explizit neu laden.
+**`MissingGreenlet` in the insurance module too, not just the ticket
+system.** `api_versicherungen.py`'s `versicherung_setzen()` created a new
+`ParzelleVersicherung` row when needed, but immediately accessed
+`pv.zusatzpersonen` right after, without reloading the row with
+`selectinload` -- exactly the same pattern we had already found and fixed
+in the ticket system (see Architecture Decisions). It simply hadn't been
+applied consistently to every spot in the code where "create new, then
+immediately read a relationship" happens. Fixed following the same
+pattern: explicitly reload after creating.
 
-**Lehre:** Automatisierte Tests fangen genau diese Art von "wir wissen es
-eigentlich schon, haben es aber nicht überall angewendet"-Fehlern – das
-ist der eigentliche Wert der Testsuite, nicht nur das Verhindern neuer
-Bugs, sondern das Aufspüren bereits vorhandener, unbemerkter.
+**Lesson:** automated tests catch exactly this kind of "we actually
+already know this, but didn't apply it everywhere" error -- that's the
+real value of the test suite, not just preventing new bugs, but uncovering
+existing, unnoticed ones.
 
-## Bekannte Grenzen (bewusst nicht automatisiert getestet)
+## Known limits (deliberately not automated)
 
-- **IMAP-Abruf und SMTP-Versand** (`app/ticket_mailer.py`,
-  `app/email_service.py`): erfordern einen echten Mailserver. Diese Pfade
-  werden weiterhin manuell getestet (siehe die frühere Diagnose-Sitzung
-  mit dem direkten `imaplib`-Testskript). Ein Mocking dieser externen
-  Systeme wäre möglich, wurde aber als nicht lohnenswert für den
-  aktuellen Projektumfang eingeschätzt – die Fehleranfälligkeit liegt
-  eher an echten Netzwerk-/Konfigurationsproblemen als an der eigenen
-  Logik, die bereits getestet ist (Threading-Zuordnung, Ticket-Erzeugung).
-- **Externe Spam-Prüf-API** (`app/spam_filter.py`, `_externe_pruefung()`):
-  gleicher Grund – nur relevant, wenn ein Verein tatsächlich einen
-  externen Dienst konfiguriert, was aktuell niemand tut.
-- **E-Mail-Versand allgemein** (Einladungen, Zuweisungsbenachrichtigungen):
-  `sende_email()` schlägt in der Testumgebung mangels SMTP-Konfiguration
-  einfach fehl (gibt `False` zurück) – das ist beabsichtigtes, bereits
-  vom Code abgefangenes Verhalten, kein Testfehler.
+- **IMAP fetching and SMTP sending** (`app/ticket_mailer.py`,
+  `app/email_service.py`): require a real mail server. These paths
+  continue to be tested manually (see the earlier diagnostic session with
+  the direct `imaplib` test script). Mocking these external systems would
+  be possible, but was judged not worth it for the project's current
+  scope -- the failure-proneness lies more in real network/configuration
+  issues than in the app's own logic, which is already tested (thread
+  matching, ticket creation).
+- **External spam-check API** (`app/spam_filter.py`,
+  `_externe_pruefung()`): same reason -- only relevant if an association
+  actually configures an external service, which nobody currently does.
+- **Email sending in general** (invitations, assignment notifications):
+  `sende_email()` simply fails in the test environment for lack of SMTP
+  configuration (returns `False`) -- that's intended, already-handled
+  behavior in the code, not a test failure.
 
-## Neues Modul? Neue Tests nicht vergessen
+## New module? Don't forget new tests
 
-Beim Bau eines neuen Moduls (siehe auch die Checkliste in
-[docs/README.md](./README.md)) gehört ab sofort auch eine
-`tests/test_<modul>.py`-Datei mit mindestens einem Happy-Path-Test dazu –
-genau wie Doku und API-Endpunkte inzwischen selbstverständlich sind.
+When building a new module (see also the checklist in
+[docs/README.md](./README.md)), a `tests/test_<module>.py` file with at
+least one happy-path test is now part of the deal from now on -- just
+like docs and API endpoints have become a given by now.

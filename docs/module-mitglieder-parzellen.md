@@ -1,66 +1,66 @@
-# Modul: Mitglieder & Parzellen (Core)
+# Module: Members & Parcels (Core)
 
-Das Kernmodul – immer aktiv, kann nicht abgeschaltet werden (im Gegensatz
-zu den optionalen Modulen wie Pflichtstunden oder Wasser/Strom).
+The core module -- always active, cannot be disabled (unlike the optional
+modules such as Work Hours or Water/Electricity).
 
-## Datenmodell
+## Data model
 
 ```
-mitglieder            – Vereinsmitglieder (Stammdaten)
-mitglied_telefon       – n Telefonnummern pro Mitglied
-mitglied_email         – n E-Mail-Adressen pro Mitglied
-parzellen              – Gartenparzellen
-mitglied_parzelle       – m:n Zuordnung Mitglied ↔ Parzelle
-aenderungshistorie      – generisches Audit-Log (siehe unten)
+members               – club members (core data)
+member_phones          – n phone numbers per member
+member_emails          – n email addresses per member
+parcels                – garden parcels
+member_parcels          – m:n member <-> parcel assignment
+change_history          – generic audit log (see below)
 ```
 
-## Wichtige Entscheidungen
+## Key decisions
 
-**m:n-Zuordnung von Anfang an.** Ein Mitglied kann mehrere Parzellen haben
-(Doppelgärten), eine Parzelle kann mehrere Mitglieder haben (Ehepaare,
-Familien). Die Zuordnungstabelle `mitglied_parzelle` trägt zusätzlich
-`ist_hauptpaechter` (bool) und `zuordnung_von`/`zuordnung_bis` (Datumsfelder).
+**m:n assignment from the start.** A member can have multiple parcels
+(multiple gardens), and a parcel can have multiple members (couples,
+families). The assignment table `member_parcels` additionally carries
+`is_primary_tenant` (bool) and `assigned_from`/`assigned_until` (date fields).
 
-**Pächter-Historie statt Löschen.** Wird ein Pachtverhältnis beendet, wird
-`zuordnung_bis` gesetzt statt die Zeile zu löschen. So bleibt nachvollziehbar,
-wer wann welche Parzelle hatte – wichtig für Rückfragen Jahre später.
-Nimmt ein Mitglied dieselbe Parzelle später erneut, wird die bestehende
-(beendete) Zuordnung reaktiviert statt eine zweite Zeile anzulegen (es gibt
-eine `UniqueConstraint` auf `mitglied_id, parzelle_id`).
+**Tenancy history instead of deletion.** When a tenancy ends,
+`assigned_until` is set instead of deleting the row. This keeps it
+traceable who held which parcel when -- important for questions that come
+up years later. If a member later takes on the same parcel again, the
+existing (ended) assignment is reactivated instead of creating a second
+row (there is a `UniqueConstraint` on `member_id, parcel_id`).
 
-**Aktive vs. inaktive Mitglieder.** Ein Mitglied gilt als aktiv, wenn
-`deleted_at IS NULL` und (`mitglied_bis IS NULL` oder `mitglied_bis` in der
-Zukunft liegt). Die zentrale Helper-Funktion `aktives_mitglied_filter()` in
-`app/database.py` kapselt das – wird überall verwendet, wo nur aktive
-Mitglieder relevant sind (Dropdowns, Auswertungen, Zuordnungen). Die
-Mitgliederliste selbst zeigt standardmäßig nur Aktive, mit einer Checkbox
-"Inaktive anzeigen" für die Historie (z.B. verstorbene Mitglieder).
+**Active vs. inactive members.** A member counts as active if
+`deleted_at IS NULL` and (`member_until IS NULL` or `member_until` is in
+the future). The central helper function `active_member_filter()` in
+`app/database.py` encapsulates this -- used everywhere only active members
+are relevant (dropdowns, reports, assignments). The member list itself
+shows only active members by default, with an "Show inactive" checkbox
+for the history (e.g. deceased members).
 
-**Änderungshistorie (ChangeHistory).** Ein generisches Audit-Log
-(`app/aenderungstracker.py`), das Feldänderungen an beliebigen Entitäten
-protokolliert (aktuell für Parzellen genutzt: Fläche, Status, Gartennummer
-etc.). Statt für jede Tabelle eine eigene Historie-Tabelle zu bauen, gibt
-es eine gemeinsame `aenderungshistorie`-Tabelle mit `entitaet_typ`,
-`entitaet_id`, `feldname`, `alter_wert`, `neuer_wert`. Verwendung:
+**Change history (ChangeHistory).** A generic audit log
+(`app/change_tracker.py`) that logs field changes on arbitrary entities
+(currently used for parcels: area, status, plot number, etc.). Instead of
+building a separate history table for every table, there is one shared
+`change_history` table with `entity_type`, `entity_id`, `field_name`,
+`old_value`, `new_value`. Usage:
 
 ```python
-tracker = AenderungsTracker(parzelle, "Parzelle", ["gartennummer", "flaeche_qm", "status"])
-# ... Felder ändern ...
-await tracker.commit(db, benutzer.id)
+tracker = ChangeTracker(parcel, "Parcel", ["plot_number", "area_sqm", "status"])
+# ... change fields ...
+await tracker.commit(db, user.id)
 ```
 
-**CSV-Import mit automatischer Trennzeichen-Erkennung.** Frühe Version
-erwartete hart Semikolon als Trennzeichen – das brach, sobald jemand die
-Export-Datei in Excel öffnete und neu speicherte (Excel wechselt je nach
-Spracheinstellung zu Komma). Jetzt wird `csv.Sniffer()` genutzt, um das
-Trennzeichen zu erkennen, mit Semikolon als Fallback.
+**CSV import with automatic delimiter detection.** An early version hard-
+coded a semicolon as the delimiter -- that broke as soon as someone opened
+the export file in Excel and saved it again (Excel switches to a comma
+depending on locale settings). It now uses `csv.Sniffer()` to detect the
+delimiter, with semicolon as the fallback.
 
-## Bekannte Fallstricke
+## Known pitfalls
 
-- `zeile.get("Spalte", "")` schützt NICHT vor `None`-Werten, wenn eine
-  CSV-Zeile weniger Felder hat als die Kopfzeile (Python füllt dann mit
-  `None`, der Default greift nur bei komplett fehlendem Schlüssel). Immer
-  `(zeile.get("Spalte") or "")` verwenden.
-- `scalar_one_or_none()` wirft einen Fehler, sobald mehr als eine Zeile
-  zurückkommt – für Duplikat-*Erkennung* (wo mehrere Treffer erwartet
-  werden können) ist `.scalars().first()` die richtige Wahl.
+- `row.get("Column", "")` does NOT protect against `None` values when a
+  CSV row has fewer fields than the header row (Python fills those with
+  `None`; the default only kicks in when the key is missing entirely).
+  Always use `(row.get("Column") or "")`.
+- `scalar_one_or_none()` raises an error as soon as more than one row comes
+  back -- for duplicate *detection* (where multiple matches can be
+  expected), `.scalars().first()` is the right choice.

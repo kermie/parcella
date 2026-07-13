@@ -12,14 +12,14 @@ from app.models import ClubSetting, User
 from app.api_auth import get_current_api_user, require_admin_api
 from app.schemas import ClubSettingOut, ClubSettingUpdate
 
-router = APIRouter(prefix="/api/v1/club-settings", tags=["API: Vereinseinstellungen"])
+router = APIRouter(prefix="/api/v1/club-settings", tags=["API: Club Settings"])
 
 
 @router.get(
     "",
     response_model=List[ClubSettingOut],
-    summary="Alle Vereinseinstellungen abrufen",
-    description="Liefert Vereinsstammdaten wie Name, Adresse, A-/B-/C-Flächengrößen als Key-Value-Liste.",
+    summary="Retrieve all club settings",
+    description="Returns club master data such as name, address, and A/B/C area sizes as a key-value list.",
 )
 async def settings_list(
     db: AsyncSession = Depends(get_db),
@@ -32,7 +32,7 @@ async def settings_list(
 @router.get(
     "/{key}",
     response_model=ClubSettingOut,
-    summary="Einzelne Einstellung abrufen",
+    summary="Retrieve a single setting",
 )
 async def setting_get(
     key: str,
@@ -51,8 +51,8 @@ async def setting_get(
 @router.put(
     "/{key}",
     response_model=ClubSettingOut,
-    summary="Einstellung setzen oder aktualisieren",
-    description="Legt den Schlüssel an, falls er nicht existiert (Upsert). Nur für Admin/Vorstand.",
+    summary="Set or update a setting",
+    description="Creates the key if it does not exist yet (upsert). Admin/board only.",
 )
 async def setting_set(
     key: str,

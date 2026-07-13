@@ -13,7 +13,7 @@ from app.models import Member, Parcel, ParcelStatus, MemberParcel
 from app.auth import get_current_user
 from fastapi import Request
 
-router = APIRouter(prefix="/api/v1/stats", tags=["API: Statistiken"])
+router = APIRouter(prefix="/api/v1/stats", tags=["API: Stats"])
 
 
 class DashboardStats(BaseModel):
@@ -27,7 +27,7 @@ class DashboardStats(BaseModel):
     area_terminated_sqm: float
 
 
-@router.get("", response_model=DashboardStats, summary="Dashboard-Statistiken")
+@router.get("", response_model=DashboardStats, summary="Dashboard statistics")
 async def dashboard_stats(db: AsyncSession = Depends(get_db)):
     # Members
     members_total = await db.scalar(

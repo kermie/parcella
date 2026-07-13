@@ -38,7 +38,7 @@ async def _load_ticket(db: AsyncSession, ticket_id: str) -> Optional[Ticket]:
     return result.scalar_one_or_none()
 
 
-@router.get("", response_model=List[TicketOut], summary="Tickets auflisten")
+@router.get("", response_model=List[TicketOut], summary="List tickets")
 async def tickets_list(
     status_filter: Optional[str] = Query(None, alias="status"),
     assigned_to_id: Optional[str] = Query(None),
@@ -63,7 +63,7 @@ async def tickets_list(
     return result.scalars().all()
 
 
-@router.get("/{ticket_id}", response_model=TicketDetailOut, summary="Ticket inkl. Verlauf abrufen")
+@router.get("/{ticket_id}", response_model=TicketDetailOut, summary="Retrieve ticket incl. history")
 async def ticket_get(
     ticket_id: str,
     db: AsyncSession = Depends(get_db),
@@ -77,10 +77,10 @@ async def ticket_get(
 
 @router.post(
     "", response_model=TicketDetailOut, status_code=status.HTTP_201_CREATED,
-    summary="Ticket anlegen",
-    description="Legt ein Ticket mit erster Nachricht an. Der Absender wird automatisch "
-                "einem Member zugeordnet, falls die E-Mail-Adresse eindeutig einem "
-                "Member zugeordnet werden kann.",
+    summary="Create ticket",
+    description="Creates a ticket with a first message. The sender is automatically "
+                "linked to a member if the email address can be uniquely matched "
+                "to a member.",
 )
 async def ticket_create(
     daten: TicketCreate,
@@ -105,8 +105,8 @@ async def ticket_create(
 
 
 @router.put(
-    "/{ticket_id}/status", response_model=TicketOut, summary="Ticket-Status ändern",
-    description="DEFERRED erfordert deferred_until. CLOSED setzt closed_at automatisch.",
+    "/{ticket_id}/status", response_model=TicketOut, summary="Change ticket status",
+    description="DEFERRED requires deferred_until. CLOSED sets closed_at automatically.",
 )
 async def status_update(
     ticket_id: str,
@@ -136,8 +136,8 @@ async def status_update(
 
 
 @router.put(
-    "/{ticket_id}/assignment", response_model=TicketOut, summary="Ticket zuweisen/Zuweisung aufheben",
-    description="Löst bei Zuweisung eine E-Mail-Benachrichtigung an den zugewiesenen Benutzer aus.",
+    "/{ticket_id}/assignment", response_model=TicketOut, summary="Assign ticket / clear assignment",
+    description="Triggers an email notification to the assigned user upon assignment.",
 )
 async def assignment_update(
     ticket_id: str,
@@ -178,7 +178,7 @@ async def assignment_update(
     return ticket
 
 
-@router.put("/{ticket_id}/member", response_model=TicketOut, summary="Member-Zuordnung setzen")
+@router.put("/{ticket_id}/member", response_model=TicketOut, summary="Set member assignment")
 async def member_assign(
     ticket_id: str,
     daten: TicketMemberUpdate,
@@ -197,9 +197,9 @@ async def member_assign(
 
 
 @router.put(
-    "/{ticket_id}/spam-status", response_model=TicketOut, summary="Spam-Verdacht setzen/aufheben",
-    description="Wird primär genutzt, um einen automatisch erkannten Spam-Verdacht als "
-                "falsch-positiv zu markieren (spam_suspected=false).",
+    "/{ticket_id}/spam-status", response_model=TicketOut, summary="Set/clear spam suspicion",
+    description="Primarily used to mark an automatically detected spam suspicion as "
+                "a false positive (spam_suspected=false).",
 )
 async def spam_status_update(
     ticket_id: str,
@@ -220,7 +220,7 @@ async def spam_status_update(
 
 @router.get(
     "/{ticket_id}/messages", response_model=List[TicketMessageOut],
-    summary="Nachrichten eines Tickets auflisten",
+    summary="List messages of a ticket",
 )
 async def messages_list(
     ticket_id: str,
@@ -235,9 +235,9 @@ async def messages_list(
 
 @router.post(
     "/{ticket_id}/messages", response_model=TicketMessageOut, status_code=status.HTTP_201_CREATED,
-    summary="Nachricht/Notiz hinzufügen",
-    description="direction=INTERNAL für interne Notizen (nie an den Absender gesendet). "
-                "Der tatsächliche E-Mail-Versand für OUTGOING folgt in Etappe 2.",
+    summary="Add message/note",
+    description="direction=INTERNAL for internal notes (never sent to the sender). "
+                "Actual email delivery for OUTGOING will follow in stage 2.",
 )
 async def message_create(
     ticket_id: str,

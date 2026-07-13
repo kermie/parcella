@@ -1,109 +1,108 @@
-# Modul: Zählerwesen (Metering: Wasser & Strom)
+# Module: Metering (Water & Electricity)
 
-> **Hinweis zur Umbenennung:** Der Code (Modelle, Tabellen, URLs,
-> API-Endpunkte) wurde vollständig auf Englisch umgestellt:
-> `Zaehlpunkt` → `MeteringPoint`, `Zaehler` → `Meter`,
-> `Zaehlerstand` → `MeterReading`, `/wasser/`→`/water/`,
-> `/strom/`→`/electricity/`. Details und Lehren dazu in
-> [Architektur-Entscheidungen](./architektur-entscheidungen.md).
-> Diese Seite beschreibt weiterhin die fachliche Logik, die sich dabei
-> nicht geändert hat.
+> **Note on the renaming:** the code (models, tables, URLs, API
+> endpoints) has been fully converted to English:
+> `Zaehlpunkt` -> `MeteringPoint`, `Zaehler` -> `Meter`,
+> `Zaehlerstand` -> `MeterReading`, `/wasser/` -> `/water/`,
+> `/strom/` -> `/electricity/`. Details and lessons learned in
+> [Architecture Decisions](./architektur-entscheidungen.md).
+> This page continues to describe the domain logic, which did not
+> change in the process.
 
-Verwaltet Wasser- und Stromzähler über **eine gemeinsame Codebasis** –
-das prägnanteste Beispiel im Projekt dafür, wie strukturell ähnliche
-Anforderungen generalisiert statt dupliziert werden.
+Manages water and electricity meters via **one shared codebase** -- the
+clearest example in the project of generalizing structurally similar
+requirements instead of duplicating them.
 
-Modul-Flags: `water` und `electricity` (unabhängig voneinander abschaltbar)
+Module flags: `water` and `electricity` (independently toggleable)
 
-## Datenmodell
+## Data model
 
 ```
-zaehlpunkte  – Ein Zählpunkt: Hauptzähler, Parzelle, oder Vereinsanschluss.
-               Hat ein "medium" (WASSER/STROM) und einen "typ".
-zaehler      – Der physische Zähler an einem Zaehlpunkt (Nummer, Eichfrist,
-               Ein-/Ausbaudatum, Anfangsstand)
-zaehlerstaende – Jährliche Ablesungen eines Zählers
+metering_points  – a metering point: main meter, parcel, or club connection.
+                   Has a "medium" (WATER/ELECTRICITY) and a "type".
+meters           – the physical meter at a metering point (number,
+                   calibration deadline, install/removal date, initial reading)
+meter_readings   – annual readings of a meter
 ```
 
-Eine Parzelle kann sowohl einen Wasser- als auch einen Strom-Zaehlpunkt
-haben – zwei Zeilen in derselben Tabelle, unterschieden über `medium`.
+A parcel can have both a water and an electricity metering point -- two
+rows in the same table, distinguished by `medium`.
 
-## Wichtige Entscheidung: Router-Factory statt Duplikation
+## Key decision: router factory instead of duplication
 
-Wasser und Strom sind strukturell identisch: Hauptzähler + Verteilzähler,
-jährliche Ablesung, Verbrauchsberechnung, Plausibilitätsprüfung. Der
-einzige Unterschied ist Einheit (m³ vs. kWh), Nachkommastellen (1 vs. 0)
-und Anzeigetexte.
+Water and electricity are structurally identical: main meter + sub-
+meters, annual reading, consumption calculation, plausibility checks. The
+only differences are the unit (m³ vs. kWh), decimal places (1 vs. 0), and
+display labels.
 
-Statt zwei separate Router-Dateien zu pflegen, gibt es **eine**
-Fabrikfunktion `erstelle_zaehler_router()` in `app/routers/zaehlerwesen.py`,
-die einen vollständig konfigurierten Router für **ein** Medium erzeugt.
-`main.py` instanziiert sie zweimal:
+Instead of maintaining two separate router files, there is **one**
+factory function, `erstelle_metering_router()`, in
+`app/routers/metering.py`, which produces a fully configured router for
+**one** medium. `main.py` instantiates it twice:
 
 ```python
-wasser_router = erstelle_zaehler_router(
-    medium=ZaehlerMedium.WASSER, url_prefix="/wasser", modul_name="wasser",
-    medium_label="Wasser", einheit="m³", icon="bi-droplet", dezimalstellen=1,
+water_router = erstelle_metering_router(
+    medium=MeteringMedium.WATER, url_prefix="/water", modul_name="water",
+    medium_label="Wasser", unit="m³", icon="bi-droplet", dezimalstellen=1,
 )
-strom_router = erstelle_zaehler_router(
-    medium=ZaehlerMedium.STROM, url_prefix="/strom", modul_name="strom",
-    medium_label="Strom", einheit="kWh", icon="bi-lightning-charge", dezimalstellen=0,
+electricity_router = erstelle_metering_router(
+    medium=MeteringMedium.ELECTRICITY, url_prefix="/electricity", modul_name="electricity",
+    medium_label="Strom", unit="kWh", icon="bi-lightning-charge", dezimalstellen=0,
 )
 ```
 
-Ein Bugfix oder eine neue Funktion muss dadurch nur **einmal** geschrieben
-werden. Die Templates (`app/templates/zaehlerwesen/`) sind ebenfalls
-gemeinsam genutzt – sie erhalten `einheit`, `medium_label`, `icon` etc. als
-Variablen statt die Werte hart zu kodieren.
+A bug fix or new feature therefore only has to be written **once**. The
+templates (`app/templates/metering/`) are likewise shared -- they receive
+`unit`, `medium_label`, `icon`, etc. as variables instead of hard-coding
+the values.
 
-Falls künftig ein drittes Medium dazukommt (Gas?), reicht ein weiterer
-Aufruf von `erstelle_zaehler_router()` mit passender Konfiguration.
+If a third medium is added in the future (gas?), one more call to
+`erstelle_metering_router()` with the matching configuration is enough.
 
-## Plausibilitätsprüfungen
+## Plausibility checks
 
-**Monotonie pro Zähler** (hart, blockierend): Ein neuer Zählerstand darf
-nicht kleiner sein als der vorherige Stand *derselben* Nummer – sowohl
-rückwärts (nicht kleiner als der Vorwert) als auch vorwärts (nicht größer
-als ein bereits erfasster späterer Wert, falls vorhanden). Siehe
-`pruefe_monotonie()` in `app/zaehler_utils.py`.
+**Per-meter monotonicity** (hard, blocking): a new reading must not be
+smaller than the previous reading for the *same* meter number -- both
+backward (not smaller than the prior value) and forward (not larger than
+an already-recorded later value, if one exists). See
+`check_monotonicity()` in `app/zaehler_utils.py`.
 
-**Gesamt-Plausibilität** (Warnung, nicht blockierend): Die Summe aus
-Parzellen- und Vereinsverbrauch darf den Hauptzähler-Verbrauch nicht
-übersteigen. Wird als Warnbanner angezeigt, nicht als Fehler – weil
-Ablesungen zeitversetzt eingetragen werden und ein zwischenzeitlich
-"unvollständiger" Datenstand kein Fehler ist, sondern normal.
+**Overall plausibility** (warning, non-blocking): the sum of parcel and
+club consumption must not exceed the main meter's consumption. This is
+shown as a warning banner, not an error -- because readings are entered
+with a time lag, and a temporarily "incomplete" data state is not an
+error but normal.
 
-## Zähler-Tausch und Historie
+## Meter exchange and history
 
-Wird ein Zähler getauscht (z.B. alle 6 Jahre bei Wasser, Eichfrist), wird
-der alte **nicht gelöscht**, sondern deaktiviert (`ist_aktiv = false`,
-`ausgebaut_am` gesetzt). Der neue Zähler bekommt eine eigene Zeile mit
-neuer Nummer und eigenem Anfangsstand. Der Verbrauch wird dadurch korrekt
-getrennt berechnet – kein Vermischen von altem und neuem Zählerstand.
+When a meter is exchanged (e.g. every 6 years for water, due to
+calibration deadlines), the old one is **not deleted** but deactivated
+(`is_active = false`, `removed_at` set). The new meter gets its own row
+with a new number and its own initial reading. This correctly separates
+consumption calculations -- no mixing of old and new meter readings.
 
-## Bekannte Fallstricke
+## Known pitfalls
 
-- **Jinja2 kann kein Python-`.format()`**: `"%.{}f"|format(stellen)|format(wert)`
-  funktioniert nicht (Jinjas `format`-Filter nutzt den alten `%`-Operator).
-  Lösung: ein eigener Jinja-Filter `fmt`, registriert direkt am
-  `Jinja2Templates`-Objekt in `zaehlerwesen.py`:
+- **Jinja2 can't do Python's `.format()`**: `"%.{}f"|format(places)|format(value)`
+  does not work (Jinja's `format` filter uses the old `%` operator).
+  Solution: a custom Jinja filter `fmt`, registered directly on the
+  `Jinja2Templates` object in `metering.py`:
   ```python
-  templates.env.filters["fmt"] = lambda wert, stellen: f"{float(wert):.{stellen}f}"
+  templates.env.filters["fmt"] = lambda value, places: f"{float(value):.{places}f}"
   ```
-- **MissingGreenlet beim Neuanlegen**: Wird eine Datenbankzeile per
-  `db.add()` + `commit()` neu angelegt (statt per Query geladen), sind
-  ihre Beziehungen (`relationship`-Felder) nicht eager geladen. Ein
-  späterer Zugriff darauf löst einen synchronen Lazy-Load aus, der mit dem
-  asynchronen Datenbanktreiber zu `MissingGreenlet` führt. Lösung: nach dem
-  Anlegen die Zeile explizit mit `selectinload(...)` neu laden (siehe
-  `_get_or_create_pv()` im Versicherungsmodul für ein Beispiel dieses
-  Musters).
+- **MissingGreenlet on creation**: when a database row is newly created
+  via `db.add()` + `commit()` (rather than loaded via a query), its
+  relationships (`relationship` fields) are not eagerly loaded. A later
+  access triggers a synchronous lazy load, which raises `MissingGreenlet`
+  with the async database driver. Fix: explicitly reload the row with
+  `selectinload(...)` after creating it (see `_get_or_create_pi()` in the
+  insurance module for an example of this pattern).
 
-## REST-API
+## REST API
 
-Dieses Modul verfügt (nachträglich ergänzt) über es für dieses Modul vollständige
-REST-API-Endpunkte (JWT-authentifiziert, siehe `/api/docs`). Siehe README
-für die Endpunkt-Übersicht. Hintergrund: anfangs wurden neue Module nur
-als Web-Oberfläche gebaut, die API wurde nachträglich nachgezogen – seither
-gilt die Regel, dass jedes neue Modul **von Anfang an** sowohl Web-UI als
-auch API-Endpunkte bekommt (siehe Architektur-Entscheidungen).
+This module has (added after the fact) a complete set of REST API
+endpoints for this module (JWT-authenticated, see `/api/docs`). See the
+README for the endpoint overview. Background: early modules were
+initially built as web UI only, with the API added later -- since then
+the rule is that every new module gets **both** the web UI and API
+endpoints **from the start** (see Architecture Decisions).

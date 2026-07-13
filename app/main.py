@@ -85,12 +85,12 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description=(
-        "REST-API zur Verwaltung eines Kleingärtnervereins: Mitglieder, Parzellen, "
-        "Zuordnungen und Vereinseinstellungen. Authentifizierung über JWT-Bearer-Token "
-        "(siehe `/api/v1/auth/token` bzw. `/api/v1/auth/login`).\n\n"
-        "Die interaktive Web-Oberfläche (Jinja2-Templates) läuft parallel unter `/`, "
-        "`/members/`, `/parcels/` usw. und nutzt eine separate, cookie-basierte "
-        "Session-Authentifizierung."
+        "REST API for managing an allotment garden association: members, parcels, "
+        "assignments, and club settings. Authentication via JWT bearer token "
+        "(see `/api/v1/auth/token` or `/api/v1/auth/login`).\n\n"
+        "The interactive web UI (Jinja2 templates) runs in parallel at `/`, "
+        "`/members/`, `/parcels/`, etc., and uses separate, cookie-based "
+        "session authentication."
     ),
     docs_url="/api/docs",
     redoc_url="/api/redoc",

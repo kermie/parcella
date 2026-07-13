@@ -41,9 +41,9 @@ def erstelle_metering_api_router(
         )
         return result.scalar_one_or_none()
 
-    @router.get("/metering-points", response_model=List[MeteringPointOut], summary="Zählpunkte auflisten")
+    @router.get("/metering-points", response_model=List[MeteringPointOut], summary="List metering points")
     async def zaehlpunkte_auflisten(
-        type: Optional[str] = Query(None, description="MAIN_METER, PARCEL oder CLUB"),
+        type: Optional[str] = Query(None, description="MAIN_METER, PARCEL, or CLUB"),
         db: AsyncSession = Depends(get_db),
         user: User = Depends(get_current_api_user),
     ):
@@ -55,7 +55,7 @@ def erstelle_metering_api_router(
 
     @router.get(
         "/metering-points/{metering_point_id}", response_model=MeteringPointDetailOut,
-        summary="Zählpunkt inkl. Zähler-Historie abrufen",
+        summary="Retrieve metering point incl. meter history",
     )
     async def zaehlpunkt_abrufen(
         metering_point_id: str,
@@ -72,8 +72,8 @@ def erstelle_metering_api_router(
 
     @router.post(
         "/metering-points", response_model=MeteringPointDetailOut, status_code=status.HTTP_201_CREATED,
-        summary="Zählpunkt anlegen",
-        description="Legt einen Zählpunkt inkl. erstem Zähler in einem Schritt an.",
+        summary="Create metering point",
+        description="Creates a metering point including its first meter in a single step.",
     )
     async def zaehlpunkt_erstellen(
         daten: MeteringPointCreate,
@@ -101,7 +101,7 @@ def erstelle_metering_api_router(
         out.former_meters = []
         return out
 
-    @router.put("/metering-points/{metering_point_id}", response_model=MeteringPointOut, summary="Zählpunkt aktualisieren")
+    @router.put("/metering-points/{metering_point_id}", response_model=MeteringPointOut, summary="Update metering point")
     async def zaehlpunkt_aktualisieren(
         metering_point_id: str,
         daten: MeteringPointUpdate,
@@ -124,7 +124,7 @@ def erstelle_metering_api_router(
 
     @router.delete(
         "/metering-points/{metering_point_id}", status_code=status.HTTP_204_NO_CONTENT,
-        summary="Zählpunkt löschen", description="Löscht auch alle Zähler und Zählerstände (Cascade).",
+        summary="Delete metering point", description="Also deletes all meters and readings (cascade).",
     )
     async def zaehlpunkt_loeschen(
         metering_point_id: str,
@@ -141,8 +141,8 @@ def erstelle_metering_api_router(
 
     @router.post(
         "/metering-points/{metering_point_id}/exchange", response_model=MeterOut,
-        summary="Zähler tauschen",
-        description="Deaktiviert den aktuellen Zähler (Ausbaudatum) und legt einen neuen an.",
+        summary="Exchange meter",
+        description="Deactivates the current meter (removal date) and creates a new one.",
     )
     async def zaehler_tauschen(
         metering_point_id: str,
@@ -171,7 +171,7 @@ def erstelle_metering_api_router(
 
     @router.get(
         "/metering-points/{metering_point_id}/readings", response_model=List[MeterReadingOut],
-        summary="Zählerstände (Ablesungen) auflisten",
+        summary="List meter readings",
     )
     async def zaehlerstaende_auflisten(
         metering_point_id: str,
@@ -188,9 +188,9 @@ def erstelle_metering_api_router(
 
     @router.post(
         "/metering-points/{metering_point_id}/readings", response_model=MeterReadingOut,
-        status_code=status.HTTP_201_CREATED, summary="Ablesung erfassen",
-        description="Legt eine neue Ablesung an oder aktualisiert die bestehende für dasselbe Jahr. "
-                    "Prüft Plausibilität (Zählerstand darf nicht sinken).",
+        status_code=status.HTTP_201_CREATED, summary="Record reading",
+        description="Creates a new reading or updates the existing one for the same year. "
+                    "Checks plausibility (the reading must not decrease).",
     )
     async def ablesung_erstellen(
         metering_point_id: str,
@@ -230,7 +230,7 @@ def erstelle_metering_api_router(
 
     @router.delete(
         "/readings/{reading_id}", status_code=status.HTTP_204_NO_CONTENT,
-        summary="Ablesung löschen",
+        summary="Delete reading",
     )
     async def zaehlerstand_loeschen(
         reading_id: str,
@@ -245,11 +245,11 @@ def erstelle_metering_api_router(
 
     @router.get(
         "/evaluation/{year}", response_model=List[ConsumptionRowOut],
-        summary="Verbrauchsauswertung für ein Jahr",
+        summary="Consumption report for a year",
     )
     async def auswertung(
         year: int,
-        type: Optional[str] = Query(None, description="Nach MAIN_METER, PARCEL oder CLUB filtern"),
+        type: Optional[str] = Query(None, description="Filter by MAIN_METER, PARCEL, or CLUB"),
         db: AsyncSession = Depends(get_db),
         user: User = Depends(get_current_api_user),
     ):

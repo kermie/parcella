@@ -41,7 +41,7 @@ router = APIRouter(
 # Konfiguration
 # ---------------------------------------------------------------------------
 
-@router.get("/configuration", response_model=List[WorkHoursConfigurationOut], summary="Konfigurationen auflisten")
+@router.get("/configuration", response_model=List[WorkHoursConfigurationOut], summary="List configurations")
 async def konfigurationen_auflisten(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
@@ -52,7 +52,7 @@ async def konfigurationen_auflisten(
     return result.scalars().all()
 
 
-@router.get("/configuration/{year}", response_model=WorkHoursConfigurationOut, summary="Konfiguration für ein Jahr abrufen")
+@router.get("/configuration/{year}", response_model=WorkHoursConfigurationOut, summary="Retrieve configuration for a year")
 async def konfiguration_abrufen(
     year: int,
     db: AsyncSession = Depends(get_db),
@@ -69,8 +69,8 @@ async def konfiguration_abrufen(
 
 @router.put(
     "/configuration/{year}", response_model=WorkHoursConfigurationOut,
-    summary="Konfiguration setzen (Upsert)",
-    description="Legt die Konfiguration für ein Jahr an oder aktualisiert sie, falls bereits vorhanden.",
+    summary="Set configuration (upsert)",
+    description="Creates the configuration for a year or updates it if one already exists.",
 )
 async def konfiguration_setzen(
     year: int,
@@ -107,7 +107,7 @@ async def konfiguration_setzen(
 # ClubRolen
 # ---------------------------------------------------------------------------
 
-@router.get("/club-roles", response_model=List[ClubRoleOut], summary="ClubRolen auflisten")
+@router.get("/club-roles", response_model=List[ClubRoleOut], summary="List club roles")
 async def vereinsrollen_auflisten(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
@@ -118,7 +118,7 @@ async def vereinsrollen_auflisten(
 
 @router.post(
     "/club-roles", response_model=ClubRoleOut, status_code=status.HTTP_201_CREATED,
-    summary="ClubRole anlegen",
+    summary="Create club role",
 )
 async def vereinsrolle_erstellen(
     daten: ClubRoleCreate,
@@ -137,7 +137,7 @@ async def vereinsrolle_erstellen(
     return role
 
 
-@router.put("/club-roles/{role_id}", response_model=ClubRoleOut, summary="ClubRole aktualisieren")
+@router.put("/club-roles/{role_id}", response_model=ClubRoleOut, summary="Update club role")
 async def vereinsrolle_aktualisieren(
     role_id: str,
     daten: ClubRoleCreate,
@@ -161,8 +161,8 @@ async def vereinsrolle_aktualisieren(
 
 @router.delete(
     "/club-roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT,
-    summary="ClubRole löschen",
-    description="Löscht die Rolle inkl. aller Member-Zuordnungen (Cascade).",
+    summary="Delete club role",
+    description="Also deletes the role's member assignments (cascade).",
 )
 async def vereinsrolle_loeschen(
     role_id: str,
@@ -178,7 +178,7 @@ async def vereinsrolle_loeschen(
 
 @router.get(
     "/club-roles/assignments", response_model=List[MemberClubRoleOut],
-    summary="Member-ClubRole-Zuordnungen auflisten",
+    summary="List member club-role assignments",
 )
 async def zuordnungen_auflisten(
     year: Optional[int] = Query(None),
@@ -197,7 +197,7 @@ async def zuordnungen_auflisten(
 
 @router.post(
     "/club-roles/assignments", response_model=MemberClubRoleOut,
-    status_code=status.HTTP_201_CREATED, summary="Member einer ClubRole zuordnen",
+    status_code=status.HTTP_201_CREATED, summary="Assign member to a club role",
 )
 async def zuordnung_erstellen(
     daten: MemberClubRoleCreate,
@@ -213,7 +213,7 @@ async def zuordnung_erstellen(
 
 @router.delete(
     "/club-roles/assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT,
-    summary="Zuordnung entfernen",
+    summary="Remove assignment",
 )
 async def zuordnung_loeschen(
     assignment_id: str,
@@ -231,10 +231,10 @@ async def zuordnung_loeschen(
 # Arbeitseinsätze
 # ---------------------------------------------------------------------------
 
-@router.get("/sessions", response_model=List[WorkSessionOut], summary="Arbeitseinsätze auflisten")
+@router.get("/sessions", response_model=List[WorkSessionOut], summary="List work sessions")
 async def einsaetze_auflisten(
-    year: Optional[int] = Query(None, description="Nach Jahr filtern"),
-    type: Optional[str] = Query(None, description="STANDARD oder BESONDERS"),
+    year: Optional[int] = Query(None, description="Filter by year"),
+    type: Optional[str] = Query(None, description="STANDARD or SPECIAL"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
 ):
@@ -248,7 +248,7 @@ async def einsaetze_auflisten(
     return result.scalars().all()
 
 
-@router.get("/sessions/{session_id}", response_model=WorkSessionOut, summary="Einsatz abrufen")
+@router.get("/sessions/{session_id}", response_model=WorkSessionOut, summary="Retrieve session")
 async def einsatz_abrufen(
     session_id: str,
     db: AsyncSession = Depends(get_db),
@@ -263,7 +263,7 @@ async def einsatz_abrufen(
 
 @router.post(
     "/sessions", response_model=WorkSessionOut, status_code=status.HTTP_201_CREATED,
-    summary="WorkSession anlegen",
+    summary="Create work session",
 )
 async def einsatz_erstellen(
     daten: WorkSessionCreate,
@@ -282,7 +282,7 @@ async def einsatz_erstellen(
     return session
 
 
-@router.put("/sessions/{session_id}", response_model=WorkSessionOut, summary="Einsatz aktualisieren")
+@router.put("/sessions/{session_id}", response_model=WorkSessionOut, summary="Update session")
 async def einsatz_aktualisieren(
     session_id: str,
     daten: WorkSessionUpdate,
@@ -307,7 +307,7 @@ async def einsatz_aktualisieren(
 
 @router.delete(
     "/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT,
-    summary="Einsatz löschen", description="Löscht auch alle Teilnahmen (Cascade).",
+    summary="Delete session", description="Also deletes all participations (cascade).",
 )
 async def einsatz_loeschen(
     session_id: str,
@@ -327,7 +327,7 @@ async def einsatz_loeschen(
 
 @router.get(
     "/sessions/{session_id}/participations", response_model=List[SessionParticipationOut],
-    summary="Teilnahmen eines Einsatzes auflisten",
+    summary="List participations of a session",
 )
 async def teilnahmen_auflisten(
     session_id: str,
@@ -342,7 +342,7 @@ async def teilnahmen_auflisten(
 
 @router.post(
     "/sessions/{session_id}/participations", response_model=SessionParticipationOut,
-    status_code=status.HTTP_201_CREATED, summary="Teilnahme eintragen",
+    status_code=status.HTTP_201_CREATED, summary="Register participation",
 )
 async def teilnahme_erstellen(
     session_id: str,
@@ -371,7 +371,7 @@ async def teilnahme_erstellen(
 
 @router.put(
     "/sessions/{session_id}/participations/{participation_id}", response_model=SessionParticipationOut,
-    summary="Teilnahme aktualisieren",
+    summary="Update participation",
 )
 async def teilnahme_aktualisieren(
     session_id: str,
@@ -402,7 +402,7 @@ async def teilnahme_aktualisieren(
 
 @router.delete(
     "/sessions/{session_id}/participations/{participation_id}", status_code=status.HTTP_204_NO_CONTENT,
-    summary="Teilnahme entfernen",
+    summary="Remove participation",
 )
 async def teilnahme_loeschen(
     session_id: str,
@@ -425,9 +425,9 @@ async def teilnahme_loeschen(
 # Sponsorshipen
 # ---------------------------------------------------------------------------
 
-@router.get("/sponsorships", response_model=List[SponsorshipOut], summary="Sponsorshipen auflisten")
+@router.get("/sponsorships", response_model=List[SponsorshipOut], summary="List sponsorships")
 async def patenschaften_auflisten(
-    year: Optional[int] = Query(None, description="Nur Sponsorshipen, die in diesem Jahr aktiv waren"),
+    year: Optional[int] = Query(None, description="Only sponsorships active in this year"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
 ):
@@ -443,7 +443,7 @@ async def patenschaften_auflisten(
 
 @router.post(
     "/sponsorships", response_model=SponsorshipOut, status_code=status.HTTP_201_CREATED,
-    summary="Sponsorship anlegen",
+    summary="Create sponsorship",
     description="member_id ist optional – eine Sponsorship kann angelegt werden, bevor sie vergeben ist.",
 )
 async def patenschaft_erstellen(
@@ -458,7 +458,7 @@ async def patenschaft_erstellen(
     return sponsorship
 
 
-@router.put("/sponsorships/{sponsorship_id}", response_model=SponsorshipOut, summary="Sponsorship aktualisieren")
+@router.put("/sponsorships/{sponsorship_id}", response_model=SponsorshipOut, summary="Update sponsorship")
 async def patenschaft_aktualisieren(
     sponsorship_id: str,
     daten: SponsorshipUpdate,
@@ -480,7 +480,7 @@ async def patenschaft_aktualisieren(
 
 @router.delete(
     "/sponsorships/{sponsorship_id}", status_code=status.HTTP_204_NO_CONTENT,
-    summary="Sponsorship löschen",
+    summary="Delete sponsorship",
 )
 async def patenschaft_loeschen(
     sponsorship_id: str,
@@ -500,11 +500,11 @@ async def patenschaft_loeschen(
 
 @router.get(
     "/evaluation/{year}", response_model=List[EvaluationRowOut],
-    summary="Jahresauswertung abrufen",
+    summary="Retrieve annual report",
     description=(
-        "Berechnet je nach konfiguriertem Modus (PER_PARCEL oder PER_MEMBER) "
-        "den Pflichtstunden-Stand: geleistete Stunden, offene Stunden, Schuldbetrag, "
-        "Befreiungsstatus."
+        "Calculates the work-hours status depending on the configured mode "
+        "(PER_PARCEL or PER_MEMBER): hours completed, hours outstanding, amount owed, "
+        "exemption status."
     ),
 )
 async def auswertung_abrufen(

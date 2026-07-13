@@ -34,7 +34,7 @@ router = APIRouter(
 # Sachversicherungs-Pakete (property insurance packages)
 # ---------------------------------------------------------------------------
 
-@router.get("/packages", response_model=List[PropertyInsurancePackageOut], summary="Pakete auflisten")
+@router.get("/packages", response_model=List[PropertyInsurancePackageOut], summary="List packages")
 async def packages_list(
     year: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
@@ -49,7 +49,7 @@ async def packages_list(
 
 @router.post(
     "/packages", response_model=PropertyInsurancePackageOut, status_code=status.HTTP_201_CREATED,
-    summary="Paket anlegen",
+    summary="Create package",
 )
 async def package_create(
     daten: PropertyInsurancePackageCreate,
@@ -63,7 +63,7 @@ async def package_create(
     return package
 
 
-@router.put("/packages/{package_id}", response_model=PropertyInsurancePackageOut, summary="Paket aktualisieren")
+@router.put("/packages/{package_id}", response_model=PropertyInsurancePackageOut, summary="Update package")
 async def package_update(
     package_id: str,
     daten: PropertyInsurancePackageCreate,
@@ -83,7 +83,7 @@ async def package_update(
     return package
 
 
-@router.delete("/packages/{package_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Paket löschen")
+@router.delete("/packages/{package_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete package")
 async def package_delete(
     package_id: str,
     db: AsyncSession = Depends(get_db),
@@ -102,7 +102,7 @@ async def package_delete(
 
 @router.get(
     "/configuration/{year}", response_model=InsuranceConfigurationOut,
-    summary="Konfiguration für ein Jahr abrufen",
+    summary="Retrieve configuration for a year",
 )
 async def configuration_get(
     year: int,
@@ -118,7 +118,7 @@ async def configuration_get(
 
 @router.put(
     "/configuration/{year}", response_model=InsuranceConfigurationOut,
-    summary="Konfiguration setzen (Upsert)",
+    summary="Set configuration (upsert)",
 )
 async def configuration_set(
     year: int,
@@ -179,9 +179,9 @@ def _to_cost_schema(pi: ParcelInsurance, config: Optional[InsuranceConfiguration
 
 @router.get(
     "/parcels/{parcel_id}/{year}", response_model=ParcelInsuranceCostOut,
-    summary="Versicherungsstatus einer Parcel abrufen",
-    description="Gibt 404 zurück, wenn für diese Parcel/Jahr noch kein Status existiert "
-                "(anders als die Web-UI wird er über die API nicht automatisch angelegt).",
+    summary="Retrieve insurance status for a parcel",
+    description="Returns 404 if no status exists yet for this parcel/year "
+                "(unlike the web UI, the API does not create one automatically).",
 )
 async def insurance_get(
     parcel_id: str,
@@ -200,7 +200,7 @@ async def insurance_get(
 
 @router.put(
     "/parcels/{parcel_id}/{year}", response_model=ParcelInsuranceCostOut,
-    summary="Versicherungsstatus setzen (Upsert)",
+    summary="Set insurance status (upsert)",
     description="Legt den Status an, falls er nicht existiert, und ersetzt die Liste der Zusatzpersonen komplett.",
 )
 async def insurance_set(
@@ -260,7 +260,7 @@ async def insurance_set(
 
 @router.get(
     "/evaluation/{year}", response_model=List[ParcelInsuranceCostOut],
-    summary="Jahresauswertung: alle versicherten Parzellen mit Kosten",
+    summary="Annual report: all insured parcels with costs",
 )
 async def evaluation(
     year: int,

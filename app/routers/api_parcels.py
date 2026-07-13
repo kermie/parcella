@@ -49,10 +49,10 @@ def _zu_detail_schema(parzelle: Parcel) -> ParcelDetailOut:
 @router.get(
     "",
     response_model=List[ParcelOut],
-    summary="Parzellen auflisten",
+    summary="List parcels",
 )
 async def parzellen_auflisten(
-    suche: Optional[str] = Query(None, description="Suche in Gartennummer"),
+    suche: Optional[str] = Query(None, description="Search in plot number"),
     status_filter: Optional[ParcelStatus] = Query(None, alias="status"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -73,8 +73,8 @@ async def parzellen_auflisten(
 @router.get(
     "/{parcel_id}",
     response_model=ParcelDetailOut,
-    summary="Einzelne Parcel abrufen",
-    description="Gibt eine Parcel inkl. zugeordneter Mitglieder zurück.",
+    summary="Retrieve a single parcel",
+    description="Returns a parcel including assigned members.",
 )
 async def parzelle_abrufen(
     parcel_id: str,
@@ -89,7 +89,7 @@ async def parzelle_abrufen(
     "",
     response_model=ParcelOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Neue Parcel anlegen",
+    summary="Create new parcel",
 )
 async def parzelle_erstellen(
     daten: ParcelCreate,
@@ -119,8 +119,8 @@ async def parzelle_erstellen(
 @router.put(
     "/{parcel_id}",
     response_model=ParcelOut,
-    summary="Parcel aktualisieren",
-    description="Teilupdate: nur übergebene Felder werden geändert. Hier auch Statuswechsel (aktiv/gekündigt/gelöscht) und Kündigungsdaten.",
+    summary="Update parcel",
+    description="Partial update: only the fields provided are changed. Also covers status changes (active/terminated/deleted) and termination data.",
 )
 async def parzelle_aktualisieren(
     parcel_id: str,
@@ -156,8 +156,8 @@ async def parzelle_aktualisieren(
 @router.delete(
     "/{parcel_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Parcel als gelöscht markieren",
-    description="Setzt den Status auf 'geloescht' (kein echtes DB-Löschen, Historie bleibt erhalten).",
+    summary="Mark parcel as deleted",
+    description="Sets the status to 'deleted' (no actual DB deletion, history is preserved).",
 )
 async def parzelle_loeschen(
     parcel_id: str,
@@ -177,8 +177,8 @@ async def parzelle_loeschen(
     "/{parcel_id}/assignments",
     response_model=AssignmentOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Member einer Parcel zuordnen",
-    description="Ermöglicht Doppelgärten (mehrere Parzellen pro Member) und Gemeinschaftsgärten (mehrere Mitglieder pro Parcel).",
+    summary="Assign member to a parcel",
+    description="Enables multiple parcels per member and multiple members sharing a parcel.",
 )
 async def member_zuordnen(
     parcel_id: str,
@@ -222,7 +222,7 @@ async def member_zuordnen(
 @router.delete(
     "/{parcel_id}/assignments/{assignment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Member-Zuordnung entfernen",
+    summary="Remove member assignment",
 )
 async def assignment_entfernen(
     parcel_id: str,

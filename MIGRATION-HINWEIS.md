@@ -1,44 +1,48 @@
-# Migration auf Alembic – Hinweis für bestehende Installationen
+# Migrating to Alembic -- note for existing installations
 
-Du hast bereits eine laufende Datenbank mit Testdaten (erstellt über das alte
-`Base.metadata.create_all()`). Ab dieser Version übernimmt **Alembic** die
-Schemaverwaltung. Damit deine Daten erhalten bleiben, brauchst du **einen
-einmaligen manuellen Schritt**, bevor der Container neu gebaut wird.
+You already have a running database with test data (created via the old
+`Base.metadata.create_all()`). As of this version, **Alembic** takes over
+schema management. To keep your data, you need **one manual step**
+before the container is rebuilt.
 
-## Einmaliger Schritt (nur beim Umstieg)
+## One-time step (only when switching over)
 
-1. Neue Dateien einspielen (siehe unten), aber **noch nicht** `docker compose up` mit dem neuen Entrypoint laufen lassen.
+1. Deploy the new files (see below), but do **not** yet run
+   `docker compose up` with the new entrypoint.
 
-2. Container wie gewohnt mit dem ALTEN Setup hochfahren (damit die DB läuft):
+2. Start the container with the OLD setup as usual (so the DB is
+   running):
    ```bash
    docker compose up -d db
    ```
 
-3. Alembic im `web`-Container (oder lokal mit gleicher DATABASE_URL) initial "stempeln" – das markiert die Migration `0001_initial` als bereits angewendet, OHNE die Tabellen neu zu erstellen:
+3. "Stamp" Alembic in the `web` container (or locally with the same
+   DATABASE_URL) -- this marks migration `0001_initial` as already
+   applied, WITHOUT recreating the tables:
    ```bash
    docker compose run --rm web alembic stamp head
    ```
 
-4. Danach normal starten:
+4. Then start normally:
    ```bash
    docker compose up -d
    ```
 
-Ab jetzt prüft der Container bei jedem Start automatisch, ob neue Migrationen
-anstehen (`alembic upgrade head` läuft im `docker-entrypoint.sh`), und führt
-nur das aus, was seit `0001_initial` neu hinzugekommen ist.
+From now on, the container automatically checks on every start whether
+new migrations are pending (`alembic upgrade head` runs in
+`docker-entrypoint.sh`), and only applies what's new since `0001_initial`.
 
-## Bei einer komplett neuen / leeren Installation
+## For a completely new / empty installation
 
-Kein manueller Schritt nötig – `alembic upgrade head` erstellt beim ersten
-Start automatisch alle Tabellen aus der `0001_initial`-Migration.
+No manual step needed -- `alembic upgrade head` automatically creates all
+tables from the `0001_initial` migration on first start.
 
-## Neue Migration erstellen (zukünftig, bei Modelländerungen)
+## Creating a new migration (going forward, on model changes)
 
 ```bash
-docker compose run --rm web alembic revision --autogenerate -m "Kurze Beschreibung"
+docker compose run --rm web alembic revision --autogenerate -m "Short description"
 ```
 
-Alembic vergleicht dann automatisch `app/models.py` mit dem aktuellen
-DB-Stand und schlägt die nötigen `CREATE`/`ALTER`-Statements vor. Die
-generierte Datei in `migrations/versions/` IMMER vor dem Anwenden prüfen.
+Alembic then automatically compares `app/models.py` with the current DB
+state and proposes the necessary `CREATE`/`ALTER` statements. ALWAYS
+review the generated file in `migrations/versions/` before applying it.
