@@ -65,7 +65,7 @@ SMTP_TLS=true
 ```
 
 The SMTP password is stored encrypted in the database (see
-[Architecture Decisions](./architektur-entscheidungen.md)). An SMTP
+[Architecture Decisions](./architecture-decisions.md)). An SMTP
 server can safely be configured even while the app is still running
 under `localhost` -- sending mail is an outbound connection from the
 container to the mail server, independent of how the app itself is

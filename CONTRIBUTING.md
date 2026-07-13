@@ -46,7 +46,7 @@ http://localhost:8000/api/docs.
   function names, URLs, API endpoints) are in **English**. User-facing UI
   text (labels, error messages, email content) stays in **German**, since
   the software's audience is German-speaking club members -- see
-  [Architecture Decisions](./docs/architektur-entscheidungen.md) for the
+  [Architecture Decisions](./docs/architecture-decisions.md) for the
   reasoning and history of this split. Code comments and docstrings are
   also generally German, matching the maintainers' primary language.
 - **Genericity**: new fields/functions should, where sensible, not only

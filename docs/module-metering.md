@@ -5,7 +5,7 @@
 > `Zaehlpunkt` -> `MeteringPoint`, `Zaehler` -> `Meter`,
 > `Zaehlerstand` -> `MeterReading`, `/wasser/` -> `/water/`,
 > `/strom/` -> `/electricity/`. Details and lessons learned in
-> [Architecture Decisions](./architektur-entscheidungen.md).
+> [Architecture Decisions](./architecture-decisions.md).
 > This page continues to describe the domain logic, which did not
 > change in the process.
 

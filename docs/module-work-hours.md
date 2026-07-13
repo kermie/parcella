@@ -5,7 +5,7 @@
 > `Arbeitseinsatz` -> `WorkSession`, `Vereinsrolle` -> `ClubRole`,
 > `Patenschaft` -> `Sponsorship`, `/pflichtstunden/` -> `/work-hours/`.
 > Details and lessons learned in
-> [Architecture Decisions](./architektur-entscheidungen.md).
+> [Architecture Decisions](./architecture-decisions.md).
 > This page continues to describe the domain logic, which did not
 > change in the process.
 
@@ -69,7 +69,7 @@ the standard requirement).
 
 - `SessionType` and `ParticipationStatus` had to be corrected to uppercase
   after the fact (like several other enums) -- see
-  [Architecture Decisions](./architektur-entscheidungen.md) for the full
+  [Architecture Decisions](./architecture-decisions.md) for the full
   explanation of this recurring bug.
 
 ## REST API

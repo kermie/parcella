@@ -7,17 +7,17 @@ decisions and reasoning are still fresh.
 
 ## Modules
 
-- [Members & Parcels](./module-mitglieder-parzellen.md) -- core module, always active
-- [Work Hours](./module-pflichtstunden.md) -- work sessions, sponsorships, club roles
-- [Metering (Water & Electricity)](./module-zaehlerwesen.md) -- shared codebase for both media
-- [Insurance](./module-versicherungen.md) -- property and accident insurance per parcel
+- [Members & Parcels](./module-members-parcels.md) -- core module, always active
+- [Work Hours](./module-work-hours.md) -- work sessions, sponsorships, club roles
+- [Metering (Water & Electricity)](./module-metering.md) -- shared codebase for both media
+- [Insurance](./module-insurance.md) -- property and accident insurance per parcel
 - [Ticket System](./module-tickets.md) -- support tickets, all 3 stages complete
-- [Purchase Requests](./module-einkaufswuensche.md) -- two-person approval principle for club expenses
+- [Purchase Requests](./module-purchase-requests.md) -- two-person approval principle for club expenses
 
 ## Cross-cutting topics
 
-- [Architecture Decisions](./architektur-entscheidungen.md) -- why certain things are built the way they are
-- [Operations](./betrieb.md) -- Docker, migrations, SMTP setup, troubleshooting
+- [Architecture Decisions](./architecture-decisions.md) -- why certain things are built the way they are
+- [Operations](./operations.md) -- Docker, migrations, SMTP setup, troubleshooting
 - [Automated Tests](./testing.md) -- testing philosophy, execution, known limits
 
 ## For new modules

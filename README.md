@@ -217,7 +217,7 @@ docker compose run --rm web alembic revision --autogenerate -m "Short descriptio
 ```
 
 For an existing installation predating Alembic: see
-[MIGRATION-HINWEIS.md](./MIGRATION-HINWEIS.md).
+[MIGRATION-NOTE.md](./MIGRATION-NOTE.md).
 
 ---
 

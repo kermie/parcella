@@ -20,7 +20,7 @@ would be its own bottomless pit. Instead:
 
 Several bugs in this project occurred **exclusively with PostgreSQL**
 (e.g. the enum-casing issue, see
-[Architecture Decisions](./architektur-entscheidungen.md)). A test run
+[Architecture Decisions](./architecture-decisions.md)). A test run
 against SQLite would have made such bugs invisible instead of catching
 them -- SQLite is more lenient than PostgreSQL in many respects (type
 system, enum handling, constraint enforcement). Tests therefore run
