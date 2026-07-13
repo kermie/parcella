@@ -44,12 +44,12 @@
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
+                        <div class="col-sm-6">
                             <label class="form-label fw-semibold">Von</label>
                             <input type="date" name="valid_from" class="form-control"
                                    value="{{ assignment.valid_from.isoformat() if assignment.valid_from else '' }}">
                         </div>
-                        <div class="col-6">
+                        <div class="col-sm-6">
                             <label class="form-label fw-semibold">Bis</label>
                             <input type="date" name="valid_until" class="form-control"
                                    value="{{ assignment.valid_until.isoformat() if assignment.valid_until else '' }}">

@@ -26,12 +26,12 @@
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
+                        <div class="col-sm-6">
                             <label class="form-label fw-semibold">Pächter seit</label>
                             <input type="date" name="assigned_from" class="form-control"
                                    value="{{ zuordnung.assigned_from.isoformat() if zuordnung.assigned_from else '' }}">
                         </div>
-                        <div class="col-6">
+                        <div class="col-sm-6">
                             <label class="form-label fw-semibold">Pächter bis</label>
                             <input type="date" name="assigned_until" class="form-control"
                                    value="{{ zuordnung.assigned_until.isoformat() if zuordnung.assigned_until else '' }}">
