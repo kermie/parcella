@@ -142,45 +142,47 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-clipboard-data me-2"></i>Ablesungen</div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Jahr</th>
-                            <th>Datum</th>
-                            <th>Stand ({{ unit }})</th>
-                            <th>Verbrauch ({{ unit }})</th>
-                            <th>Notiz</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for eintrag in staende_mit_verbrauch %}
-                        <tr>
-                            <td class="fw-semibold">{{ eintrag.reading.year }}</td>
-                            <td class="text-muted">{{ eintrag.reading.date.strftime('%d.%m.%Y') }}</td>
-                            <td>{{ eintrag.reading.reading | fmt(dezimalstellen) }}</td>
-                            <td>
-                                {% if eintrag.verbrauch is not none %}
-                                {{ eintrag.verbrauch | fmt(dezimalstellen) }}
-                                {% else %}–{% endif %}
-                            </td>
-                            <td class="text-muted" style="font-size: 0.85rem;">{{ eintrag.reading.note or '' }}</td>
-                            <td class="text-end">
-                                <form method="post" action="{{ url_prefix }}/readings/{{ eintrag.reading.id }}/delete">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                            onclick="return confirm('Ablesung wirklich löschen?')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-3">Noch keine Ablesungen erfasst.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Jahr</th>
+                                <th>Datum</th>
+                                <th>Stand ({{ unit }})</th>
+                                <th>Verbrauch ({{ unit }})</th>
+                                <th>Notiz</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eintrag in staende_mit_verbrauch %}
+                            <tr>
+                                <td class="fw-semibold">{{ eintrag.reading.year }}</td>
+                                <td class="text-muted">{{ eintrag.reading.date.strftime('%d.%m.%Y') }}</td>
+                                <td>{{ eintrag.reading.reading | fmt(dezimalstellen) }}</td>
+                                <td>
+                                    {% if eintrag.verbrauch is not none %}
+                                    {{ eintrag.verbrauch | fmt(dezimalstellen) }}
+                                    {% else %}–{% endif %}
+                                </td>
+                                <td class="text-muted" style="font-size: 0.85rem;">{{ eintrag.reading.note or '' }}</td>
+                                <td class="text-end">
+                                    <form method="post" action="{{ url_prefix }}/readings/{{ eintrag.reading.id }}/delete">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('Ablesung wirklich löschen?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">Noch keine Ablesungen erfasst.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="card-footer">
                 <form method="post" action="{{ url_prefix }}/metering-points/{{ metering_point.id }}/readings/new"
@@ -219,29 +221,31 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-clock-history me-2"></i>Frühere Zähler</div>
             <div class="card-body p-0">
-                <table class="table table-sm mb-0">
-                    <thead>
-                        <tr>
-                            <th>Nummer</th>
-                            <th>Eingebaut</th>
-                            <th>Ausgebaut</th>
-                            <th>Letzter Stand</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for z in former_meters %}
-                        <tr class="text-muted">
-                            <td><code>{{ z.number }}</code></td>
-                            <td>{{ z.installed_at.strftime('%d.%m.%Y') if z.installed_at else '–' }}</td>
-                            <td>{{ z.removed_at.strftime('%d.%m.%Y') if z.removed_at else '–' }}</td>
-                            <td>
-                                {% set letzte = z.readings | sort(attribute='year', reverse=true) | first %}
-                                {% if letzte %}{{ letzte.reading | fmt(dezimalstellen) }} {{ unit }}{% else %}–{% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nummer</th>
+                                <th>Eingebaut</th>
+                                <th>Ausgebaut</th>
+                                <th>Letzter Stand</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for z in former_meters %}
+                            <tr class="text-muted">
+                                <td><code>{{ z.number }}</code></td>
+                                <td>{{ z.installed_at.strftime('%d.%m.%Y') if z.installed_at else '–' }}</td>
+                                <td>{{ z.removed_at.strftime('%d.%m.%Y') if z.removed_at else '–' }}</td>
+                                <td>
+                                    {% set letzte = z.readings | sort(attribute='year', reverse=true) | first %}
+                                    {% if letzte %}{{ letzte.reading | fmt(dezimalstellen) }} {{ unit }}{% else %}–{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

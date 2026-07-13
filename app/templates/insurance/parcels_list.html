@@ -11,51 +11,53 @@
 {% block content %}
 <div class="card">
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>Parzelle</th>
-                    <th>Sachversicherung</th>
-                    <th>Unfallversicherung</th>
-                    <th>Kosten gesamt</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in rows %}
-                <tr>
-                    <td class="fw-semibold">{{ r.parcel.plot_number }}</td>
-                    <td>
-                        {% if r.pi and r.pi.has_property_insurance %}
-                        <span class="badge badge-aktiv">{{ r.pi.property_package.name if r.pi.property_package else 'Ja' }}</span>
-                        {% else %}
-                        <span class="text-muted">–</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if r.pi and r.pi.has_accident_insurance %}
-                        <span class="badge badge-aktiv">
-                            Ja{% if r.pi.additional_persons %} (+{{ r.pi.additional_persons | length }}){% endif %}
-                        </span>
-                        {% else %}
-                        <span class="text-muted">–</span>
-                        {% endif %}
-                    </td>
-                    <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
-                    <td class="text-end">
-                        <a href="/insurance/parcels/{{ r.parcel.id }}?year={{ year }}"
-                           class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">Keine aktiven Parzellen vorhanden.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+<table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Parzelle</th>
+                        <th>Sachversicherung</th>
+                        <th>Unfallversicherung</th>
+                        <th>Kosten gesamt</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr>
+                        <td class="fw-semibold">{{ r.parcel.plot_number }}</td>
+                        <td>
+                            {% if r.pi and r.pi.has_property_insurance %}
+                            <span class="badge badge-aktiv">{{ r.pi.property_package.name if r.pi.property_package else 'Ja' }}</span>
+                            {% else %}
+                            <span class="text-muted">–</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.pi and r.pi.has_accident_insurance %}
+                            <span class="badge badge-aktiv">
+                                Ja{% if r.pi.additional_persons %} (+{{ r.pi.additional_persons | length }}){% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">–</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
+                        <td class="text-end">
+                            <a href="/insurance/parcels/{{ r.parcel.id }}?year={{ year }}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">Keine aktiven Parzellen vorhanden.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% if rows %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">

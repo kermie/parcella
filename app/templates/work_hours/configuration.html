@@ -65,55 +65,57 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-clock-history me-2"></i>Historische Konfigurationen</div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Jahr</th>
-                            <th>Stunden</th>
-                            <th>Satz</th>
-                            <th>Max. Schuld</th>
-                            <th>Modus</th>
-                            <th>Notiz</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for k in konfigurationen %}
-                        <tr>
-                            <td class="fw-bold">{{ k.year }}</td>
-                            <td>{{ k.hours_required | int }} h</td>
-                            <td>{{ "%.2f"|format(k.rate_per_hour_eur|float) }} €</td>
-                            <td>{{ "%.2f"|format(k.hours_required|float * k.rate_per_hour_eur|float) }} €</td>
-                            <td>
-                                <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.72rem;">
-                                    {% if k.mode.value == 'PER_PARCEL' %}Pachtvertrag{% else %}Mitglied{% endif %}
-                                </span>
-                            </td>
-                            <td class="text-muted" style="font-size: 0.85rem;">{{ k.note or '–' }}</td>
-                            <td class="text-end">
-                                <a href="/work-hours/configuration/{{ k.id }}/edit"
-                                   class="btn btn-sm btn-outline-secondary border-0">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form method="post"
-                                      action="/work-hours/configuration/{{ k.id }}/delete"
-                                      class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                            onclick="return confirm('Konfiguration für {{ k.year }} wirklich löschen?')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-3">
-                                Noch keine Konfiguration vorhanden.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Jahr</th>
+                                <th>Stunden</th>
+                                <th>Satz</th>
+                                <th>Max. Schuld</th>
+                                <th>Modus</th>
+                                <th>Notiz</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for k in konfigurationen %}
+                            <tr>
+                                <td class="fw-bold">{{ k.year }}</td>
+                                <td>{{ k.hours_required | int }} h</td>
+                                <td>{{ "%.2f"|format(k.rate_per_hour_eur|float) }} €</td>
+                                <td>{{ "%.2f"|format(k.hours_required|float * k.rate_per_hour_eur|float) }} €</td>
+                                <td>
+                                    <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.72rem;">
+                                        {% if k.mode.value == 'PER_PARCEL' %}Pachtvertrag{% else %}Mitglied{% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-muted" style="font-size: 0.85rem;">{{ k.note or '–' }}</td>
+                                <td class="text-end">
+                                    <a href="/work-hours/configuration/{{ k.id }}/edit"
+                                       class="btn btn-sm btn-outline-secondary border-0">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post"
+                                          action="/work-hours/configuration/{{ k.id }}/delete"
+                                          class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('Konfiguration für {{ k.year }} wirklich löschen?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-3">
+                                    Noch keine Konfiguration vorhanden.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

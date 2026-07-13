@@ -124,43 +124,45 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>Zugeordnete Parzellen</div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Gartennummer</th>
-                            <th>Fläche</th>
-                            <th>Status</th>
-                            <th>Rolle</th>
-                            <th>Seit</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for z in member.parcel_assignments %}
-                        <tr>
-                            <td>
-                                <a href="/parcels/{{ z.parcel.id }}" class="fw-semibold text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ z.parcel.plot_number }}</a>
-                            </td>
-                            <td>{{ z.parcel.area_sqm | round(1) if z.parcel.area_sqm else '–' }} {% if z.parcel.area_sqm %}qm{% endif %}</td>
-                            <td>
-                                <span class="badge badge-{{ z.parcel.status.value|lower }}">{{ z.parcel.status.value|lower }}</span>
-                            </td>
-                            <td>{% if z.is_primary_tenant %}<span class="badge badge-aktiv">Hauptpächter</span>{% else %}<span class="text-muted">Mitpächter</span>{% endif %}</td>
-                            <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
-                            <td class="text-end">
-                                <a href="/parcels/{{ z.parcel.id }}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-arrow-right"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-3">Keine Parzellen zugeordnet</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Gartennummer</th>
+                                <th>Fläche</th>
+                                <th>Status</th>
+                                <th>Rolle</th>
+                                <th>Seit</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for z in member.parcel_assignments %}
+                            <tr>
+                                <td>
+                                    <a href="/parcels/{{ z.parcel.id }}" class="fw-semibold text-decoration-none"
+                                       style="color: var(--gv-gruen);">{{ z.parcel.plot_number }}</a>
+                                </td>
+                                <td>{{ z.parcel.area_sqm | round(1) if z.parcel.area_sqm else '–' }} {% if z.parcel.area_sqm %}qm{% endif %}</td>
+                                <td>
+                                    <span class="badge badge-{{ z.parcel.status.value|lower }}">{{ z.parcel.status.value|lower }}</span>
+                                </td>
+                                <td>{% if z.is_primary_tenant %}<span class="badge badge-aktiv">Hauptpächter</span>{% else %}<span class="text-muted">Mitpächter</span>{% endif %}</td>
+                                <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
+                                <td class="text-end">
+                                    <a href="/parcels/{{ z.parcel.id }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">Keine Parzellen zugeordnet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="card-footer">
                 <form method="post" action="/parcels/PLACEHOLDER/member/assign"

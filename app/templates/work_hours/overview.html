@@ -69,61 +69,63 @@
         </div>
     </div>
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>Titel</th>
-                    <th>Typ</th>
-                    <th>Zeit</th>
-                    <th>Teilnehmer</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for e in einsaetze %}
-                <tr>
-                    <td class="fw-semibold">{{ e.date.strftime('%d.%m.%Y') }}</td>
-                    <td>
-                        <a href="/work-hours/sessions/{{ e.id }}" class="text-decoration-none"
-                           style="color: var(--gv-gruen);">{{ e.title }}</a>
-                    </td>
-                    <td>
-                        {% if e.type.value == 'STANDARD' %}
-                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
-                        {% else %}
-                        <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-muted">
-                        {% if e.time_from %}{{ e.time_from }}{% if e.time_until %} – {{ e.time_until }}{% endif %}{% else %}–{% endif %}
-                    </td>
-                    <td>
-                        {{ e.participations | length }}
-                        {% if e.max_participants %}/ {{ e.max_participants }}{% endif %}
-                        <small class="text-muted ms-1">
-                            ({{ e.participations | selectattr('status.value', 'eq', 'ATTENDED') | list | length }} erschienen)
-                        </small>
-                    </td>
-                    <td class="text-end">
-                        <a href="/work-hours/sessions/{{ e.id }}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">
-                        <i class="bi bi-calendar-x d-block mb-2" style="font-size: 1.5rem;"></i>
-                        Noch keine Arbeitseinsätze für {{ year }}.
-                        <br><a href="/work-hours/sessions/new" class="btn btn-sm btn-primary mt-2">
-                            Ersten Einsatz anlegen
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+<table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Titel</th>
+                        <th>Typ</th>
+                        <th>Zeit</th>
+                        <th>Teilnehmer</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in einsaetze %}
+                    <tr>
+                        <td class="fw-semibold">{{ e.date.strftime('%d.%m.%Y') }}</td>
+                        <td>
+                            <a href="/work-hours/sessions/{{ e.id }}" class="text-decoration-none"
+                               style="color: var(--gv-gruen);">{{ e.title }}</a>
+                        </td>
+                        <td>
+                            {% if e.type.value == 'STANDARD' %}
+                            <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
+                            {% else %}
+                            <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">
+                            {% if e.time_from %}{{ e.time_from }}{% if e.time_until %} – {{ e.time_until }}{% endif %}{% else %}–{% endif %}
+                        </td>
+                        <td>
+                            {{ e.participations | length }}
+                            {% if e.max_participants %}/ {{ e.max_participants }}{% endif %}
+                            <small class="text-muted ms-1">
+                                ({{ e.participations | selectattr('status.value', 'eq', 'ATTENDED') | list | length }} erschienen)
+                            </small>
+                        </td>
+                        <td class="text-end">
+                            <a href="/work-hours/sessions/{{ e.id }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-calendar-x d-block mb-2" style="font-size: 1.5rem;"></i>
+                            Noch keine Arbeitseinsätze für {{ year }}.
+                            <br><a href="/work-hours/sessions/new" class="btn btn-sm btn-primary mt-2">
+                                Ersten Einsatz anlegen
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

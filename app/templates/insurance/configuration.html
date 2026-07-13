@@ -97,53 +97,55 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-box-seam me-2"></i>Pakete {{ year }}</div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Bezeichnung</th>
-                            <th>Betrag</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for p in packages %}
-                        <tr>
-                            <td>
-                                <form method="post" action="/insurance/configuration/packages/{{ p.id }}/edit"
-                                      class="d-flex gap-2 align-items-center">
-                                    <input type="text" name="name" class="form-control form-control-sm"
-                                           value="{{ p.name }}" style="max-width: 140px;" required>
-                            </td>
-                            <td>
-                                    <div class="input-group input-group-sm" style="max-width: 130px;">
-                                        <input type="text" name="amount_eur" class="form-control"
-                                               value="{{ '%.2f'|format(p.amount_eur|float) }}" required>
-                                        <span class="input-group-text">€</span>
-                                    </div>
-                            </td>
-                            <td class="text-end">
-                                    <input type="hidden" name="sort_order" value="{{ p.sort_order }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-primary border-0">
-                                        <i class="bi bi-check-lg"></i>
-                                    </button>
-                                </form>
-                                <form method="post" action="/insurance/configuration/packages/{{ p.id }}/delete" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                            onclick="return confirm('Paket wirklich löschen?')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="3" class="text-center text-muted py-3">
-                                Noch keine Pakete für {{ year }} angelegt.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Bezeichnung</th>
+                                <th>Betrag</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in packages %}
+                            <tr>
+                                <td>
+                                    <form method="post" action="/insurance/configuration/packages/{{ p.id }}/edit"
+                                          class="d-flex gap-2 align-items-center">
+                                        <input type="text" name="name" class="form-control form-control-sm"
+                                               value="{{ p.name }}" style="max-width: 140px;" required>
+                                </td>
+                                <td>
+                                        <div class="input-group input-group-sm" style="max-width: 130px;">
+                                            <input type="text" name="amount_eur" class="form-control"
+                                                   value="{{ '%.2f'|format(p.amount_eur|float) }}" required>
+                                            <span class="input-group-text">€</span>
+                                        </div>
+                                </td>
+                                <td class="text-end">
+                                        <input type="hidden" name="sort_order" value="{{ p.sort_order }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary border-0">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                    <form method="post" action="/insurance/configuration/packages/{{ p.id }}/delete" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('Paket wirklich löschen?')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">
+                                    Noch keine Pakete für {{ year }} angelegt.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

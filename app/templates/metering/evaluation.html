@@ -54,35 +54,37 @@
 <div class="card mb-3">
     <div class="card-header">{{ titel }}</div>
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>Zählpunkt</th>
-                    <th>Zähler-Nr.</th>
-                    <th>Verbrauch ({{ unit }})</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for z in zeilen %}
-                <tr>
-                    <td>
-                        <a href="{{ url_prefix }}/metering-points/{{ z.metering_point.id }}" class="text-decoration-none"
-                           style="color: var(--gv-gruen);">{{ z.metering_point.display_name }}</a>
-                    </td>
-                    <td>{% if z.zaehler %}<code>{{ z.zaehler.number }}</code>{% else %}–{% endif %}</td>
-                    <td>
-                        {% if z.verbrauch is not none %}
-                        {{ z.verbrauch | fmt(dezimalstellen) }}
-                        {% else %}
-                        <span class="text-muted">keine Ablesung</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="3" class="text-center text-muted py-3">Keine Einträge</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+<table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Zählpunkt</th>
+                        <th>Zähler-Nr.</th>
+                        <th>Verbrauch ({{ unit }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for z in zeilen %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_prefix }}/metering-points/{{ z.metering_point.id }}" class="text-decoration-none"
+                               style="color: var(--gv-gruen);">{{ z.metering_point.display_name }}</a>
+                        </td>
+                        <td>{% if z.zaehler %}<code>{{ z.zaehler.number }}</code>{% else %}–{% endif %}</td>
+                        <td>
+                            {% if z.verbrauch is not none %}
+                            {{ z.verbrauch | fmt(dezimalstellen) }}
+                            {% else %}
+                            <span class="text-muted">keine Ablesung</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center text-muted py-3">Keine Einträge</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endmacro %}

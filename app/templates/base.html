@@ -112,10 +112,32 @@
             background: #fff; border-bottom: 1px solid #e0e8e2;
             padding: 0.75rem 1.5rem;
             display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; row-gap: 0.5rem;
             position: sticky; top: 0; z-index: 50;
         }
         .topbar-title { font-weight: 600; font-size: 1.05rem; color: var(--gv-gruen); }
         .page-body { padding: 1.5rem; }
+
+        /* Hamburger-Button: nur auf schmalen Bildschirmen sichtbar (siehe Media Query) */
+        .sidebar-toggle-btn {
+            display: none;
+            align-items: center; justify-content: center;
+            width: 2.25rem; height: 2.25rem;
+            border: none; background: none;
+            color: var(--gv-gruen); font-size: 1.3rem;
+            margin-right: 0.5rem; flex-shrink: 0;
+            border-radius: 6px;
+        }
+        .sidebar-toggle-btn:hover, .sidebar-toggle-btn:active { background: var(--gv-gruen-blass); }
+
+        /* Abdunkelndes Overlay hinter der aufgeklappten Seitenleiste (mobil) */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 90;
+        }
+        .sidebar-backdrop.show { display: block; }
 
         /* Karten */
         .card { border: 1px solid #dce8df; border-radius: 8px; }
@@ -144,8 +166,33 @@
         .alert-info    { background: #dbeafe; color: #1e40af; }
 
         @media (max-width: 768px) {
-            .sidebar { transform: translateX(-240px); }
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.2s ease-out;
+                box-shadow: 2px 0 12px rgba(0,0,0,0.25);
+            }
+            .sidebar.sidebar-open { transform: translateX(0); }
             .main-content { margin-left: 0; }
+            .sidebar-toggle-btn { display: inline-flex; }
+
+            /* Größere Tipp-/Klickflächen auf Touch-Geräten – kleine
+               Bootstrap-Varianten (btn-sm, form-control-sm) sind für
+               Finger knapp bemessen. */
+            .btn-sm { min-height: 2.25rem; padding-top: 0.4rem; padding-bottom: 0.4rem; }
+            .form-control-sm, .form-select-sm { min-height: 2.25rem; }
+
+            /* Filter-Button-Reihen (z.B. "Aktiv/Meine/Verdächtig/...") laufen
+               auf schmalen Screens sonst über den Rand hinaus oder werden
+               abgeschnitten – hier lieber umbrechen als horizontal
+               abschneiden. Bootstraps .btn-group ist standardmäßig
+               inline-flex ohne Umbruch. */
+            .btn-group { flex-wrap: wrap; }
+            .btn-group > .btn { border-radius: 0.25rem !important; }
+        }
+
+        @media (max-width: 480px) {
+            .page-body { padding: 1rem; }
+            .topbar { padding: 0.6rem 1rem; }
         }
     </style>
     {% block extra_head %}{% endblock %}
@@ -164,10 +211,10 @@
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
-        <a href="/members/" class="nav-top-link {% if '/mitglieder' in request.url.path %}aktiv{% endif %}">
+        <a href="/members/" class="nav-top-link {% if '/members' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-people"></i> Mitglieder
         </a>
-        <a href="/parcels/" class="nav-top-link {% if '/parzellen' in request.url.path %}aktiv{% endif %}">
+        <a href="/parcels/" class="nav-top-link {% if '/parcels' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-grid-3x3"></i> Parzellen
         </a>
 
@@ -280,10 +327,18 @@
     </div>
 </nav>
 
+<!-- Abdunkelndes Overlay hinter der Seitenleiste (nur mobil, per Tap schließen) -->
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
 <!-- Hauptinhalt -->
 <div class="main-content">
     <div class="topbar">
-        <span class="topbar-title">{% block page_title %}{% endblock %}</span>
+        <div class="d-flex align-items-center" style="min-width: 0;">
+            <button type="button" class="sidebar-toggle-btn" id="sidebar-toggle" aria-label="Menü öffnen" aria-expanded="false">
+                <i class="bi bi-list"></i>
+            </button>
+            <span class="topbar-title text-truncate">{% block page_title %}{% endblock %}</span>
+        </div>
         <div>{% block topbar_actions %}{% endblock %}</div>
     </div>
     <div class="page-body">
@@ -302,10 +357,47 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Navigation: Modul-Gruppen aufklappbar machen, Zustand pro Browser merken.
-// Die Gruppe mit der aktuell aktiven Seite klappt immer auf, unabhängig
-// vom gespeicherten Zustand – niemand soll seine aktuelle Seite "verlieren".
 document.addEventListener('DOMContentLoaded', function () {
+    // Off-Canvas-Seitenleiste (mobil): Hamburger-Button öffnet/schließt,
+    // Tap auf das Overlay oder Escape schließt, ein Klick auf einen
+    // Navigationslink schließt automatisch (erwartetes Mobil-Verhalten –
+    // niemand will das Menü nach der Navigation offen stehen sehen).
+    var sidebar = document.querySelector('.sidebar');
+    var toggleBtn = document.getElementById('sidebar-toggle');
+    var backdrop = document.getElementById('sidebar-backdrop');
+
+    if (sidebar && toggleBtn && backdrop) {
+        function openSidebar() {
+            sidebar.classList.add('sidebar-open');
+            backdrop.classList.add('show');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('sidebar-open');
+            backdrop.classList.remove('show');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+        toggleBtn.addEventListener('click', function () {
+            if (sidebar.classList.contains('sidebar-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+        backdrop.addEventListener('click', closeSidebar);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
+        sidebar.querySelectorAll('a').forEach(function (link) {
+            link.addEventListener('click', function () {
+                if (window.innerWidth < 768) closeSidebar();
+            });
+        });
+    }
+
+    // Navigation: Modul-Gruppen aufklappbar machen, Zustand pro Browser merken.
+    // Die Gruppe mit der aktuell aktiven Seite klappt immer auf, unabhängig
+    // vom gespeicherten Zustand – niemand soll seine aktuelle Seite "verlieren".
     document.querySelectorAll('.nav-group').forEach(function (gruppe) {
         var name = gruppe.dataset.group;
         var body = gruppe.querySelector('.nav-group-body');

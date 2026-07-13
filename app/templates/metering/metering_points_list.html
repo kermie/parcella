@@ -16,72 +16,74 @@
 {% block content %}
 <div class="card">
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>Typ</th>
-                    <th>Zählpunkt</th>
-                    <th>Zähler-Nr.</th>
-                    <th>Status</th>
-                    <th>Geeicht bis</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for a in metering_points %}
-                <tr>
-                    <td>
-                        {% if a.type.value == 'MAIN_METER' %}
-                        <span class="badge" style="background: #dbeafe; color: #1e40af;">Hauptzähler</span>
-                        {% elif a.type.value == 'PARCEL' %}
-                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Parzelle</span>
-                        {% else %}
-                        <span class="badge" style="background: #f5ede8; color: var(--gv-braun);">Verein</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_prefix }}/metering-points/{{ a.id }}" class="text-decoration-none fw-semibold"
-                           style="color: var(--gv-gruen);">{{ a.display_name }}</a>
-                    </td>
-                    <td>
-                        {% if a.current_meter %}
-                        <code>{{ a.current_meter.number }}</code>
-                        {% else %}
-                        <span class="text-muted">kein aktiver Zähler</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if a.current_meter %}
-                        <span class="badge badge-aktiv">aktiv</span>
-                        {% else %}
-                        <span class="badge" style="background: #fee2e2; color: #991b1b;">ohne Zähler</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-muted">
-                        {% if a.current_meter and a.current_meter.calibrated_until %}
-                            {{ a.current_meter.calibrated_until }}
-                            {% if a.current_meter.calibrated_until <= year %}
-                            <i class="bi bi-exclamation-triangle-fill text-warning ms-1" title="Eichung abgelaufen"></i>
+        <div class="table-responsive">
+<table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Typ</th>
+                        <th>Zählpunkt</th>
+                        <th>Zähler-Nr.</th>
+                        <th>Status</th>
+                        <th>Geeicht bis</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in metering_points %}
+                    <tr>
+                        <td>
+                            {% if a.type.value == 'MAIN_METER' %}
+                            <span class="badge" style="background: #dbeafe; color: #1e40af;">Hauptzähler</span>
+                            {% elif a.type.value == 'PARCEL' %}
+                            <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Parzelle</span>
+                            {% else %}
+                            <span class="badge" style="background: #f5ede8; color: var(--gv-braun);">Verein</span>
                             {% endif %}
-                        {% else %}–{% endif %}
-                    </td>
-                    <td class="text-end">
-                        <a href="{{ url_prefix }}/metering-points/{{ a.id }}" class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-center py-5 text-muted">
-                        <i class="bi {{ icon }} d-block mb-2" style="font-size: 1.5rem;"></i>
-                        Noch keine {{ medium_label }}-Zählpunkte angelegt.<br>
-                        <a href="{{ url_prefix }}/metering-points/new" class="btn btn-sm btn-primary mt-2">Ersten Zählpunkt anlegen</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+                        <td>
+                            <a href="{{ url_prefix }}/metering-points/{{ a.id }}" class="text-decoration-none fw-semibold"
+                               style="color: var(--gv-gruen);">{{ a.display_name }}</a>
+                        </td>
+                        <td>
+                            {% if a.current_meter %}
+                            <code>{{ a.current_meter.number }}</code>
+                            {% else %}
+                            <span class="text-muted">kein aktiver Zähler</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if a.current_meter %}
+                            <span class="badge badge-aktiv">aktiv</span>
+                            {% else %}
+                            <span class="badge" style="background: #fee2e2; color: #991b1b;">ohne Zähler</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">
+                            {% if a.current_meter and a.current_meter.calibrated_until %}
+                                {{ a.current_meter.calibrated_until }}
+                                {% if a.current_meter.calibrated_until <= year %}
+                                <i class="bi bi-exclamation-triangle-fill text-warning ms-1" title="Eichung abgelaufen"></i>
+                                {% endif %}
+                            {% else %}–{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_prefix }}/metering-points/{{ a.id }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi {{ icon }} d-block mb-2" style="font-size: 1.5rem;"></i>
+                            Noch keine {{ medium_label }}-Zählpunkte angelegt.<br>
+                            <a href="{{ url_prefix }}/metering-points/new" class="btn btn-sm btn-primary mt-2">Ersten Zählpunkt anlegen</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% if metering_points %}
     <div class="card-footer text-muted" style="font-size: 0.82rem;">

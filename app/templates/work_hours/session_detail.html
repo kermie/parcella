@@ -82,68 +82,70 @@
                 </span>
             </div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Mitglied</th>
-                            <th>Status</th>
-                            <th>Stunden</th>
-                            <th>Notiz</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for t in session.participations | sort(attribute='mitglied.last_name') %}
-                        <tr>
-                            <td>
-                                <a href="/members/{{ t.member.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ t.member.full_name }}</a>
-                            </td>
-                            <td>
-                                <form method="post"
-                                      action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
-                                      class="d-flex gap-1 align-items-center">
-                                    <select name="status" class="form-select form-select-sm"
-                                            style="width: auto;" onchange="this.form.submit()">
-                                        <option value="REGISTERED" {% if t.status.value == 'REGISTERED' %}selected{% endif %}>Angemeldet</option>
-                                        <option value="ATTENDED" {% if t.status.value == 'ATTENDED' %}selected{% endif %}>Erschienen</option>
-                                        <option value="NO_SHOW" {% if t.status.value == 'NO_SHOW' %}selected{% endif %}>Nicht erschienen</option>
-                                    </select>
-                                </form>
-                            </td>
-                            <td>
-                                <form method="post"
-                                      action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
-                                      class="d-flex gap-1 align-items-center">
-                                    <input type="hidden" name="status" value="{{ t.status.value }}">
-                                    <div class="input-group input-group-sm" style="width: 90px;">
-                                        <input type="text" name="hours_completed" class="form-control form-control-sm"
-                                               value="{{ t.hours_completed or session.hours_per_participant or '' }}"
-                                               placeholder="h">
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary px-1">✓</button>
-                                    </div>
-                                </form>
-                            </td>
-                            <td class="text-muted" style="font-size: 0.85rem;">{{ t.note or '' }}</td>
-                            <td class="text-end">
-                                <form method="post"
-                                      action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/remove">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                            onclick="return confirm('Teilnahme entfernen?')">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-3">
-                                Noch keine Teilnehmer eingetragen.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mitglied</th>
+                                <th>Status</th>
+                                <th>Stunden</th>
+                                <th>Notiz</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for t in session.participations | sort(attribute='mitglied.last_name') %}
+                            <tr>
+                                <td>
+                                    <a href="/members/{{ t.member.id }}" class="text-decoration-none"
+                                       style="color: var(--gv-gruen);">{{ t.member.full_name }}</a>
+                                </td>
+                                <td>
+                                    <form method="post"
+                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
+                                          class="d-flex gap-1 align-items-center">
+                                        <select name="status" class="form-select form-select-sm"
+                                                style="width: auto;" onchange="this.form.submit()">
+                                            <option value="REGISTERED" {% if t.status.value == 'REGISTERED' %}selected{% endif %}>Angemeldet</option>
+                                            <option value="ATTENDED" {% if t.status.value == 'ATTENDED' %}selected{% endif %}>Erschienen</option>
+                                            <option value="NO_SHOW" {% if t.status.value == 'NO_SHOW' %}selected{% endif %}>Nicht erschienen</option>
+                                        </select>
+                                    </form>
+                                </td>
+                                <td>
+                                    <form method="post"
+                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
+                                          class="d-flex gap-1 align-items-center">
+                                        <input type="hidden" name="status" value="{{ t.status.value }}">
+                                        <div class="input-group input-group-sm" style="width: 90px;">
+                                            <input type="text" name="hours_completed" class="form-control form-control-sm"
+                                                   value="{{ t.hours_completed or session.hours_per_participant or '' }}"
+                                                   placeholder="h">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary px-1">✓</button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td class="text-muted" style="font-size: 0.85rem;">{{ t.note or '' }}</td>
+                                <td class="text-end">
+                                    <form method="post"
+                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/remove">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('Teilnahme entfernen?')">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    Noch keine Teilnehmer eingetragen.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Teilnehmer hinzufügen -->

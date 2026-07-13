@@ -39,43 +39,45 @@
 
 <div class="card">
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead>
-                <tr>
-                    <th>Parzelle</th>
-                    <th>Sachversicherung</th>
-                    <th>Sach-Kosten</th>
-                    <th>Unfallversicherung</th>
-                    <th>Zusatzpersonen</th>
-                    <th>Unfall-Kosten</th>
-                    <th>Gesamt</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in rows %}
-                <tr>
-                    <td class="fw-semibold">
-                        <a href="/insurance/parcels/{{ r.pi.parcel.id }}?year={{ year }}"
-                           class="text-decoration-none" style="color: var(--gv-gruen);">
-                            {{ r.pi.parcel.plot_number }}
-                        </a>
-                    </td>
-                    <td>{{ r.pi.property_package.name if r.pi.property_package else '–' }}</td>
-                    <td>{{ "%.2f"|format(r.cost.property_cost) }} €</td>
-                    <td>{% if r.pi.has_accident_insurance %}Ja{% else %}–{% endif %}</td>
-                    <td>{{ r.pi.additional_persons | length }}</td>
-                    <td>{{ "%.2f"|format(r.cost.accident_cost) }} €</td>
-                    <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
-                        Keine versicherten Parzellen für {{ year }}.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+<table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Parzelle</th>
+                        <th>Sachversicherung</th>
+                        <th>Sach-Kosten</th>
+                        <th>Unfallversicherung</th>
+                        <th>Zusatzpersonen</th>
+                        <th>Unfall-Kosten</th>
+                        <th>Gesamt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                    <tr>
+                        <td class="fw-semibold">
+                            <a href="/insurance/parcels/{{ r.pi.parcel.id }}?year={{ year }}"
+                               class="text-decoration-none" style="color: var(--gv-gruen);">
+                                {{ r.pi.parcel.plot_number }}
+                            </a>
+                        </td>
+                        <td>{{ r.pi.property_package.name if r.pi.property_package else '–' }}</td>
+                        <td>{{ "%.2f"|format(r.cost.property_cost) }} €</td>
+                        <td>{% if r.pi.has_accident_insurance %}Ja{% else %}–{% endif %}</td>
+                        <td>{{ r.pi.additional_persons | length }}</td>
+                        <td>{{ "%.2f"|format(r.cost.accident_cost) }} €</td>
+                        <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Keine versicherten Parzellen für {{ year }}.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

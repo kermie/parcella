@@ -68,57 +68,59 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-people me-2"></i>Aktuelle Pächter</div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Mitglied</th>
-                            <th>Rolle</th>
-                            <th>Seit</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for z in parcel.member_assignments if z.assigned_until is none %}
-                        <tr>
-                            <td>
-                                <a href="/members/{{ z.member.id }}" class="text-decoration-none fw-semibold"
-                                   style="color: var(--gv-gruen);">
-                                    {{ z.member.full_name }}
-                                </a>
-                            </td>
-                            <td>
-                                {% if z.is_primary_tenant %}
-                                <span class="badge badge-aktiv">Hauptpächter</span>
-                                {% else %}
-                                <span class="text-muted">Mitpächter</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
-                            <td class="text-end">
-                                <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/edit"
-                                   class="btn btn-sm btn-outline-secondary border-0">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form method="post"
-                                      action="/parcels/{{ parcel.id }}/member/{{ z.id }}/remove"
-                                      class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                            onclick="return confirm('Pachtverhältnis beenden? (Historie bleibt erhalten)')"
-                                            title="Pachtverhältnis beenden">
-                                        <i class="bi bi-calendar-x"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-3">
-                                Keine aktuellen Pächter
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mitglied</th>
+                                <th>Rolle</th>
+                                <th>Seit</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for z in parcel.member_assignments if z.assigned_until is none %}
+                            <tr>
+                                <td>
+                                    <a href="/members/{{ z.member.id }}" class="text-decoration-none fw-semibold"
+                                       style="color: var(--gv-gruen);">
+                                        {{ z.member.full_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if z.is_primary_tenant %}
+                                    <span class="badge badge-aktiv">Hauptpächter</span>
+                                    {% else %}
+                                    <span class="text-muted">Mitpächter</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
+                                <td class="text-end">
+                                    <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/edit"
+                                       class="btn btn-sm btn-outline-secondary border-0">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="post"
+                                          action="/parcels/{{ parcel.id }}/member/{{ z.id }}/remove"
+                                          class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('Pachtverhältnis beenden? (Historie bleibt erhalten)')"
+                                                title="Pachtverhältnis beenden">
+                                            <i class="bi bi-calendar-x"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">
+                                    Keine aktuellen Pächter
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div class="card-footer">
                 <form method="post" action="/parcels/{{ parcel.id }}/member/assign"
@@ -149,36 +151,38 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-clock-history me-2"></i>Frühere Pächter</div>
             <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Mitglied</th>
-                            <th>Rolle</th>
-                            <th>Von</th>
-                            <th>Bis</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for z in fruehere | sort(attribute='assigned_until', reverse=true) %}
-                        <tr class="text-muted">
-                            <td>
-                                <a href="/members/{{ z.member.id }}" class="text-decoration-none"
-                                   style="color: var(--gv-gruen);">{{ z.member.full_name }}</a>
-                            </td>
-                            <td>{% if z.is_primary_tenant %}Hauptpächter{% else %}Mitpächter{% endif %}</td>
-                            <td>{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
-                            <td>{{ z.assigned_until.strftime('%d.%m.%Y') }}</td>
-                            <td class="text-end">
-                                <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/edit"
-                                   class="btn btn-sm btn-outline-secondary border-0" title="Zeitraum korrigieren">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Mitglied</th>
+                                <th>Rolle</th>
+                                <th>Von</th>
+                                <th>Bis</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for z in fruehere | sort(attribute='assigned_until', reverse=true) %}
+                            <tr class="text-muted">
+                                <td>
+                                    <a href="/members/{{ z.member.id }}" class="text-decoration-none"
+                                       style="color: var(--gv-gruen);">{{ z.member.full_name }}</a>
+                                </td>
+                                <td>{% if z.is_primary_tenant %}Hauptpächter{% else %}Mitpächter{% endif %}</td>
+                                <td>{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
+                                <td>{{ z.assigned_until.strftime('%d.%m.%Y') }}</td>
+                                <td class="text-end">
+                                    <a href="/parcels/{{ parcel.id }}/member/{{ z.id }}/edit"
+                                       class="btn btn-sm btn-outline-secondary border-0" title="Zeitraum korrigieren">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -190,30 +194,32 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-journal-text me-2"></i>Änderungshistorie</div>
             <div class="card-body p-0">
-                <table class="table table-sm mb-0">
-                    <thead>
-                        <tr>
-                            <th>Zeitpunkt</th>
-                            <th>Feld</th>
-                            <th>Alter Wert</th>
-                            <th>Neuer Wert</th>
-                            <th>Geändert von</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for a in aenderungen %}
-                        <tr>
-                            <td class="text-muted" style="font-size: 0.82rem;">{{ a.changed_at.strftime('%d.%m.%Y %H:%M') }}</td>
-                            <td><code style="font-size: 0.8rem;">{{ a.field_name }}</code></td>
-                            <td class="text-muted">{{ a.old_value or '–' }}</td>
-                            <td class="fw-semibold">{{ a.new_value or '–' }}</td>
-                            <td class="text-muted" style="font-size: 0.82rem;">
-                                {{ a.changed_by.name if a.changed_by else 'Unbekannt' }}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+<table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Zeitpunkt</th>
+                                <th>Feld</th>
+                                <th>Alter Wert</th>
+                                <th>Neuer Wert</th>
+                                <th>Geändert von</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in aenderungen %}
+                            <tr>
+                                <td class="text-muted" style="font-size: 0.82rem;">{{ a.changed_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                <td><code style="font-size: 0.8rem;">{{ a.field_name }}</code></td>
+                                <td class="text-muted">{{ a.old_value or '–' }}</td>
+                                <td class="fw-semibold">{{ a.new_value or '–' }}</td>
+                                <td class="text-muted" style="font-size: 0.82rem;">
+                                    {{ a.changed_by.name if a.changed_by else 'Unbekannt' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
