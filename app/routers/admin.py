@@ -194,7 +194,7 @@ async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_d
     settings_map = {e.key: e.value for e in result.scalars().all()}
 
     return templates.TemplateResponse(
-        "admin/einstellungen.html",
+        "admin/settings.html",
         {
             "request": request,
             "user": user,

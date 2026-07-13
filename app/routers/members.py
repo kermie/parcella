@@ -70,7 +70,7 @@ async def mitglieder_liste(
     members = result.scalars().all()
 
     return templates.TemplateResponse(
-        "members/liste.html",
+        "members/list.html",
         {
             "request": request,
             "user": user,
@@ -85,7 +85,7 @@ async def mitglieder_liste(
 async def mitglied_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
-        "members/formular.html",
+        "members/form.html",
         {"request": request, "user": user, "member": None},
     )
 
@@ -177,7 +177,7 @@ async def mitglied_bearbeiten_seite(
         raise HTTPException(status_code=404, detail="Member nicht gefunden")
 
     return templates.TemplateResponse(
-        "members/formular.html",
+        "members/form.html",
         {"request": request, "user": user, "member": member},
     )
 

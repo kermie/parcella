@@ -150,7 +150,7 @@ def erstelle_metering_router(
         if year not in verfuegbare_jahre:
             verfuegbare_jahre.insert(0, year)
 
-        return templates.TemplateResponse("metering/uebersicht.html", {
+        return templates.TemplateResponse("metering/overview.html", {
             **basis_context,
             "request": request, "user": user, "year": year,
             "verfuegbare_jahre": verfuegbare_jahre,
@@ -182,7 +182,7 @@ def erstelle_metering_router(
 
         alle.sort(key=sortkey)
 
-        return templates.TemplateResponse("metering/metering_points_liste.html", {
+        return templates.TemplateResponse("metering/metering_points_list.html", {
             **basis_context,
             "request": request, "user": user,
             "metering_points": alle, "MeteringPointType": MeteringPointType,
@@ -197,7 +197,7 @@ def erstelle_metering_router(
         )
         alle_parzellen = result.scalars().all()
 
-        return templates.TemplateResponse("metering/metering_point_formular.html", {
+        return templates.TemplateResponse("metering/metering_point_form.html", {
             **basis_context,
             "request": request, "user": user,
             "alle_parzellen": alle_parzellen, "heute": date.today().isoformat(),
@@ -469,7 +469,7 @@ def erstelle_metering_router(
         )
         verein_zeilen = aufbereiten(MeteringPointType.CLUB)
 
-        return templates.TemplateResponse("metering/readings_liste.html", {
+        return templates.TemplateResponse("metering/readings_list.html", {
             **basis_context,
             "request": request, "user": user, "year": year,
             "hauptzaehler_zeilen": hauptzaehler_zeilen,

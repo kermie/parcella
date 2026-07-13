@@ -61,7 +61,7 @@ async def parzellen_liste(
     parcels = result.scalars().all()
 
     return templates.TemplateResponse(
-        "parcels/liste.html",
+        "parcels/list.html",
         {
             "request": request,
             "user": user,
@@ -77,7 +77,7 @@ async def parzellen_liste(
 async def parzelle_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
-        "parcels/formular.html",
+        "parcels/form.html",
         {"request": request, "user": user, "parcel": None},
     )
 
@@ -99,7 +99,7 @@ async def parzelle_erstellen(
     if existing.scalar_one_or_none():
         user_result = await require_user(request, db)
         return templates.TemplateResponse(
-            "parcels/formular.html",
+            "parcels/form.html",
             {
                 "request": request,
                 "user": user_result,
@@ -185,7 +185,7 @@ async def parzelle_bearbeiten_seite(
         raise HTTPException(status_code=404)
 
     return templates.TemplateResponse(
-        "parcels/formular.html",
+        "parcels/form.html",
         {"request": request, "user": user, "parcel": parcel},
     )
 
@@ -324,7 +324,7 @@ async def mitglied_zuordnung_bearbeiten_seite(
     parcel = await _get_parcel_mit_details(db, parcel_id)
 
     return templates.TemplateResponse(
-        "parcels/zuordnung_formular.html",
+        "parcels/assignment_form.html",
         {
             "request": request,
             "user": user,

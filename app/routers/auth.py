@@ -92,11 +92,11 @@ async def invitation_page(token: str, request: Request, db: AsyncSession = Depen
 
     if not invitation or invitation.expires_at < datetime.now(timezone.utc):
         return templates.TemplateResponse(
-            "auth/einladung_abgelaufen.html", {"request": request}
+            "auth/invitation_expired.html", {"request": request}
         )
 
     return templates.TemplateResponse(
-        "auth/einladung.html",
+        "auth/invitation.html",
         {"request": request, "token": token, "email": invitation.email},
     )
 
@@ -120,12 +120,12 @@ async def invitation_accept(
 
     if not invitation or invitation.expires_at < datetime.now(timezone.utc):
         return templates.TemplateResponse(
-            "auth/einladung_abgelaufen.html", {"request": request}
+            "auth/invitation_expired.html", {"request": request}
         )
 
     if password != password_confirm:
         return templates.TemplateResponse(
-            "auth/einladung.html",
+            "auth/invitation.html",
             {
                 "request": request,
                 "token": token,
@@ -136,7 +136,7 @@ async def invitation_accept(
 
     if len(password) < 8:
         return templates.TemplateResponse(
-            "auth/einladung.html",
+            "auth/invitation.html",
             {
                 "request": request,
                 "token": token,

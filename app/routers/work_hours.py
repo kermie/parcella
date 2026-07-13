@@ -122,7 +122,7 @@ async def pflichtstunden_uebersicht(
     einsaetze = einsaetze_result.scalars().all()
 
     return templates.TemplateResponse(
-        "work_hours/uebersicht.html",
+        "work_hours/overview.html",
         {
             "request": request,
             "user": user,
@@ -177,7 +177,7 @@ async def konfiguration_bearbeiten_seite(
         raise HTTPException(status_code=404, detail="Konfiguration nicht gefunden")
 
     return templates.TemplateResponse(
-        "work_hours/configuration_formular.html",
+        "work_hours/configuration_form.html",
         {
             "request": request,
             "user": user,
@@ -285,7 +285,7 @@ async def konfiguration_erstellen(
 async def einsatz_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
-        "work_hours/einsatz_formular.html",
+        "work_hours/session_form.html",
         {
             "request": request,
             "user": user,
@@ -340,7 +340,7 @@ async def einsatz_bearbeiten_seite(
         raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
 
     return templates.TemplateResponse(
-        "work_hours/einsatz_formular.html",
+        "work_hours/session_form.html",
         {
             "request": request,
             "user": user,
@@ -434,7 +434,7 @@ async def einsatz_detail(
     bereits_eingetragen = {t.member_id for t in session.participations}
 
     return templates.TemplateResponse(
-        "work_hours/einsatz_detail.html",
+        "work_hours/session_detail.html",
         {
             "request": request,
             "user": user,
@@ -644,7 +644,7 @@ async def mitglied_vereinsrolle_bearbeiten_seite(
     alle_rollen = rollen_result.scalars().all()
 
     return templates.TemplateResponse(
-        "work_hours/mitglied_vereinsrolle_formular.html",
+        "work_hours/member_club_role_form.html",
         {
             "request": request,
             "user": user,
@@ -744,7 +744,7 @@ async def vereinsrolle_bearbeiten_seite(
         raise HTTPException(status_code=404, detail="ClubRole nicht gefunden")
 
     return templates.TemplateResponse(
-        "work_hours/vereinsrolle_formular.html",
+        "work_hours/club_role_form.html",
         {
             "request": request,
             "user": user,
@@ -913,7 +913,7 @@ async def patenschaft_bearbeiten_seite(
     alle_bereiche = [r[0] for r in alle_bereiche_result.all()]
 
     return templates.TemplateResponse(
-        "work_hours/patenschaft_formular.html",
+        "work_hours/sponsorship_form.html",
         {
             "request": request,
             "user": user,
