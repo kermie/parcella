@@ -10,10 +10,14 @@ Architekturentscheidung (siehe docs/i18n.md):
   kein gettext/Babel – kein Kompilierschritt nötig, für jeden ohne
   Spezialwissen editierbar, und trotzdem mit Weblate & Co. kompatibel,
   falls später crowd-sourced Übersetzungen gewünscht sind.
-- Deutsch ist die Quellsprache und gleichzeitig der Fallback: fehlt ein
-  Schlüssel in der Zielsprache (z.B. weil ein Modul noch nicht übersetzt
-  wurde), wird automatisch die deutsche Zeichenkette angezeigt, statt
-  eines rohen Schlüsselnamens oder eines Fehlers.
+- Deutsch ist weiterhin die Quellsprache, in der neue Oberflächentexte
+  zuerst geschrieben werden. Der Laufzeit-Fallback ist jedoch Englisch:
+  fehlt ein Schlüssel in der Zielsprache (z.B. weil ein Modul noch
+  nicht übersetzt wurde), wird die englische Zeichenkette angezeigt,
+  nicht die deutsche – und eine frische Installation ohne gesetzte
+  ClubSetting "language" startet ebenfalls auf Englisch, nicht Deutsch
+  (siehe DEFAULT_LANGUAGE unten). Das reine Autoren-Vorgehen (Deutsch
+  zuerst schreiben, dann übersetzen) ändert sich dadurch nicht.
 - Die aktuelle Sprache wird – wie schon die Modul-Flags (siehe
   app/module_flags.py) – einmal pro Request in einer Middleware geladen
   und unter request.state.language abgelegt.
@@ -40,7 +44,7 @@ from app.models import ClubSetting
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LANGUAGE = "de"
+DEFAULT_LANGUAGE = "en"
 TRANSLATIONS_DIR = Path(__file__).parent / "translations"
 
 # Sprachen, die in der Vereinseinstellungen-Oberfläche zur Auswahl stehen.
@@ -51,6 +55,10 @@ AVAILABLE_LANGUAGES = {
     "de": "Deutsch",
     "en": "English",
     "pl": "Polski",
+    "cs": "Čeština",
+    "sk": "Slovenčina",
+    "fr": "Français",
+    "nl": "Nederlands",
 }
 
 # In-Memory-Cache: {"de": {...verschachteltes dict...}, "en": {...}}

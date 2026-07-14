@@ -21,7 +21,7 @@
                 </p>
                 <select name="language" class="form-select" style="max-width: 280px;">
                     {% for code, label in available_languages.items() %}
-                    <option value="{{ code }}" {% if einstellungen.get('language', 'de') == code %}selected{% endif %}>
+                    <option value="{{ code }}" {% if einstellungen.get('language', 'en') == code %}selected{% endif %}>
                         {{ label }}
                     </option>
                     {% endfor %}
