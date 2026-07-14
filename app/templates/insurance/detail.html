@@ -40,7 +40,7 @@
                         <option value="">{{ t('insurance.detail.select_package_placeholder') }}</option>
                         {% for package in packages %}
                         <option value="{{ package.id }}" {% if pi.property_package_id == package.id %}selected{% endif %}>
-                            {{ package.name }} ({{ "%.2f"|format(package.amount_eur|float) }} €)
+                            {{ package.name }} ({{ package.amount_eur|float|money }})
                         </option>
                         {% endfor %}
                     </select>
@@ -108,15 +108,15 @@
                 <div class="row g-3 text-center">
                     <div class="col-sm-4">
                         <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">{{ t('insurance.detail.cost_property') }}</div>
-                        <div style="font-size: 1.4rem; font-weight: 700;">{{ "%.2f"|format(cost.property_cost) }} €</div>
+                        <div style="font-size: 1.4rem; font-weight: 700;">{{ cost.property_cost|money }}</div>
                     </div>
                     <div class="col-sm-4">
                         <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">{{ t('insurance.detail.cost_accident') }}</div>
-                        <div style="font-size: 1.4rem; font-weight: 700;">{{ "%.2f"|format(cost.accident_cost) }} €</div>
+                        <div style="font-size: 1.4rem; font-weight: 700;">{{ cost.accident_cost|money }}</div>
                     </div>
                     <div class="col-sm-4">
                         <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">{{ t('insurance.detail.cost_total') }}</div>
-                        <div style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">{{ "%.2f"|format(cost.total) }} €</div>
+                        <div style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">{{ cost.total|money }}</div>
                     </div>
                 </div>
             </div>

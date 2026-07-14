@@ -30,8 +30,8 @@
 
                     <dt class="col-sm-5 text-muted">{{ t('members.detail.label_address') }}</dt>
                     <dd class="col-sm-7">
-                        {% if member.street %}{{ member.street }}<br>{% endif %}
-                        {% if member.postal_code or member.city %}{{ member.postal_code or '' }} {{ member.city or '' }}{% else %}–{% endif %}
+                        {% set addr_lines = address_lines(member.street, member.postal_code, member.city) %}
+                        {% if addr_lines %}{{ addr_lines|join('<br>')|safe }}{% else %}–{% endif %}
                     </dd>
 
                     <dt class="col-sm-5 text-muted">{{ t('members.detail.label_iban') }}</dt>

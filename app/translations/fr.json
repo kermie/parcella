@@ -220,7 +220,11 @@
         "tickets_desc": "Tickets d'assistance avec attribution, statut et correspondance avec les membres. Désactiver si le club n'utilise pas de système de tickets interne.",
         "purchase_requests_name": "Demandes d'achat",
         "purchase_requests_desc": "Principe d'approbation à deux personnes pour les dépenses du club : soumettre des demandes, les faire approuver ou rejeter par deux membres du conseil d'administration."
-      }
+      },
+      "region_header": "Région",
+      "region_help": "Détermine le format des nombres et de l'adresse (par ex. séparateur de milliers, ordre du code postal et de la ville). Indépendant de la langue de l'interface.",
+      "currency_header": "Devise",
+      "currency_help": "Détermine le symbole et sa position pour les montants (par ex. « 19,99 € » vs. « £19.99 »). Sélectionnable indépendamment de la langue et de la région."
     }
   },
   "members": {

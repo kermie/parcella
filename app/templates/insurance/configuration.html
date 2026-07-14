@@ -33,7 +33,7 @@
                             <input type="text" name="accident_base_amount_eur" class="form-control"
                                    value="{{ '%.2f'|format(configuration.accident_base_amount_eur|float) if configuration else '3,00' }}"
                                    required>
-                            <span class="input-group-text">€</span>
+                            <span class="input-group-text">{{ currency_symbol() }}</span>
                         </div>
                         <div class="form-text">
                             {{ t('insurance.configuration.base_amount_help') }}
@@ -45,7 +45,7 @@
                             <input type="text" name="accident_additional_amount_eur" class="form-control"
                                    value="{{ '%.2f'|format(configuration.accident_additional_amount_eur|float) if configuration else '3,00' }}"
                                    required>
-                            <span class="input-group-text">€</span>
+                            <span class="input-group-text">{{ currency_symbol() }}</span>
                         </div>
                         <div class="form-text">
                             {{ t('insurance.configuration.additional_amount_help') }}
@@ -76,7 +76,7 @@
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('insurance.configuration.label_amount') }}</label>
                         <div class="input-group input-group-sm">
                             <input type="text" name="amount_eur" class="form-control" placeholder="40,00" required>
-                            <span class="input-group-text">€</span>
+                            <span class="input-group-text">{{ currency_symbol() }}</span>
                         </div>
                     </div>
                     <div class="col-sm-3">
@@ -117,7 +117,7 @@
                                         <div class="input-group input-group-sm" style="max-width: 130px;">
                                             <input type="text" name="amount_eur" class="form-control"
                                                    value="{{ '%.2f'|format(p.amount_eur|float) }}" required>
-                                            <span class="input-group-text">€</span>
+                                            <span class="input-group-text">{{ currency_symbol() }}</span>
                                         </div>
                                 </td>
                                 <td class="text-end">

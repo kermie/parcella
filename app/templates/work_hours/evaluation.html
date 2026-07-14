@@ -46,13 +46,13 @@
     <div class="col-sm-3">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('work_hours.evaluation.open_hours_label') }}</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;">{{ "%.1f"|format(offen_gesamt) }} h</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;">{{ offen_gesamt|number(1) }} h</div>
         </div>
     </div>
     <div class="col-sm-3">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('work_hours.evaluation.total_debt_label') }}</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;">{{ "%.2f"|format(schuld_gesamt) }} €</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;">{{ schuld_gesamt|money }}</div>
         </div>
     </div>
     <div class="col-sm-3">
@@ -61,7 +61,7 @@
             <div style="font-size: 1rem; font-weight: 600; color: var(--gv-gruen);">
                 {% if config.mode.value == 'PER_PARCEL' %}{{ t('work_hours.evaluation.mode_per_parcel') }}{% else %}{{ t('work_hours.evaluation.mode_per_member') }}{% endif %}
             </div>
-            <div class="text-muted" style="font-size: 0.75rem;">{{ config.hours_required | int }}h à {{ "%.2f"|format(config.rate_per_hour_eur|float) }}€</div>
+            <div class="text-muted" style="font-size: 0.75rem;">{{ config.hours_required | int }}h {{ t('work_hours.overview.rate_prefix') }} {{ config.rate_per_hour_eur|float|money }}</div>
         </div>
     </div>
 </div>
@@ -104,16 +104,16 @@
                                 <a href="/members/{{ pd.member.id }}" class="text-decoration-none"
                                    style="color: var(--gv-gruen);">{{ pd.member.full_name }}</a>
                                 {% if pd.befreit %}<span class="badge ms-1" style="background: #dbeafe; color: #1e40af; font-size: 0.7rem;">{{ t('work_hours.evaluation.exempt_badge') }}</span>{% endif %}
-                                <span class="text-muted">({{ "%.1f"|format(pd.stand.gesamt) }}h)</span>
+                                <span class="text-muted">({{ pd.stand.gesamt|number(1) }}h)</span>
                             </div>
                             {% endfor %}
                         </td>
                         <td>{{ z.pflicht_stunden | int }} h</td>
-                        <td>{{ "%.1f"|format(z.paechter_details | sum(attribute='stand.einsatz_stunden')) }} h</td>
-                        <td>{{ "%.1f"|format(z.paechter_details | sum(attribute='stand.patenschaft_stunden')) }} h</td>
-                        <td class="fw-semibold">{{ "%.1f"|format(z.gesamt_stunden) }} h</td>
-                        <td>{% if z.alle_befreit %}–{% else %}{{ "%.1f"|format(z.offen_stunden) }} h{% endif %}</td>
-                        <td>{% if z.alle_befreit %}–{% else %}{{ "%.2f"|format(z.schuldbetrag) }} €{% endif %}</td>
+                        <td>{{ z.paechter_details | sum(attribute='stand.einsatz_stunden')|number(1) }} h</td>
+                        <td>{{ z.paechter_details | sum(attribute='stand.patenschaft_stunden')|number(1) }} h</td>
+                        <td class="fw-semibold">{{ z.gesamt_stunden|number(1) }} h</td>
+                        <td>{% if z.alle_befreit %}–{% else %}{{ z.offen_stunden|number(1) }} h{% endif %}</td>
+                        <td>{% if z.alle_befreit %}–{% else %}{{ z.schuldbetrag|money }}{% endif %}</td>
 
                         {% else %}
                         <td>
@@ -121,11 +121,11 @@
                                style="color: var(--gv-gruen);">{{ z.member.full_name }}</a>
                         </td>
                         <td>{{ z.pflicht_stunden | int }} h</td>
-                        <td>{{ "%.1f"|format(z.stand.einsatz_stunden) }} h</td>
-                        <td>{{ "%.1f"|format(z.stand.patenschaft_stunden) }} h</td>
-                        <td class="fw-semibold">{{ "%.1f"|format(z.stand.gesamt) }} h</td>
-                        <td>{% if z.befreit %}–{% else %}{{ "%.1f"|format(z.offen_stunden) }} h{% endif %}</td>
-                        <td>{% if z.befreit %}–{% else %}{{ "%.2f"|format(z.schuldbetrag) }} €{% endif %}</td>
+                        <td>{{ z.stand.einsatz_stunden|number(1) }} h</td>
+                        <td>{{ z.stand.patenschaft_stunden|number(1) }} h</td>
+                        <td class="fw-semibold">{{ z.stand.gesamt|number(1) }} h</td>
+                        <td>{% if z.befreit %}–{% else %}{{ z.offen_stunden|number(1) }} h{% endif %}</td>
+                        <td>{% if z.befreit %}–{% else %}{{ z.schuldbetrag|money }}{% endif %}</td>
                         {% endif %}
 
                         <td>

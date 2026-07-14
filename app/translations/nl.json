@@ -220,7 +220,11 @@
         "tickets_desc": "Ondersteuningstickets met toewijzing, status en lidkoppeling. Uitschakelen als de vereniging geen intern ticketsysteem gebruikt.",
         "purchase_requests_name": "Aankoopaanvragen",
         "purchase_requests_desc": "Twee-personen goedkeuringsprincipe voor verenigingsuitgaven: aanvragen indienen, door twee bestuursleden laten goedkeuren of afwijzen."
-      }
+      },
+      "region_header": "Regio",
+      "region_help": "Bepaalt het getal- en adresformaat (bijv. duizendtalscheidingsteken, volgorde van postcode en plaats). Onafhankelijk van de interfacetaal.",
+      "currency_header": "Valuta",
+      "currency_help": "Bepaalt het symbool en de positie voor geldbedragen (bijv. \"19,99 €\" vs. \"£19.99\"). Onafhankelijk van taal en regio instelbaar."
     }
   },
   "members": {

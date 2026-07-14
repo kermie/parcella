@@ -220,7 +220,11 @@
         "tickets_desc": "Zgłoszenia wsparcia z przypisaniem, statusem i powiązaniem z członkiem. Wyłącz, jeśli stowarzyszenie nie korzysta z wewnętrznego systemu zgłoszeń.",
         "purchase_requests_name": "Wnioski zakupowe",
         "purchase_requests_desc": "Zasada dwóch osób dla wydatków stowarzyszenia: składanie wniosków, zatwierdzanie lub odrzucanie przez dwóch członków zarządu."
-      }
+      },
+      "region_header": "Region",
+      "region_help": "Określa format liczb i adresu (np. separator tysięcy, kolejność kodu pocztowego i miejscowości). Niezależnie od języka interfejsu.",
+      "currency_header": "Waluta",
+      "currency_help": "Określa symbol i pozycję dla kwot pieniężnych (np. „19,99 €” vs. „£19.99”). Wybierana niezależnie od języka i regionu."
     }
   },
   "members": {

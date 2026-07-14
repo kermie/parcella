@@ -15,6 +15,7 @@ from app.auth import require_admin, create_invitation_token, hash_password
 from app.email_service import sende_email
 from app.crypto_utils import verschluesseln
 from app.i18n import AVAILABLE_LANGUAGES, t_for
+from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
 from app.config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -221,6 +222,8 @@ async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_d
             "felder": resolved_felder,
             "module_felder": resolved_module_felder,
             "available_languages": AVAILABLE_LANGUAGES,
+            "available_regions": AVAILABLE_REGIONS,
+            "available_currencies": AVAILABLE_CURRENCIES,
         },
     )
 
@@ -289,6 +292,27 @@ async def einstellungen_speichern(
             entry.value = language_value
         else:
             db.add(ClubSetting(key="language", value=language_value, description="Sprache der Oberfläche"))
+
+    # Region und Währung: bewusst getrennt von der Sprache (siehe
+    # app/l10n.py) -- eigene Felder, ebenfalls gegen bekannte Werte
+    # validiert.
+    region_value = form.get("region", "").strip()
+    if region_value in AVAILABLE_REGIONS:
+        result = await db.execute(select(ClubSetting).where(ClubSetting.key == "region"))
+        entry = result.scalar_one_or_none()
+        if entry:
+            entry.value = region_value
+        else:
+            db.add(ClubSetting(key="region", value=region_value, description="Region (Zahlen-/Adressformat)"))
+
+    currency_value = form.get("currency", "").strip()
+    if currency_value in AVAILABLE_CURRENCIES:
+        result = await db.execute(select(ClubSetting).where(ClubSetting.key == "currency"))
+        entry = result.scalar_one_or_none()
+        if entry:
+            entry.value = currency_value
+        else:
+            db.add(ClubSetting(key="currency", value=currency_value, description="Währung"))
 
     await db.commit()
     return RedirectResponse("/admin/settings?erfolg=1", status_code=302)

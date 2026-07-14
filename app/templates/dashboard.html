@@ -76,7 +76,7 @@
                 <div>
                     <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('dashboard.total_area_label') }}</div>
                     <div style="font-size: 1.8rem; font-weight: 700; color: #1e40af;">
-                        {{ "{:,.0f}".format(stats.flaeche_gesamt_qm).replace(",", ".") }}
+                        {{ stats.flaeche_gesamt_qm|number }}
                     </div>
                     <div class="text-muted" style="font-size: 0.75rem;">{{ t('dashboard.active_parcels_suffix') }}</div>
                 </div>

@@ -42,7 +42,7 @@
                             <span class="text-muted">–</span>
                             {% endif %}
                         </td>
-                        <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
+                        <td class="fw-semibold">{{ r.cost.total|money }}</td>
                         <td class="text-end">
                             <a href="/insurance/parcels/{{ r.parcel.id }}?year={{ year }}"
                                class="btn btn-sm btn-outline-secondary">

@@ -32,7 +32,7 @@
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('insurance.evaluation.stat_total_income') }}</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ "%.2f"|format(total_overall) }} €</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ total_overall|money }}</div>
         </div>
     </div>
 </div>
@@ -62,11 +62,11 @@
                             </a>
                         </td>
                         <td>{{ r.pi.property_package.name if r.pi.property_package else '–' }}</td>
-                        <td>{{ "%.2f"|format(r.cost.property_cost) }} €</td>
+                        <td>{{ r.cost.property_cost|money }}</td>
                         <td>{% if r.pi.has_accident_insurance %}{{ t('insurance.evaluation.yes') }}{% else %}–{% endif %}</td>
                         <td>{{ r.pi.additional_persons | length }}</td>
-                        <td>{{ "%.2f"|format(r.cost.accident_cost) }} €</td>
-                        <td class="fw-semibold">{{ "%.2f"|format(r.cost.total) }} €</td>
+                        <td>{{ r.cost.accident_cost|money }}</td>
+                        <td class="fw-semibold">{{ r.cost.total|money }}</td>
                     </tr>
                     {% else %}
                     <tr>

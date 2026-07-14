@@ -220,7 +220,11 @@
         "tickets_desc": "Podpůrné tikety s přiřazením, stavem a přiřazením členů. Vypnout, pokud spolek nepoužívá interní ticketový systém.",
         "purchase_requests_name": "Žádosti o nákup",
         "purchase_requests_desc": "Princip schvalování dvěma osobami pro výdaje spolku: předkládejte žádosti, nechte je schválit nebo zamítnout dvěma členy výboru."
-      }
+      },
+      "region_header": "Region",
+      "region_help": "Určuje formát čísel a adresy (např. oddělovač tisíců, pořadí PSČ a města). Nezávisle na jazyce rozhraní.",
+      "currency_header": "Měna",
+      "currency_help": "Určuje symbol a pozici u peněžních částek (např. „19,99 €“ vs. „£19.99“). Volitelná nezávisle na jazyce a regionu."
     }
   },
   "members": {

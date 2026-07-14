@@ -42,7 +42,7 @@
 
                     {% if pr.estimated_cost_eur %}
                     <dt class="col-sm-4 text-muted">{{ t('purchase_requests.detail.label_estimated_cost') }}</dt>
-                    <dd class="col-sm-8 fw-semibold">{{ "%.2f"|format(pr.estimated_cost_eur|float) }} €</dd>
+                    <dd class="col-sm-8 fw-semibold">{{ pr.estimated_cost_eur|float|money }}</dd>
                     {% endif %}
                 </dl>
             </div>

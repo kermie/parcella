@@ -220,7 +220,11 @@
         "tickets_desc": "Support tickets with assignment, status, and member matching. Disable if the club doesn't use an internal ticket system.",
         "purchase_requests_name": "Purchase requests",
         "purchase_requests_desc": "Two-person approval principle for club expenses: submit requests, have them approved or rejected by two board members."
-      }
+      },
+      "region_header": "Region",
+      "region_help": "Determines number and address format (e.g. thousands separator, order of postal code and city). Independent of the interface language.",
+      "currency_header": "Currency",
+      "currency_help": "Determines the symbol and position used for monetary amounts (e.g. \"19,99 €\" vs. \"£19.99\"). Selectable independently of language and region."
     }
   },
   "members": {

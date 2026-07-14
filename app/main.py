@@ -19,6 +19,7 @@ from app.models import User, UserRole, Member, Parcel, ParcelStatus, MemberParce
 from app.auth import hash_password, get_current_user
 from app.module_flags import lade_modul_flags
 from app.i18n import load_translations, load_current_language
+from app.l10n import load_current_region, load_current_currency
 
 # Wird beim Modul-Import geladen (nicht erst im Lifespan-Startup-Event),
 # da ASGI-Test-Clients (z.B. httpx mit ASGITransport) Lifespan-Events
@@ -126,6 +127,22 @@ async def sprache_middleware(request: Request, call_next):
     """
     async with AsyncSessionLocal() as db:
         request.state.language = await load_current_language(db)
+    response = await call_next(request)
+    return response
+
+
+@app.middleware("http")
+async def l10n_middleware(request: Request, call_next):
+    """
+    Lädt einmal pro Request Region und Währung (siehe app/l10n.py) und
+    legt sie unter request.state.region / request.state.currency ab.
+    Bewusst getrennt von der Sprache (sprache_middleware oben) -- Region/
+    Währung sind unabhängige Einstellungen, siehe app/l10n.py-Docstring.
+    Templates nutzen die Filter/Funktion `money`, `number`, `address`.
+    """
+    async with AsyncSessionLocal() as db:
+        request.state.region = await load_current_region(db)
+        request.state.currency = await load_current_currency(db)
     response = await call_next(request)
     return response
 

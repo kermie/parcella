@@ -33,7 +33,7 @@
                         <div class="input-group">
                             <input type="text" name="rate_per_hour_eur" class="form-control"
                                    value="{{ '%.2f'|format(configuration.rate_per_hour_eur|float) }}" required>
-                            <span class="input-group-text">€</span>
+                            <span class="input-group-text">{{ currency_symbol() }}</span>
                         </div>
                     </div>
                     <div class="mb-3">

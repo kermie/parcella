@@ -42,7 +42,7 @@
                                style="color: var(--gv-gruen);">{{ pr.title }}</a>
                         </td>
                         <td class="text-muted" style="font-size: 0.85rem;">{{ pr.requester_display_name }}</td>
-                        <td>{% if pr.estimated_cost_eur %}{{ "%.2f"|format(pr.estimated_cost_eur|float) }} €{% else %}–{% endif %}</td>
+                        <td>{% if pr.estimated_cost_eur %}{{ pr.estimated_cost_eur|float|money }}{% else %}–{% endif %}</td>
                         <td>
                             {% if pr.status.value == 'OPEN' %}
                             <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">

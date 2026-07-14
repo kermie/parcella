@@ -32,6 +32,42 @@
 
     <div class="col-12">
         <div class="card">
+            <div class="card-header"><i class="bi bi-globe2 me-2"></i>{{ t('admin.settings.region_header') }} &amp; {{ t('admin.settings.currency_header') }}</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">{{ t('admin.settings.region_header') }}</label>
+                        <p class="text-muted" style="font-size: 0.85rem;">
+                            {{ t('admin.settings.region_help') }}
+                        </p>
+                        <select name="region" class="form-select" style="max-width: 280px;">
+                            {% for code, label in available_regions.items() %}
+                            <option value="{{ code }}" {% if einstellungen.get('region', 'de_DE') == code %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">{{ t('admin.settings.currency_header') }}</label>
+                        <p class="text-muted" style="font-size: 0.85rem;">
+                            {{ t('admin.settings.currency_help') }}
+                        </p>
+                        <select name="currency" class="form-select" style="max-width: 280px;">
+                            {% for code, label in available_currencies.items() %}
+                            <option value="{{ code }}" {% if einstellungen.get('currency', 'EUR') == code %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
             <div class="card-header"><i class="bi bi-toggles me-2"></i>{{ t('admin.settings.module_header') }}</div>
             <div class="card-body">
                 <p class="text-muted" style="font-size: 0.85rem;">

@@ -45,13 +45,13 @@
     <div class="col-sm-6 col-lg-3">
         <div class="card h-100 p-3 text-center">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('insurance.overview.stat_income_property') }}</div>
-            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ "%.2f"|format(total_property) }} €</div>
+            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ total_property|money }}</div>
         </div>
     </div>
     <div class="col-sm-6 col-lg-3">
         <div class="card h-100 p-3 text-center">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('insurance.overview.stat_income_accident') }}</div>
-            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ "%.2f"|format(total_accident) }} €</div>
+            <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">{{ total_accident|money }}</div>
         </div>
     </div>
 </div>
@@ -64,7 +64,7 @@
             {% for p in packages %}
             <div class="col-auto">
                 <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.85rem; padding: 0.5rem 0.8rem;">
-                    {{ p.name }}: {{ "%.2f"|format(p.amount_eur|float) }} €
+                    {{ p.name }}: {{ p.amount_eur|float|money }}
                 </span>
             </div>
             {% endfor %}

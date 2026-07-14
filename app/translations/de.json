@@ -220,7 +220,11 @@
         "tickets_desc": "Support-Tickets mit Zuweisung, Status und Member-Zuordnung. Deaktivieren, falls der Verein kein internes Ticketsystem nutzt.",
         "purchase_requests_name": "Einkaufswünsche",
         "purchase_requests_desc": "Vier-Augen-Prinzip für Vereinsausgaben: Anträge stellen, von zwei Vorstandsmitgliedern freigeben oder ablehnen lassen."
-      }
+      },
+      "region_header": "Region",
+      "region_help": "Bestimmt Zahlen- und Adressformat (z.B. Tausendertrennzeichen, Reihenfolge von PLZ und Ort). Unabhängig von der Oberflächensprache.",
+      "currency_header": "Währung",
+      "currency_help": "Bestimmt Symbol und Position bei Geldbeträgen (z.B. \"19,99 €\" vs. \"£19.99\"). Unabhängig von Sprache und Region wählbar."
     }
   },
   "members": {

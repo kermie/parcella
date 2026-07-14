@@ -33,7 +33,7 @@
                         <div class="input-group">
                             <input type="text" name="rate_per_hour_eur" class="form-control"
                                    placeholder="25.00" required>
-                            <span class="input-group-text">€</span>
+                            <span class="input-group-text">{{ currency_symbol() }}</span>
                         </div>
                         <div class="form-text">{{ t('work_hours.configuration.rate_hint') }}</div>
                     </div>
@@ -83,8 +83,8 @@
                             <tr>
                                 <td class="fw-bold">{{ k.year }}</td>
                                 <td>{{ k.hours_required | int }} h</td>
-                                <td>{{ "%.2f"|format(k.rate_per_hour_eur|float) }} €</td>
-                                <td>{{ "%.2f"|format(k.hours_required|float * k.rate_per_hour_eur|float) }} €</td>
+                                <td>{{ k.rate_per_hour_eur|float|money }}</td>
+                                <td>{{ (k.hours_required|float * k.rate_per_hour_eur|float)|money }}</td>
                                 <td>
                                     <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.72rem;">
                                         {% if k.mode.value == 'PER_PARCEL' %}{{ t('work_hours.configuration.mode_short_parcel') }}{% else %}{{ t('work_hours.configuration.mode_short_member') }}{% endif %}
