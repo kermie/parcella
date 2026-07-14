@@ -122,8 +122,8 @@ DECIMAL_PLACES_PER_MEDIUM = {
 }
 
 
-def round_for_medium(wert: Decimal, medium: str) -> Decimal:
+def round_for_medium(value: Decimal, medium: str) -> Decimal:
     """Rundet einen Wert auf die für das Medium übliche Nachkommastellen-Anzahl."""
     stellen = DECIMAL_PLACES_PER_MEDIUM.get(medium, 1)
     quant = Decimal("1") if stellen == 0 else Decimal("1." + "0" * stellen)
-    return wert.quantize(quant)
+    return value.quantize(quant)

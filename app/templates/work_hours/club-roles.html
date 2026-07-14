@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}ClubRolen{% endblock %}
-{% block page_title %}ClubRolen{% endblock %}
+{% block title %}{{ t('work_hours.club_roles.title') }}{% endblock %}
+{% block page_title %}{{ t('work_hours.club_roles.title') }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
@@ -12,7 +12,7 @@
         </select>
     </form>
     <a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Zurück
+        <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
     </a>
 </div>
 {% endblock %}
@@ -23,18 +23,18 @@
     <!-- Neue ClubRole anlegen -->
     <div class="col-lg-4">
         <div class="card">
-            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Neue ClubRole</div>
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.club_roles.new_role_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/club-roles/new">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Bezeichnung <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_roles.name_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control"
-                               placeholder="z.B. Vorsitzender, Wasserverantwortlicher" required>
+                               placeholder="{{ t('work_hours.club_roles.name_placeholder') }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Beschreibung</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_roles.description_label') }}</label>
                         <textarea name="description" class="form-control" rows="2"
-                                  placeholder="Aufgaben dieser Rolle…"></textarea>
+                                  placeholder="{{ t('work_hours.club_roles.description_placeholder') }}"></textarea>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
@@ -42,23 +42,23 @@
                                    name="hours_exempt" id="befreit-check"
                                    onchange="document.getElementById('exemption_reason-row').style.display = this.checked ? '' : 'none'">
                             <label class="form-check-label" for="befreit-check">
-                                Von Pflichtstunden befreit
+                                {{ t('work_hours.club_roles.exempt_checkbox_label') }}
                             </label>
                         </div>
                     </div>
                     <div class="mb-3" id="exemption_reason-row" style="display: none;">
-                        <label class="form-label fw-semibold">Befreiungsgrund</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_roles.exemption_reason_label') }}</label>
                         <select name="exemption_reason" class="form-select">
-                            <option value="">– bitte wählen –</option>
-                            <option value="BOARD">Vorstandsarbeit</option>
-                            <option value="EXTENDED_BOARD">Erweiterter Vorstand</option>
-                            <option value="ILLNESS">Krankheit / gesundheitliche Gründe</option>
-                            <option value="AGE">Altersbefreiung</option>
-                            <option value="OTHER">Sonstiger Grund</option>
+                            <option value="">{{ t('work_hours.club_roles.please_select') }}</option>
+                            <option value="BOARD">{{ t('work_hours.club_roles.reason_board') }}</option>
+                            <option value="EXTENDED_BOARD">{{ t('work_hours.club_roles.reason_extended_board') }}</option>
+                            <option value="ILLNESS">{{ t('work_hours.club_roles.reason_illness') }}</option>
+                            <option value="AGE">{{ t('work_hours.club_roles.reason_age') }}</option>
+                            <option value="OTHER">{{ t('work_hours.club_roles.reason_other') }}</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-check-lg me-1"></i>Rolle anlegen
+                        <i class="bi bi-check-lg me-1"></i>{{ t('work_hours.club_roles.create_button') }}
                     </button>
                 </form>
             </div>
@@ -68,15 +68,15 @@
     <!-- Bestehende Rollen -->
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header"><i class="bi bi-person-badge me-2"></i>Bestehende Rollen</div>
+            <div class="card-header"><i class="bi bi-person-badge me-2"></i>{{ t('work_hours.club_roles.existing_roles_card_title') }}</div>
             <div class="card-body p-0">
                 <div class="table-responsive">
 <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Bezeichnung</th>
-                                <th>Befreit</th>
-                                <th>Grund</th>
+                                <th>{{ t('work_hours.club_roles.col_name') }}</th>
+                                <th>{{ t('work_hours.club_roles.col_exempt') }}</th>
+                                <th>{{ t('work_hours.club_roles.col_reason') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -91,9 +91,9 @@
                                 </td>
                                 <td>
                                     {% if r.hours_exempt %}
-                                    <span class="badge badge-aktiv">Ja</span>
+                                    <span class="badge badge-aktiv">{{ t('work_hours.club_roles.yes') }}</span>
                                     {% else %}
-                                    <span class="text-muted">Nein</span>
+                                    <span class="text-muted">{{ t('work_hours.club_roles.no') }}</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-muted" style="font-size: 0.85rem;">
@@ -108,7 +108,7 @@
                                           action="/work-hours/club-roles/{{ r.id }}/delete"
                                           class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                                onclick="return confirm('Rolle wirklich löschen? Alle Zuordnungen gehen verloren.')">
+                                                onclick="return confirm('{{ t('work_hours.club_roles.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -117,7 +117,7 @@
                             {% else %}
                             <tr>
                                 <td colspan="4" class="text-center text-muted py-3">
-                                    Noch keine ClubRolen angelegt.
+                                    {{ t('work_hours.club_roles.no_roles') }}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -132,7 +132,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-people me-2"></i>Mitglieder in ClubRolen</span>
+                <span><i class="bi bi-people me-2"></i>{{ t('work_hours.club_roles.members_in_roles_card_title') }}</span>
             </div>
 
             <!-- Neue Zuordnung -->
@@ -141,35 +141,35 @@
                       class="row g-2 align-items-end">
                     <input type="hidden" name="year" value="{{ year }}">
                     <div class="col-sm-3">
-                        <label class="form-label fw-semibold">Mitglied <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_roles.member_label') }} <span class="text-danger">*</span></label>
                         <select name="member_id" class="form-select form-select-sm" required>
-                            <option value="">– bitte wählen –</option>
+                            <option value="">{{ t('work_hours.club_roles.please_select') }}</option>
                             {% for m in alle_mitglieder %}
                             <option value="{{ m.id }}">{{ m.full_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-sm-3">
-                        <label class="form-label fw-semibold">ClubRole <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_roles.role_label') }} <span class="text-danger">*</span></label>
                         <select name="club_role_id" class="form-select form-select-sm" required>
-                            <option value="">– bitte wählen –</option>
+                            <option value="">{{ t('work_hours.club_roles.please_select') }}</option>
                             {% for r in rollen %}
                             <option value="{{ r.id }}">{{ r.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="col-sm-2">
-                        <label class="form-label fw-semibold">Von</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_roles.from_label') }}</label>
                         <input type="date" name="valid_from" class="form-control form-control-sm">
                     </div>
                     <div class="col-sm-2">
-                        <label class="form-label fw-semibold">Bis</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_roles.until_label') }}</label>
                         <input type="date" name="valid_until" class="form-control form-control-sm">
-                        <div class="form-text" style="font-size: 0.72rem;">Leer = läuft noch</div>
+                        <div class="form-text" style="font-size: 0.72rem;">{{ t('work_hours.club_roles.empty_means_ongoing') }}</div>
                     </div>
                     <div class="col-sm-2">
                         <button type="submit" class="btn btn-sm btn-primary w-100">
-                            <i class="bi bi-plus-lg me-1"></i>Zuordnen
+                            <i class="bi bi-plus-lg me-1"></i>{{ t('work_hours.club_roles.assign_button') }}
                         </button>
                     </div>
                 </form>
@@ -181,12 +181,12 @@
 <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Mitglied</th>
-                                <th>Rolle</th>
-                                <th>Befreit</th>
-                                <th>Von</th>
-                                <th>Bis</th>
-                                <th>Notiz</th>
+                                <th>{{ t('work_hours.club_roles.col_member') }}</th>
+                                <th>{{ t('work_hours.club_roles.col_role') }}</th>
+                                <th>{{ t('work_hours.club_roles.col_exempt') }}</th>
+                                <th>{{ t('work_hours.club_roles.col_from') }}</th>
+                                <th>{{ t('work_hours.club_roles.col_until') }}</th>
+                                <th>{{ t('work_hours.club_roles.col_note') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -204,13 +204,13 @@
                                 </td>
                                 <td>
                                     {% if z.club_role.hours_exempt %}
-                                    <span class="badge badge-aktiv">Ja</span>
+                                    <span class="badge badge-aktiv">{{ t('work_hours.club_roles.yes') }}</span>
                                     {% else %}
-                                    <span class="text-muted">Nein</span>
+                                    <span class="text-muted">{{ t('work_hours.club_roles.no') }}</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-muted">{{ z.valid_from.strftime('%d.%m.%Y') if z.valid_from else '–' }}</td>
-                                <td class="text-muted">{{ z.valid_until.strftime('%d.%m.%Y') if z.valid_until else 'laufend' }}</td>
+                                <td class="text-muted">{{ z.valid_until.strftime('%d.%m.%Y') if z.valid_until else t('work_hours.club_roles.ongoing') }}</td>
                                 <td class="text-muted" style="font-size: 0.85rem;">{{ z.note or '' }}</td>
                                 <td class="text-end">
                                     <a href="/work-hours/club-roles/assignment/{{ z.id }}/edit"
@@ -222,7 +222,7 @@
                                           class="d-inline">
                                         <input type="hidden" name="year" value="{{ year }}">
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                                onclick="return confirm('Zuordnung wirklich entfernen?')">
+                                                onclick="return confirm('{{ t('work_hours.club_roles.remove_confirm') }}')">
                                             <i class="bi bi-x-lg"></i>
                                         </button>
                                     </form>
@@ -231,7 +231,7 @@
                             {% else %}
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-3">
-                                    Keine Mitglieder in ClubRolen für {{ year }}.
+                                    {{ t('work_hours.club_roles.none_for_year', year=year) }}
                                 </td>
                             </tr>
                             {% endfor %}

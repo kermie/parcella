@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Konfiguration bearbeiten{% endblock %}
-{% block page_title %}Konfiguration {{ configuration.year }} bearbeiten{% endblock %}
+{% block title %}{{ t('work_hours.configuration_form.title') }}{% endblock %}
+{% block page_title %}{{ t('work_hours.configuration_form.page_title', year=configuration.year) }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/work-hours/configuration" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
 </a>
 {% endblock %}
 
@@ -12,16 +12,16 @@
 <div class="row g-3" style="max-width: 560px;">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-pencil me-2"></i>Konfiguration bearbeiten</div>
+            <div class="card-header"><i class="bi bi-pencil me-2"></i>{{ t('work_hours.configuration_form.card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/configuration/{{ configuration.id }}/edit">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Jahr <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration_form.year_label') }} <span class="text-danger">*</span></label>
                         <input type="number" name="year" class="form-control"
                                value="{{ configuration.year }}" min="2000" max="2100" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Pflichtstunden gesamt <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration_form.hours_required_label') }} <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="text" name="hours_required" class="form-control"
                                    value="{{ configuration.hours_required|int }}" required>
@@ -29,7 +29,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Stundensatz <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration_form.rate_label') }} <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="text" name="rate_per_hour_eur" class="form-control"
                                    value="{{ '%.2f'|format(configuration.rate_per_hour_eur|float) }}" required>
@@ -37,25 +37,25 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Abrechnungsmodus</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration_form.mode_label') }}</label>
                         <select name="mode" class="form-select">
                             <option value="PER_PARCEL" {% if configuration.mode.value == 'PER_PARCEL' %}selected{% endif %}>
-                                Pro Pachtvertrag / Parzelle
+                                {{ t('work_hours.configuration_form.mode_per_parcel') }}
                             </option>
                             <option value="PER_MEMBER" {% if configuration.mode.value == 'PER_MEMBER' %}selected{% endif %}>
-                                Pro Mitglied
+                                {{ t('work_hours.configuration_form.mode_per_member') }}
                             </option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Notiz</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration_form.note_label') }}</label>
                         <input type="text" name="note" class="form-control"
                                value="{{ configuration.note or '' }}">
                     </div>
                     <div class="d-flex gap-2 justify-content-end">
-                        <a href="/work-hours/configuration" class="btn btn-outline-secondary">Abbrechen</a>
+                        <a href="/work-hours/configuration" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i>Änderungen speichern
+                            <i class="bi bi-check-lg me-1"></i>{{ t('work_hours.configuration_form.save_button') }}
                         </button>
                     </div>
                 </form>

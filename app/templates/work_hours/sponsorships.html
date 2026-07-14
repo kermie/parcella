@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Sponsorshipen {{ year }}{% endblock %}
-{% block page_title %}Sponsorshipen{% endblock %}
+{% block title %}{{ t('work_hours.sponsorships.title', year=year) }}{% endblock %}
+{% block page_title %}{{ t('work_hours.sponsorships.page_title') }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
 </a>
 {% endblock %}
 
@@ -12,69 +12,67 @@
 <div class="row g-3">
     <div class="col-lg-5">
         <div class="card">
-            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Sponsorship anlegen / Mitglied hinzufügen</div>
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.sponsorships.create_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/sponsorships/new">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Bereich <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.area_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="area" class="form-control" list="bereiche-liste"
-                               placeholder="z.B. Hecke Nordseite, Spielplatz, Eingangsbereich" required>
+                               placeholder="{{ t('work_hours.sponsorships.area_placeholder') }}" required>
                         <datalist id="bereiche-liste">
                             {% for b in alle_bereiche %}
                             <option value="{{ b }}">
                             {% endfor %}
                         </datalist>
                         <div class="form-text">
-                            Bereits vorhandenen Bereich wählen, um ein weiteres Mitglied dafür einzutragen –
-                            mehrere Personen können sich einen Bereich teilen.
+                            {{ t('work_hours.sponsorships.area_hint') }}
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Mitglied</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.member_label') }}</label>
                         <select name="member_id" class="form-select">
-                            <option value="">– noch nicht vergeben –</option>
+                            <option value="">{{ t('work_hours.sponsorships.not_yet_assigned') }}</option>
                             {% for m in alle_mitglieder %}
                             <option value="{{ m.id }}">{{ m.full_name }}</option>
                             {% endfor %}
                         </select>
-                        <div class="form-text">Kann später zugeordnet werden.</div>
+                        <div class="form-text">{{ t('work_hours.sponsorships.member_hint') }}</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Beschreibung</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.description_label') }}</label>
                         <textarea name="description" class="form-control" rows="2"
-                                  placeholder="Was genau wird gepflegt / betreut?"></textarea>
+                                  placeholder="{{ t('work_hours.sponsorships.description_placeholder') }}"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Anrechenbare Stunden/Jahr <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.credited_hours_label') }} <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="text" name="credited_hours" class="form-control"
                                    value="{{ config.hours_required|int if config else '' }}"
-                                   placeholder="5.0" required>
+                                   placeholder="{{ t('work_hours.sponsorships.credited_hours_placeholder') }}" required>
                             <span class="input-group-text">h</span>
                         </div>
                         <div class="form-text">
                             {% if config %}
-                            Vorbefüllt mit der aktuellen Pflichtstunden-Konfiguration für {{ year }}
-                            ({{ config.hours_required|int }}h) – bei Bedarf anpassbar.
+                            {{ t('work_hours.sponsorships.credited_hours_hint_prefilled', year=year, hours=config.hours_required|int) }}
                             {% else %}
-                            Keine Pflichtstunden-Konfiguration für {{ year }} hinterlegt.
+                            {{ t('work_hours.sponsorships.credited_hours_hint_missing', year=year) }}
                             {% endif %}
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
-                            <label class="form-label fw-semibold">Gültig ab <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.valid_from_label') }} <span class="text-danger">*</span></label>
                             <input type="date" name="valid_from" class="form-control" required
                                    value="{{ year }}-01-01">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label fw-semibold">Gültig bis</label>
+                            <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.valid_until_label') }}</label>
                             <input type="date" name="valid_until" class="form-control">
-                            <div class="form-text">Leer = läuft noch</div>
+                            <div class="form-text">{{ t('work_hours.sponsorships.empty_means_ongoing') }}</div>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-heart me-1"></i>Speichern
+                        <i class="bi bi-heart me-1"></i>{{ t('work_hours.sponsorships.save_button') }}
                     </button>
                 </form>
             </div>
@@ -84,8 +82,8 @@
     <div class="col-lg-7">
         <div class="card">
             <div class="card-header">
-                <i class="bi bi-heart me-2"></i>Aktive Sponsorshipen
-                <span class="text-muted ms-1" style="font-size: 0.85rem;">im Jahr {{ year }}</span>
+                <i class="bi bi-heart me-2"></i>{{ t('work_hours.sponsorships.active_card_title') }}
+                <span class="text-muted ms-1" style="font-size: 0.85rem;">{{ t('work_hours.sponsorships.in_year', year=year) }}</span>
             </div>
             <div class="card-body p-0">
                 {% if bereiche_gruppiert %}
@@ -93,10 +91,10 @@
 <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Bereich</th>
-                                <th>Mitglied(er)</th>
-                                <th>Stunden/Jahr</th>
-                                <th>Zeitraum</th>
+                                <th>{{ t('work_hours.sponsorships.col_area') }}</th>
+                                <th>{{ t('work_hours.sponsorships.col_members') }}</th>
+                                <th>{{ t('work_hours.sponsorships.col_hours_per_year') }}</th>
+                                <th>{{ t('work_hours.sponsorships.col_period') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -113,7 +111,7 @@
                                     {% endif %}
                                     {% if eintraege | length > 1 %}
                                     <span class="badge mt-1" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
-                                        {{ eintraege | length }} Personen
+                                        {{ t('work_hours.sponsorships.people_count', count=eintraege|length) }}
                                     </span>
                                     {% endif %}
                                 </td>
@@ -123,13 +121,13 @@
                                     <a href="/members/{{ p.member.id }}" class="text-decoration-none"
                                        style="color: var(--gv-gruen);">{{ p.member.full_name }}</a>
                                     {% else %}
-                                    <span class="text-muted fst-italic">noch nicht vergeben</span>
+                                    <span class="text-muted fst-italic">{{ t('work_hours.sponsorships.not_yet_assigned_italic') }}</span>
                                     {% endif %}
                                 </td>
                                 <td>{{ p.credited_hours | int }} h</td>
                                 <td class="text-muted" style="font-size: 0.85rem;">
                                     {{ p.valid_from.strftime('%d.%m.%Y') }} –
-                                    {{ p.valid_until.strftime('%d.%m.%Y') if p.valid_until else 'laufend' }}
+                                    {{ p.valid_until.strftime('%d.%m.%Y') if p.valid_until else t('work_hours.sponsorships.ongoing') }}
                                 </td>
                                 <td class="text-end">
                                     <a href="/work-hours/sponsorships/{{ p.id }}/edit"
@@ -140,7 +138,7 @@
                                           action="/work-hours/sponsorships/{{ p.id }}/delete"
                                           class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                                onclick="return confirm('Eintrag wirklich löschen?')">
+                                                onclick="return confirm('{{ t('work_hours.sponsorships.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -153,7 +151,7 @@
                 </div>
                 {% else %}
                 <div class="text-center text-muted py-4">
-                    Keine aktiven Sponsorshipen im Jahr {{ year }}.
+                    {{ t('work_hours.sponsorships.no_active', year=year) }}
                 </div>
                 {% endif %}
             </div>

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Zuordnung bearbeiten{% endblock %}
-{% block page_title %}Zuordnung bearbeiten{% endblock %}
+{% block title %}{{ t('work_hours.member_club_role_form.title') }}{% endblock %}
+{% block page_title %}{{ t('work_hours.member_club_role_form.title') }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/work-hours/club-roles" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
 </a>
 {% endblock %}
 
@@ -12,11 +12,11 @@
 <div class="row g-3" style="max-width: 640px;">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-person-badge me-2"></i>Mitglied in ClubRole bearbeiten</div>
+            <div class="card-header"><i class="bi bi-person-badge me-2"></i>{{ t('work_hours.member_club_role_form.card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/club-roles/assignment/{{ assignment.id }}/edit">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Mitglied <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.member_label') }} <span class="text-danger">*</span></label>
                         <select name="member_id" class="form-select" required>
                             {% for m in alle_mitglieder %}
                             <option value="{{ m.id }}" {% if m.id == assignment.member_id %}selected{% endif %}>
@@ -26,7 +26,7 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">ClubRole <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.role_label') }} <span class="text-danger">*</span></label>
                         <select name="club_role_id" class="form-select" required>
                             {% for r in alle_rollen %}
                             <option value="{{ r.id }}" {% if r.id == assignment.club_role_id %}selected{% endif %}>
@@ -36,35 +36,35 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Jahr <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.year_label') }} <span class="text-danger">*</span></label>
                         <input type="number" name="year" class="form-control"
                                value="{{ assignment.year }}" min="2000" max="2100" required>
                         <div class="form-text">
-                            Die Pflichtstunden-Befreiung gilt für dieses gesamte Kalenderjahr.
+                            {{ t('work_hours.member_club_role_form.year_hint') }}
                         </div>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
-                            <label class="form-label fw-semibold">Von</label>
+                            <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.from_label') }}</label>
                             <input type="date" name="valid_from" class="form-control"
                                    value="{{ assignment.valid_from.isoformat() if assignment.valid_from else '' }}">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label fw-semibold">Bis</label>
+                            <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.until_label') }}</label>
                             <input type="date" name="valid_until" class="form-control"
                                    value="{{ assignment.valid_until.isoformat() if assignment.valid_until else '' }}">
-                            <div class="form-text">Leer = läuft noch</div>
+                            <div class="form-text">{{ t('work_hours.member_club_role_form.empty_means_ongoing') }}</div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Notiz</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.note_label') }}</label>
                         <textarea name="note" class="form-control" rows="2"
-                                  placeholder="z.B. Grund für Niederlegung, Übergabe an…">{{ assignment.note or '' }}</textarea>
+                                  placeholder="{{ t('work_hours.member_club_role_form.note_placeholder') }}">{{ assignment.note or '' }}</textarea>
                     </div>
                     <div class="d-flex gap-2 justify-content-end">
-                        <a href="/work-hours/club-roles" class="btn btn-outline-secondary">Abbrechen</a>
+                        <a href="/work-hours/club-roles" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i>Änderungen speichern
+                            <i class="bi bi-check-lg me-1"></i>{{ t('work_hours.member_club_role_form.save_button') }}
                         </button>
                     </div>
                 </form>

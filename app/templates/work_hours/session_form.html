@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{% if session %}Einsatz bearbeiten{% else %}Neuer WorkSession{% endif %}{% endblock %}
-{% block page_title %}{% if session %}Einsatz bearbeiten{% else %}Neuer WorkSession{% endif %}{% endblock %}
+{% block title %}{% if session %}{{ t('work_hours.session_form.title_edit') }}{% else %}{{ t('work_hours.session_form.title_new') }}{% endif %}{% endblock %}
+{% block page_title %}{% if session %}{{ t('work_hours.session_form.title_edit') }}{% else %}{{ t('work_hours.session_form.title_new') }}{% endif %}{% endblock %}
 
 {% block topbar_actions %}
 <a href="{% if session %}/work-hours/sessions/{{ session.id }}{% else %}/work-hours/{% endif %}"
    class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
 </a>
 {% endblock %}
 
@@ -17,64 +17,64 @@
         <div class="card">
             <div class="card-header">
                 <i class="bi bi-calendar-event me-2"></i>
-                {% if session %}Einsatz bearbeiten{% else %}Einsatz anlegen{% endif %}
+                {% if session %}{{ t('work_hours.session_form.card_title_edit') }}{% else %}{{ t('work_hours.session_form.card_title_new') }}{% endif %}
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-12">
-                        <label class="form-label fw-semibold">Titel <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.title_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="title" class="form-control"
                                value="{{ session.title if session else '' }}"
-                               placeholder="z.B. Frühjahrsputz, Heckenschnitt Nordseite" required autofocus>
+                               placeholder="{{ t('work_hours.session_form.title_placeholder') }}" required autofocus>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Typ</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.type_label') }}</label>
                         <select name="type" class="form-select">
                             <option value="STANDARD" {% if session and session.type.value == 'STANDARD' %}selected{% endif %}>
-                                Standard (geplant)
+                                {{ t('work_hours.session_form.type_standard') }}
                             </option>
                             <option value="SPECIAL" {% if session and session.type.value == 'SPECIAL' %}selected{% endif %}>
-                                Besonders (spontan)
+                                {{ t('work_hours.session_form.type_special') }}
                             </option>
                         </select>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Datum <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.date_label') }} <span class="text-danger">*</span></label>
                         <input type="date" name="date" class="form-control"
                                value="{{ session.date.isoformat() if session else '' }}" required>
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Von</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.time_from_label') }}</label>
                         <input type="time" name="time_from" class="form-control"
                                value="{{ session.time_from if session and session.time_from else '' }}"
                                placeholder="08:00">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Bis</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.time_until_label') }}</label>
                         <input type="time" name="time_until" class="form-control"
                                value="{{ session.time_until if session and session.time_until else '' }}"
                                placeholder="12:00">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Max. Teilnehmer</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.max_participants_label') }}</label>
                         <input type="number" name="max_participants" class="form-control"
                                value="{{ session.max_participants if session and session.max_participants else '' }}"
-                               placeholder="Leer = unbegrenzt" min="1">
+                               placeholder="{{ t('work_hours.session_form.max_participants_placeholder') }}" min="1">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">Stunden pro Teilnehmer</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.hours_per_participant_label') }}</label>
                         <div class="input-group">
                             <input type="text" name="hours_per_participant" class="form-control"
                                    value="{{ session.hours_per_participant|int if session and session.hours_per_participant else '' }}"
-                                   placeholder="z.B. 4.0">
+                                   placeholder="{{ t('work_hours.session_form.hours_per_participant_placeholder') }}">
                             <span class="input-group-text">h</span>
                         </div>
-                        <div class="form-text">Kann beim Eintragen individuell angepasst werden</div>
+                        <div class="form-text">{{ t('work_hours.session_form.hours_per_participant_hint') }}</div>
                     </div>
                     <div class="col-12">
-                        <label class="form-label fw-semibold">Beschreibung</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.session_form.description_label') }}</label>
                         <textarea name="description" class="form-control" rows="3"
-                                  placeholder="Aufgaben, Werkzeug, Besonderheiten…">{{ session.description if session and session.description else '' }}</textarea>
+                                  placeholder="{{ t('work_hours.session_form.description_placeholder') }}">{{ session.description if session and session.description else '' }}</textarea>
                     </div>
                 </div>
             </div>
@@ -82,10 +82,10 @@
     </div>
     <div class="col-12 d-flex gap-2 justify-content-end">
         <a href="{% if session %}/work-hours/sessions/{{ session.id }}{% else %}/work-hours/{% endif %}"
-           class="btn btn-outline-secondary">Abbrechen</a>
+           class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-lg me-1"></i>
-            {% if session %}Änderungen speichern{% else %}Einsatz anlegen{% endif %}
+            {% if session %}{{ t('work_hours.session_form.save_button_edit') }}{% else %}{{ t('work_hours.session_form.save_button_new') }}{% endif %}
         </button>
     </div>
 </div>

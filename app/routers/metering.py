@@ -30,7 +30,7 @@ from app.models import (
 from app.auth import require_user
 from app.i18n import t_for, translate, DEFAULT_LANGUAGE
 from app.module_flags import require_modul
-from app.zaehler_utils import (
+from app.meter_utils import (
     calculate_consumption, check_monotonicity, total_consumption_for_type, reading_before_year
 )
 

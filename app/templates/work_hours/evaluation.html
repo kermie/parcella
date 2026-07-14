@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Pflichtstunden-Auswertung {{ year }}{% endblock %}
-{% block page_title %}Jahresauswertung {{ year }}{% endblock %}
+{% block title %}{{ t('work_hours.evaluation.title', year=year) }}{% endblock %}
+{% block page_title %}{{ t('work_hours.evaluation.page_title', year=year) }}{% endblock %}
 
 {% block topbar_actions %}
 <div class="d-flex gap-2 align-items-center">
@@ -12,10 +12,10 @@
         </select>
     </form>
     <a href="/work-hours/evaluation/csv?year={{ year }}" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-download me-1"></i>CSV Export
+        <i class="bi bi-download me-1"></i>{{ t('work_hours.evaluation.csv_export_button') }}
     </a>
     <a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Zurück
+        <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
     </a>
 </div>
 {% endblock %}
@@ -25,8 +25,8 @@
 {% if not config %}
 <div class="alert alert-warning d-flex gap-2 align-items-center">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    Keine Pflichtstunden-Konfiguration für {{ year }} vorhanden.
-    <a href="/work-hours/configuration" class="alert-link ms-1">Jetzt anlegen →</a>
+    {{ t('work_hours.evaluation.no_config_warning', year=year) }}
+    <a href="/work-hours/configuration" class="alert-link ms-1">{{ t('work_hours.evaluation.create_now_link') }}</a>
 </div>
 {% else %}
 
@@ -39,27 +39,27 @@
 <div class="row g-3 mb-4">
     <div class="col-sm-3">
         <div class="card text-center p-3">
-            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Erfüllt</div>
+            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('work_hours.evaluation.fulfilled_label') }}</div>
             <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ erfuellt }} / {{ gesamt }}</div>
         </div>
     </div>
     <div class="col-sm-3">
         <div class="card text-center p-3">
-            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Offene Stunden</div>
+            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('work_hours.evaluation.open_hours_label') }}</div>
             <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;">{{ "%.1f"|format(offen_gesamt) }} h</div>
         </div>
     </div>
     <div class="col-sm-3">
         <div class="card text-center p-3">
-            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Schuldbetrag gesamt</div>
+            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('work_hours.evaluation.total_debt_label') }}</div>
             <div style="font-size: 1.8rem; font-weight: 700; color: #92400e;">{{ "%.2f"|format(schuld_gesamt) }} €</div>
         </div>
     </div>
     <div class="col-sm-3">
         <div class="card text-center p-3">
-            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">Modus</div>
+            <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('work_hours.evaluation.mode_label') }}</div>
             <div style="font-size: 1rem; font-weight: 600; color: var(--gv-gruen);">
-                {% if config.mode.value == 'PER_PARCEL' %}Pro Parzelle{% else %}Pro Mitglied{% endif %}
+                {% if config.mode.value == 'PER_PARCEL' %}{{ t('work_hours.evaluation.mode_per_parcel') }}{% else %}{{ t('work_hours.evaluation.mode_per_member') }}{% endif %}
             </div>
             <div class="text-muted" style="font-size: 0.75rem;">{{ config.hours_required | int }}h à {{ "%.2f"|format(config.rate_per_hour_eur|float) }}€</div>
         </div>
@@ -74,18 +74,18 @@
                 <thead>
                     <tr>
                         {% if config.mode.value == 'PER_PARCEL' %}
-                        <th>Parzelle</th>
-                        <th>Pächter</th>
+                        <th>{{ t('work_hours.evaluation.col_parcel') }}</th>
+                        <th>{{ t('work_hours.evaluation.col_tenant') }}</th>
                         {% else %}
-                        <th>Mitglied</th>
+                        <th>{{ t('work_hours.evaluation.col_member') }}</th>
                         {% endif %}
-                        <th>Pflicht</th>
-                        <th>Einsätze</th>
-                        <th>Sponsorship</th>
-                        <th>Gesamt</th>
-                        <th>Offen</th>
-                        <th>Schuldbetrag</th>
-                        <th>Status</th>
+                        <th>{{ t('work_hours.evaluation.col_required') }}</th>
+                        <th>{{ t('work_hours.evaluation.col_sessions') }}</th>
+                        <th>{{ t('work_hours.evaluation.col_sponsorship') }}</th>
+                        <th>{{ t('work_hours.evaluation.col_total') }}</th>
+                        <th>{{ t('work_hours.evaluation.col_open') }}</th>
+                        <th>{{ t('work_hours.evaluation.col_debt') }}</th>
+                        <th>{{ t('work_hours.evaluation.col_status') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,7 +103,7 @@
                             <div style="font-size: 0.85rem;">
                                 <a href="/members/{{ pd.member.id }}" class="text-decoration-none"
                                    style="color: var(--gv-gruen);">{{ pd.member.full_name }}</a>
-                                {% if pd.befreit %}<span class="badge ms-1" style="background: #dbeafe; color: #1e40af; font-size: 0.7rem;">befreit</span>{% endif %}
+                                {% if pd.befreit %}<span class="badge ms-1" style="background: #dbeafe; color: #1e40af; font-size: 0.7rem;">{{ t('work_hours.evaluation.exempt_badge') }}</span>{% endif %}
                                 <span class="text-muted">({{ "%.1f"|format(pd.stand.gesamt) }}h)</span>
                             </div>
                             {% endfor %}
@@ -130,18 +130,18 @@
 
                         <td>
                             {% if z.befreit %}
-                            <span class="badge" style="background: #dbeafe; color: #1e40af;"><i class="bi bi-shield-check me-1"></i>Befreit</span>
+                            <span class="badge" style="background: #dbeafe; color: #1e40af;"><i class="bi bi-shield-check me-1"></i>{{ t('work_hours.evaluation.status_exempt') }}</span>
                             {% elif z.erfuellt %}
-                            <span class="badge badge-aktiv"><i class="bi bi-check-lg me-1"></i>Erfüllt</span>
+                            <span class="badge badge-aktiv"><i class="bi bi-check-lg me-1"></i>{{ t('work_hours.evaluation.status_fulfilled') }}</span>
                             {% else %}
-                            <span class="badge badge-gekuendigt"><i class="bi bi-exclamation me-1"></i>Offen</span>
+                            <span class="badge badge-gekuendigt"><i class="bi bi-exclamation me-1"></i>{{ t('work_hours.evaluation.status_open') }}</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
                     <tr>
                         <td colspan="9" class="text-center text-muted py-4">
-                            Keine Daten vorhanden – sind Parzellen und Mitglieder angelegt?
+                            {{ t('work_hours.evaluation.no_data') }}
                         </td>
                     </tr>
                     {% endfor %}

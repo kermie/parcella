@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}ClubRole bearbeiten{% endblock %}
-{% block page_title %}ClubRole bearbeiten{% endblock %}
+{% block title %}{{ t('work_hours.club_role_form.title') }}{% endblock %}
+{% block page_title %}{{ t('work_hours.club_role_form.title') }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/work-hours/club-roles" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
 </a>
 {% endblock %}
 
@@ -12,16 +12,16 @@
 <div class="row g-3" style="max-width: 560px;">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-pencil me-2"></i>ClubRole bearbeiten</div>
+            <div class="card-header"><i class="bi bi-pencil me-2"></i>{{ t('work_hours.club_role_form.card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/club-roles/{{ role.id }}/edit">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Bezeichnung <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_role_form.name_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control"
                                value="{{ role.name }}" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Beschreibung</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_role_form.description_label') }}</label>
                         <textarea name="description" class="form-control" rows="2">{{ role.description or '' }}</textarea>
                     </div>
                     <div class="mb-3">
@@ -31,26 +31,26 @@
                                    {% if role.hours_exempt %}checked{% endif %}
                                    onchange="document.getElementById('exemption_reason-row').style.display = this.checked ? '' : 'none'">
                             <label class="form-check-label" for="befreit-check">
-                                Von Pflichtstunden befreit
+                                {{ t('work_hours.club_role_form.exempt_checkbox_label') }}
                             </label>
                         </div>
                     </div>
                     <div class="mb-3" id="exemption_reason-row"
                          style="{% if not role.hours_exempt %}display: none;{% endif %}">
-                        <label class="form-label fw-semibold">Befreiungsgrund</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.club_role_form.exemption_reason_label') }}</label>
                         <select name="exemption_reason" class="form-select">
-                            <option value="">– bitte wählen –</option>
-                            <option value="BOARD" {% if role.exemption_reason and role.exemption_reason.value == 'BOARD' %}selected{% endif %}>Vorstandsarbeit</option>
-                            <option value="EXTENDED_BOARD" {% if role.exemption_reason and role.exemption_reason.value == 'EXTENDED_BOARD' %}selected{% endif %}>Erweiterter Vorstand</option>
-                            <option value="ILLNESS" {% if role.exemption_reason and role.exemption_reason.value == 'ILLNESS' %}selected{% endif %}>Krankheit / gesundheitliche Gründe</option>
-                            <option value="AGE" {% if role.exemption_reason and role.exemption_reason.value == 'AGE' %}selected{% endif %}>Altersbefreiung</option>
-                            <option value="OTHER" {% if role.exemption_reason and role.exemption_reason.value == 'OTHER' %}selected{% endif %}>Sonstiger Grund</option>
+                            <option value="">{{ t('work_hours.club_role_form.please_select') }}</option>
+                            <option value="BOARD" {% if role.exemption_reason and role.exemption_reason.value == 'BOARD' %}selected{% endif %}>{{ t('work_hours.club_role_form.reason_board') }}</option>
+                            <option value="EXTENDED_BOARD" {% if role.exemption_reason and role.exemption_reason.value == 'EXTENDED_BOARD' %}selected{% endif %}>{{ t('work_hours.club_role_form.reason_extended_board') }}</option>
+                            <option value="ILLNESS" {% if role.exemption_reason and role.exemption_reason.value == 'ILLNESS' %}selected{% endif %}>{{ t('work_hours.club_role_form.reason_illness') }}</option>
+                            <option value="AGE" {% if role.exemption_reason and role.exemption_reason.value == 'AGE' %}selected{% endif %}>{{ t('work_hours.club_role_form.reason_age') }}</option>
+                            <option value="OTHER" {% if role.exemption_reason and role.exemption_reason.value == 'OTHER' %}selected{% endif %}>{{ t('work_hours.club_role_form.reason_other') }}</option>
                         </select>
                     </div>
                     <div class="d-flex gap-2 justify-content-end">
-                        <a href="/work-hours/club-roles" class="btn btn-outline-secondary">Abbrechen</a>
+                        <a href="/work-hours/club-roles" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i>Änderungen speichern
+                            <i class="bi bi-check-lg me-1"></i>{{ t('work_hours.club_role_form.save_button') }}
                         </button>
                     </div>
                 </form>

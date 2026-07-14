@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Pflichtstunden-Konfiguration{% endblock %}
-{% block page_title %}Pflichtstunden-Konfiguration{% endblock %}
+{% block title %}{{ t('work_hours.configuration.title') }}{% endblock %}
+{% block page_title %}{{ t('work_hours.configuration.title') }}{% endblock %}
 
 {% block topbar_actions %}
 <a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Zurück
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
 </a>
 {% endblock %}
 
@@ -12,16 +12,16 @@
 <div class="row g-3">
     <div class="col-lg-5">
         <div class="card">
-            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>Jahr anlegen / aktualisieren</div>
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.configuration.create_update_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/configuration/new">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Jahr <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration.year_label') }} <span class="text-danger">*</span></label>
                         <input type="number" name="year" class="form-control"
                                value="{{ aktuelles_jahr }}" min="2000" max="2100" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Pflichtstunden gesamt <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration.hours_required_label') }} <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="text" name="hours_required" class="form-control"
                                    placeholder="5.0" required>
@@ -29,32 +29,32 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Stundensatz <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration.rate_label') }} <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <input type="text" name="rate_per_hour_eur" class="form-control"
                                    placeholder="25.00" required>
                             <span class="input-group-text">€</span>
                         </div>
-                        <div class="form-text">Gegenwert pro nicht geleisteter Stunde</div>
+                        <div class="form-text">{{ t('work_hours.configuration.rate_hint') }}</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Abrechnungsmodus</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration.mode_label') }}</label>
                         <select name="mode" class="form-select">
-                            <option value="PER_PARCEL">Pro Pachtvertrag / Parzelle</option>
-                            <option value="PER_MEMBER">Pro Mitglied</option>
+                            <option value="PER_PARCEL">{{ t('work_hours.configuration.mode_per_parcel') }}</option>
+                            <option value="PER_MEMBER">{{ t('work_hours.configuration.mode_per_member') }}</option>
                         </select>
                         <div class="form-text">
-                            <strong>Pro Pachtvertrag:</strong> Alle Pächter einer Parzelle leisten zusammen die Pflichtstunden.<br>
-                            <strong>Pro Mitglied:</strong> Jedes Mitglied leistet individuell.
+                            <strong>{{ t('work_hours.configuration.mode_hint_parcel') }}</strong> {{ t('work_hours.configuration.mode_hint_parcel_text') }}<br>
+                            <strong>{{ t('work_hours.configuration.mode_hint_member') }}</strong> {{ t('work_hours.configuration.mode_hint_member_text') }}
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Notiz</label>
+                        <label class="form-label fw-semibold">{{ t('work_hours.configuration.note_label') }}</label>
                         <input type="text" name="note" class="form-control"
-                               placeholder="z.B. Beschluss HV vom 15.03.2025">
+                               placeholder="{{ t('work_hours.configuration.note_placeholder') }}">
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-check-lg me-1"></i>Speichern
+                        <i class="bi bi-check-lg me-1"></i>{{ t('work_hours.configuration.save_button') }}
                     </button>
                 </form>
             </div>
@@ -63,18 +63,18 @@
 
     <div class="col-lg-7">
         <div class="card">
-            <div class="card-header"><i class="bi bi-clock-history me-2"></i>Historische Konfigurationen</div>
+            <div class="card-header"><i class="bi bi-clock-history me-2"></i>{{ t('work_hours.configuration.history_card_title') }}</div>
             <div class="card-body p-0">
                 <div class="table-responsive">
 <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Jahr</th>
-                                <th>Stunden</th>
-                                <th>Satz</th>
-                                <th>Max. Schuld</th>
-                                <th>Modus</th>
-                                <th>Notiz</th>
+                                <th>{{ t('work_hours.configuration.col_year') }}</th>
+                                <th>{{ t('work_hours.configuration.col_hours') }}</th>
+                                <th>{{ t('work_hours.configuration.col_rate') }}</th>
+                                <th>{{ t('work_hours.configuration.col_max_debt') }}</th>
+                                <th>{{ t('work_hours.configuration.col_mode') }}</th>
+                                <th>{{ t('work_hours.configuration.col_note') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -87,7 +87,7 @@
                                 <td>{{ "%.2f"|format(k.hours_required|float * k.rate_per_hour_eur|float) }} €</td>
                                 <td>
                                     <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen); font-size: 0.72rem;">
-                                        {% if k.mode.value == 'PER_PARCEL' %}Pachtvertrag{% else %}Mitglied{% endif %}
+                                        {% if k.mode.value == 'PER_PARCEL' %}{{ t('work_hours.configuration.mode_short_parcel') }}{% else %}{{ t('work_hours.configuration.mode_short_member') }}{% endif %}
                                     </span>
                                 </td>
                                 <td class="text-muted" style="font-size: 0.85rem;">{{ k.note or '–' }}</td>
@@ -100,7 +100,7 @@
                                           action="/work-hours/configuration/{{ k.id }}/delete"
                                           class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                                onclick="return confirm('Konfiguration für {{ k.year }} wirklich löschen?')">
+                                                onclick="return confirm('{{ t('work_hours.configuration.delete_confirm', year=k.year) }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -109,7 +109,7 @@
                             {% else %}
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-3">
-                                    Noch keine Konfiguration vorhanden.
+                                    {{ t('work_hours.configuration.no_config') }}
                                 </td>
                             </tr>
                             {% endfor %}

@@ -20,6 +20,7 @@ from app.models import (
     Member, MemberParcel, Parcel, ParcelStatus,
 )
 from app.auth import require_user
+from app.i18n import t_for
 
 from app.module_flags import require_modul
 
@@ -174,7 +175,7 @@ async def konfiguration_bearbeiten_seite(
     )
     configuration = result.scalar_one_or_none()
     if not configuration:
-        raise HTTPException(status_code=404, detail="Konfiguration nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.configuration_not_found"))
 
     return templates.TemplateResponse(
         "work_hours/configuration_form.html",
@@ -205,7 +206,7 @@ async def konfiguration_aktualisieren(
     )
     configuration = result.scalar_one_or_none()
     if not configuration:
-        raise HTTPException(status_code=404, detail="Konfiguration nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.configuration_not_found"))
 
     # Falls das Jahr geändert wird: prüfen ob es mit einem anderen Eintrag kollidiert
     if year != configuration.year:
@@ -213,7 +214,7 @@ async def konfiguration_aktualisieren(
         if kollision and kollision.id != configuration_id:
             raise HTTPException(
                 status_code=400,
-                detail=f"Für {year} existiert bereits eine andere Konfiguration."
+                detail=t_for(request, "work_hours.errors.configuration_year_exists", year=year)
             )
 
     configuration.year = year
@@ -337,7 +338,7 @@ async def einsatz_bearbeiten_seite(
     result = await db.execute(select(WorkSession).where(WorkSession.id == session_id))
     session = result.scalar_one_or_none()
     if not session:
-        raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.session_not_found"))
 
     return templates.TemplateResponse(
         "work_hours/session_form.html",
@@ -369,7 +370,7 @@ async def einsatz_aktualisieren(
     result = await db.execute(select(WorkSession).where(WorkSession.id == session_id))
     session = result.scalar_one_or_none()
     if not session:
-        raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.session_not_found"))
 
     session.title = title.strip()
     session.description = description.strip() or None
@@ -422,7 +423,7 @@ async def einsatz_detail(
     )
     session = result.scalar_one_or_none()
     if not session:
-        raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.session_not_found"))
 
     # Alle aktiven Mitglieder für Anmelde-Dropdown
     mitglieder_result = await db.execute(
@@ -631,7 +632,7 @@ async def mitglied_vereinsrolle_bearbeiten_seite(
     )
     assignment = result.scalar_one_or_none()
     if not assignment:
-        raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.assignment_not_found"))
 
     mitglieder_result = await db.execute(
         select(Member)
@@ -674,7 +675,7 @@ async def mitglied_vereinsrolle_aktualisieren(
     )
     assignment = result.scalar_one_or_none()
     if not assignment:
-        raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.assignment_not_found"))
 
     assignment.member_id = member_id
     assignment.club_role_id = club_role_id
@@ -741,7 +742,7 @@ async def vereinsrolle_bearbeiten_seite(
     result = await db.execute(select(ClubRole).where(ClubRole.id == role_id))
     role = result.scalar_one_or_none()
     if not role:
-        raise HTTPException(status_code=404, detail="ClubRole nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.club_role_not_found"))
 
     return templates.TemplateResponse(
         "work_hours/club_role_form.html",
@@ -898,7 +899,7 @@ async def patenschaft_bearbeiten_seite(
     )
     sponsorship = result.scalar_one_or_none()
     if not sponsorship:
-        raise HTTPException(status_code=404, detail="Sponsorship nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.sponsorship_not_found"))
 
     mitglieder_result = await db.execute(
         select(Member)
@@ -941,7 +942,7 @@ async def patenschaft_aktualisieren(
     result = await db.execute(select(Sponsorship).where(Sponsorship.id == sponsorship_id))
     sponsorship = result.scalar_one_or_none()
     if not sponsorship:
-        raise HTTPException(status_code=404, detail="Sponsorship nicht gefunden")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.sponsorship_not_found"))
 
     sponsorship.member_id = member_id.strip() or None
     sponsorship.area = area.strip()
@@ -1122,7 +1123,7 @@ async def auswertung_export_csv(
 
     config = await _get_config_for_year(db, year)
     if not config:
-        raise HTTPException(status_code=404, detail=f"Keine Konfiguration für {year}")
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.no_configuration_for_year", year=year))
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")

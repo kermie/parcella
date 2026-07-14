@@ -5,16 +5,16 @@
 {% block topbar_actions %}
 <div class="d-flex gap-2 flex-wrap">
     <a href="/work-hours/sessions/{{ session.id }}/edit" class="btn btn-sm btn-primary">
-        <i class="bi bi-pencil me-1"></i>Bearbeiten
+        <i class="bi bi-pencil me-1"></i>{{ t('work_hours.session_detail.edit_button') }}
     </a>
     <form method="post" action="/work-hours/sessions/{{ session.id }}/delete" class="d-inline">
         <button type="submit" class="btn btn-sm btn-outline-danger"
-                onclick="return confirm('Einsatz „{{ session.title }}“ wirklich löschen? Alle Teilnahmen gehen verloren.')">
-            <i class="bi bi-trash me-1"></i>Löschen
+                onclick="return confirm('{{ t('work_hours.session_detail.delete_confirm', title=session.title) }}')">
+            <i class="bi bi-trash me-1"></i>{{ t('work_hours.session_detail.delete_button') }}
         </button>
     </form>
     <a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Zurück
+        <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
     </a>
 </div>
 {% endblock %}
@@ -25,35 +25,35 @@
     <!-- Einsatz-Details -->
     <div class="col-lg-4">
         <div class="card">
-            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Details</div>
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>{{ t('work_hours.session_detail.details_card_title') }}</div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-5 text-muted">Typ</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('work_hours.session_detail.type_label') }}</dt>
                     <dd class="col-sm-7">
                         {% if session.type.value == 'STANDARD' %}
-                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">Standard</span>
+                        <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">{{ t('work_hours.session_detail.badge_standard') }}</span>
                         {% else %}
-                        <span class="badge" style="background: #fef3c7; color: #92400e;">Besonders</span>
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('work_hours.session_detail.badge_special') }}</span>
                         {% endif %}
                     </dd>
 
-                    <dt class="col-sm-5 text-muted">Datum</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('work_hours.session_detail.date_label') }}</dt>
                     <dd class="col-sm-7 fw-semibold">{{ session.date.strftime('%d.%m.%Y') }}</dd>
 
-                    <dt class="col-sm-5 text-muted">Uhrzeit</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('work_hours.session_detail.time_label') }}</dt>
                     <dd class="col-sm-7">
                         {% if session.time_from %}
                             {{ session.time_from }}{% if session.time_until %} – {{ session.time_until }}{% endif %}
                         {% else %}–{% endif %}
                     </dd>
 
-                    <dt class="col-sm-5 text-muted">Plätze</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('work_hours.session_detail.slots_label') }}</dt>
                     <dd class="col-sm-7">
                         {{ session.participations | length }}
                         {% if session.max_participants %}/ {{ session.max_participants }}{% endif %}
                     </dd>
 
-                    <dt class="col-sm-5 text-muted">Std./Person</dt>
+                    <dt class="col-sm-5 text-muted">{{ t('work_hours.session_detail.hours_per_person_label') }}</dt>
                     <dd class="col-sm-7">
                         {% if session.hours_per_participant %}
                         {{ session.hours_per_participant | int }} h
@@ -73,12 +73,12 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-people me-2"></i>Teilnehmer</span>
+                <span><i class="bi bi-people me-2"></i>{{ t('work_hours.session_detail.participants_card_title') }}</span>
                 <span class="text-muted" style="font-size: 0.85rem;">
                     {{ session.participations | selectattr('status.value', 'eq', 'ATTENDED') | list | length }}
-                    erschienen ·
+                    {{ t('work_hours.session_detail.attended_suffix') }} ·
                     {{ session.participations | selectattr('status.value', 'eq', 'REGISTERED') | list | length }}
-                    angemeldet
+                    {{ t('work_hours.session_detail.registered_suffix') }}
                 </span>
             </div>
             <div class="card-body p-0">
@@ -86,51 +86,51 @@
 <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Mitglied</th>
-                                <th>Status</th>
-                                <th>Stunden</th>
-                                <th>Notiz</th>
+                                <th>{{ t('work_hours.session_detail.col_member') }}</th>
+                                <th>{{ t('work_hours.session_detail.col_status') }}</th>
+                                <th>{{ t('work_hours.session_detail.col_hours') }}</th>
+                                <th>{{ t('work_hours.session_detail.col_note') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for t in session.participations | sort(attribute='mitglied.last_name') %}
+                            {% for t_p in session.participations | sort(attribute='mitglied.last_name') %}
                             <tr>
                                 <td>
-                                    <a href="/members/{{ t.member.id }}" class="text-decoration-none"
-                                       style="color: var(--gv-gruen);">{{ t.member.full_name }}</a>
+                                    <a href="/members/{{ t_p.member.id }}" class="text-decoration-none"
+                                       style="color: var(--gv-gruen);">{{ t_p.member.full_name }}</a>
                                 </td>
                                 <td>
                                     <form method="post"
-                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
+                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t_p.id }}/status"
                                           class="d-flex gap-1 align-items-center">
                                         <select name="status" class="form-select form-select-sm"
                                                 style="width: auto;" onchange="this.form.submit()">
-                                            <option value="REGISTERED" {% if t.status.value == 'REGISTERED' %}selected{% endif %}>Angemeldet</option>
-                                            <option value="ATTENDED" {% if t.status.value == 'ATTENDED' %}selected{% endif %}>Erschienen</option>
-                                            <option value="NO_SHOW" {% if t.status.value == 'NO_SHOW' %}selected{% endif %}>Nicht erschienen</option>
+                                            <option value="REGISTERED" {% if t_p.status.value == 'REGISTERED' %}selected{% endif %}>{{ t('work_hours.session_detail.status_registered') }}</option>
+                                            <option value="ATTENDED" {% if t_p.status.value == 'ATTENDED' %}selected{% endif %}>{{ t('work_hours.session_detail.status_attended') }}</option>
+                                            <option value="NO_SHOW" {% if t_p.status.value == 'NO_SHOW' %}selected{% endif %}>{{ t('work_hours.session_detail.status_no_show') }}</option>
                                         </select>
                                     </form>
                                 </td>
                                 <td>
                                     <form method="post"
-                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/status"
+                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t_p.id }}/status"
                                           class="d-flex gap-1 align-items-center">
-                                        <input type="hidden" name="status" value="{{ t.status.value }}">
+                                        <input type="hidden" name="status" value="{{ t_p.status.value }}">
                                         <div class="input-group input-group-sm" style="width: 90px;">
                                             <input type="text" name="hours_completed" class="form-control form-control-sm"
-                                                   value="{{ t.hours_completed or session.hours_per_participant or '' }}"
+                                                   value="{{ t_p.hours_completed or session.hours_per_participant or '' }}"
                                                    placeholder="h">
                                             <button type="submit" class="btn btn-sm btn-outline-secondary px-1">✓</button>
                                         </div>
                                     </form>
                                 </td>
-                                <td class="text-muted" style="font-size: 0.85rem;">{{ t.note or '' }}</td>
+                                <td class="text-muted" style="font-size: 0.85rem;">{{ t_p.note or '' }}</td>
                                 <td class="text-end">
                                     <form method="post"
-                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t.id }}/remove">
+                                          action="/work-hours/sessions/{{ session.id }}/participants/{{ t_p.id }}/remove">
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                                onclick="return confirm('Teilnahme entfernen?')">
+                                                onclick="return confirm('{{ t('work_hours.session_detail.remove_participation_confirm') }}')">
                                             <i class="bi bi-x-lg"></i>
                                         </button>
                                     </form>
@@ -139,7 +139,7 @@
                             {% else %}
                             <tr>
                                 <td colspan="5" class="text-center text-muted py-3">
-                                    Noch keine Teilnehmer eingetragen.
+                                    {{ t('work_hours.session_detail.no_participants') }}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -154,7 +154,7 @@
                       action="/work-hours/sessions/{{ session.id }}/participants/add"
                       class="d-flex gap-2 flex-wrap align-items-center">
                     <select name="member_id" class="form-select form-select-sm" style="max-width: 220px;" required>
-                        <option value="">Mitglied wählen…</option>
+                        <option value="">{{ t('work_hours.session_detail.select_member_placeholder') }}</option>
                         {% for m in alle_mitglieder %}
                         {% if m.id not in bereits_eingetragen %}
                         <option value="{{ m.id }}">{{ m.full_name }}</option>
@@ -162,9 +162,9 @@
                         {% endfor %}
                     </select>
                     <select name="status" class="form-select form-select-sm" style="width: auto;">
-                        <option value="ATTENDED">Erschienen</option>
-                        <option value="REGISTERED">Angemeldet</option>
-                        <option value="NO_SHOW">Nicht erschienen</option>
+                        <option value="ATTENDED">{{ t('work_hours.session_detail.status_attended') }}</option>
+                        <option value="REGISTERED">{{ t('work_hours.session_detail.status_registered') }}</option>
+                        <option value="NO_SHOW">{{ t('work_hours.session_detail.status_no_show') }}</option>
                     </select>
                     <div class="input-group input-group-sm" style="width: 100px;">
                         <input type="text" name="hours_completed" class="form-control"
@@ -172,7 +172,7 @@
                         <span class="input-group-text">h</span>
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i>Hinzufügen
+                        <i class="bi bi-plus-lg me-1"></i>{{ t('work_hours.session_detail.add_button') }}
                     </button>
                 </form>
             </div>
