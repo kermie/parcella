@@ -313,7 +313,12 @@
       "no_parcels": "Žiadne pridelené parcely",
       "select_parcel_placeholder": "Vyberte parcelu…",
       "assign_button": "Priradiť",
-      "notes_header": "Poznámky"
+      "notes_header": "Poznámky",
+      "danger_zone_header": "Nebezpečná zóna",
+      "danger_zone_text": "Označí {name} ako zmazaného. Člen zmizne zo zoznamov a výsledkov hľadania, ale dáta zostanú v databáze -- existujúce priradenia k záhradkám, tikety, pracovné zmeny atď. zostávajú bez zmeny. Pre bežné ukončenie členstva nastavte v editačnom formulári \"Člen do\" namiesto mazania.",
+      "delete_confirm": "Naozaj zmazať {name}?",
+      "button_delete": "Zmazať člena",
+      "deleted_message": "{name} zmazaný."
     }
   },
   "parcels": {

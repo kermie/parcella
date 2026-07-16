@@ -3,7 +3,7 @@ Mitglieder-Router: Liste, Anlegen, Bearbeiten, CSV-Import/Export.
 """
 import csv
 import io
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
@@ -14,7 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
 from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
-from app.auth import get_current_user, require_user
+from app.auth import get_current_user, require_user, require_admin
 from app.i18n import t_for
 
 router = APIRouter(prefix="/members", tags=["members"])
@@ -228,6 +228,33 @@ async def mitglied_aktualisieren(
 
     await db.commit()
     return RedirectResponse(f"/members/{member_id}", status_code=302)
+
+
+@router.post("/{member_id}/delete")
+async def mitglied_loeschen(
+    member_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Soft-delete: setzt deleted_at, entfernt das Member aus Listen/Suche.
+    Bereits erfasste Parzellenzuordnungen, Tickets, Arbeitseinsätze usw.
+    bleiben unverändert -- kein FK-Cascade, da kein echtes DELETE.
+    Admin/Board only (gleiche Berechtigungsstufe wie require_admin
+    anderswo im Projekt, siehe app/auth.py)."""
+    await require_admin(request, db)
+    member = await _get_member_mit_details(db, member_id)
+
+    if not member:
+        raise HTTPException(status_code=404, detail="Member nicht gefunden")
+
+    member.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+
+    meldung = t_for(request, "members.detail.deleted_message", name=member.full_name)
+    import urllib.parse
+    return RedirectResponse(
+        f"/members/?meldung={urllib.parse.quote(meldung)}", status_code=302
+    )
 
 
 # ---------------------------------------------------------------------------

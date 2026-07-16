@@ -313,7 +313,12 @@
       "no_parcels": "Aucune parcelle attribuée",
       "select_parcel_placeholder": "Choisir une parcelle…",
       "assign_button": "Attribuer",
-      "notes_header": "Notes"
+      "notes_header": "Notes",
+      "danger_zone_header": "Zone de danger",
+      "danger_zone_text": "Marque {name} comme supprimé. Le membre disparaît des listes et des résultats de recherche, mais les données restent dans la base -- les affectations de parcelles, tickets, sessions de travail existants, etc. restent inchangés. Pour une fin d'adhésion normale, définissez \"Membre jusqu'au\" dans le formulaire d'édition plutôt que de supprimer.",
+      "delete_confirm": "Vraiment supprimer {name} ?",
+      "button_delete": "Supprimer le membre",
+      "deleted_message": "{name} supprimé."
     }
   },
   "parcels": {

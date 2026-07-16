@@ -313,7 +313,12 @@
       "no_parcels": "Geen percelen toegewezen",
       "select_parcel_placeholder": "Kies perceel…",
       "assign_button": "Toewijzen",
-      "notes_header": "Notities"
+      "notes_header": "Notities",
+      "danger_zone_header": "Gevarenzone",
+      "danger_zone_text": "Markeert {name} als verwijderd. Het lid verdwijnt uit lijsten en zoekresultaten, maar de gegevens blijven in de database -- bestaande perceeltoewijzingen, tickets, werksessies enz. blijven ongewijzigd. Voor een normale beëindiging van het lidmaatschap stelt u \"Lid tot\" in het bewerkformulier in plaats van te verwijderen.",
+      "delete_confirm": "Echt {name} verwijderen?",
+      "button_delete": "Lid verwijderen",
+      "deleted_message": "{name} verwijderd."
     }
   },
   "parcels": {

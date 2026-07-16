@@ -313,7 +313,12 @@
       "no_parcels": "Brak przypisanych działek",
       "select_parcel_placeholder": "Wybierz działkę…",
       "assign_button": "Przypisz",
-      "notes_header": "Notatki"
+      "notes_header": "Notatki",
+      "danger_zone_header": "Strefa niebezpieczna",
+      "danger_zone_text": "Oznacza {name} jako usuniętego. Członek znika z list i wyników wyszukiwania, ale dane pozostają w bazie danych -- istniejące przypisania do działek, zgłoszenia, wpisy prac itd. pozostają bez zmian. Do zwykłego zakończenia członkostwa ustaw \"Członek do\" w formularzu edycji zamiast usuwać.",
+      "delete_confirm": "Czy na pewno usunąć {name}?",
+      "button_delete": "Usuń członka",
+      "deleted_message": "{name} usunięty."
     }
   },
   "parcels": {

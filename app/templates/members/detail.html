@@ -197,5 +197,25 @@
     </div>
     {% endif %}
 
+    <!-- Gefahrenzone -->
+    {% if user.role.value in ['admin', 'board'] %}
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('members.detail.danger_zone_header') }}</div>
+            <div class="card-body">
+                <p class="text-muted mb-3" style="font-size: 0.88rem;">
+                    {{ t('members.detail.danger_zone_text', name=member.full_name) }}
+                </p>
+                <form method="post" action="/members/{{ member.id }}/delete"
+                      onsubmit="return confirm('{{ t('members.detail.delete_confirm', name=member.full_name) }}')">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>{{ t('members.detail.button_delete') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

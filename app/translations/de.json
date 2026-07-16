@@ -313,7 +313,12 @@
       "no_parcels": "Keine Parzellen zugeordnet",
       "select_parcel_placeholder": "Parzelle wählen…",
       "assign_button": "Zuordnen",
-      "notes_header": "Notizen"
+      "notes_header": "Notizen",
+      "danger_zone_header": "Gefahrenzone",
+      "danger_zone_text": "Markiert {name} als gelöscht. Das Mitglied verschwindet aus Listen und Suchergebnissen, die Daten bleiben aber in der Datenbank erhalten -- bereits erfasste Parzellenzuordnungen, Tickets, Arbeitseinsätze usw. bleiben unverändert. Für ein normales Vereinsende (Kündigung) \"Mitglied bis\" im Bearbeiten-Formular setzen statt zu löschen.",
+      "delete_confirm": "{name} wirklich löschen?",
+      "button_delete": "Mitglied löschen",
+      "deleted_message": "{name} gelöscht."
     }
   },
   "parcels": {

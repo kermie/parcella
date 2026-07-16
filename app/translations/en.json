@@ -313,7 +313,12 @@
       "no_parcels": "No parcels assigned",
       "select_parcel_placeholder": "Choose parcel…",
       "assign_button": "Assign",
-      "notes_header": "Notes"
+      "notes_header": "Notes",
+      "danger_zone_header": "Danger Zone",
+      "danger_zone_text": "Marks {name} as deleted. The member disappears from lists and search results, but the data stays in the database -- existing parcel assignments, tickets, work sessions, etc. remain untouched. For a normal end of membership, set \"Member until\" in the edit form instead of deleting.",
+      "delete_confirm": "Really delete {name}?",
+      "button_delete": "Delete Member",
+      "deleted_message": "{name} deleted."
     }
   },
   "parcels": {
