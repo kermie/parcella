@@ -535,8 +535,8 @@ class TicketCreate(BaseModel):
 
 
 class TicketStatusUpdate(BaseModel):
-    status: str = Field(..., description="UNASSIGNED, ASSIGNED, DEFERRED oder CLOSED")
-    deferred_until: Optional[date] = None
+    status: str = Field(..., description="ACTIVE, ASSIGNED, WAITING, POSTPONED, CLOSED oder DELETED")
+    postponed_until: Optional[date] = None
 
 
 class TicketAssignmentUpdate(BaseModel):
@@ -557,7 +557,7 @@ class TicketOut(BaseModel):
     subject: str
     status: str
     assigned_to_id: Optional[str] = None
-    deferred_until: Optional[date] = None
+    postponed_until: Optional[date] = None
     member_id: Optional[str] = None
     sender_email: str
     sender_name: Optional[str] = None

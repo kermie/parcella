@@ -342,10 +342,13 @@ async def process_incoming_mails(db: AsyncSession) -> int:
         ticket = await _find_matching_ticket(db, mail)
 
         if ticket:
-            # Geschlossenes Ticket bei neuer Antwort automatisch wieder öffnen
-            if ticket.status == TicketStatus.CLOSED:
-                ticket.status = TicketStatus.ASSIGNED if ticket.assigned_to_id else TicketStatus.UNASSIGNED
+            # Geschlossenes, zurückgestelltes oder auf Antwort wartendes
+            # Ticket bei neuer Antwort automatisch wieder aktivieren --
+            # eine Antwort des Absenders beendet jede Form von "wir warten".
+            if ticket.status in (TicketStatus.CLOSED, TicketStatus.POSTPONED, TicketStatus.WAITING):
+                ticket.status = TicketStatus.ASSIGNED if ticket.assigned_to_id else TicketStatus.ACTIVE
                 ticket.closed_at = None
+                ticket.postponed_until = None
         else:
             # Spam-Prüfung nur für neue Tickets, nicht für Antworten auf
             # bestehende – spart unnötige (ggf. kostenpflichtige) externe Aufrufe.

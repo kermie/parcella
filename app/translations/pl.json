@@ -51,7 +51,6 @@
       "title": "Zgłoszenia",
       "fetch_inbox_now": "Pobierz skrzynkę teraz",
       "new_ticket": "Nowe zgłoszenie",
-      "due_notice": "{count} odroczone zgłoszenie/-a jest/są ponownie aktywne.",
       "filter_active": "Aktywne",
       "filter_mine": "Moje",
       "filter_spam": "Podejrzane",
@@ -65,13 +64,24 @@
       "col_assigned_to": "Przypisane do",
       "col_created": "Utworzono",
       "spam_suspected_badge": "Podejrzenie spamu",
-      "status_unassigned": "Nieprzypisane",
       "status_assigned": "Przypisane",
-      "status_deferred": "Odroczone",
-      "status_deferred_due_suffix": "(termin minął!)",
       "status_closed": "Zamknięte",
       "empty_state": "Nie znaleziono zgłoszeń.",
-      "count_suffix": "zgłoszenie/-a"
+      "count_suffix": "zgłoszenie/-a",
+      "reactivated_notice": "{count} odroczone zgłoszenie/-a jest/są teraz ponownie aktywne.",
+      "filter_waiting": "Oczekujące",
+      "filter_postponed": "Odroczone",
+      "status_active": "Aktywny",
+      "status_waiting": "Oczekujące",
+      "status_postponed": "Odroczone",
+      "status_deleted": "Usunięte",
+      "bulk_selected_count": "Wybrano {count}",
+      "bulk_none_selected": "Nie wybrano żadnego zgłoszenia",
+      "bulk_status_placeholder": "Zmień status na…",
+      "bulk_apply_button": "Zastosuj",
+      "bulk_unassign_option": "– Cofnij przypisanie –",
+      "bulk_delete_confirm": "Czy na pewno oznaczyć {count} zgłoszenie/-a jako usunięte?",
+      "bulk_postponed_date_required": "Proszę podać datę dla statusu „Odroczone”."
     },
     "form": {
       "title": "Nowe zgłoszenie",
@@ -97,9 +107,7 @@
       "spam_score_label": "Wynik:",
       "spam_not_spam_button": "To nie spam – zdejmij podejrzenie",
       "status_header": "Status",
-      "status_deferred_until_label": "Odroczone do",
       "status_save_button": "Zapisz status",
-      "status_overdue_notice": "Odroczenie wygasło – zgłoszenie ponownie aktywne.",
       "assignment_header": "Przypisanie",
       "assignment_unassigned_option": "– nieprzypisane –",
       "assignment_save_button": "Przypisz",
@@ -108,7 +116,8 @@
       "member_none_assigned": "Nie przypisano żadnego członka.",
       "member_no_assignment_option": "– brak przypisania –",
       "member_save_button": "Zapisz przypisanie",
-      "member_multiple_candidates_help": "Kilku członków korzysta z tego adresu e-mail – proszę wybrać ręcznie."
+      "member_multiple_candidates_help": "Kilku członków korzysta z tego adresu e-mail – proszę wybrać ręcznie.",
+      "status_postponed_until_label": "Odroczone do"
     }
   },
   "auth": {

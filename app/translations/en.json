@@ -51,7 +51,6 @@
       "title": "Tickets",
       "fetch_inbox_now": "Fetch inbox now",
       "new_ticket": "New ticket",
-      "due_notice": "{count} deferred ticket(s) are due again.",
       "filter_active": "Active",
       "filter_mine": "Mine",
       "filter_spam": "Suspected spam",
@@ -65,13 +64,24 @@
       "col_assigned_to": "Assigned to",
       "col_created": "Created",
       "spam_suspected_badge": "Suspected spam",
-      "status_unassigned": "Unassigned",
       "status_assigned": "Assigned",
-      "status_deferred": "Deferred",
-      "status_deferred_due_suffix": "(due!)",
       "status_closed": "Closed",
       "empty_state": "No tickets found.",
-      "count_suffix": "ticket(s)"
+      "count_suffix": "ticket(s)",
+      "reactivated_notice": "{count} postponed ticket(s) just became active again.",
+      "filter_waiting": "Waiting",
+      "filter_postponed": "Postponed",
+      "status_active": "Active",
+      "status_waiting": "Waiting",
+      "status_postponed": "Postponed",
+      "status_deleted": "Deleted",
+      "bulk_selected_count": "{count} selected",
+      "bulk_none_selected": "No tickets selected",
+      "bulk_status_placeholder": "Change status to…",
+      "bulk_apply_button": "Apply",
+      "bulk_unassign_option": "– Unassign –",
+      "bulk_delete_confirm": "Really mark {count} ticket(s) as deleted?",
+      "bulk_postponed_date_required": "Please provide a date for \"Postponed\"."
     },
     "form": {
       "title": "New ticket",
@@ -97,9 +107,7 @@
       "spam_score_label": "Score:",
       "spam_not_spam_button": "Not spam – clear suspicion",
       "status_header": "Status",
-      "status_deferred_until_label": "Deferred until",
       "status_save_button": "Save status",
-      "status_overdue_notice": "The deferral period has ended – active again.",
       "assignment_header": "Assignment",
       "assignment_unassigned_option": "– unassigned –",
       "assignment_save_button": "Assign",
@@ -108,7 +116,8 @@
       "member_none_assigned": "No member linked.",
       "member_no_assignment_option": "– no assignment –",
       "member_save_button": "Save assignment",
-      "member_multiple_candidates_help": "Multiple members use this email address – please choose manually."
+      "member_multiple_candidates_help": "Multiple members use this email address – please choose manually.",
+      "status_postponed_until_label": "Postponed until"
     }
   },
   "auth": {

@@ -51,7 +51,6 @@
       "title": "Tickets",
       "fetch_inbox_now": "Inbox nu ophalen",
       "new_ticket": "Nieuw ticket",
-      "due_notice": "{count} uitgesteld(e) ticket(s) zijn weer actueel.",
       "filter_active": "Actief",
       "filter_mine": "Mijn",
       "filter_spam": "Vermoedelijke spam",
@@ -65,13 +64,24 @@
       "col_assigned_to": "Toegewezen aan",
       "col_created": "Aangemaakt",
       "spam_suspected_badge": "Vermoedelijke spam",
-      "status_unassigned": "Niet toegewezen",
       "status_assigned": "Toegewezen",
-      "status_deferred": "Uitgesteld",
-      "status_deferred_due_suffix": "(verval!)",
       "status_closed": "Gesloten",
       "empty_state": "Geen tickets gevonden.",
-      "count_suffix": "ticket(s)"
+      "count_suffix": "ticket(s)",
+      "reactivated_notice": "{count} uitgestelde ticket(s) is/zijn nu weer actief.",
+      "filter_waiting": "Wachtend",
+      "filter_postponed": "Uitgesteld",
+      "status_active": "Actief",
+      "status_waiting": "Wachtend",
+      "status_postponed": "Uitgesteld",
+      "status_deleted": "Verwijderd",
+      "bulk_selected_count": "{count} geselecteerd",
+      "bulk_none_selected": "Geen tickets geselecteerd",
+      "bulk_status_placeholder": "Status wijzigen naar…",
+      "bulk_apply_button": "Toepassen",
+      "bulk_unassign_option": "– Toewijzing opheffen –",
+      "bulk_delete_confirm": "Echt {count} ticket(s) als verwijderd markeren?",
+      "bulk_postponed_date_required": "Geef een datum op voor status \"Uitgesteld\"."
     },
     "form": {
       "title": "Nieuw ticket",
@@ -97,9 +107,7 @@
       "spam_score_label": "Score:",
       "spam_not_spam_button": "Geen spam – vermoeden opheffen",
       "status_header": "Status",
-      "status_deferred_until_label": "Uitgesteld tot",
       "status_save_button": "Status opslaan",
-      "status_overdue_notice": "De uitstelperiode is verstreken – weer actief.",
       "assignment_header": "Toewijzing",
       "assignment_unassigned_option": "– niet toegewezen –",
       "assignment_save_button": "Toewijzen",
@@ -108,7 +116,8 @@
       "member_none_assigned": "Geen lid gekoppeld.",
       "member_no_assignment_option": "– geen koppeling –",
       "member_save_button": "Koppeling opslaan",
-      "member_multiple_candidates_help": "Meerdere leden gebruiken dit e-mailadres – kies handmatig."
+      "member_multiple_candidates_help": "Meerdere leden gebruiken dit e-mailadres – kies handmatig.",
+      "status_postponed_until_label": "Uitgesteld tot"
     }
   },
   "auth": {

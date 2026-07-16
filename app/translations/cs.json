@@ -51,7 +51,6 @@
       "title": "Tikety",
       "fetch_inbox_now": "Načíst doručenou poštu nyní",
       "new_ticket": "Nový ticket",
-      "due_notice": "{count} odložený(ých) ticket(ů) je opět splatných.",
       "filter_active": "Aktivní",
       "filter_mine": "Moje",
       "filter_spam": "Podezřelý spam",
@@ -65,13 +64,24 @@
       "col_assigned_to": "Přiděleno komu",
       "col_created": "Vytvořeno",
       "spam_suspected_badge": "Podezřelý spam",
-      "status_unassigned": "Nepřiděleno",
       "status_assigned": "Přiděleno",
-      "status_deferred": "Odloženo",
-      "status_deferred_due_suffix": "(splatné!)",
       "status_closed": "Uzavřeno",
       "empty_state": "Nebyly nalezeny žádné tikety.",
-      "count_suffix": "ticket(y)"
+      "count_suffix": "ticket(y)",
+      "reactivated_notice": "{count} odložených tiketů je nyní opět aktivních.",
+      "filter_waiting": "Čekající",
+      "filter_postponed": "Odloženo",
+      "status_active": "Aktivní",
+      "status_waiting": "Čekající",
+      "status_postponed": "Odloženo",
+      "status_deleted": "Smazáno",
+      "bulk_selected_count": "Vybráno {count}",
+      "bulk_none_selected": "Není vybrán žádný tiket",
+      "bulk_status_placeholder": "Změnit stav na…",
+      "bulk_apply_button": "Použít",
+      "bulk_unassign_option": "– Zrušit přiřazení –",
+      "bulk_delete_confirm": "Opravdu označit {count} tiket(y) jako smazané?",
+      "bulk_postponed_date_required": "Zadejte prosím datum pro stav „Odloženo“."
     },
     "form": {
       "title": "Nový ticket",
@@ -97,9 +107,7 @@
       "spam_score_label": "Skóre:",
       "spam_not_spam_button": "Není spam – zrušit podezření",
       "status_header": "Stav",
-      "status_deferred_until_label": "Odloženo do",
       "status_save_button": "Uložit stav",
-      "status_overdue_notice": "Období odkladu skončilo – opět aktivní.",
       "assignment_header": "Přidělení",
       "assignment_unassigned_option": "– nepřiděleno –",
       "assignment_save_button": "Přidělit",
@@ -108,7 +116,8 @@
       "member_none_assigned": "Žádný člen není propojen.",
       "member_no_assignment_option": "– žádné propojení –",
       "member_save_button": "Uložit propojení",
-      "member_multiple_candidates_help": "Tuto e-mailovou adresu používá více členů – vyberte ručně."
+      "member_multiple_candidates_help": "Tuto e-mailovou adresu používá více členů – vyberte ručně.",
+      "status_postponed_until_label": "Odloženo do"
     }
   },
   "auth": {

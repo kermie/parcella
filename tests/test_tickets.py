@@ -31,7 +31,7 @@ async def test_ticket_anlegen_und_automatischer_mitglied_abgleich(client, admin_
     )).json()
 
     assert ticket["member_id"] == mitglied["id"]
-    assert ticket["status"] == "UNASSIGNED"
+    assert ticket["status"] == "ACTIVE"
     assert len(ticket["messages"]) == 1
 
 
@@ -58,7 +58,7 @@ async def test_ticket_zuweisung_aendert_status(client, admin_user):
         json={"assigned_to_id": None},
         headers=headers,
     )).json()
-    assert aufgehoben["status"] == "UNASSIGNED"
+    assert aufgehoben["status"] == "ACTIVE"
 
 
 async def test_ticket_status_zurueckgestellt_erfordert_datum(client, admin_user):
@@ -73,14 +73,14 @@ async def test_ticket_status_zurueckgestellt_erfordert_datum(client, admin_user)
 
     ohne_datum = await client.put(
         f"/api/v1/tickets/{ticket['id']}/status",
-        json={"status": "DEFERRED"},
+        json={"status": "POSTPONED"},
         headers=headers,
     )
     assert ohne_datum.status_code == 422
 
     mit_datum = await client.put(
         f"/api/v1/tickets/{ticket['id']}/status",
-        json={"status": "DEFERRED", "deferred_until": "2030-01-01"},
+        json={"status": "POSTPONED", "postponed_until": "2030-01-01"},
         headers=headers,
     )
     assert mit_datum.status_code == 200

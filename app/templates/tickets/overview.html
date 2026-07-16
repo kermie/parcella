@@ -23,10 +23,10 @@
 </div>
 {% endif %}
 
-{% if due_count > 0 %}
+{% if reaktiviert_count > 0 %}
 <div class="alert alert-warning d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-alarm-fill"></i>
-    {{ t('tickets.overview.due_notice', count=due_count) }}
+    {{ t('tickets.overview.reactivated_notice', count=reaktiviert_count) }}
 </div>
 {% endif %}
 
@@ -36,6 +36,12 @@
             <div class="btn-group btn-group-sm" role="group">
                 <a href="/tickets/?filter=aktiv" class="btn btn-{{ 'primary' if filter == 'aktiv' else 'outline-secondary' }}">{{ t('tickets.overview.filter_active') }}</a>
                 <a href="/tickets/?filter=mir" class="btn btn-{{ 'primary' if filter == 'mir' else 'outline-secondary' }}">{{ t('tickets.overview.filter_mine') }}</a>
+                <a href="/tickets/?filter=wartend" class="btn btn-{{ 'primary' if filter == 'wartend' else 'outline-secondary' }}">
+                    {{ t('tickets.overview.filter_waiting') }} {% if waiting_count > 0 %}<span class="badge bg-secondary ms-1">{{ waiting_count }}</span>{% endif %}
+                </a>
+                <a href="/tickets/?filter=zurueckgestellt" class="btn btn-{{ 'primary' if filter == 'zurueckgestellt' else 'outline-secondary' }}">
+                    {{ t('tickets.overview.filter_postponed') }} {% if postponed_count > 0 %}<span class="badge bg-secondary ms-1">{{ postponed_count }}</span>{% endif %}
+                </a>
                 <a href="/tickets/?filter=spam" class="btn btn-{{ 'primary' if filter == 'spam' else 'outline-secondary' }}">
                     {{ t('tickets.overview.filter_spam') }} {% if spam_count > 0 %}<span class="badge bg-danger ms-1">{{ spam_count }}</span>{% endif %}
                 </a>
@@ -50,75 +56,184 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-<table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>{{ t('tickets.overview.col_subject') }}</th>
-                        <th>{{ t('tickets.overview.col_sender') }}</th>
-                        <th>{{ t('tickets.overview.col_status') }}</th>
-                        <th>{{ t('tickets.overview.col_assigned_to') }}</th>
-                        <th>{{ t('tickets.overview.col_created') }}</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t_row in tickets %}
-                    <tr class="{% if t_row.is_due %}table-warning{% elif t_row.spam_suspected %}table-danger{% endif %}">
-                        <td>
-                            <a href="/tickets/{{ t_row.id }}" class="text-decoration-none fw-semibold"
-                               style="color: var(--gv-gruen);">{{ t_row.subject }}</a>
-                            {% if t_row.spam_suspected %}
-                            <span class="badge bg-danger ms-1" style="font-size: 0.68rem;">{{ t('tickets.overview.spam_suspected_badge') }}</span>
-                            {% endif %}
-                            {% if t_row.member %}
-                            <div class="text-muted" style="font-size: 0.78rem;">
-                                <i class="bi bi-person"></i> {{ t_row.member.full_name }}
-                            </div>
-                            {% endif %}
-                        </td>
-                        <td class="text-muted" style="font-size: 0.85rem;">
-                            {{ t_row.sender_name or t_row.sender_email }}
-                        </td>
-                        <td>
-                            {% if t_row.status.value == 'UNASSIGNED' %}
-                            <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('tickets.overview.status_unassigned') }}</span>
-                            {% elif t_row.status.value == 'ASSIGNED' %}
-                            <span class="badge badge-aktiv">{{ t('tickets.overview.status_assigned') }}</span>
-                            {% elif t_row.status.value == 'DEFERRED' %}
-                            <span class="badge" style="background: #fef3c7; color: #92400e;">
-                                {{ t('tickets.overview.status_deferred') }}{% if t_row.is_due %} {{ t('tickets.overview.status_deferred_due_suffix') }}{% endif %}
-                            </span>
-                            {% else %}
-                            <span class="badge" style="background: #f3f4f6; color: #6b7280;">{{ t('tickets.overview.status_closed') }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ t_row.assigned_to.name if t_row.assigned_to else '–' }}</td>
-                        <td class="text-muted" style="font-size: 0.82rem;">{{ t_row.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
-                        <td class="text-end">
-                            <a href="/tickets/{{ t_row.id }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox d-block mb-2" style="font-size: 1.5rem;"></i>
-                            {{ t('tickets.overview.empty_state') }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<form method="post" id="bulk-form">
+    <input type="hidden" name="filter" value="{{ filter }}">
+
+    <!-- Massenbearbeitung -->
+    <div class="card mb-3">
+        <div class="card-body py-2 d-flex flex-wrap gap-2 align-items-center">
+            <span class="text-muted" style="font-size: 0.85rem; min-width: 130px;" id="bulk-selected-count">
+                {{ t('tickets.overview.bulk_none_selected') }}
+            </span>
+
+            <select name="status_neu" id="bulk-status-select" class="form-select form-select-sm" style="max-width: 180px;">
+                <option value="">{{ t('tickets.overview.bulk_status_placeholder') }}</option>
+                <option value="ACTIVE">{{ t('tickets.overview.status_active') }}</option>
+                <option value="ASSIGNED">{{ t('tickets.overview.status_assigned') }}</option>
+                <option value="WAITING">{{ t('tickets.overview.status_waiting') }}</option>
+                <option value="POSTPONED">{{ t('tickets.overview.status_postponed') }}</option>
+                <option value="CLOSED">{{ t('tickets.overview.status_closed') }}</option>
+                <option value="DELETED">{{ t('tickets.overview.status_deleted') }}</option>
+            </select>
+            <input type="date" name="postponed_until" id="bulk-postponed-date"
+                   class="form-control form-control-sm" style="max-width: 150px; display: none;">
+            <button type="submit" formaction="/tickets/bulk/status" id="bulk-status-apply"
+                    class="btn btn-sm btn-outline-primary" disabled>
+                {{ t('tickets.overview.bulk_apply_button') }}
+            </button>
+
+            <span class="text-muted d-none d-md-inline">|</span>
+
+            <select name="user_id" id="bulk-assign-select" class="form-select form-select-sm" style="max-width: 200px;">
+                <option value="">{{ t('tickets.overview.bulk_unassign_option') }}</option>
+                {% for u in alle_benutzer %}
+                <option value="{{ u.id }}">{{ u.name }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" formaction="/tickets/bulk/assign" id="bulk-assign-apply"
+                    class="btn btn-sm btn-outline-primary" disabled>
+                {{ t('tickets.overview.bulk_apply_button') }}
+            </button>
         </div>
     </div>
-    {% if tickets %}
-    <div class="card-footer text-muted" style="font-size: 0.82rem;">
-        {{ tickets | length }} {{ t('tickets.overview.count_suffix') }}
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+<table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 2.5rem;"><input type="checkbox" id="select-all" aria-label="{{ t('tickets.overview.bulk_none_selected') }}"></th>
+                            <th>{{ t('tickets.overview.col_subject') }}</th>
+                            <th>{{ t('tickets.overview.col_sender') }}</th>
+                            <th>{{ t('tickets.overview.col_status') }}</th>
+                            <th>{{ t('tickets.overview.col_assigned_to') }}</th>
+                            <th>{{ t('tickets.overview.col_created') }}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t_row in tickets %}
+                        <tr class="{% if t_row.spam_suspected %}table-danger{% endif %}">
+                            <td>
+                                <input type="checkbox" name="ticket_ids" value="{{ t_row.id }}" class="ticket-checkbox">
+                            </td>
+                            <td>
+                                <a href="/tickets/{{ t_row.id }}" class="text-decoration-none fw-semibold"
+                                   style="color: var(--gv-gruen);">{{ t_row.subject }}</a>
+                                {% if t_row.spam_suspected %}
+                                <span class="badge bg-danger ms-1" style="font-size: 0.68rem;">{{ t('tickets.overview.spam_suspected_badge') }}</span>
+                                {% endif %}
+                                {% if t_row.member %}
+                                <div class="text-muted" style="font-size: 0.78rem;">
+                                    <i class="bi bi-person"></i> {{ t_row.member.full_name }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted" style="font-size: 0.85rem;">
+                                {{ t_row.sender_name or t_row.sender_email }}
+                            </td>
+                            <td>
+                                {% if t_row.status.value == 'ACTIVE' %}
+                                <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('tickets.overview.status_active') }}</span>
+                                {% elif t_row.status.value == 'ASSIGNED' %}
+                                <span class="badge badge-aktiv">{{ t('tickets.overview.status_assigned') }}</span>
+                                {% elif t_row.status.value == 'WAITING' %}
+                                <span class="badge" style="background: #dbeafe; color: #1e40af;">{{ t('tickets.overview.status_waiting') }}</span>
+                                {% elif t_row.status.value == 'POSTPONED' %}
+                                <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('tickets.overview.status_postponed') }}</span>
+                                {% elif t_row.status.value == 'DELETED' %}
+                                <span class="badge" style="background: #1f2937; color: #f9fafb;">{{ t('tickets.overview.status_deleted') }}</span>
+                                {% else %}
+                                <span class="badge" style="background: #f3f4f6; color: #6b7280;">{{ t('tickets.overview.status_closed') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ t_row.assigned_to.name if t_row.assigned_to else '–' }}</td>
+                            <td class="text-muted" style="font-size: 0.82rem;">{{ t_row.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                            <td class="text-end">
+                                <a href="/tickets/{{ t_row.id }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox d-block mb-2" style="font-size: 1.5rem;"></i>
+                                {{ t('tickets.overview.empty_state') }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if tickets %}
+        <div class="card-footer text-muted" style="font-size: 0.82rem;">
+            {{ tickets | length }} {{ t('tickets.overview.count_suffix') }}
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
-</div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var selectAll = document.getElementById('select-all');
+    var checkboxes = document.querySelectorAll('.ticket-checkbox');
+    var selectedCountEl = document.getElementById('bulk-selected-count');
+    var statusSelect = document.getElementById('bulk-status-select');
+    var postponedDate = document.getElementById('bulk-postponed-date');
+    var statusApplyBtn = document.getElementById('bulk-status-apply');
+    var assignApplyBtn = document.getElementById('bulk-assign-apply');
+    var form = document.getElementById('bulk-form');
+
+    function checkedCount() {
+        return Array.prototype.filter.call(checkboxes, function (cb) { return cb.checked; }).length;
+    }
+
+    function updateButtons() {
+        var n = checkedCount();
+        selectedCountEl.textContent = n > 0
+            ? '{{ t("tickets.overview.bulk_selected_count", count="__N__") }}'.replace('__N__', n)
+            : '{{ t("tickets.overview.bulk_none_selected") }}';
+        statusApplyBtn.disabled = (n === 0 || !statusSelect.value);
+        assignApplyBtn.disabled = (n === 0);
+        selectAll.checked = (n > 0 && n === checkboxes.length);
+    }
+
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(function (cb) { cb.checked = selectAll.checked; });
+        updateButtons();
+    });
+
+    checkboxes.forEach(function (cb) {
+        cb.addEventListener('change', updateButtons);
+    });
+
+    statusSelect.addEventListener('change', function () {
+        postponedDate.style.display = (statusSelect.value === 'POSTPONED') ? '' : 'none';
+        updateButtons();
+    });
+
+    form.addEventListener('submit', function (e) {
+        var submitter = e.submitter;
+        if (!submitter) return;
+
+        if (submitter.id === 'bulk-status-apply') {
+            if (statusSelect.value === 'POSTPONED' && !postponedDate.value) {
+                e.preventDefault();
+                alert('{{ t("tickets.overview.bulk_postponed_date_required") }}');
+                return;
+            }
+            if (statusSelect.value === 'DELETED') {
+                if (!confirm('{{ t("tickets.overview.bulk_delete_confirm", count="__N__") }}'.replace('__N__', checkedCount()))) {
+                    e.preventDefault();
+                }
+            }
+        }
+    });
+
+    updateButtons();
+});
+</script>
 {% endblock %}

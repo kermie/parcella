@@ -106,7 +106,7 @@ async def ticket_create(
 
 @router.put(
     "/{ticket_id}/status", response_model=TicketOut, summary="Change ticket status",
-    description="DEFERRED requires deferred_until. CLOSED sets closed_at automatically.",
+    description="POSTPONED requires postponed_until. CLOSED sets closed_at automatically.",
 )
 async def status_update(
     ticket_id: str,
@@ -121,13 +121,13 @@ async def status_update(
 
     neuer_status = TicketStatus(daten.status)
 
-    if neuer_status == TicketStatus.DEFERRED and not daten.deferred_until:
-        raise HTTPException(status_code=422, detail="deferred_until ist bei Status DEFERRED erforderlich")
+    if neuer_status == TicketStatus.POSTPONED and not daten.postponed_until:
+        raise HTTPException(status_code=422, detail="postponed_until ist bei Status POSTPONED erforderlich")
 
     ticket.status = neuer_status
-    ticket.deferred_until = daten.deferred_until if neuer_status == TicketStatus.DEFERRED else None
+    ticket.postponed_until = daten.postponed_until if neuer_status == TicketStatus.POSTPONED else None
     ticket.closed_at = datetime.now(timezone.utc) if neuer_status == TicketStatus.CLOSED else None
-    if neuer_status == TicketStatus.UNASSIGNED:
+    if neuer_status == TicketStatus.ACTIVE:
         ticket.assigned_to_id = None
 
     await db.commit()
@@ -171,7 +171,7 @@ async def assignment_update(
         await sende_email(assignee.email, subject, html, db=db)
     else:
         ticket.assigned_to_id = None
-        ticket.status = TicketStatus.UNASSIGNED
+        ticket.status = TicketStatus.ACTIVE
         await db.commit()
         await db.refresh(ticket)
 

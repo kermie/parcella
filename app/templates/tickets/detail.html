@@ -98,27 +98,24 @@
             <div class="card-body">
                 <form method="post" action="/tickets/{{ ticket.id }}/status">
                     <select name="status_neu" class="form-select form-select-sm mb-2"
-                            onchange="document.getElementById('zurueckstell-datum').style.display = this.value === 'DEFERRED' ? '' : 'none';">
-                        <option value="UNASSIGNED" {% if ticket.status.value == 'UNASSIGNED' %}selected{% endif %}>{{ t('tickets.overview.status_unassigned') }}</option>
+                            onchange="document.getElementById('zurueckstell-datum').style.display = this.value === 'POSTPONED' ? '' : 'none';">
+                        <option value="ACTIVE" {% if ticket.status.value == 'ACTIVE' %}selected{% endif %}>{{ t('tickets.overview.status_active') }}</option>
                         <option value="ASSIGNED" {% if ticket.status.value == 'ASSIGNED' %}selected{% endif %}>{{ t('tickets.overview.status_assigned') }}</option>
-                        <option value="DEFERRED" {% if ticket.status.value == 'DEFERRED' %}selected{% endif %}>{{ t('tickets.overview.status_deferred') }}</option>
+                        <option value="WAITING" {% if ticket.status.value == 'WAITING' %}selected{% endif %}>{{ t('tickets.overview.status_waiting') }}</option>
+                        <option value="POSTPONED" {% if ticket.status.value == 'POSTPONED' %}selected{% endif %}>{{ t('tickets.overview.status_postponed') }}</option>
                         <option value="CLOSED" {% if ticket.status.value == 'CLOSED' %}selected{% endif %}>{{ t('tickets.overview.status_closed') }}</option>
+                        <option value="DELETED" {% if ticket.status.value == 'DELETED' %}selected{% endif %}>{{ t('tickets.overview.status_deleted') }}</option>
                     </select>
                     <div id="zurueckstell-datum" class="mb-2"
-                         style="{% if ticket.status.value != 'DEFERRED' %}display: none;{% endif %}">
-                        <label class="form-label small mb-1">{{ t('tickets.detail.status_deferred_until_label') }}</label>
-                        <input type="date" name="deferred_until" class="form-control form-control-sm"
-                               value="{{ ticket.deferred_until.isoformat() if ticket.deferred_until else '' }}">
+                         style="{% if ticket.status.value != 'POSTPONED' %}display: none;{% endif %}">
+                        <label class="form-label small mb-1">{{ t('tickets.detail.status_postponed_until_label') }}</label>
+                        <input type="date" name="postponed_until" class="form-control form-control-sm"
+                               value="{{ ticket.postponed_until.isoformat() if ticket.postponed_until else '' }}">
                     </div>
                     <button type="submit" class="btn btn-sm btn-primary w-100">
                         <i class="bi bi-check-lg me-1"></i>{{ t('tickets.detail.status_save_button') }}
                     </button>
                 </form>
-                {% if ticket.is_due %}
-                <div class="alert alert-warning mt-2 mb-0 py-2" style="font-size: 0.82rem;">
-                    <i class="bi bi-alarm me-1"></i>{{ t('tickets.detail.status_overdue_notice') }}
-                </div>
-                {% endif %}
             </div>
         </div>
 

@@ -850,10 +850,12 @@ class AccidentInsuranceAdditionalPerson(Base):
 # ---------------------------------------------------------------------------
 
 class TicketStatus(str, enum.Enum):
-    UNASSIGNED = "UNASSIGNED"
+    ACTIVE = "ACTIVE"
     ASSIGNED = "ASSIGNED"
-    DEFERRED = "DEFERRED"
+    WAITING = "WAITING"        # wartet auf Antwort des Absenders
+    POSTPONED = "POSTPONED"    # zurückgestellt bis postponed_until
     CLOSED = "CLOSED"
+    DELETED = "DELETED"        # Soft-Delete, wie bei Member.deleted_at
 
 
 class MessageDirection(str, enum.Enum):
@@ -874,12 +876,12 @@ class Ticket(Base):
     subject: Mapped[str] = mapped_column(String(255), nullable=False)
 
     status: Mapped[TicketStatus] = mapped_column(
-        SAEnum(TicketStatus), default=TicketStatus.UNASSIGNED, nullable=False, index=True
+        SAEnum(TicketStatus), default=TicketStatus.ACTIVE, nullable=False, index=True
     )
     assigned_to_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    deferred_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    postponed_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
     # Automatischer Abgleich per Absender-E-Mail; überschreibbar/manuell korrigierbar,
     # falls die Adresse mehreren Mitgliedern gehört oder unbekannt ist.
@@ -916,10 +918,15 @@ class Ticket(Base):
     @property
     def is_due(self) -> bool:
         """True, wenn ein zurückgestelltes Ticket sein Datum erreicht hat und
-        wieder als aktiv behandelt werden soll (rein berechnet, kein Hintergrundjob)."""
-        if self.status != TicketStatus.DEFERRED:
+        wieder als aktiv behandelt werden soll. Der eigentliche Statuswechsel
+        (POSTPONED -> ACTIVE/ASSIGNED) passiert lazy beim nächsten Laden der
+        Ticketliste (siehe _reaktiviere_faellige_tickets in app/routers/tickets.py),
+        nicht über einen Hintergrundjob -- diese Property ist nur die reine
+        Berechnung, falls sie anderswo (z.B. Badge-Anzeige) gebraucht wird.
+        """
+        if self.status != TicketStatus.POSTPONED:
             return False
-        return self.deferred_until is not None and self.deferred_until <= date.today()
+        return self.postponed_until is not None and self.postponed_until <= date.today()
 
     def __repr__(self) -> str:
         return f"<Ticket {self.subject!r} ({self.status.value})>"

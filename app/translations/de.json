@@ -51,7 +51,6 @@
       "title": "Tickets",
       "fetch_inbox_now": "Postfach jetzt abrufen",
       "new_ticket": "Neues Ticket",
-      "due_notice": "{count} zurückgestellte(s) Ticket(s) ist/sind wieder fällig.",
       "filter_active": "Aktiv",
       "filter_mine": "Meine",
       "filter_spam": "Verdächtig",
@@ -65,13 +64,24 @@
       "col_assigned_to": "Zugewiesen an",
       "col_created": "Erstellt",
       "spam_suspected_badge": "Spam-Verdacht",
-      "status_unassigned": "Nicht zugewiesen",
       "status_assigned": "Zugewiesen",
-      "status_deferred": "Zurückgestellt",
-      "status_deferred_due_suffix": "(fällig!)",
       "status_closed": "Geschlossen",
       "empty_state": "Keine Tickets gefunden.",
-      "count_suffix": "Ticket(s)"
+      "count_suffix": "Ticket(s)",
+      "reactivated_notice": "{count} zurückgestellte(s) Ticket(s) ist/sind jetzt wieder aktiv.",
+      "filter_waiting": "Wartend",
+      "filter_postponed": "Zurückgestellt",
+      "status_active": "Aktiv",
+      "status_waiting": "Wartend",
+      "status_postponed": "Zurückgestellt",
+      "status_deleted": "Gelöscht",
+      "bulk_selected_count": "{count} ausgewählt",
+      "bulk_none_selected": "Kein Ticket ausgewählt",
+      "bulk_status_placeholder": "Status ändern in…",
+      "bulk_apply_button": "Anwenden",
+      "bulk_unassign_option": "– Zuweisung aufheben –",
+      "bulk_delete_confirm": "{count} Ticket(s) wirklich als gelöscht markieren?",
+      "bulk_postponed_date_required": "Bitte ein Datum für „Zurückgestellt“ angeben."
     },
     "form": {
       "title": "Neues Ticket",
@@ -97,9 +107,7 @@
       "spam_score_label": "Score:",
       "spam_not_spam_button": "Kein Spam – Verdacht aufheben",
       "status_header": "Status",
-      "status_deferred_until_label": "Zurückgestellt bis",
       "status_save_button": "Status speichern",
-      "status_overdue_notice": "Zurückstellung ist abgelaufen – wieder aktiv.",
       "assignment_header": "Zuweisung",
       "assignment_unassigned_option": "– nicht zugewiesen –",
       "assignment_save_button": "Zuweisen",
@@ -108,7 +116,8 @@
       "member_none_assigned": "Kein Mitglied zugeordnet.",
       "member_no_assignment_option": "– keine Zuordnung –",
       "member_save_button": "Zuordnung speichern",
-      "member_multiple_candidates_help": "Mehrere Mitglieder nutzen diese E-Mail-Adresse – bitte manuell auswählen."
+      "member_multiple_candidates_help": "Mehrere Mitglieder nutzen diese E-Mail-Adresse – bitte manuell auswählen.",
+      "status_postponed_until_label": "Zurückgestellt bis"
     }
   },
   "auth": {
