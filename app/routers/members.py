@@ -9,7 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
@@ -59,17 +59,23 @@ async def mitglieder_liste(
         query = query.where(active_member_filter())
 
     if suche:
-        # Sucht nach Vor-/Nachname ODER Parzellennummer (aktuelle
-        # Zuordnungen -- wer JETZT auf dieser Parzelle wohnt, nicht die
-        # gesamte Historie). "Ort" wurde bewusst entfernt, da die Suche
-        # danach in der Praxis nicht genutzt wurde.
+        # Sucht nach Vor-/Nachname ODER Parzellennummer. Bei der
+        # Parzellensuche: standardmäßig nur aktuelle Zuordnungen (wer
+        # JETZT dort wohnt); mit "auch_inaktive" zusätzlich auch bereits
+        # beendete Zuordnungen (wer FRÜHER dort gewohnt hat) -- dieselbe
+        # Kippschalter-Logik wie bei aktiven/inaktiven Mitgliedern, nur
+        # auf die Pächter-Historie der Parzelle übertragen.
+        # "Ort" wurde bewusst entfernt, da die Suche danach in der Praxis
+        # nicht genutzt wurde.
+        parzellen_bedingung = Parcel.plot_number.ilike(f"%{suche}%")
+        if not auch_inaktive:
+            parzellen_bedingung = and_(
+                parzellen_bedingung, MemberParcel.assigned_until.is_(None)
+            )
         parzellen_treffer = (
             select(MemberParcel.member_id)
             .join(Parcel, MemberParcel.parcel_id == Parcel.id)
-            .where(
-                Parcel.plot_number.ilike(f"%{suche}%"),
-                MemberParcel.assigned_until.is_(None),
-            )
+            .where(parzellen_bedingung)
         )
         query = query.where(
             or_(
