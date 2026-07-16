@@ -39,7 +39,6 @@ def _zu_detail_schema(parzelle: Parcel) -> ParcelDetailOut:
         ParcelAssignmentBrief(
             member_id=z.member.id,
             name=z.member.full_name,
-            is_primary_tenant=z.is_primary_tenant,
         )
         for z in parzelle.member_assignments
     ]
@@ -209,7 +208,6 @@ async def member_zuordnen(
     assignment = MemberParcel(
         parcel_id=parcel_id,
         member_id=daten.member_id,
-        is_primary_tenant=daten.is_primary_tenant,
         assigned_from=daten.assigned_from,
         assigned_until=daten.assigned_until,
     )

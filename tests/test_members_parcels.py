@@ -45,14 +45,14 @@ async def test_mitglied_parzelle_zuordnung_und_doppelgarten(client, admin_user):
     # Doppelgarten: ein Member bekommt zwei Parzellen
     r1 = await client.post(
         f"/api/v1/parcels/{p1['id']}/assignments",
-        json={"member_id": m1["id"], "parcel_id": p1["id"], "is_primary_tenant": True},
+        json={"member_id": m1["id"], "parcel_id": p1["id"]},
         headers=headers,
     )
     assert r1.status_code == 201
 
     r2 = await client.post(
         f"/api/v1/parcels/{p2['id']}/assignments",
-        json={"member_id": m1["id"], "parcel_id": p2["id"], "is_primary_tenant": True},
+        json={"member_id": m1["id"], "parcel_id": p2["id"]},
         headers=headers,
     )
     assert r2.status_code == 201
@@ -60,7 +60,7 @@ async def test_mitglied_parzelle_zuordnung_und_doppelgarten(client, admin_user):
     # Gemeinschaftsgarten: zweites Member auf derselben Parcel
     r3 = await client.post(
         f"/api/v1/parcels/{p1['id']}/assignments",
-        json={"member_id": m2["id"], "parcel_id": p1["id"], "is_primary_tenant": False},
+        json={"member_id": m2["id"], "parcel_id": p1["id"]},
         headers=headers,
     )
     assert r3.status_code == 201

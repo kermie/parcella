@@ -69,12 +69,12 @@ async def test_befreiung_gilt_fuer_ganze_parcel_bei_per_parcel(client, admin_use
 
     await client.post(
         f"/api/v1/parcels/{parcel['id']}/assignments",
-        json={"member_id": befreiter["id"], "parcel_id": parcel["id"], "is_primary_tenant": True},
+        json={"member_id": befreiter["id"], "parcel_id": parcel["id"]},
         headers=headers,
     )
     await client.post(
         f"/api/v1/parcels/{parcel['id']}/assignments",
-        json={"member_id": mitpaechter["id"], "parcel_id": parcel["id"], "is_primary_tenant": False},
+        json={"member_id": mitpaechter["id"], "parcel_id": parcel["id"]},
         headers=headers,
     )
 

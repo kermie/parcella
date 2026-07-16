@@ -18,13 +18,6 @@
             </div>
             <div class="card-body">
                 <form method="post" action="/parcels/{{ parcel.id }}/member/{{ zuordnung.id }}/edit">
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_primary_tenant"
-                                   id="hp-check" {% if zuordnung.is_primary_tenant %}checked{% endif %}>
-                            <label class="form-check-label" for="hp-check">{{ t('parcels_assignment_form.is_primary_tenant_label') }}</label>
-                        </div>
-                    </div>
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">{{ t('parcels_assignment_form.label_tenant_since') }}</label>

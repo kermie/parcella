@@ -270,7 +270,6 @@ async def mitglied_zuordnen(
     parcel_id: str,
     request: Request,
     member_id: str = Form(...),
-    is_primary_tenant: bool = Form(False),
     assigned_from: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -292,12 +291,10 @@ async def mitglied_zuordnen(
         # Frühere (beendete) Zuordnung reaktivieren statt Duplikat anzulegen
         zuordnung.assigned_until = None
         zuordnung.assigned_from = date.fromisoformat(assigned_from) if assigned_from else date.today()
-        zuordnung.is_primary_tenant = is_primary_tenant
     else:
         zuordnung = MemberParcel(
             parcel_id=parcel_id,
             member_id=member_id,
-            is_primary_tenant=is_primary_tenant,
             assigned_from=date.fromisoformat(assigned_from) if assigned_from else None,
         )
         db.add(zuordnung)
@@ -342,7 +339,6 @@ async def mitglied_zuordnung_aktualisieren(
     parcel_id: str,
     assignment_id: str,
     request: Request,
-    is_primary_tenant: bool = Form(False),
     assigned_from: str = Form(""),
     assigned_until: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -358,7 +354,6 @@ async def mitglied_zuordnung_aktualisieren(
     if not zuordnung:
         raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
 
-    zuordnung.is_primary_tenant = is_primary_tenant
     zuordnung.assigned_from = date.fromisoformat(assigned_from) if assigned_from.strip() else None
     zuordnung.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
 
@@ -414,13 +409,13 @@ async def parzellen_export_csv(request: Request, db: AsyncSession = Depends(get_
     writer.writerow([
         "Gartennummer", "Fläche (qm)", "Status",
         "Kündigungsnotiz",
-        "Mitglieder (Hauptpächter zuerst)", "Notizen"
+        "Mitglieder", "Notizen"
     ])
 
     for p in parcels:
         mitglieder_str = "; ".join(
-            f"{z.member.full_name}{'*' if z.is_primary_tenant else ''}"
-            for z in sorted(p.member_assignments, key=lambda z: not z.is_primary_tenant)
+            z.member.full_name
+            for z in sorted(p.member_assignments, key=lambda z: z.member.full_name)
         )
         writer.writerow([
             p.plot_number,

@@ -84,7 +84,7 @@
                             {% for z in aktuelle_paechter %}
                             <a href="/members/{{ z.member.id }}" class="text-decoration-none"
                                style="color: var(--gv-gruen);">
-                                {{ z.member.first_name }} {{ z.member.last_name }}{% if z.is_primary_tenant %}<i class="bi bi-star-fill text-warning ms-1" style="font-size: 0.7rem;"></i>{% endif %}
+                                {{ z.member.first_name }} {{ z.member.last_name }}
                             </a>{% if not loop.last %}, {% endif %}
                             {% else %}
                             <span class="text-muted">–</span>

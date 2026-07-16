@@ -17,45 +17,60 @@ def _normalized_address(member: Member) -> tuple:
     )
 
 
-def primary_tenant_of(assignments: List[MemberParcel]) -> Optional[Member]:
-    """Ermittelt den Hauptpächter einer Parcel (oder den ersten Pächter als Fallback)."""
-    current = [a for a in assignments if a.assigned_until is None]
-    if not current:
-        return None
-    primary = next((a for a in current if a.is_primary_tenant), current[0])
-    return primary.member
-
-
 def household_grouping(assignments: List[MemberParcel]) -> dict:
     """
-    Teilt die aktuellen Pächter einer Parcel in "im Haushalt des
-    Hauptpächters" (gleiche Adresse) und "außerhalb" auf.
+    Teilt die aktuellen Bewohner einer Parcel in "im Haushalt" (teilen
+    sich eine Adresse) und "außerhalb" (abweichende oder fehlende
+    Adresse) auf.
+
+    Bewusst OHNE Anker auf eine einzelne "Hauptperson" -- das Konzept
+    von Haupt-/Mitpächter wurde entfernt (siehe Migration
+    0022_remove_tenant_role): das Vereinsboard behandelt alle Bewohner
+    einer Parcel gleichermaßen haftbar, unabhängig davon, wer zuerst
+    unterschrieben hat. Stattdessen werden die Bewohner untereinander
+    nach Adresse gruppiert; die GRÖSSTE Gruppe mit übereinstimmender
+    Adresse gilt als der automatisch mitversicherte Haushalt, alle
+    anderen (abweichende Adresse oder Einzelperson ohne Match) als
+    "außerhalb" (optional gegen Aufpreis versicherbar).
 
     Rückgabe: {"household": [Member, ...], "external": [Member, ...]}
     Eine leere Adresse (alle Felder leer) zählt NICHT als Übereinstimmung,
-    um Falsch-Zuordnungen bei fehlenden Adressdaten zu vermeiden.
+    um Falsch-Zuordnungen bei fehlenden Adressdaten zu vermeiden -- auch
+    wenn mehrere Bewohner zufällig alle eine leere Adresse haben, bilden
+    sie deshalb KEINE gemeinsame Haushalts-Gruppe.
     """
-    current = [a for a in assignments if a.assigned_until is None]
-    primary_tenant = primary_tenant_of(assignments)
-
-    if not primary_tenant:
+    current = [a.member for a in assignments if a.assigned_until is None]
+    if not current:
         return {"household": [], "external": []}
 
-    primary_address = _normalized_address(primary_tenant)
-    is_empty = primary_address == ("", "", "")
+    # Einzelne Bewohner-Sonderfall: bei genau einer Person gibt es
+    # niemanden zum Vergleichen -- diese Person zählt trivial als
+    # Haushalt, unabhängig davon, ob eine Adresse hinterlegt ist.
+    if len(current) == 1:
+        return {"household": current, "external": []}
 
-    household = []
-    external = []
-
-    for a in current:
-        m = a.member
-        if m.id == primary_tenant.id:
-            household.append(m)
+    # Nach normalisierter Adresse gruppieren; leere Adressen bleiben
+    # explizit ungruppiert (jede für sich).
+    groups: dict = {}
+    unmatched: list = []
+    for m in current:
+        addr = _normalized_address(m)
+        if addr == ("", "", ""):
+            unmatched.append(m)
             continue
-        if not is_empty and _normalized_address(m) == primary_address:
-            household.append(m)
-        else:
-            external.append(m)
+        groups.setdefault(addr, []).append(m)
+
+    # Größte Adress-Gruppe (mit mindestens einer Person) ist der
+    # Haushalt. Bei Gleichstand: die zuerst gefundene (stabile
+    # Query-Reihenfolge), es gibt keine fachliche Grundlage, eine
+    # bestimmte Gruppe zu bevorzugen.
+    if groups:
+        household = max(groups.values(), key=len)
+    else:
+        household = []
+
+    household_ids = {m.id for m in household}
+    external = [m for m in current if m.id not in household_ids]
 
     return {"household": household, "external": external}
 

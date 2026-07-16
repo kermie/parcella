@@ -268,9 +268,6 @@ class MemberParcel(Base):
         String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
-    # Ist dieses Member der Hauptpächter?
-    is_primary_tenant: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-
     # Zeitraum der Zuordnung
     assigned_from: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     assigned_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -779,7 +776,8 @@ class ParcelInsurance(Base):
     Versicherungsstatus einer Parcel für ein bestimmtes Jahr:
     Sachversicherung/property insurance (optional, mit gewähltem Paket)
     und Unfallversicherung/accident insurance (optional, Grundbetrag
-    deckt den Haushalt des Hauptpächters ab).
+    deckt den automatisch erkannten Haushalt ab -- siehe
+    household_grouping() in app/insurance_utils.py).
     """
     __tablename__ = "parcel_insurance"
 
@@ -819,10 +817,10 @@ class ParcelInsurance(Base):
 
 class AccidentInsuranceAdditionalPerson(Base):
     """
-    Ein Member, das zusätzlich zum Haushalt des Hauptpächters gegen
+    Ein Member, das zusätzlich zum automatisch erkannten Haushalt gegen
     Aufpreis in die Unfallversicherung (accident insurance) der Parcel
-    aufgenommen wurde (z.B. ein Mitpächter, der nicht am selben Wohnort
-    lebt).
+    aufgenommen wurde (z.B. ein Bewohner, der nicht am selben Wohnort
+    lebt wie die übrigen Bewohner der Parcel).
     """
     __tablename__ = "accident_insurance_additional_persons"
 

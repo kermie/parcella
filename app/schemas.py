@@ -117,7 +117,6 @@ class MemberAssignmentBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     parcel_id: str
     plot_number: str
-    is_primary_tenant: bool
 
 
 class MemberOut(MemberBase):
@@ -162,7 +161,6 @@ class ParcelAssignmentBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     member_id: str
     name: str
-    is_primary_tenant: bool
 
 
 class ParcelOut(ParcelBase):
@@ -185,7 +183,6 @@ class ParcelDetailOut(ParcelOut):
 class AssignmentCreate(BaseModel):
     member_id: str
     parcel_id: str
-    is_primary_tenant: bool = True
     assigned_from: Optional[date] = None
     assigned_until: Optional[date] = None
 
@@ -195,7 +192,6 @@ class AssignmentOut(BaseModel):
     id: str
     member_id: str
     parcel_id: str
-    is_primary_tenant: bool
     assigned_from: Optional[date] = None
     assigned_until: Optional[date] = None
 

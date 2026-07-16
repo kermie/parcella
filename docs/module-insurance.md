@@ -28,12 +28,16 @@ accident_insurance_additional_persons – who is additionally insured beyond the
 
 ## Key decision: household detection via address comparison
 
-Accident insurance automatically covers all tenants of a parcel who have
-**the same address** as the primary tenant (street, postal code, city in
+Accident insurance automatically covers all residents of a parcel who
+share **the same address** with each other (street, postal code, city in
 the member record) -- at no extra cost, since they live in the same
-household.
+household. There's no designated "primary" resident to anchor this
+comparison on (that role distinction was removed, see
+[Architecture Decisions](./architecture-decisions.md)); instead, current
+residents are grouped by matching address to each other, and the largest
+matching group is the auto-covered household.
 
-Tenants with a **different address** are shown as candidates but **not**
+Residents with a **different address** are shown as candidates but **not**
 added automatically -- the association deliberately decides per person
 (checkbox) whether they should be additionally insured for the extra
 amount. This was an explicit requirement: "can be additionally insured"

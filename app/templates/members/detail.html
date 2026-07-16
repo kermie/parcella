@@ -131,7 +131,6 @@
                                 <th>{{ t('members.detail.col_plot_number') }}</th>
                                 <th>{{ t('members.detail.col_area') }}</th>
                                 <th>{{ t('members.detail.col_status') }}</th>
-                                <th>{{ t('members.detail.col_role') }}</th>
                                 <th>{{ t('members.detail.col_since') }}</th>
                                 <th></th>
                             </tr>
@@ -153,7 +152,6 @@
                                     <span class="badge badge-geloescht">{{ t('parcels.status.deleted') }}</span>
                                     {% endif %}
                                 </td>
-                                <td>{% if z.is_primary_tenant %}<span class="badge badge-aktiv">{{ t('members.detail.primary_tenant') }}</span>{% else %}<span class="text-muted">{{ t('members.detail.co_tenant') }}</span>{% endif %}</td>
                                 <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
                                 <td class="text-end">
                                     <a href="/parcels/{{ z.parcel.id }}" class="btn btn-sm btn-outline-secondary">
@@ -163,7 +161,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-3">{{ t('members.detail.no_parcels') }}</td>
+                                <td colspan="5" class="text-center text-muted py-3">{{ t('members.detail.no_parcels') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -181,10 +179,6 @@
                         {% endfor %}
                     </select>
                     <input type="hidden" name="member_id" value="{{ member.id }}">
-                    <div class="form-check form-check-inline my-auto">
-                        <input class="form-check-input" type="checkbox" name="is_primary_tenant" id="ist-hp" checked>
-                        <label class="form-check-label small" for="ist-hp">{{ t('members.detail.is_primary_tenant_label') }}</label>
-                    </div>
                     <button type="submit" class="btn btn-sm btn-primary">
                         <i class="bi bi-plus-lg me-1"></i>{{ t('members.detail.assign_button') }}
                     </button>

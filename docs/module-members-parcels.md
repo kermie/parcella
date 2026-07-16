@@ -18,8 +18,12 @@ change_history          – generic audit log (see below)
 
 **m:n assignment from the start.** A member can have multiple parcels
 (multiple gardens), and a parcel can have multiple members (couples,
-families). The assignment table `member_parcels` additionally carries
-`is_primary_tenant` (bool) and `assigned_from`/`assigned_until` (date fields).
+families). The assignment table `member_parcels` carries
+`assigned_from`/`assigned_until` (date fields) for tenancy history.
+Originally also had an `is_primary_tenant` role distinction; removed
+(see [Architecture Decisions](./architecture-decisions.md)) since the
+board holds every resident of a parcel jointly responsible, with no
+hierarchy between them.
 
 **Tenancy history instead of deletion.** When a tenancy ends,
 `assigned_until` is set instead of deleting the row. This keeps it
