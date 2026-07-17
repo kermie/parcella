@@ -1061,6 +1061,9 @@
     "quick_manage_users": "Spravovať používateľov",
     "quick_api_docs": "API dokumentácia (Swagger)",
     "purchase_requests_card_title": "Otvorené žiadosti o nákup",
-    "purchase_requests_suffix": "čaká na schválenie"
+    "purchase_requests_suffix": "čaká na schválenie",
+    "tickets_open_label": "Otvorené tikety",
+    "tickets_spam_suffix": "{count} podozrivých zo spamu",
+    "tickets_no_spam_suffix": "žiadne podozrenie zo spamu"
   }
 }

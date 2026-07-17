@@ -1061,6 +1061,9 @@
     "quick_manage_users": "Zarządzaj użytkownikami",
     "quick_api_docs": "Dokumentacja API (Swagger)",
     "purchase_requests_card_title": "Otwarte wnioski zakupowe",
-    "purchase_requests_suffix": "oczekuje na zatwierdzenie"
+    "purchase_requests_suffix": "oczekuje na zatwierdzenie",
+    "tickets_open_label": "Otwarte zgłoszenia",
+    "tickets_spam_suffix": "{count} podejrzanych o spam",
+    "tickets_no_spam_suffix": "brak podejrzeń o spam"
   }
 }

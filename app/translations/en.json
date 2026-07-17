@@ -1061,6 +1061,9 @@
     "quick_manage_users": "Manage Users",
     "quick_api_docs": "API Documentation (Swagger)",
     "purchase_requests_card_title": "Open Purchase Requests",
-    "purchase_requests_suffix": "awaiting approval"
+    "purchase_requests_suffix": "awaiting approval",
+    "tickets_open_label": "Open Tickets",
+    "tickets_spam_suffix": "{count} spam suspected",
+    "tickets_no_spam_suffix": "none flagged as spam"
   }
 }

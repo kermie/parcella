@@ -1061,6 +1061,9 @@
     "quick_manage_users": "Gebruikers beheren",
     "quick_api_docs": "API-documentatie (Swagger)",
     "purchase_requests_card_title": "Openstaande aankoopverzoeken",
-    "purchase_requests_suffix": "wacht op goedkeuring"
+    "purchase_requests_suffix": "wacht op goedkeuring",
+    "tickets_open_label": "Open tickets",
+    "tickets_spam_suffix": "{count} verdacht van spam",
+    "tickets_no_spam_suffix": "geen spam vermoed"
   }
 }

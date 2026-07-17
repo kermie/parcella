@@ -1061,6 +1061,9 @@
     "quick_manage_users": "Benutzer verwalten",
     "quick_api_docs": "API-Dokumentation (Swagger)",
     "purchase_requests_card_title": "Offene Einkaufswünsche",
-    "purchase_requests_suffix": "warten auf Freigabe"
+    "purchase_requests_suffix": "warten auf Freigabe",
+    "tickets_open_label": "Offene Tickets",
+    "tickets_spam_suffix": "{count} Spam-Verdacht",
+    "tickets_no_spam_suffix": "kein Spam-Verdacht"
   }
 }

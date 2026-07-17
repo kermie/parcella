@@ -17,6 +17,7 @@ from app.config import settings
 from app.database import get_db, AsyncSessionLocal, active_member_filter
 from app.models import User, UserRole, Member, Parcel, ParcelStatus, MemberParcel
 from app.models import PurchaseRequest, PurchaseRequestStatus
+from app.models import Ticket, TicketStatus
 from app.auth import hash_password, get_current_user
 from app.module_flags import lade_modul_flags
 from app.i18n import load_translations, load_current_language
@@ -238,6 +239,20 @@ async def startseite(request: Request):
             )
         )
 
+        # Für die Dashboard-Kachel "Tickets" -- "offen" zählt hier genau wie
+        # der "Active"-Filter auf /tickets/ (ACTIVE/ASSIGNED/WAITING, siehe
+        # app/routers/tickets.py), NICHT postponed/closed/deleted.
+        tickets_open_count = await db.scalar(
+            select(func.count()).select_from(Ticket).where(
+                Ticket.status.in_([TicketStatus.ACTIVE, TicketStatus.ASSIGNED, TicketStatus.WAITING])
+            )
+        )
+        tickets_spam_count = await db.scalar(
+            select(func.count()).select_from(Ticket).where(
+                Ticket.spam_suspected == True, Ticket.status != TicketStatus.DELETED
+            )
+        )
+
     stats = {
         "mitglieder_gesamt": members_total or 0,
         "mitglieder_aktiv": members_active or 0,
@@ -246,6 +261,8 @@ async def startseite(request: Request):
         "parzellen_unbesetzt": parcels_vacant or 0,
         "flaeche_gesamt_qm": float(area_total or 0),
         "einkaufswuensche_offen": purchase_requests_open_count or 0,
+        "tickets_offen": tickets_open_count or 0,
+        "tickets_spam": tickets_spam_count or 0,
     }
 
     return templates.TemplateResponse(
