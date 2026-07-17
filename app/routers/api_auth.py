@@ -31,7 +31,7 @@ async def token_anfordern(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="E-Mail oder Passwort falsch, oder Konto deaktiviert.",
+            detail="Incorrect email or password, or account deactivated.",
         )
     token = create_access_token(user.id, user.email)
     return TokenResponse(access_token=token, expires_in_minutes=ACCESS_TOKEN_VALID_MINUTES)
@@ -51,7 +51,7 @@ async def login_json(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="E-Mail oder Passwort falsch, oder Konto deaktiviert.",
+            detail="Incorrect email or password, or account deactivated.",
         )
     token = create_access_token(user.id, user.email)
     return TokenResponse(access_token=token, expires_in_minutes=ACCESS_TOKEN_VALID_MINUTES)

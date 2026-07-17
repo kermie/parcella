@@ -42,18 +42,25 @@ http://localhost:8000/api/docs.
 
 ## Code conventions
 
-- **Language**: technical identifiers (class/table/column names,
-  function names, URLs, API endpoints) are in **English**. User-facing UI
-  text (labels, error messages, email content) is written in **German
-  first** -- that's still the authoring source language, since the
-  maintainers and the software's original audience are German-speaking --
-  and then translated into the other supported languages (currently
-  English, Polish, Czech, Slovak, French, Dutch) via the i18n system; see
+- **Language**: this is an open-source project meant for adoption by any
+  allotment garden association, in any country -- **English is the one
+  and only base/authoring language**, for code and prose alike. Technical
+  identifiers (class/table/column names, function names, URLs, API
+  endpoints) are in English, as always. User-facing UI text (labels,
+  error messages, email content) is now also written in **English
+  first**, then translated into the other supported languages (German,
+  Polish, Czech, Slovak, French, Dutch) via the i18n system; see
   [i18n & l10n](./docs/i18n-l10n.md) for how that works and what a new
-  module needs. Code comments and docstrings are also generally German,
-  matching the maintainers' primary language, and are *not* translated
-  (see [Architecture Decisions](./docs/architecture-decisions.md) for the
-  original reasoning behind the identifier-vs-UI-text split).
+  module needs. Code comments and docstrings should be written in
+  **English** too going forward. A fair amount of existing German-language
+  comments/docstrings remain from before this policy and are being
+  translated incrementally rather than in one disruptive sweep -- if
+  you're touching a file for another reason, translating its comments to
+  English while you're in there is welcome, but not required just to make
+  an unrelated change (see
+  [Architecture Decisions](./docs/architecture-decisions.md) for the
+  history of this policy and the identifier-vs-UI-text split it grew out
+  of).
 - **Genericity**: new fields/functions should, where sensible, not only
   fit the originating association but allotment garden associations in
   general (e.g. configurable area types instead of hard-coded A/B/C

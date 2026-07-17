@@ -73,7 +73,7 @@ async def package_update(
     result = await db.execute(select(PropertyInsurancePackage).where(PropertyInsurancePackage.id == package_id))
     package = result.scalar_one_or_none()
     if not package:
-        raise HTTPException(status_code=404, detail="Paket nicht gefunden")
+        raise HTTPException(status_code=404, detail="Package not found")
 
     for feld, value in daten.model_dump().items():
         setattr(package, feld, value)
@@ -112,7 +112,7 @@ async def configuration_get(
     result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
     config = result.scalar_one_or_none()
     if not config:
-        raise HTTPException(status_code=404, detail=f"Keine Konfiguration für {year}")
+        raise HTTPException(status_code=404, detail=f"No configuration for {year}")
     return config
 
 
@@ -191,7 +191,7 @@ async def insurance_get(
 ):
     pi = await _load_pi(db, parcel_id, year)
     if not pi:
-        raise HTTPException(status_code=404, detail="Kein Versicherungsstatus für diese Parcel/Jahr")
+        raise HTTPException(status_code=404, detail="No insurance status for this parcel/year")
 
     config_result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
     config = config_result.scalar_one_or_none()
@@ -212,7 +212,7 @@ async def insurance_set(
 ):
     parcel_result = await db.execute(select(Parcel).where(Parcel.id == parcel_id))
     if not parcel_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Parcel nicht gefunden")
+        raise HTTPException(status_code=404, detail="Parcel not found")
 
     pi = await _load_pi(db, parcel_id, year)
     if not pi:

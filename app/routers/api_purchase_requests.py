@@ -60,7 +60,7 @@ async def purchase_request_get(
 ):
     pr = await _load_with_details(db, request_id)
     if not pr:
-        raise HTTPException(status_code=404, detail="Einkaufswunsch nicht gefunden")
+        raise HTTPException(status_code=404, detail="Purchase request not found")
     return pr
 
 
@@ -97,12 +97,12 @@ async def purchase_request_create(
     if pr.confirmation_token:
         from app.email_service import sende_email
         from app.config import settings
-        betreff = f"Bitte bestätigen: Einkaufswunsch „{pr.title}“"
+        betreff = f'Please confirm: purchase request "{pr.title}"'
         html = (
-            f"<html><body><p>Hallo {pr.requester_name or ''},</p>"
-            f"<p>{user.name} hat in Ihrem Namen einen Einkaufswunsch im {settings.app_name} erfasst: "
+            f"<html><body><p>Hello {pr.requester_name or ''},</p>"
+            f"<p>{user.name} has submitted a purchase request in {settings.app_name} on your behalf: "
             f"<strong>{pr.title}</strong></p>"
-            f"<p>Bitte melden Sie sich, um die Angaben zu prüfen.</p></body></html>"
+            f"<p>Please log in to review the details.</p></body></html>"
         )
         await sende_email(pr.requester_email, betreff, html, db=db)
 
@@ -122,7 +122,7 @@ async def purchase_request_approve(
 ):
     pr = await _load_with_details(db, request_id)
     if not pr:
-        raise HTTPException(status_code=404, detail="Einkaufswunsch nicht gefunden")
+        raise HTTPException(status_code=404, detail="Purchase request not found")
 
     if pr.status != PurchaseRequestStatus.OPEN:
         raise HTTPException(status_code=409, detail=f"Einkaufswunsch ist bereits {pr.status.value}")
@@ -130,11 +130,11 @@ async def purchase_request_approve(
     if user.id in (pr.requested_by_id, pr.created_by_id):
         raise HTTPException(
             status_code=403,
-            detail="Der Antragsteller darf seinen eigenen Einkaufswunsch nicht mitfreigeben (Vier-Augen-Prinzip)."
+            detail="The requester may not approve their own purchase request (four-eyes principle)."
         )
 
     if any(a.user_id == user.id for a in pr.approvals):
-        raise HTTPException(status_code=409, detail="Sie haben bereits freigegeben.")
+        raise HTTPException(status_code=409, detail="You have already approved this.")
 
     db.add(PurchaseRequestApproval(purchase_request_id=request_id, user_id=user.id))
     await db.flush()
@@ -160,7 +160,7 @@ async def purchase_request_reject(
 ):
     pr = await _load_with_details(db, request_id)
     if not pr:
-        raise HTTPException(status_code=404, detail="Einkaufswunsch nicht gefunden")
+        raise HTTPException(status_code=404, detail="Purchase request not found")
 
     if pr.status != PurchaseRequestStatus.OPEN:
         raise HTTPException(status_code=409, detail=f"Einkaufswunsch ist bereits {pr.status.value}")

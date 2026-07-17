@@ -300,6 +300,14 @@ caught up.
 
 ## i18n: one language per installation, English as runtime fallback
 
+**Note: superseded in part.** The "authoring language" half of the
+second decision below was German at the time this was written; it has
+since changed to English (see "English becomes the one and only
+base/authoring language" further down). Left as-is here rather than
+edited, so the history of the decision is visible -- the "one language
+per installation" decision and the "English as runtime fallback/default"
+decision are both still accurate as written.
+
 **Context:** the software started German-only. Making it a genuine
 open-source product meant supporting other languages -- but *how* the
 language is chosen matters as much as the translation content itself.
@@ -313,25 +321,29 @@ The admin picks a language once in Admin -> Settings; it applies to
 everyone. This ruled out both a per-user profile setting and an
 `Accept-Language`-header-based auto-detection.
 
-**Decision: German remains the authoring source language, but English is
-the runtime fallback -- not the same thing.** New UI text is still
-written in German first (that hasn't changed), but if a translation key
-is missing for whichever language is currently selected -- most likely
-because a module hasn't been translated into that language yet -- the
-string falls back to English, not German. Same for a completely fresh
-install with no language chosen yet: it starts in English. This was a
-deliberate, explicit request (not an oversight) to make English the
-"safe default" a new international user lands on, rather than German
-text they may not read. The two decisions (source language vs. runtime
-default) are controlled by two different mechanisms in `app/i18n.py`
-and can, in principle, diverge further if needed.
+**Decision (superseded, see note above): German remains the authoring
+source language, but English is the runtime fallback -- not the same
+thing.** New UI text is still written in German first (that hasn't
+changed), but if a translation key is missing for whichever language is
+currently selected -- most likely because a module hasn't been
+translated into that language yet -- the string falls back to English,
+not German. Same for a completely fresh install with no language chosen
+yet: it starts in English. This was a deliberate, explicit request (not
+an oversight) to make English the "safe default" a new international
+user lands on, rather than German text they may not read. The two
+decisions (source language vs. runtime default) are controlled by two
+different mechanisms in `app/i18n.py` and can, in principle, diverge
+further if needed.
 
 **Implementation:** JSON translation catalogs (one file per language,
 `app/translations/<code>.json`), loaded once at startup. `t()` in
 templates, `t_for(request, ...)` in Python for web-UI-facing error
-messages. REST API error messages are deliberately **not** translated
-(every API router leaves error `detail` strings in German) -- the API is
-for programmatic integrations, not a language-switchable human UI.
+messages. REST API error messages (`detail=` strings in `api_*.py`
+routers) are hardcoded English rather than going through the JSON
+catalogs -- the API is for programmatic integrations, not a
+language-switchable human UI, so a fixed language is fine there; it
+just needed to be English rather than German once English became the
+project's base language (see the entry on that below).
 
 ## l10n: region and currency as settings independent of language and each other
 
@@ -413,6 +425,100 @@ See [Responsive Design](./responsive-design.md) for the practical
 reference (breakpoints, what's automatic vs. what needs a per-template
 wrapper, how to test it).
 
+## Ticket status redesign: six explicit states, plus bulk actions
+
+**Context:** the original four statuses (`UNASSIGNED`, `ASSIGNED`,
+`DEFERRED`, `CLOSED`) didn't give the board what they actually needed
+day-to-day: no way to mark "we replied, waiting on the customer" as
+distinct from "just sitting in the queue," no real hiding of postponed
+tickets (see below), and no way to act on more than one ticket at a
+time.
+
+**Decision: six statuses -- `ACTIVE`, `ASSIGNED`, `WAITING`, `POSTPONED`,
+`CLOSED`, `DELETED`.** `WAITING` (new) means the ticket is waiting on the
+sender's reply -- no date attached, manually set, and cleared the moment
+a new reply arrives. `DELETED` (new) is a genuine soft-delete modeled as
+a status rather than a separate `deleted_at` column, since `Ticket`
+didn't have one and a sixth enum value was simpler than adding a column
+plus updating every query. `DELETED` tickets are hidden from every
+filter, including "All" -- no trash/recovery view was built, since it
+wasn't asked for.
+
+**Decision: `POSTPONED` tickets are actually hidden, and actually
+reactivate -- not just computed for display.** The original `DEFERRED`
+status was purely a computed display flag (`is_due`); the underlying
+ticket stayed visible in the active list the whole time, just with an
+"overdue" badge once its date passed. That never matched what "postponed"
+should mean. Now a postponed ticket disappears from Active/Mine
+entirely until its date, and once the date passes, a lazy check (run on
+every ticket-list or ticket-detail page load, since there's no
+scheduler in this app) actually flips its status in the database back
+to `ACTIVE`/`ASSIGNED`. Extended the pre-existing "closed ticket reopens
+on a new reply" logic to also cover `POSTPONED` and `WAITING` -- one
+consistent rule: any reply from the sender clears whichever "we're
+waiting" state a ticket was in, regardless of which one.
+
+**Decision: bulk actions via one form, two `formaction` buttons, not two
+forms.** The ticket list needed both "change status for N selected
+tickets" and "assign N selected tickets to one user" -- two different
+actions over the same selection. Duplicating the checkboxes across two
+separate `<form>`s (and keeping their selection state in sync via JS)
+would have been more fragile than the alternative: one form with all the
+checkboxes, and each action's submit button overrides the form's
+`action` via the HTML `formaction` attribute. No JS needed to keep two
+selections in sync, because there's only ever one.
+
+## Ticket emails: sanitize untrusted HTML, don't just strip it to text
+
+**Context:** incoming ticket emails were being reduced to plain text
+even when they arrived as HTML -- and when an email had *only* an HTML
+part (no `text/plain` alternative, common with many email clients), the
+fallback was a crude regex tag-strip that left things like raw CSS from
+`<style>` blocks visible as text. The board wanted HTML emails to
+actually render properly instead.
+
+**The security constraint that shapes everything here:** the ticket
+inbox accepts email from any external sender -- there's no
+authentication, no relationship required. Rendering that content as HTML
+without sanitizing it first is a textbook stored-XSS vector: a malicious
+email could contain `<script>`, event-handler attributes, `javascript:`
+links, or tracking pixels via `<img>`. This is *not* the same trust
+level as, say, a club-settings field a logged-in board member typed in.
+
+**Decision: sanitize with an allowlist (bleach), not a denylist.**
+`app/html_sanitizer.py` allows a small set of formatting tags (`p`,
+`b`/`i`/`strong`/`em`, `a`, lists, tables, headings, `blockquote`) and
+only `href`/`title` on `<a>`, with link protocols restricted to
+`http`/`https`/`mailto`. Everything else is stripped, including all
+`style=`/`class=` attributes (blocks CSS-based tricks like invisible
+text) and `<img>` entirely (blocks both tracking pixels and the classic
+`onerror=` attack). External links get `target="_blank"
+rel="noopener noreferrer"` added automatically.
+
+**One bleach behavior that needed a workaround:** `bleach.clean()`
+strips disallowed *tags* but keeps their *inner text* by default --
+correct for something like a stripped `<div>`, wrong for `<script>`/
+`<style>`, whose content isn't human-readable text at all. Confirmed
+this empirically before relying on it (`<script>alert(1)</script>`
+survives `bleach.clean()` as the bare text `alert(1)`). Fixed by
+regex-stripping `<script>`/`<style>` blocks -- tag *and* content --
+before bleach ever sees the HTML.
+
+**Sanitize at ingestion, plus a second pass at render time.** The
+association's inbox only ever needs to render this content in one
+place (the ticket detail page) today, but ingestion-time sanitization
+alone relies on every future display surface remembering to never
+bypass it. A `sanitize_html` Jinja filter is applied again at render
+time as a cheap, idempotent defense-in-depth safety net -- re-sanitizing
+already-clean HTML costs nothing and costs nothing to get wrong, but
+catches a future code path that might render this content without
+going through the same ingestion path.
+
+**Plain text (`TicketMessage.content`) is kept regardless**, for search,
+notifications, and as the display fallback for emails with no HTML part
+-- HTML rendering is additive, not a replacement for the existing plain
+text handling.
+
 ## Removed the primary/co-tenant role distinction
 
 **Context:** `member_parcels` originally had `is_primary_tenant`, marking
@@ -443,3 +549,91 @@ auto-coverage ("gleiche Adresse wie Hauptpächter") referenced the
 now-gone concept directly and needed rewording (in all 7 languages, not
 just German) to describe the actual mechanism ("share an address with
 other residents") rather than a no-longer-existing role.
+
+## Dashboard stat cards: the pattern new modules should follow
+
+**Context:** the dashboard started with four stat cards (Members, Active
+Parcels, Terminated, Total Area) for the core module. As Purchase
+Requests and Tickets got their own cards, it was worth writing down the
+pattern so the *next* module's dashboard card doesn't reinvent it
+slightly differently each time.
+
+**The pattern:** one `col-sm-6 col-xl-3` card per stat, appended to the
+same row as the existing ones (Bootstrap wraps extras to a new row
+automatically -- with an optional module's card, the row won't always
+divide evenly, and that's fine). Structure: icon in a colored circle,
+big number, small uppercase label, a one-line footer link ("Show All" or
+similar) to the filtered view that number represents. A short sub-line
+under the number is optional and, when used, should flag something
+actionable in a warning color (e.g. Active Parcels' "vacant" count,
+Tickets' "N spam suspected") rather than restating the headline number
+in different words.
+
+**Always gate on the module flag, not on the count.** A card for an
+optional module (Purchase Requests, Tickets) is wrapped in
+`{% if request.state.module_flags.<name> %}` so it simply doesn't exist
+for associations that don't use that module -- never shown-with-zero.
+Core-module cards (Members, Parcels) have no such guard since those
+modules can't be disabled.
+
+**The stat query should match the list page's own default filter,
+exactly.** The "Open Tickets" count uses the identical status set
+(ACTIVE/ASSIGNED/WAITING) as `/tickets/`'s own "Active" filter tab, and
+the footer link points at that same filtered URL -- so the number on the
+dashboard and the list you land on after clicking always agree with each
+other. This was a deliberate design constraint, prompted directly by the
+bug below.
+
+**Lesson from a real bug, not a hypothetical one:** the pre-existing
+"Terminated" parcels card linked to `/parcels/?status_filter=gekuendigt`
+-- a leftover German enum value from before the identifier-renaming work,
+which no longer matched anything (`ParcelStatus` had long since become
+`ACTIVE`/`TERMINATED`/`DELETED`). The filter silently matched zero
+results, so the link just showed the full, unfiltered parcel list
+instead. A hardcoded filter value in a dashboard link is exactly the
+kind of stale reference that survives a rename undetected, because
+nothing about it looks broken -- the link still worked, it just quietly
+stopped filtering. Worth double-checking any hardcoded query-string
+filter value against the actual current enum whenever either side
+changes.
+
+## English becomes the one and only base/authoring language
+
+**Context:** the project started as a personal tool with German as the
+natural authoring language throughout -- identifiers were English from
+early on (see the module-renaming entries above), but UI text, code
+comments, and docstrings stayed German, and for a while there was even a
+brief split where German was "the authoring language" while English was
+merely "the runtime fallback" (see the i18n entry above, left unedited
+as a record of that). As this became a genuine open-source project meant
+for adoption by any allotment-garden association in any country, that
+split stopped making sense: a contributor who doesn't read German
+shouldn't hit a language barrier reading the code, and a translator
+working from the UI-text source of truth shouldn't need to go through
+German first.
+
+**Decision: English is the one and only base/authoring language, full
+stop.** Not "also," not "as well as German" -- the prior split between
+an authoring language and a fallback language is gone. Concretely:
+- New UI text is written in English first, then translated into the
+  other six languages (`app/translations/en.json` is the source of
+  truth other language files are validated against, not `de.json`).
+- New code comments and docstrings are written in English.
+- The REST API's hardcoded error `detail=` strings (previously German,
+  see the i18n entry above) are now English too.
+
+**What this does NOT mean:** a one-time mechanical sweep translating
+every existing German comment and docstring across the whole codebase
+in a single pass. That's a large, low-risk-per-line but high-volume
+change spanning nearly every file, and batch-translating it without care
+risks subtly mangling technical nuance that was fine in the original
+German. The policy applies to new work from now on; existing German
+comments are being translated incrementally as files are touched for
+other reasons, not stripped out in one disruptive commit. High-value,
+low-risk spots (a module's own docstring describing its own behavior,
+like `app/i18n.py`'s) are translated opportunistically when working in
+the area anyway.
+
+**German is not going away as a supported language** -- this is purely
+about which language the *source* is written in and read from; `de.json`
+remains one of the seven fully-supported UI languages, same as before.

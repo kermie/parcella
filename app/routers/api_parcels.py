@@ -29,7 +29,7 @@ async def _hole_parcel_oder_404(db: AsyncSession, parcel_id: str, mit_details: b
     result = await db.execute(query)
     parzelle = result.scalar_one_or_none()
     if not parzelle:
-        raise HTTPException(status_code=404, detail="Parcel nicht gefunden")
+        raise HTTPException(status_code=404, detail="Parcel not found")
     return parzelle
 
 
@@ -186,7 +186,7 @@ async def member_zuordnen(
     user: User = Depends(require_write_access),
 ):
     if daten.parcel_id != parcel_id:
-        raise HTTPException(status_code=400, detail="parcel_id im Body muss mit URL übereinstimmen")
+        raise HTTPException(status_code=400, detail="parcel_id in body must match the URL")
 
     await _hole_parcel_oder_404(db, parcel_id)
 
@@ -194,7 +194,7 @@ async def member_zuordnen(
         select(Member).where(Member.id == daten.member_id, Member.deleted_at.is_(None))
     )
     if not member_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Member nicht gefunden")
+        raise HTTPException(status_code=404, detail="Member not found")
 
     existing = await db.execute(
         select(MemberParcel).where(
@@ -203,7 +203,7 @@ async def member_zuordnen(
         )
     )
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=409, detail="Zuordnung existiert bereits")
+        raise HTTPException(status_code=409, detail="Assignment already exists")
 
     assignment = MemberParcel(
         parcel_id=parcel_id,
@@ -235,6 +235,6 @@ async def assignment_entfernen(
     )
     assignment = result.scalar_one_or_none()
     if not assignment:
-        raise HTTPException(status_code=404, detail="Zuordnung nicht gefunden")
+        raise HTTPException(status_code=404, detail="Assignment not found")
     await db.delete(assignment)
     await db.commit()

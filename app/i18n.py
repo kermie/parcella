@@ -1,34 +1,40 @@
 """
-Internationalisierung (i18n): eine Sprache pro Installation, umschaltbar
-über eine Vereinseinstellung (ClubSetting-Schlüssel "language").
+Internationalization (i18n): one language per installation, switchable
+via a club setting (ClubSetting key "language").
 
-Architekturentscheidung (siehe docs/i18n.md):
-- EINE Sprache pro Installation, nicht pro Benutzer und nicht per
-  Browser-Erkennung. Ein Verein besteht i.d.R. aus einer Sprachgemeinschaft;
-  eine Instanz pro Sprache zu betreiben wäre unnötig kompliziert.
-- Einfaches JSON-Wörterbuch pro Sprache (app/translations/<code>.json),
-  kein gettext/Babel – kein Kompilierschritt nötig, für jeden ohne
-  Spezialwissen editierbar, und trotzdem mit Weblate & Co. kompatibel,
-  falls später crowd-sourced Übersetzungen gewünscht sind.
-- Deutsch ist weiterhin die Quellsprache, in der neue Oberflächentexte
-  zuerst geschrieben werden. Der Laufzeit-Fallback ist jedoch Englisch:
-  fehlt ein Schlüssel in der Zielsprache (z.B. weil ein Modul noch
-  nicht übersetzt wurde), wird die englische Zeichenkette angezeigt,
-  nicht die deutsche – und eine frische Installation ohne gesetzte
-  ClubSetting "language" startet ebenfalls auf Englisch, nicht Deutsch
-  (siehe DEFAULT_LANGUAGE unten). Das reine Autoren-Vorgehen (Deutsch
-  zuerst schreiben, dann übersetzen) ändert sich dadurch nicht.
-- Die aktuelle Sprache wird – wie schon die Modul-Flags (siehe
-  app/module_flags.py) – einmal pro Request in einer Middleware geladen
-  und unter request.state.language abgelegt.
+Architecture decision (see docs/i18n-l10n.md):
+- ONE language per installation, not per user and not browser-detected.
+  An association is usually a single language community; running one
+  instance per language would be needlessly complicated.
+- Simple JSON dictionary per language (app/translations/<code>.json),
+  no gettext/Babel -- no build step needed, editable by anyone without
+  special tooling, and still compatible with Weblate & co. if
+  crowd-sourced translation is ever wanted.
+- English is the one and only base/authoring language: new UI text is
+  written in English first, then translated into the other six
+  (German, Polish, Czech, Slovak, French, Dutch). This project is
+  open-source and meant for adoption by any allotment garden
+  association in any country, so there's a single source of truth for
+  both code and UI text -- not split between an "authoring language"
+  and a "fallback language" the way it briefly was early on.
+- English is also the runtime fallback and the fresh-install default:
+  if a key is missing for the selected language (e.g. a brand-new
+  module before its Czech translation is ready), the English string is
+  shown. A fresh installation with no "language" ClubSetting set yet
+  also starts in English (see DEFAULT_LANGUAGE below). Since English is
+  now also the authoring language, this is no longer two separate
+  decisions -- they're the same thing.
+- The current language is loaded once per request in a middleware --
+  same pattern as the module flags (see app/module_flags.py) -- and
+  stored under request.state.language.
 
-Neues Modul übersetzen:
-1. Schlüssel unter einem Namensraum in app/translations/de.json ergänzen,
-   z.B. "purchase_requests": {"overview": {"title": "..."}}.
-2. Dieselben Schlüssel in app/translations/en.json (oder jeder weiteren
-   Sprachdatei) mit der Übersetzung ergänzen.
-3. In Templates: {{ t('purchase_requests.overview.title') }}
-4. In Python (Router): t_for(request, 'purchase_requests.overview.title')
+Translating a new module:
+1. Add keys under a namespace in app/translations/en.json (the source
+   of truth), e.g. "purchase_requests": {"overview": {"title": "..."}}.
+2. Add the same keys, translated, to every other
+   app/translations/<code>.json file (de, pl, cs, sk, fr, nl).
+3. In templates: {{ t('purchase_requests.overview.title') }}
+4. In Python (routers): t_for(request, 'purchase_requests.overview.title')
 """
 import json
 import logging
@@ -47,10 +53,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_LANGUAGE = "en"
 TRANSLATIONS_DIR = Path(__file__).parent / "translations"
 
-# Sprachen, die in der Vereinseinstellungen-Oberfläche zur Auswahl stehen.
-# Weitere Sprachen: einfach eine neue app/translations/<code>.json anlegen
-# und hier ergänzen (kein Code-Deploy-Schritt nötig, nur ein Neustart,
-# damit load_translations() die neue Datei einliest).
+# Languages offered in the club-settings UI. To add another language,
+# just create a new app/translations/<code>.json and add it here (no
+# code-deploy step needed, just a restart so load_translations() picks
+# up the new file).
 AVAILABLE_LANGUAGES = {
     "de": "Deutsch",
     "en": "English",
@@ -61,12 +67,12 @@ AVAILABLE_LANGUAGES = {
     "nl": "Nederlands",
 }
 
-# In-Memory-Cache: {"de": {...verschachteltes dict...}, "en": {...}}
+# In-memory cache: {"en": {...nested dict...}, "de": {...}}
 _TRANSLATIONS: Dict[str, Dict[str, Any]] = {}
 
 
 def load_translations() -> None:
-    """Liest alle app/translations/*.json einmal beim Start in den Cache ein."""
+    """Reads every app/translations/*.json into the cache once at startup."""
     _TRANSLATIONS.clear()
     for path in TRANSLATIONS_DIR.glob("*.json"):
         lang_code = path.stem
@@ -74,8 +80,8 @@ def load_translations() -> None:
             _TRANSLATIONS[lang_code] = json.load(f)
     if DEFAULT_LANGUAGE not in _TRANSLATIONS:
         logger.error(
-            f"Quellsprache '{DEFAULT_LANGUAGE}' nicht gefunden in {TRANSLATIONS_DIR} – "
-            f"Übersetzungen werden nicht funktionieren."
+            f"Source language '{DEFAULT_LANGUAGE}' not found in {TRANSLATIONS_DIR} -- "
+            f"translations will not work."
         )
 
 
@@ -90,15 +96,15 @@ def _lookup(catalog: Dict[str, Any], dotted_key: str) -> Optional[str]:
 
 def translate(key: str, lang: str, **kwargs) -> str:
     """
-    Löst einen gepunkteten Übersetzungsschlüssel auf (z.B. "tickets.overview.title").
-    Fällt auf Deutsch zurück, falls in der Zielsprache nicht vorhanden;
-    fällt auf den rohen Schlüssel zurück (mit Log-Warnung), falls auch dort nicht vorhanden.
+    Resolves a dotted translation key (e.g. "tickets.overview.title").
+    Falls back to English if not present in the target language; falls
+    back to the raw key (with a log warning) if not present there either.
     """
     value = _lookup(_TRANSLATIONS.get(lang, {}), key)
     if value is None and lang != DEFAULT_LANGUAGE:
         value = _lookup(_TRANSLATIONS.get(DEFAULT_LANGUAGE, {}), key)
     if value is None:
-        logger.warning(f"Fehlender Übersetzungsschlüssel '{key}' (Sprache: {lang})")
+        logger.warning(f"Missing translation key '{key}' (language: {lang})")
         return key
 
     if kwargs:
@@ -110,7 +116,7 @@ def translate(key: str, lang: str, **kwargs) -> str:
 
 
 async def load_current_language(db: AsyncSession) -> str:
-    """Liest die aktuell eingestellte Sprache aus ClubSetting (Default: Deutsch)."""
+    """Reads the currently configured language from ClubSetting (default: English)."""
     result = await db.execute(select(ClubSetting).where(ClubSetting.key == "language"))
     entry = result.scalar_one_or_none()
     if entry and entry.value in AVAILABLE_LANGUAGES:
@@ -119,16 +125,16 @@ async def load_current_language(db: AsyncSession) -> str:
 
 
 def t_for(request: Request, key: str, **kwargs) -> str:
-    """Übersetzungshilfe für Python-Code (Router, Flash-Nachrichten, Fehlermeldungen)."""
+    """Translation helper for Python code (routers, flash messages, error messages)."""
     lang = getattr(request.state, "language", DEFAULT_LANGUAGE)
     return translate(key, lang, **kwargs)
 
 
 @pass_context
 def jinja_t(context, key: str, **kwargs) -> str:
-    """Als Jinja-Global registriert (siehe app/main.py) – nutzt automatisch
-    request.state.language des laufenden Requests, ohne dass jeder Router
-    `t` explizit in den Template-Kontext einfügen muss."""
+    """Registered as a Jinja global (see app/main.py) -- automatically uses
+    request.state.language of the current request, so no router needs to
+    inject `t` into the template context itself."""
     request = context.get("request")
     lang = getattr(request.state, "language", DEFAULT_LANGUAGE) if request else DEFAULT_LANGUAGE
     return translate(key, lang, **kwargs)

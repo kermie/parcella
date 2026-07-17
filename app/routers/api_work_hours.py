@@ -63,7 +63,7 @@ async def konfiguration_abrufen(
     )
     konfig = result.scalar_one_or_none()
     if not konfig:
-        raise HTTPException(status_code=404, detail=f"Keine Konfiguration für {year}")
+        raise HTTPException(status_code=404, detail=f"No configuration for {year}")
     return konfig
 
 
@@ -147,7 +147,7 @@ async def vereinsrolle_aktualisieren(
     result = await db.execute(select(ClubRole).where(ClubRole.id == role_id))
     role = result.scalar_one_or_none()
     if not role:
-        raise HTTPException(status_code=404, detail="ClubRole nicht gefunden")
+        raise HTTPException(status_code=404, detail="Club role not found")
 
     role.name = daten.name
     role.description = daten.description
@@ -257,7 +257,7 @@ async def einsatz_abrufen(
     result = await db.execute(select(WorkSession).where(WorkSession.id == session_id))
     session = result.scalar_one_or_none()
     if not session:
-        raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
+        raise HTTPException(status_code=404, detail="Work session not found")
     return session
 
 
@@ -292,7 +292,7 @@ async def einsatz_aktualisieren(
     result = await db.execute(select(WorkSession).where(WorkSession.id == session_id))
     session = result.scalar_one_or_none()
     if not session:
-        raise HTTPException(status_code=404, detail="Einsatz nicht gefunden")
+        raise HTTPException(status_code=404, detail="Work session not found")
 
     update_daten = daten.model_dump(exclude_unset=True)
     if "type" in update_daten:
@@ -356,7 +356,7 @@ async def teilnahme_erstellen(
         )
     )
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=409, detail="Member ist bereits eingetragen")
+        raise HTTPException(status_code=409, detail="Member is already registered")
 
     participation = SessionParticipation(
         session_id=session_id, member_id=daten.member_id,
@@ -387,7 +387,7 @@ async def teilnahme_aktualisieren(
     )
     participation = result.scalar_one_or_none()
     if not participation:
-        raise HTTPException(status_code=404, detail="Teilnahme nicht gefunden")
+        raise HTTPException(status_code=404, detail="Participation not found")
 
     update_daten = daten.model_dump(exclude_unset=True)
     if "status" in update_daten:
@@ -468,7 +468,7 @@ async def patenschaft_aktualisieren(
     result = await db.execute(select(Sponsorship).where(Sponsorship.id == sponsorship_id))
     sponsorship = result.scalar_one_or_none()
     if not sponsorship:
-        raise HTTPException(status_code=404, detail="Sponsorship nicht gefunden")
+        raise HTTPException(status_code=404, detail="Sponsorship not found")
 
     for feld, value in daten.model_dump(exclude_unset=True).items():
         setattr(sponsorship, feld, value)
@@ -518,7 +518,7 @@ async def auswertung_abrufen(
 
     config = await _get_config_for_year(db, year)
     if not config:
-        raise HTTPException(status_code=404, detail=f"Keine Konfiguration für {year}")
+        raise HTTPException(status_code=404, detail=f"No configuration for {year}")
 
     zeilen: List[EvaluationRowOut] = []
     pflicht = Decimal(str(config.hours_required))

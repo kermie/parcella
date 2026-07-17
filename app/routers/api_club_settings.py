@@ -44,7 +44,7 @@ async def setting_get(
     )
     entry = result.scalar_one_or_none()
     if not entry:
-        raise HTTPException(status_code=404, detail="Einstellung nicht gefunden")
+        raise HTTPException(status_code=404, detail="Setting not found")
     return entry
 
 

@@ -64,7 +64,7 @@ def erstelle_metering_api_router(
     ):
         zp = await _lade_zaehlpunkt(db, metering_point_id)
         if not zp:
-            raise HTTPException(status_code=404, detail="Zählpunkt nicht gefunden")
+            raise HTTPException(status_code=404, detail="Metering point not found")
         out = MeteringPointDetailOut.model_validate(zp)
         out.current_meter = zp.current_meter
         out.former_meters = [z for z in zp.meters if not z.is_active]
@@ -113,7 +113,7 @@ def erstelle_metering_api_router(
         )
         zp = result.scalar_one_or_none()
         if not zp:
-            raise HTTPException(status_code=404, detail="Zählpunkt nicht gefunden")
+            raise HTTPException(status_code=404, detail="Metering point not found")
 
         for feld, value in daten.model_dump(exclude_unset=True).items():
             setattr(zp, feld, value)
@@ -152,7 +152,7 @@ def erstelle_metering_api_router(
     ):
         zp = await _lade_zaehlpunkt(db, metering_point_id)
         if not zp:
-            raise HTTPException(status_code=404, detail="Zählpunkt nicht gefunden")
+            raise HTTPException(status_code=404, detail="Metering point not found")
 
         alter = zp.current_meter
         if alter:
@@ -180,7 +180,7 @@ def erstelle_metering_api_router(
     ):
         zp = await _lade_zaehlpunkt(db, metering_point_id)
         if not zp:
-            raise HTTPException(status_code=404, detail="Zählpunkt nicht gefunden")
+            raise HTTPException(status_code=404, detail="Metering point not found")
         zaehler = zp.current_meter
         if not zaehler:
             return []
@@ -200,10 +200,10 @@ def erstelle_metering_api_router(
     ):
         zp = await _lade_zaehlpunkt(db, metering_point_id)
         if not zp:
-            raise HTTPException(status_code=404, detail="Zählpunkt nicht gefunden")
+            raise HTTPException(status_code=404, detail="Metering point not found")
         zaehler = zp.current_meter
         if not zaehler:
-            raise HTTPException(status_code=400, detail="Kein aktiver Zähler für diesen Zählpunkt")
+            raise HTTPException(status_code=400, detail="No active meter for this metering point")
 
         fehler = check_monotonicity(zaehler, daten.year, daten.reading)
         if fehler:

@@ -1,9 +1,9 @@
 """
-JWT-Authentifizierung für die REST-API.
+JWT authentication for the REST API.
 
-Getrennt von der Cookie-basierten Session-Authentifizierung der Web-UI
-(siehe app/auth.py). Die API nutzt klassische Bearer-Token im
-Authorization-Header.
+Separate from the web UI's cookie-based session authentication (see
+app/auth.py). The API uses classic bearer tokens in the Authorization
+header.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -63,10 +63,10 @@ async def get_current_api_user(
     token: Optional[str] = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Dependency für geschützte API-Endpunkte. Erfordert gültigen Bearer-Token."""
+    """Dependency for protected API endpoints. Requires a valid bearer token."""
     unauthorized = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Ungültige oder fehlende Authentifizierung",
+        detail="Invalid or missing authentication",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -88,20 +88,20 @@ async def get_current_api_user(
 
 
 def require_api_role(*allowed_roles: UserRole):
-    """Dependency-Factory: schränkt Endpunkte auf bestimmte Rollen ein."""
+    """Dependency factory: restricts endpoints to specific roles."""
 
     async def checker(user: User = Depends(get_current_api_user)) -> User:
         if user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Diese Aktion erfordert eine der Rollen: {', '.join(r.value for r in allowed_roles)}",
+                detail=f"This action requires one of these roles: {', '.join(r.value for r in allowed_roles)}",
             )
         return user
 
     return checker
 
 
-# Häufige Kombinationen als fertige Dependencies
+# Common combinations as ready-made dependencies
 require_write_access = require_api_role(
     UserRole.ADMIN, UserRole.BOARD, UserRole.TREASURER
 )

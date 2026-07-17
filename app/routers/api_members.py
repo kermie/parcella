@@ -37,7 +37,7 @@ async def _hole_member_oder_404(db: AsyncSession, member_id: str, mit_details: b
     result = await db.execute(query)
     member = result.scalar_one_or_none()
     if not member:
-        raise HTTPException(status_code=404, detail="Member nicht gefunden")
+        raise HTTPException(status_code=404, detail="Member not found")
     return member
 
 
@@ -208,7 +208,7 @@ async def telefon_entfernen(
     )
     telefon = result.scalar_one_or_none()
     if not telefon:
-        raise HTTPException(status_code=404, detail="Telefonnummer nicht gefunden")
+        raise HTTPException(status_code=404, detail="Phone number not found")
     await db.delete(telefon)
     await db.commit()
 
@@ -260,6 +260,6 @@ async def email_entfernen(
     )
     email_obj = result.scalar_one_or_none()
     if not email_obj:
-        raise HTTPException(status_code=404, detail="E-Mail-Adresse nicht gefunden")
+        raise HTTPException(status_code=404, detail="Email address not found")
     await db.delete(email_obj)
     await db.commit()

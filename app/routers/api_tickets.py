@@ -71,7 +71,7 @@ async def ticket_get(
 ):
     ticket = await _load_ticket(db, ticket_id)
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+        raise HTTPException(status_code=404, detail="Ticket not found")
     return ticket
 
 
@@ -117,12 +117,12 @@ async def status_update(
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+        raise HTTPException(status_code=404, detail="Ticket not found")
 
     neuer_status = TicketStatus(daten.status)
 
     if neuer_status == TicketStatus.POSTPONED and not daten.postponed_until:
-        raise HTTPException(status_code=422, detail="postponed_until ist bei Status POSTPONED erforderlich")
+        raise HTTPException(status_code=422, detail="postponed_until is required for status POSTPONED")
 
     ticket.status = neuer_status
     ticket.postponed_until = daten.postponed_until if neuer_status == TicketStatus.POSTPONED else None
@@ -148,13 +148,13 @@ async def assignment_update(
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+        raise HTTPException(status_code=404, detail="Ticket not found")
 
     if daten.assigned_to_id:
         assignee_result = await db.execute(select(User).where(User.id == daten.assigned_to_id))
         assignee = assignee_result.scalar_one_or_none()
         if not assignee:
-            raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+            raise HTTPException(status_code=404, detail="User not found")
 
         ticket.assigned_to_id = assignee.id
         ticket.status = TicketStatus.ASSIGNED
@@ -188,7 +188,7 @@ async def member_assign(
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+        raise HTTPException(status_code=404, detail="Ticket not found")
 
     ticket.member_id = daten.member_id
     await db.commit()
@@ -210,7 +210,7 @@ async def spam_status_update(
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+        raise HTTPException(status_code=404, detail="Ticket not found")
 
     ticket.spam_suspected = daten.spam_suspected
     await db.commit()
@@ -250,7 +250,7 @@ async def message_create(
     )
     ticket = ticket_result.scalar_one_or_none()
     if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+        raise HTTPException(status_code=404, detail="Ticket not found")
 
     direction = MessageDirection(daten.direction)
     message_id = None
