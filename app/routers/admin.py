@@ -16,6 +16,7 @@ from app.email_service import sende_email
 from app.crypto_utils import verschluesseln
 from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
+from app.branding import save_logo_upload, remove_logo_file
 from app.config import settings
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -236,6 +237,30 @@ async def einstellungen_speichern(
     await require_admin(request, db)
     form = await request.form()
 
+    # Logo: hochladen, entfernen, oder unverändert lassen (kein Feld in
+    # SETTINGS_FIELDS, da UploadFile eine Datei statt einem Textwert ist).
+    logo_error = None
+    remove_logo = form.get("remove_logo", "") == "true"
+    logo_upload = form.get("logo")
+
+    if remove_logo:
+        remove_logo_file()
+        result = await db.execute(select(ClubSetting).where(ClubSetting.key == "logo_filename"))
+        entry = result.scalar_one_or_none()
+        if entry:
+            await db.delete(entry)
+    elif logo_upload is not None and getattr(logo_upload, "filename", ""):
+        try:
+            filename = await save_logo_upload(logo_upload)
+            result = await db.execute(select(ClubSetting).where(ClubSetting.key == "logo_filename"))
+            entry = result.scalar_one_or_none()
+            if entry:
+                entry.value = filename
+            else:
+                db.add(ClubSetting(key="logo_filename", value=filename, description="Uploaded club logo filename"))
+        except ValueError as e:
+            logo_error = str(e)
+
     for key, description in SETTINGS_FIELDS:
         value = form.get(key, "").strip() or None
 
@@ -315,4 +340,6 @@ async def einstellungen_speichern(
             db.add(ClubSetting(key="currency", value=currency_value, description="Währung"))
 
     await db.commit()
+    if logo_error:
+        return RedirectResponse(f"/admin/settings?logo_error={logo_error}", status_code=302)
     return RedirectResponse("/admin/settings?erfolg=1", status_code=302)

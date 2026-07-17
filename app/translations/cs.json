@@ -27,8 +27,7 @@
     "users": "Uživatelé",
     "settings": "Nastavení",
     "logout": "Odhlásit",
-    "menu_open_aria": "Otevřít menu",
-    "default_title": "Správa zahrádkářského spolku"
+    "menu_open_aria": "Otevřít menu"
   },
   "errors": {
     "ticket_not_found": "Ticket nebyl nalezen",
@@ -235,7 +234,12 @@
       "region_header": "Region",
       "region_help": "Určuje formát čísel a adresy (např. oddělovač tisíců, pořadí PSČ a města). Nezávisle na jazyce rozhraní.",
       "currency_header": "Měna",
-      "currency_help": "Určuje symbol a pozici u peněžních částek (např. „19,99 €“ vs. „£19.99“). Volitelná nezávisle na jazyce a regionu."
+      "currency_help": "Určuje symbol a pozici u peněžních částek (např. „19,99 €“ vs. „£19.99“). Volitelná nezávisle na jazyce a regionu.",
+      "logo_label": "Logo spolku",
+      "logo_help": "PNG, JPEG, WebP nebo SVG, maximálně 2 MB. Nahradí ikonu stromu v postranním panelu.",
+      "logo_remove_label": "Odstranit logo (zpět na výchozí ikonu)",
+      "logo_error_type": "Neplatný typ souboru. Nahrajte prosím PNG, JPEG, WebP nebo SVG.",
+      "logo_error_size": "Soubor je příliš velký (maximálně 2 MB)."
     }
   },
   "members": {

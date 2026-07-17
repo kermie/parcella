@@ -22,6 +22,7 @@ from app.auth import hash_password, get_current_user
 from app.module_flags import lade_modul_flags
 from app.i18n import load_translations, load_current_language
 from app.l10n import load_current_region, load_current_currency
+from app.branding import load_branding
 
 # Wird beim Modul-Import geladen (nicht erst im Lifespan-Startup-Event),
 # da ASGI-Test-Clients (z.B. httpx mit ASGITransport) Lifespan-Events
@@ -145,6 +146,20 @@ async def l10n_middleware(request: Request, call_next):
     async with AsyncSessionLocal() as db:
         request.state.region = await load_current_region(db)
         request.state.currency = await load_current_currency(db)
+    response = await call_next(request)
+    return response
+
+
+@app.middleware("http")
+async def branding_middleware(request: Request, call_next):
+    """Loads the club's display name and custom logo once per request
+    (same pattern as module flags, language, and l10n above) and stores
+    them under request.state.club_name / request.state.logo_url. See
+    app/branding.py."""
+    async with AsyncSessionLocal() as db:
+        branding = await load_branding(db)
+        request.state.club_name = branding["club_name"]
+        request.state.logo_url = branding["logo_url"]
     response = await call_next(request)
     return response
 

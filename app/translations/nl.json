@@ -27,8 +27,7 @@
     "users": "Gebruikers",
     "settings": "Instellingen",
     "logout": "Uitloggen",
-    "menu_open_aria": "Open menu",
-    "default_title": "Tuinvereniging Beheer"
+    "menu_open_aria": "Open menu"
   },
   "errors": {
     "ticket_not_found": "Ticket niet gevonden",
@@ -235,7 +234,12 @@
       "region_header": "Regio",
       "region_help": "Bepaalt het getal- en adresformaat (bijv. duizendtalscheidingsteken, volgorde van postcode en plaats). Onafhankelijk van de interfacetaal.",
       "currency_header": "Valuta",
-      "currency_help": "Bepaalt het symbool en de positie voor geldbedragen (bijv. \"19,99 €\" vs. \"£19.99\"). Onafhankelijk van taal en regio instelbaar."
+      "currency_help": "Bepaalt het symbool en de positie voor geldbedragen (bijv. \"19,99 €\" vs. \"£19.99\"). Onafhankelijk van taal en regio instelbaar.",
+      "logo_label": "Verenigingslogo",
+      "logo_help": "PNG, JPEG, WebP of SVG, maximaal 2 MB. Vervangt het boomicoon in de zijbalk.",
+      "logo_remove_label": "Logo verwijderen (terug naar het standaardicoon)",
+      "logo_error_type": "Ongeldig bestandstype. Upload een PNG-, JPEG-, WebP- of SVG-bestand.",
+      "logo_error_size": "Het bestand is te groot (maximaal 2 MB)."
     }
   },
   "members": {

@@ -8,6 +8,15 @@
     <i class="bi bi-check-circle-fill"></i> {{ t('admin.settings.saved_message') }}
 </div>
 {% endif %}
+{% if request.query_params.get('logo_error') == 'invalid_logo_type' %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ t('admin.settings.logo_error_type') }}
+</div>
+{% elif request.query_params.get('logo_error') == 'logo_too_large' %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ t('admin.settings.logo_error_size') }}
+</div>
+{% endif %}
 
 <div class="d-flex justify-content-end mb-3">
     <button type="submit" form="settings-form" class="btn btn-primary">
@@ -15,7 +24,7 @@
     </button>
 </div>
 
-<form method="post" action="/admin/settings" id="settings-form">
+<form method="post" action="/admin/settings" id="settings-form" enctype="multipart/form-data">
 <div class="row g-3">
 
     <div class="col-12">
@@ -105,6 +114,28 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-building me-2"></i>{{ t('admin.settings.club_data_header') }}</div>
             <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ t('admin.settings.logo_label') }}</label>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        {% if request.state.logo_url %}
+                        <img src="{{ request.state.logo_url }}" alt="{{ request.state.club_name }}"
+                             style="height: 48px; width: auto; max-width: 160px; border: 1px solid #dce8df; border-radius: 6px; padding: 4px;">
+                        {% else %}
+                        <div style="height: 48px; width: 48px; display: flex; align-items: center; justify-content: center;
+                                    border: 1px solid #dce8df; border-radius: 6px; font-size: 1.5rem; color: var(--gv-gruen);">
+                            <i class="bi bi-tree"></i>
+                        </div>
+                        {% endif %}
+                        <span class="text-muted" style="font-size: 0.82rem;">{{ t('admin.settings.logo_help') }}</span>
+                    </div>
+                    <input type="file" name="logo" class="form-control form-control-sm" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+                    {% if request.state.logo_url %}
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="remove_logo" id="remove-logo-check" value="true">
+                        <label class="form-check-label small" for="remove-logo-check">{{ t('admin.settings.logo_remove_label') }}</label>
+                    </div>
+                    {% endif %}
+                </div>
                 {% for schluessel, label in felder[:6] %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">{{ label }}</label>

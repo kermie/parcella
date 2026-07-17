@@ -27,8 +27,7 @@
     "users": "Users",
     "settings": "Settings",
     "logout": "Log Out",
-    "menu_open_aria": "Open Menu",
-    "default_title": "Gartenverein Management"
+    "menu_open_aria": "Open Menu"
   },
   "errors": {
     "ticket_not_found": "Ticket not found",
@@ -235,7 +234,12 @@
       "region_header": "Region",
       "region_help": "Determines number and address format (e.g. thousands separator, order of postal code and city). Independent of the interface language.",
       "currency_header": "Currency",
-      "currency_help": "Determines the symbol and position used for monetary amounts (e.g. \"19,99 €\" vs. \"£19.99\"). Selectable independently of language and region."
+      "currency_help": "Determines the symbol and position used for monetary amounts (e.g. \"19,99 €\" vs. \"£19.99\"). Selectable independently of language and region.",
+      "logo_label": "Club Logo",
+      "logo_help": "PNG, JPEG, WebP, or SVG, maximum 2 MB. Replaces the tree icon in the sidebar.",
+      "logo_remove_label": "Remove logo (revert to the default icon)",
+      "logo_error_type": "Invalid file type. Please upload PNG, JPEG, WebP, or SVG.",
+      "logo_error_size": "The file is too large (maximum 2 MB)."
     }
   },
   "members": {

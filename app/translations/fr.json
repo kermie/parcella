@@ -27,8 +27,7 @@
     "users": "Utilisateurs",
     "settings": "Paramètres",
     "logout": "Déconnexion",
-    "menu_open_aria": "Ouvrir le menu",
-    "default_title": "Gestion du jardin associatif"
+    "menu_open_aria": "Ouvrir le menu"
   },
   "errors": {
     "ticket_not_found": "Ticket non trouvé",
@@ -235,7 +234,12 @@
       "region_header": "Région",
       "region_help": "Détermine le format des nombres et de l'adresse (par ex. séparateur de milliers, ordre du code postal et de la ville). Indépendant de la langue de l'interface.",
       "currency_header": "Devise",
-      "currency_help": "Détermine le symbole et sa position pour les montants (par ex. « 19,99 € » vs. « £19.99 »). Sélectionnable indépendamment de la langue et de la région."
+      "currency_help": "Détermine le symbole et sa position pour les montants (par ex. « 19,99 € » vs. « £19.99 »). Sélectionnable indépendamment de la langue et de la région.",
+      "logo_label": "Logo du club",
+      "logo_help": "PNG, JPEG, WebP ou SVG, 2 Mo maximum. Remplace l'icône d'arbre dans la barre latérale.",
+      "logo_remove_label": "Supprimer le logo (revenir à l'icône par défaut)",
+      "logo_error_type": "Type de fichier invalide. Veuillez charger un fichier PNG, JPEG, WebP ou SVG.",
+      "logo_error_size": "Le fichier est trop volumineux (2 Mo maximum)."
     }
   },
   "members": {

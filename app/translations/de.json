@@ -27,8 +27,7 @@
     "users": "Benutzer",
     "settings": "Einstellungen",
     "logout": "Abmelden",
-    "menu_open_aria": "Menü öffnen",
-    "default_title": "Gartenverein Verwaltung"
+    "menu_open_aria": "Menü öffnen"
   },
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
@@ -235,7 +234,12 @@
       "region_header": "Region",
       "region_help": "Bestimmt Zahlen- und Adressformat (z.B. Tausendertrennzeichen, Reihenfolge von PLZ und Ort). Unabhängig von der Oberflächensprache.",
       "currency_header": "Währung",
-      "currency_help": "Bestimmt Symbol und Position bei Geldbeträgen (z.B. \"19,99 €\" vs. \"£19.99\"). Unabhängig von Sprache und Region wählbar."
+      "currency_help": "Bestimmt Symbol und Position bei Geldbeträgen (z.B. \"19,99 €\" vs. \"£19.99\"). Unabhängig von Sprache und Region wählbar.",
+      "logo_label": "Vereinslogo",
+      "logo_help": "PNG, JPEG, WebP oder SVG, maximal 2 MB. Ersetzt das Baum-Symbol in der Seitenleiste.",
+      "logo_remove_label": "Logo entfernen (zurück zum Standard-Symbol)",
+      "logo_error_type": "Ungültiger Dateityp. Bitte PNG, JPEG, WebP oder SVG hochladen.",
+      "logo_error_size": "Die Datei ist zu groß (maximal 2 MB)."
     }
   },
   "members": {
