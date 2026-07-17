@@ -359,6 +359,33 @@ class SponsorshipOut(SponsorshipBase):
     member_id: Optional[str] = None
 
 
+class TaskBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    workload: str = "MODERATE"  # LIGHT | MODERATE | DEMANDING
+
+
+class TaskCreate(TaskBase):
+    session_id: Optional[str] = None
+
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    workload: Optional[str] = None
+    session_id: Optional[str] = None
+    assigned_participation_id: Optional[str] = None
+    is_done: Optional[bool] = None
+
+
+class TaskOut(TaskBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    session_id: Optional[str] = None
+    assigned_participation_id: Optional[str] = None
+    is_done: bool
+
+
 class EvaluationRowOut(BaseModel):
     """Eine Zeile der Work-Hours-Jahresauswertung."""
     label: str

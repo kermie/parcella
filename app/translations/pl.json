@@ -27,7 +27,8 @@
     "users": "Użytkownicy",
     "settings": "Ustawienia",
     "logout": "Wyloguj",
-    "menu_open_aria": "Otwórz menu"
+    "menu_open_aria": "Otwórz menu",
+    "work_hours_tasks": "Zadania"
   },
   "errors": {
     "ticket_not_found": "Nie znaleziono zgłoszenia",
@@ -793,7 +794,8 @@
       "first_session_button": "Utwórz pierwszy wpis",
       "quick_access_hours_config": "Konfiguracja godzin",
       "quick_access_club_roles": "Role klubowe",
-      "quick_access_sponsorships": "Patronaty"
+      "quick_access_sponsorships": "Patronaty",
+      "quick_access_tasks": "Zadania"
     },
     "club_roles": {
       "title": "Role klubowe",
@@ -960,7 +962,10 @@
       "remove_participation_confirm": "Usunąć uczestnictwo?",
       "no_participants": "Nie wpisano jeszcze żadnych uczestników.",
       "select_member_placeholder": "Wybierz członka…",
-      "add_button": "Dodaj"
+      "add_button": "Dodaj",
+      "tasks_card_title": "Zadania",
+      "manage_tasks_link": "Zarządzaj zadaniami",
+      "no_tasks": "Dla tego wpisu nie zaplanowano jeszcze żadnych zadań."
     },
     "session_form": {
       "title_edit": "Edytuj wpis",
@@ -1037,7 +1042,37 @@
       "assignment_not_found": "Nie znaleziono przypisania",
       "club_role_not_found": "Nie znaleziono roli klubowej",
       "sponsorship_not_found": "Nie znaleziono patronatu",
-      "no_configuration_for_year": "Brak konfiguracji dla {year}"
+      "no_configuration_for_year": "Brak konfiguracji dla {year}",
+      "task_not_found": "Nie znaleziono zadania",
+      "task_not_scheduled": "To zadanie nie jest jeszcze przypisane do żadnego wpisu",
+      "participant_not_in_session": "Ten uczestnik nie jest zarejestrowany na ten wpis"
+    },
+    "tasks": {
+      "title": "Zadania",
+      "new_task_card_title": "Nowe zadanie",
+      "title_label": "Tytuł",
+      "title_placeholder": "np. Przycięcie żywopłotu od północy, naprawa zamka bramy",
+      "description_label": "Opis",
+      "description_placeholder": "Szczegóły ważne przed rozpoczęciem...",
+      "workload_label": "Nakład pracy",
+      "workload_light": "Lekkie",
+      "workload_moderate": "Umiarkowane",
+      "workload_demanding": "Wymagające",
+      "workload_help": "Orientacyjna wskazówka dla osoby przydzielającej zadanie -- nie jest to wymuszane przez system.",
+      "session_label": "Wpis prac",
+      "backlog_option": "-- Zaległości (jeszcze nie zaplanowane) --",
+      "session_help": "Pozostaw jako zaległość, aby zaplanować to później.",
+      "create_button": "Dodaj zadanie",
+      "backlog_card_title": "Zaległości",
+      "backlog_empty": "Brak niezaplanowanych zadań.",
+      "col_title": "Zadanie",
+      "col_workload": "Nakład pracy",
+      "col_schedule": "Zaplanuj do",
+      "col_assigned_to": "Przydzielone do",
+      "delete_confirm": "Czy na pewno usunąć to zadanie?",
+      "not_yet_assigned": "Jeszcze nie przydzielone",
+      "toggle_done_tooltip": "Oznacz jako wykonane / niewykonane",
+      "assign_hint": "Przydziel każde zadanie jednemu z zarejestrowanych uczestników tego wpisu powyżej."
     }
   },
   "dashboard": {

@@ -27,7 +27,8 @@
     "users": "Benutzer",
     "settings": "Einstellungen",
     "logout": "Abmelden",
-    "menu_open_aria": "Menü öffnen"
+    "menu_open_aria": "Menü öffnen",
+    "work_hours_tasks": "Aufgaben"
   },
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
@@ -793,7 +794,8 @@
       "first_session_button": "Ersten Einsatz anlegen",
       "quick_access_hours_config": "Stunden-Konfiguration",
       "quick_access_club_roles": "Vereinsrollen",
-      "quick_access_sponsorships": "Patenschaften"
+      "quick_access_sponsorships": "Patenschaften",
+      "quick_access_tasks": "Aufgaben"
     },
     "club_roles": {
       "title": "Vereinsrollen",
@@ -960,7 +962,10 @@
       "remove_participation_confirm": "Teilnahme entfernen?",
       "no_participants": "Noch keine Teilnehmer eingetragen.",
       "select_member_placeholder": "Mitglied wählen…",
-      "add_button": "Hinzufügen"
+      "add_button": "Hinzufügen",
+      "tasks_card_title": "Aufgaben",
+      "manage_tasks_link": "Aufgaben verwalten",
+      "no_tasks": "Für diesen Einsatz sind noch keine Aufgaben eingeplant."
     },
     "session_form": {
       "title_edit": "Einsatz bearbeiten",
@@ -1037,7 +1042,37 @@
       "assignment_not_found": "Zuordnung nicht gefunden",
       "club_role_not_found": "Vereinsrolle nicht gefunden",
       "sponsorship_not_found": "Patenschaft nicht gefunden",
-      "no_configuration_for_year": "Keine Konfiguration für {year}"
+      "no_configuration_for_year": "Keine Konfiguration für {year}",
+      "task_not_found": "Aufgabe nicht gefunden",
+      "task_not_scheduled": "Diese Aufgabe ist noch keinem Einsatz zugeordnet",
+      "participant_not_in_session": "Dieser Teilnehmer ist für diesen Einsatz nicht angemeldet"
+    },
+    "tasks": {
+      "title": "Aufgaben",
+      "new_task_card_title": "Neue Aufgabe",
+      "title_label": "Titel",
+      "title_placeholder": "z.B. Hecke Nordseite schneiden, Torschloss reparieren",
+      "description_label": "Beschreibung",
+      "description_placeholder": "Details, die vor Beginn wichtig sind...",
+      "workload_label": "Arbeitsaufwand",
+      "workload_light": "Leicht",
+      "workload_moderate": "Mittel",
+      "workload_demanding": "Anspruchsvoll",
+      "workload_help": "Ein grober Anhaltspunkt für die Person, die diese Aufgabe zuteilt -- wird vom System nicht erzwungen.",
+      "session_label": "Arbeitseinsatz",
+      "backlog_option": "-- Rückstand (noch nicht geplant) --",
+      "session_help": "Im Rückstand lassen, um es später einzuplanen.",
+      "create_button": "Aufgabe hinzufügen",
+      "backlog_card_title": "Rückstand",
+      "backlog_empty": "Keine ungeplanten Aufgaben.",
+      "col_title": "Aufgabe",
+      "col_workload": "Aufwand",
+      "col_schedule": "Einplanen zu",
+      "col_assigned_to": "Zugewiesen an",
+      "delete_confirm": "Diese Aufgabe wirklich löschen?",
+      "not_yet_assigned": "Noch nicht zugewiesen",
+      "toggle_done_tooltip": "Als erledigt / nicht erledigt markieren",
+      "assign_hint": "Weisen Sie jede Aufgabe oben einem der angemeldeten Teilnehmer dieses Einsatzes zu."
     }
   },
   "dashboard": {

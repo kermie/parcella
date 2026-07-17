@@ -27,7 +27,8 @@
     "users": "Uživatelé",
     "settings": "Nastavení",
     "logout": "Odhlásit",
-    "menu_open_aria": "Otevřít menu"
+    "menu_open_aria": "Otevřít menu",
+    "work_hours_tasks": "Úkoly"
   },
   "errors": {
     "ticket_not_found": "Ticket nebyl nalezen",
@@ -793,7 +794,8 @@
       "first_session_button": "Vytvořit první sezení",
       "quick_access_hours_config": "Konfigurace hodin",
       "quick_access_club_roles": "Role ve spolku",
-      "quick_access_sponsorships": "Sponzoringy"
+      "quick_access_sponsorships": "Sponzoringy",
+      "quick_access_tasks": "Úkoly"
     },
     "club_roles": {
       "title": "Role ve spolku",
@@ -960,7 +962,10 @@
       "remove_participation_confirm": "Odstranit tuto účast?",
       "no_participants": "Zatím nebyli zadáni žádní účastníci.",
       "select_member_placeholder": "Vyberte člena…",
-      "add_button": "Přidat"
+      "add_button": "Přidat",
+      "tasks_card_title": "Úkoly",
+      "manage_tasks_link": "Spravovat úkoly",
+      "no_tasks": "Pro tuto směnu zatím nejsou naplánovány žádné úkoly."
     },
     "session_form": {
       "title_edit": "Upravit sezení",
@@ -1037,7 +1042,37 @@
       "assignment_not_found": "Přiřazení nebylo nalezeno",
       "club_role_not_found": "Role ve spolku nebyla nalezena",
       "sponsorship_not_found": "Sponzoring nebyl nalezen",
-      "no_configuration_for_year": "Pro {year} neexistuje žádná konfigurace"
+      "no_configuration_for_year": "Pro {year} neexistuje žádná konfigurace",
+      "task_not_found": "Úkol nenalezen",
+      "task_not_scheduled": "Tento úkol ještě není přiřazen k žádné směně",
+      "participant_not_in_session": "Tento účastník není na tuto směnu přihlášen"
+    },
+    "tasks": {
+      "title": "Úkoly",
+      "new_task_card_title": "Nový úkol",
+      "title_label": "Název",
+      "title_placeholder": "např. Ořezat severní živý plot, opravit zámek branky",
+      "description_label": "Popis",
+      "description_placeholder": "Podrobnosti důležité před zahájením...",
+      "workload_label": "Náročnost",
+      "workload_light": "Lehká",
+      "workload_moderate": "Střední",
+      "workload_demanding": "Náročná",
+      "workload_help": "Orientační vodítko pro osobu přidělující úkol -- systém to nevynucuje.",
+      "session_label": "Pracovní směna",
+      "backlog_option": "-- Nezařazeno (zatím neplánováno) --",
+      "session_help": "Ponechte nezařazené a naplánujte později.",
+      "create_button": "Přidat úkol",
+      "backlog_card_title": "Nezařazené úkoly",
+      "backlog_empty": "Žádné nenaplánované úkoly.",
+      "col_title": "Úkol",
+      "col_workload": "Náročnost",
+      "col_schedule": "Naplánovat do",
+      "col_assigned_to": "Přiděleno komu",
+      "delete_confirm": "Opravdu smazat tento úkol?",
+      "not_yet_assigned": "Zatím nepřiděleno",
+      "toggle_done_tooltip": "Označit jako hotové / nehotové",
+      "assign_hint": "Přiřaďte každý úkol výše jednomu z přihlášených účastníků této směny."
     }
   },
   "dashboard": {

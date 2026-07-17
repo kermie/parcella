@@ -27,7 +27,8 @@
     "users": "Používatelia",
     "settings": "Nastavenia",
     "logout": "Odhlásiť sa",
-    "menu_open_aria": "Otvoriť menu"
+    "menu_open_aria": "Otvoriť menu",
+    "work_hours_tasks": "Úlohy"
   },
   "errors": {
     "ticket_not_found": "Ticket nebol nájdený",
@@ -793,7 +794,8 @@
       "first_session_button": "Vytvoriť prvé sedenie",
       "quick_access_hours_config": "Konfigurácia hodín",
       "quick_access_club_roles": "Roly v spolku",
-      "quick_access_sponsorships": "Sponzorstvá"
+      "quick_access_sponsorships": "Sponzorstvá",
+      "quick_access_tasks": "Úlohy"
     },
     "club_roles": {
       "title": "Roly v spolku",
@@ -960,7 +962,10 @@
       "remove_participation_confirm": "Odstrániť túto účasť?",
       "no_participants": "Zatiaľ neboli zadaní žiadni účastníci.",
       "select_member_placeholder": "Vyberte člena…",
-      "add_button": "Pridať"
+      "add_button": "Pridať",
+      "tasks_card_title": "Úlohy",
+      "manage_tasks_link": "Spravovať úlohy",
+      "no_tasks": "Pre túto zmenu zatiaľ nie sú naplánované žiadne úlohy."
     },
     "session_form": {
       "title_edit": "Upraviť sedenie",
@@ -1037,7 +1042,37 @@
       "assignment_not_found": "Priradenie nebolo nájdené",
       "club_role_not_found": "Rola v spolku nebola nájdená",
       "sponsorship_not_found": "Sponzorstvo nebolo nájdené",
-      "no_configuration_for_year": "Pre {year} neexistuje žiadna konfigurácia"
+      "no_configuration_for_year": "Pre {year} neexistuje žiadna konfigurácia",
+      "task_not_found": "Úloha nenájdená",
+      "task_not_scheduled": "Táto úloha ešte nie je priradená k žiadnej zmene",
+      "participant_not_in_session": "Tento účastník nie je na túto zmenu prihlásený"
+    },
+    "tasks": {
+      "title": "Úlohy",
+      "new_task_card_title": "Nová úloha",
+      "title_label": "Názov",
+      "title_placeholder": "napr. Orezať severný živý plot, opraviť zámok bránky",
+      "description_label": "Popis",
+      "description_placeholder": "Podrobnosti dôležité pred začatím...",
+      "workload_label": "Náročnosť",
+      "workload_light": "Ľahká",
+      "workload_moderate": "Stredná",
+      "workload_demanding": "Náročná",
+      "workload_help": "Orientačné vodidlo pre osobu prideľujúcu úlohu -- systém to nevynucuje.",
+      "session_label": "Pracovná zmena",
+      "backlog_option": "-- Nezaradené (zatiaľ neplánované) --",
+      "session_help": "Ponechajte nezaradené a naplánujte neskôr.",
+      "create_button": "Pridať úlohu",
+      "backlog_card_title": "Nezaradené úlohy",
+      "backlog_empty": "Žiadne neplánované úlohy.",
+      "col_title": "Úloha",
+      "col_workload": "Náročnosť",
+      "col_schedule": "Naplánovať do",
+      "col_assigned_to": "Pridelené komu",
+      "delete_confirm": "Naozaj zmazať túto úlohu?",
+      "not_yet_assigned": "Zatiaľ nepridelené",
+      "toggle_done_tooltip": "Označiť ako hotové / nehotové",
+      "assign_hint": "Priraďte každú úlohu vyššie jednému z prihlásených účastníkov tejto zmeny."
     }
   },
   "dashboard": {

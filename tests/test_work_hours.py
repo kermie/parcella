@@ -46,6 +46,85 @@ async def test_session_und_participation(client, admin_user):
     assert participation.status_code == 201
 
 
+async def test_task_lifecycle(client, admin_user):
+    """
+    Covers the full task lifecycle: create in the backlog, schedule to a
+    session, assign to one of that session's participants, and confirm
+    that rescheduling to a different session clears the assignment (an
+    assignment to a specific person only makes sense for the session
+    they actually signed up for).
+    """
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    member = (await client.post(
+        "/api/v1/members", json={"first_name": "Elena", "last_name": "Elder"}, headers=headers
+    )).json()
+
+    session_a = (await client.post(
+        "/api/v1/work-hours/sessions",
+        json={"title": "Spring Cleanup", "type": "STANDARD", "date": "2026-04-01"},
+        headers=headers,
+    )).json()
+    session_b = (await client.post(
+        "/api/v1/work-hours/sessions",
+        json={"title": "Summer Maintenance", "type": "STANDARD", "date": "2026-07-01"},
+        headers=headers,
+    )).json()
+
+    participation = (await client.post(
+        f"/api/v1/work-hours/sessions/{session_a['id']}/participations",
+        json={"member_id": member["id"], "status": "REGISTERED"},
+        headers=headers,
+    )).json()
+
+    # Create in the backlog (no session yet)
+    task = (await client.post(
+        "/api/v1/work-hours/tasks",
+        json={"title": "Water the flower beds", "workload": "LIGHT"},
+        headers=headers,
+    )).json()
+    assert task["session_id"] is None
+
+    # Schedule to session A
+    task = (await client.put(
+        f"/api/v1/work-hours/tasks/{task['id']}",
+        json={"session_id": session_a["id"]},
+        headers=headers,
+    )).json()
+    assert task["session_id"] == session_a["id"]
+
+    # Assign to the participant who signed up for session A
+    task = (await client.put(
+        f"/api/v1/work-hours/tasks/{task['id']}",
+        json={"assigned_participation_id": participation["id"]},
+        headers=headers,
+    )).json()
+    assert task["assigned_participation_id"] == participation["id"]
+
+    # Assigning to a participant of a DIFFERENT session must be rejected
+    response = await client.put(
+        f"/api/v1/work-hours/tasks/{task['id']}",
+        json={"session_id": session_b["id"], "assigned_participation_id": participation["id"]},
+        headers=headers,
+    )
+    assert response.status_code == 400
+
+    # Rescheduling to session B (without forcing the assignment) clears it
+    task = (await client.put(
+        f"/api/v1/work-hours/tasks/{task['id']}",
+        json={"session_id": session_b["id"]},
+        headers=headers,
+    )).json()
+    assert task["session_id"] == session_b["id"]
+    assert task["assigned_participation_id"] is None
+
+    delete_response = await client.delete(
+        f"/api/v1/work-hours/tasks/{task['id']}", headers=headers
+    )
+    assert delete_response.status_code == 204
+
+
 async def test_befreiung_gilt_fuer_ganze_parcel_bei_per_parcel(client, admin_user):
     """
     Wichtigster Regressionstest für die 'any() statt all()'-Entscheidung:

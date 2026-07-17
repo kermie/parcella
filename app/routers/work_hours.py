@@ -18,6 +18,7 @@ from app.models import (
     Sponsorship, ClubRole, MemberClubRole, ExemptionReason,
     WorkHoursConfiguration, WorkHoursMode,
     Member, MemberParcel, Parcel, ParcelStatus,
+    WorkTask, TaskWorkload,
 )
 from app.auth import require_user
 from app.i18n import t_for
@@ -434,6 +435,14 @@ async def einsatz_detail(
     alle_mitglieder = mitglieder_result.scalars().all()
     bereits_eingetragen = {t.member_id for t in session.participations}
 
+    tasks_result = await db.execute(
+        select(WorkTask)
+        .options(selectinload(WorkTask.assigned_participation).selectinload(SessionParticipation.member))
+        .where(WorkTask.session_id == session_id)
+        .order_by(WorkTask.is_done, WorkTask.created_at)
+    )
+    session_tasks = tasks_result.scalars().all()
+
     return templates.TemplateResponse(
         "work_hours/session_detail.html",
         {
@@ -444,6 +453,8 @@ async def einsatz_detail(
             "bereits_eingetragen": bereits_eingetragen,
             "ParticipationStatus": ParticipationStatus,
             "SessionType": SessionType,
+            "session_tasks": session_tasks,
+            "TaskWorkload": TaskWorkload,
         },
     )
 
@@ -1187,3 +1198,183 @@ async def auswertung_export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=pflichtstunden_{year}.csv"},
     )
+
+
+# ---------------------------------------------------------------------------
+# Tasks: a backlog of upcoming work, optionally scheduled to a session and
+# assigned to one of that session's signed-up participants. Lets whoever
+# coordinates a session match tasks to people appropriately (e.g. lighter
+# tasks for someone who can't do heavy physical work) -- the app only
+# stores a workload label per task; the actual matching judgment stays
+# entirely with the human coordinator.
+# ---------------------------------------------------------------------------
+
+async def _load_task(db: AsyncSession, task_id: str) -> Optional[WorkTask]:
+    result = await db.execute(
+        select(WorkTask)
+        .options(
+            selectinload(WorkTask.session),
+            selectinload(WorkTask.assigned_participation).selectinload(SessionParticipation.member),
+        )
+        .where(WorkTask.id == task_id)
+    )
+    return result.scalar_one_or_none()
+
+
+@router.get("/tasks", response_class=HTMLResponse)
+async def tasks_overview(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_user(request, db)
+
+    backlog_result = await db.execute(
+        select(WorkTask)
+        .where(WorkTask.session_id.is_(None))
+        .order_by(WorkTask.created_at.desc())
+    )
+    backlog = backlog_result.scalars().all()
+
+    scheduled_result = await db.execute(
+        select(WorkTask)
+        .options(
+            selectinload(WorkTask.session),
+            selectinload(WorkTask.assigned_participation).selectinload(SessionParticipation.member),
+        )
+        .where(WorkTask.session_id.is_not(None))
+        .order_by(WorkTask.is_done, WorkTask.created_at.desc())
+    )
+    scheduled_tasks = scheduled_result.scalars().all()
+
+    # Group scheduled tasks by session for display, most recent session first.
+    by_session: dict = {}
+    for task in scheduled_tasks:
+        by_session.setdefault(task.session, []).append(task)
+    sessions_with_tasks = sorted(by_session.items(), key=lambda pair: pair[0].date, reverse=True)
+
+    upcoming_sessions_result = await db.execute(
+        select(WorkSession).where(WorkSession.date >= date.today()).order_by(WorkSession.date)
+    )
+    upcoming_sessions = upcoming_sessions_result.scalars().all()
+
+    return templates.TemplateResponse("work_hours/tasks.html", {
+        "request": request, "user": user,
+        "backlog": backlog,
+        "sessions_with_tasks": sessions_with_tasks,
+        "upcoming_sessions": upcoming_sessions,
+        "TaskWorkload": TaskWorkload,
+    })
+
+
+@router.post("/tasks/new")
+async def task_erstellen(
+    request: Request,
+    title: str = Form(...),
+    description: str = Form(""),
+    workload: str = Form("MODERATE"),
+    session_id: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_user(request, db)
+
+    task = WorkTask(
+        title=title.strip(),
+        description=description.strip() or None,
+        workload=TaskWorkload(workload),
+        session_id=session_id or None,
+        created_by_id=user.id,
+    )
+    db.add(task)
+    await db.commit()
+    return RedirectResponse("/work-hours/tasks", status_code=302)
+
+
+@router.post("/tasks/{task_id}/schedule")
+async def task_zu_einsatz_zuordnen(
+    task_id: str,
+    request: Request,
+    session_id: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    """Schedules a task to a session, or sends it back to the backlog if
+    session_id is empty. Clears any participant assignment when the
+    session changes (an assignment to a specific person only makes sense
+    for the session they actually signed up for)."""
+    await require_user(request, db)
+    task = await _load_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.task_not_found"))
+
+    new_session_id = session_id or None
+    if new_session_id != task.session_id:
+        task.assigned_participation_id = None
+    task.session_id = new_session_id
+
+    await db.commit()
+    return RedirectResponse("/work-hours/tasks", status_code=302)
+
+
+@router.post("/tasks/{task_id}/assign")
+async def task_teilnehmer_zuordnen(
+    task_id: str,
+    request: Request,
+    participation_id: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    """Assigns a task to one specific signed-up participant of its
+    session, or clears the assignment if participation_id is empty."""
+    await require_user(request, db)
+    task = await _load_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.task_not_found"))
+    if not task.session_id:
+        raise HTTPException(status_code=400, detail=t_for(request, "work_hours.errors.task_not_scheduled"))
+
+    if participation_id:
+        result = await db.execute(
+            select(SessionParticipation).where(
+                SessionParticipation.id == participation_id,
+                SessionParticipation.session_id == task.session_id,
+            )
+        )
+        participation = result.scalar_one_or_none()
+        if not participation:
+            raise HTTPException(status_code=400, detail=t_for(request, "work_hours.errors.participant_not_in_session"))
+        task.assigned_participation_id = participation.id
+    else:
+        task.assigned_participation_id = None
+
+    await db.commit()
+    referer = request.headers.get("referer", "/work-hours/tasks")
+    return RedirectResponse(referer, status_code=302)
+
+
+@router.post("/tasks/{task_id}/toggle-done")
+async def task_erledigt_umschalten(
+    task_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+    task = await _load_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.task_not_found"))
+
+    task.is_done = not task.is_done
+    await db.commit()
+    referer = request.headers.get("referer", "/work-hours/tasks")
+    return RedirectResponse(referer, status_code=302)
+
+
+@router.post("/tasks/{task_id}/delete")
+async def task_loeschen(
+    task_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_user(request, db)
+    task = await _load_task(db, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.task_not_found"))
+
+    await db.delete(task)
+    await db.commit()
+    referer = request.headers.get("referer", "/work-hours/tasks")
+    return RedirectResponse(referer, status_code=302)

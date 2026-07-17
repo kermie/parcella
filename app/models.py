@@ -545,6 +545,61 @@ class SessionParticipation(Base):
     )
 
 
+class TaskWorkload(str, enum.Enum):
+    """How physically demanding a task is. This exists so whoever is
+    coordinating a work session can match tasks to the people who signed
+    up for it -- the app itself never stores or infers anything about a
+    member's health, age, or ability; that judgment call stays entirely
+    with the human coordinator, who knows the people involved."""
+    LIGHT = "LIGHT"
+    MODERATE = "MODERATE"
+    DEMANDING = "DEMANDING"
+
+
+class WorkTask(Base):
+    """
+    A task for the work-hours program: something that needs doing,
+    optionally scheduled to a specific work session, and optionally
+    assigned to one specific person who signed up for that session.
+
+    Deliberately a three-stage lifecycle, each stage optional:
+    1. Backlog: session_id is NULL -- "things we know need doing,"
+       not yet tied to a specific date.
+    2. Scheduled: session_id is set, assigned_participation_id is NULL --
+       this session will cover the task, but no specific person yet.
+    3. Assigned: assigned_participation_id is set -- one specific
+       signed-up participant is doing this specific task.
+    """
+    __tablename__ = "work_tasks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    workload: Mapped[TaskWorkload] = mapped_column(
+        SAEnum(TaskWorkload), default=TaskWorkload.MODERATE, nullable=False
+    )
+    session_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("work_sessions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    assigned_participation_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("session_participations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    is_done: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    session: Mapped[Optional["WorkSession"]] = relationship("WorkSession")
+    assigned_participation: Mapped[Optional["SessionParticipation"]] = relationship("SessionParticipation")
+    created_by: Mapped[Optional["User"]] = relationship("User")
+
+    def __repr__(self) -> str:
+        return f"<WorkTask {self.title!r}>"
+
+
 
 
 # ---------------------------------------------------------------------------

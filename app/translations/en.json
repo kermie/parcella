@@ -27,7 +27,8 @@
     "users": "Users",
     "settings": "Settings",
     "logout": "Log Out",
-    "menu_open_aria": "Open Menu"
+    "menu_open_aria": "Open Menu",
+    "work_hours_tasks": "Tasks"
   },
   "errors": {
     "ticket_not_found": "Ticket not found",
@@ -793,7 +794,8 @@
       "first_session_button": "Create First Session",
       "quick_access_hours_config": "Hours Configuration",
       "quick_access_club_roles": "Club Roles",
-      "quick_access_sponsorships": "Sponsorships"
+      "quick_access_sponsorships": "Sponsorships",
+      "quick_access_tasks": "Tasks"
     },
     "club_roles": {
       "title": "Club Roles",
@@ -960,7 +962,10 @@
       "remove_participation_confirm": "Remove this participation?",
       "no_participants": "No participants entered yet.",
       "select_member_placeholder": "Select member…",
-      "add_button": "Add"
+      "add_button": "Add",
+      "tasks_card_title": "Tasks",
+      "manage_tasks_link": "Manage Tasks",
+      "no_tasks": "No tasks scheduled for this session yet."
     },
     "session_form": {
       "title_edit": "Edit Session",
@@ -1037,7 +1042,37 @@
       "assignment_not_found": "Assignment not found",
       "club_role_not_found": "Club role not found",
       "sponsorship_not_found": "Sponsorship not found",
-      "no_configuration_for_year": "No configuration for {year}"
+      "no_configuration_for_year": "No configuration for {year}",
+      "task_not_found": "Task not found",
+      "task_not_scheduled": "This task isn't scheduled to a session yet",
+      "participant_not_in_session": "This participant isn't signed up for this session"
+    },
+    "tasks": {
+      "title": "Tasks",
+      "new_task_card_title": "New Task",
+      "title_label": "Title",
+      "title_placeholder": "e.g. Trim the north hedge, fix the gate latch",
+      "description_label": "Description",
+      "description_placeholder": "Any details worth knowing before starting...",
+      "workload_label": "Workload",
+      "workload_light": "Light",
+      "workload_moderate": "Moderate",
+      "workload_demanding": "Demanding",
+      "workload_help": "A rough guide for whoever assigns this task to a participant -- not enforced by the system.",
+      "session_label": "Work session",
+      "backlog_option": "-- Backlog (not yet scheduled) --",
+      "session_help": "Leave as backlog to schedule it later.",
+      "create_button": "Add Task",
+      "backlog_card_title": "Backlog",
+      "backlog_empty": "No unscheduled tasks.",
+      "col_title": "Task",
+      "col_workload": "Workload",
+      "col_schedule": "Schedule to",
+      "col_assigned_to": "Assigned to",
+      "delete_confirm": "Really delete this task?",
+      "not_yet_assigned": "Not yet assigned",
+      "toggle_done_tooltip": "Mark done / not done",
+      "assign_hint": "Assign each task to one of this session's signed-up participants above."
     }
   },
   "dashboard": {

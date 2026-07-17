@@ -27,7 +27,8 @@
     "users": "Gebruikers",
     "settings": "Instellingen",
     "logout": "Uitloggen",
-    "menu_open_aria": "Open menu"
+    "menu_open_aria": "Open menu",
+    "work_hours_tasks": "Taken"
   },
   "errors": {
     "ticket_not_found": "Ticket niet gevonden",
@@ -793,7 +794,8 @@
       "first_session_button": "Eerste sessie aanmaken",
       "quick_access_hours_config": "Urenconfiguratie",
       "quick_access_club_roles": "Verenigingsrollen",
-      "quick_access_sponsorships": "Sponsorschappen"
+      "quick_access_sponsorships": "Sponsorschappen",
+      "quick_access_tasks": "Taken"
     },
     "club_roles": {
       "title": "Verenigingsrollen",
@@ -960,7 +962,10 @@
       "remove_participation_confirm": "Deze deelname verwijderen?",
       "no_participants": "Nog geen deelnemers ingevoerd.",
       "select_member_placeholder": "Kies lid…",
-      "add_button": "Toevoegen"
+      "add_button": "Toevoegen",
+      "tasks_card_title": "Taken",
+      "manage_tasks_link": "Taken beheren",
+      "no_tasks": "Voor deze sessie zijn nog geen taken ingepland."
     },
     "session_form": {
       "title_edit": "Sessie bewerken",
@@ -1037,7 +1042,37 @@
       "assignment_not_found": "Koppeling niet gevonden",
       "club_role_not_found": "Verenigingsrol niet gevonden",
       "sponsorship_not_found": "Sponsorschap niet gevonden",
-      "no_configuration_for_year": "Geen configuratie voor {year}"
+      "no_configuration_for_year": "Geen configuratie voor {year}",
+      "task_not_found": "Taak niet gevonden",
+      "task_not_scheduled": "Deze taak is nog aan geen enkele sessie toegewezen",
+      "participant_not_in_session": "Deze deelnemer is niet aangemeld voor deze sessie"
+    },
+    "tasks": {
+      "title": "Taken",
+      "new_task_card_title": "Nieuwe taak",
+      "title_label": "Titel",
+      "title_placeholder": "bijv. Noordelijke heg snoeien, hekslot repareren",
+      "description_label": "Beschrijving",
+      "description_placeholder": "Details die belangrijk zijn voordat je begint...",
+      "workload_label": "Belasting",
+      "workload_light": "Licht",
+      "workload_moderate": "Gemiddeld",
+      "workload_demanding": "Zwaar",
+      "workload_help": "Een globale richtlijn voor wie deze taak toewijst -- wordt niet afgedwongen door het systeem.",
+      "session_label": "Werksessie",
+      "backlog_option": "-- Achterstand (nog niet ingepland) --",
+      "session_help": "Laat op achterstand staan om later in te plannen.",
+      "create_button": "Taak toevoegen",
+      "backlog_card_title": "Achterstand",
+      "backlog_empty": "Geen ongeplande taken.",
+      "col_title": "Taak",
+      "col_workload": "Belasting",
+      "col_schedule": "Inplannen bij",
+      "col_assigned_to": "Toegewezen aan",
+      "delete_confirm": "Deze taak echt verwijderen?",
+      "not_yet_assigned": "Nog niet toegewezen",
+      "toggle_done_tooltip": "Markeren als voltooid / niet voltooid",
+      "assign_hint": "Wijs elke taak hierboven toe aan een van de aangemelde deelnemers van deze sessie."
     }
   },
   "dashboard": {

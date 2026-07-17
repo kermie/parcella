@@ -17,6 +17,7 @@ from app.models import (
     ClubRole, MemberClubRole, ExemptionReason,
     WorkSession, SessionParticipation, SessionType, ParticipationStatus,
     Sponsorship, Member, Parcel, ParcelStatus, MemberParcel, User,
+    WorkTask, TaskWorkload,
 )
 from app.api_auth import get_current_api_user, require_write_access
 from app.module_flags import require_modul
@@ -27,6 +28,7 @@ from app.schemas import (
     WorkSessionOut, WorkSessionCreate, WorkSessionUpdate,
     SessionParticipationOut, SessionParticipationCreate, SessionParticipationUpdate,
     SponsorshipOut, SponsorshipCreate, SponsorshipUpdate,
+    TaskOut, TaskCreate, TaskUpdate,
     EvaluationRowOut,
 )
 
@@ -571,3 +573,107 @@ async def auswertung_abrufen(
             ))
 
     return zeilen
+
+
+# ---------------------------------------------------------------------------
+# Tasks: a backlog of upcoming work, optionally scheduled to a session and
+# assigned to one signed-up participant. See app/routers/work_hours.py for
+# the fuller explanation of the workload/assignment model -- summary:
+# the app stores a workload label (light/moderate/demanding) per task; the
+# actual matching of task to person is a manual, human judgment call.
+# ---------------------------------------------------------------------------
+
+@router.get("/tasks", response_model=List[TaskOut], summary="List tasks")
+async def list_tasks(
+    session_id: Optional[str] = Query(None, description="Filter by session (omit for all tasks, including the backlog)"),
+    backlog_only: bool = Query(False, description="Only tasks not yet scheduled to any session"),
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_api_user),
+):
+    query = select(WorkTask).order_by(WorkTask.created_at.desc())
+    if backlog_only:
+        query = query.where(WorkTask.session_id.is_(None))
+    elif session_id:
+        query = query.where(WorkTask.session_id == session_id)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+@router.post("/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED, summary="Create a task")
+async def create_task(
+    daten: TaskCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_write_access),
+):
+    task = WorkTask(
+        title=daten.title,
+        description=daten.description,
+        workload=TaskWorkload(daten.workload),
+        session_id=daten.session_id,
+        created_by_id=user.id,
+    )
+    db.add(task)
+    await db.commit()
+    await db.refresh(task)
+    return task
+
+
+@router.put("/tasks/{task_id}", response_model=TaskOut, summary="Update a task")
+async def update_task(
+    task_id: str,
+    daten: TaskUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_write_access),
+):
+    result = await db.execute(select(WorkTask).where(WorkTask.id == task_id))
+    task = result.scalar_one_or_none()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if daten.title is not None:
+        task.title = daten.title
+    if daten.description is not None:
+        task.description = daten.description
+    if daten.workload is not None:
+        task.workload = TaskWorkload(daten.workload)
+    if daten.session_id is not None:
+        # An assignment to a specific participant only makes sense for the
+        # session they actually signed up for -- clear it when the
+        # session changes, same rule the web UI enforces.
+        if daten.session_id != task.session_id:
+            task.assigned_participation_id = None
+        task.session_id = daten.session_id or None
+    if daten.assigned_participation_id is not None:
+        if not task.session_id:
+            raise HTTPException(status_code=400, detail="This task isn't scheduled to a session yet")
+        participation_id = daten.assigned_participation_id or None
+        if participation_id:
+            check = await db.execute(
+                select(SessionParticipation).where(
+                    SessionParticipation.id == participation_id,
+                    SessionParticipation.session_id == task.session_id,
+                )
+            )
+            if not check.scalar_one_or_none():
+                raise HTTPException(status_code=400, detail="This participant isn't signed up for this session")
+        task.assigned_participation_id = participation_id
+    if daten.is_done is not None:
+        task.is_done = daten.is_done
+
+    await db.commit()
+    await db.refresh(task)
+    return task
+
+
+@router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a task")
+async def delete_task(
+    task_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_write_access),
+):
+    result = await db.execute(select(WorkTask).where(WorkTask.id == task_id))
+    task = result.scalar_one_or_none()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    await db.delete(task)
+    await db.commit()

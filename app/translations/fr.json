@@ -27,7 +27,8 @@
     "users": "Utilisateurs",
     "settings": "Paramètres",
     "logout": "Déconnexion",
-    "menu_open_aria": "Ouvrir le menu"
+    "menu_open_aria": "Ouvrir le menu",
+    "work_hours_tasks": "Tâches"
   },
   "errors": {
     "ticket_not_found": "Ticket non trouvé",
@@ -793,7 +794,8 @@
       "first_session_button": "Créer une première session",
       "quick_access_hours_config": "Configuration des heures",
       "quick_access_club_roles": "Rôles du club",
-      "quick_access_sponsorships": "Parrainages"
+      "quick_access_sponsorships": "Parrainages",
+      "quick_access_tasks": "Tâches"
     },
     "club_roles": {
       "title": "Rôles du club",
@@ -960,7 +962,10 @@
       "remove_participation_confirm": "Supprimer cette participation ?",
       "no_participants": "Aucun participant saisi.",
       "select_member_placeholder": "Sélectionner un membre…",
-      "add_button": "Ajouter"
+      "add_button": "Ajouter",
+      "tasks_card_title": "Tâches",
+      "manage_tasks_link": "Gérer les tâches",
+      "no_tasks": "Aucune tâche encore planifiée pour cette session."
     },
     "session_form": {
       "title_edit": "Modifier la session",
@@ -1037,7 +1042,37 @@
       "assignment_not_found": "Attribution non trouvée",
       "club_role_not_found": "Rôle de club non trouvé",
       "sponsorship_not_found": "Parrainage non trouvé",
-      "no_configuration_for_year": "Aucune configuration pour {year}"
+      "no_configuration_for_year": "Aucune configuration pour {year}",
+      "task_not_found": "Tâche introuvable",
+      "task_not_scheduled": "Cette tâche n'est pas encore planifiée pour une session",
+      "participant_not_in_session": "Ce participant n'est pas inscrit à cette session"
+    },
+    "tasks": {
+      "title": "Tâches",
+      "new_task_card_title": "Nouvelle tâche",
+      "title_label": "Titre",
+      "title_placeholder": "ex. Tailler la haie nord, réparer le loquet du portail",
+      "description_label": "Description",
+      "description_placeholder": "Détails utiles avant de commencer...",
+      "workload_label": "Charge de travail",
+      "workload_light": "Légère",
+      "workload_moderate": "Modérée",
+      "workload_demanding": "Exigeante",
+      "workload_help": "Un repère approximatif pour la personne qui attribue cette tâche -- non imposé par le système.",
+      "session_label": "Session de travail",
+      "backlog_option": "-- En attente (pas encore planifiée) --",
+      "session_help": "Laisser en attente pour planifier plus tard.",
+      "create_button": "Ajouter la tâche",
+      "backlog_card_title": "Tâches en attente",
+      "backlog_empty": "Aucune tâche non planifiée.",
+      "col_title": "Tâche",
+      "col_workload": "Charge",
+      "col_schedule": "Planifier pour",
+      "col_assigned_to": "Attribuée à",
+      "delete_confirm": "Vraiment supprimer cette tâche ?",
+      "not_yet_assigned": "Pas encore attribuée",
+      "toggle_done_tooltip": "Marquer comme terminée / non terminée",
+      "assign_hint": "Attribuez chaque tâche ci-dessus à l'un des participants inscrits à cette session."
     }
   },
   "dashboard": {

@@ -94,7 +94,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for t_p in session.participations | sort(attribute='mitglied.last_name') %}
+                            {% for t_p in session.participations | sort(attribute='member.last_name') %}
                             <tr>
                                 <td>
                                     <a href="/members/{{ t_p.member.id }}" class="text-decoration-none"
@@ -175,6 +175,74 @@
                         <i class="bi bi-plus-lg me-1"></i>{{ t('work_hours.session_detail.add_button') }}
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks scheduled for this session -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check me-2"></i>{{ t('work_hours.session_detail.tasks_card_title') }}</span>
+                <a href="/work-hours/tasks" class="btn btn-sm btn-outline-secondary">{{ t('work_hours.session_detail.manage_tasks_link') }}</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('work_hours.tasks.col_title') }}</th>
+                                <th>{{ t('work_hours.tasks.col_workload') }}</th>
+                                <th>{{ t('work_hours.tasks.col_assigned_to') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in session_tasks %}
+                            <tr class="{% if task.is_done %}text-muted text-decoration-line-through{% endif %}">
+                                <td>
+                                    <div class="fw-semibold">{{ task.title }}</div>
+                                    {% if task.description %}
+                                    <div class="text-muted" style="font-size: 0.8rem;">{{ task.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.workload.value == 'LIGHT' %}
+                                    <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('work_hours.tasks.workload_light') }}</span>
+                                    {% elif task.workload.value == 'DEMANDING' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('work_hours.tasks.workload_demanding') }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background: #dbeafe; color: #1e40af;">{{ t('work_hours.tasks.workload_moderate') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="/work-hours/tasks/{{ task.id }}/assign">
+                                        <select name="participation_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                            <option value="">{{ t('work_hours.tasks.not_yet_assigned') }}</option>
+                                            {% for p in session.participations %}
+                                            <option value="{{ p.id }}" {% if task.assigned_participation and task.assigned_participation.id == p.id %}selected{% endif %}>
+                                                {{ p.member.full_name }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="/work-hours/tasks/{{ task.id }}/toggle-done" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary border-0" title="{{ t('work_hours.tasks.toggle_done_tooltip') }}">
+                                            <i class="bi {% if task.is_done %}bi-arrow-counterclockwise{% else %}bi-check-lg{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">{{ t('work_hours.session_detail.no_tasks') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

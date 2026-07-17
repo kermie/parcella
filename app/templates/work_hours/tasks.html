@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}{{ t('work_hours.tasks.title') }}{% endblock %}
+{% block page_title %}{{ t('work_hours.tasks.title') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/work-hours/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <!-- New task -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.tasks.new_task_card_title') }}</div>
+            <div class="card-body">
+                <form method="post" action="/work-hours/tasks/new">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('work_hours.tasks.title_label') }} <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control"
+                               placeholder="{{ t('work_hours.tasks.title_placeholder') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('work_hours.tasks.description_label') }}</label>
+                        <textarea name="description" class="form-control" rows="2"
+                                  placeholder="{{ t('work_hours.tasks.description_placeholder') }}"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('work_hours.tasks.workload_label') }}</label>
+                        <select name="workload" class="form-select">
+                            <option value="LIGHT">{{ t('work_hours.tasks.workload_light') }}</option>
+                            <option value="MODERATE" selected>{{ t('work_hours.tasks.workload_moderate') }}</option>
+                            <option value="DEMANDING">{{ t('work_hours.tasks.workload_demanding') }}</option>
+                        </select>
+                        <div class="form-text">{{ t('work_hours.tasks.workload_help') }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('work_hours.tasks.session_label') }}</label>
+                        <select name="session_id" class="form-select">
+                            <option value="">{{ t('work_hours.tasks.backlog_option') }}</option>
+                            {% for s in upcoming_sessions %}
+                            <option value="{{ s.id }}">{{ s.date.strftime('%d.%m.%Y') }} -- {{ s.title }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">{{ t('work_hours.tasks.session_help') }}</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-1"></i>{{ t('work_hours.tasks.create_button') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backlog -->
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-list-check me-2"></i>{{ t('work_hours.tasks.backlog_card_title') }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('work_hours.tasks.col_title') }}</th>
+                                <th>{{ t('work_hours.tasks.col_workload') }}</th>
+                                <th>{{ t('work_hours.tasks.col_schedule') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in backlog %}
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">{{ task.title }}</div>
+                                    {% if task.description %}
+                                    <div class="text-muted" style="font-size: 0.8rem;">{{ task.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.workload.value == 'LIGHT' %}
+                                    <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('work_hours.tasks.workload_light') }}</span>
+                                    {% elif task.workload.value == 'DEMANDING' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('work_hours.tasks.workload_demanding') }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background: #dbeafe; color: #1e40af;">{{ t('work_hours.tasks.workload_moderate') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="/work-hours/tasks/{{ task.id }}/schedule" class="d-flex gap-1">
+                                        <select name="session_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                                            <option value="">{{ t('work_hours.tasks.backlog_option') }}</option>
+                                            {% for s in upcoming_sessions %}
+                                            <option value="{{ s.id }}">{{ s.date.strftime('%d.%m.%Y') }} -- {{ s.title }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="/work-hours/tasks/{{ task.id }}/delete" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('{{ t('work_hours.tasks.delete_confirm') }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-3">{{ t('work_hours.tasks.backlog_empty') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheduled tasks, grouped by session -->
+        {% for session, tasks in sessions_with_tasks %}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-calendar-event me-2"></i>
+                    <a href="/work-hours/sessions/{{ session.id }}" class="text-decoration-none" style="color: var(--gv-gruen);">
+                        {{ session.date.strftime('%d.%m.%Y') }} -- {{ session.title }}
+                    </a>
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+<table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('work_hours.tasks.col_title') }}</th>
+                                <th>{{ t('work_hours.tasks.col_workload') }}</th>
+                                <th>{{ t('work_hours.tasks.col_assigned_to') }}</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr class="{% if task.is_done %}text-muted text-decoration-line-through{% endif %}">
+                                <td>
+                                    <div class="fw-semibold">{{ task.title }}</div>
+                                    {% if task.description %}
+                                    <div class="text-muted" style="font-size: 0.8rem;">{{ task.description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.workload.value == 'LIGHT' %}
+                                    <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('work_hours.tasks.workload_light') }}</span>
+                                    {% elif task.workload.value == 'DEMANDING' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('work_hours.tasks.workload_demanding') }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background: #dbeafe; color: #1e40af;">{{ t('work_hours.tasks.workload_moderate') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.assigned_participation %}
+                                    {{ task.assigned_participation.member.full_name }}
+                                    {% else %}
+                                    <span class="text-muted fst-italic">{{ t('work_hours.tasks.not_yet_assigned') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="/work-hours/tasks/{{ task.id }}/toggle-done" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary border-0" title="{{ t('work_hours.tasks.toggle_done_tooltip') }}">
+                                            <i class="bi {% if task.is_done %}bi-arrow-counterclockwise{% else %}bi-check-lg{% endif %}"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <form method="post" action="/work-hours/tasks/{{ task.id }}/delete" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('{{ t('work_hours.tasks.delete_confirm') }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-muted" style="font-size: 0.8rem;">
+                {{ t('work_hours.tasks.assign_hint') }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
