@@ -230,6 +230,8 @@
         </a>
         {% endif %}
 
+        <div id="nav-accordion">
+
         {% if request.state.module_flags.work_hours %}
         <div class="nav-group" data-group="work_hours">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
@@ -238,7 +240,7 @@
                 <span>{{ t('nav.work_hours_group') }}</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-work_hours">
+            <div class="collapse nav-group-body" id="nav-group-work_hours" data-bs-parent="#nav-accordion">
                 <a href="/work-hours/" class="{% if '/work-hours' in request.url.path and '/evaluation' not in request.url.path %}aktiv{% endif %}">
                     {{ t('nav.work_hours_overview') }}
                 </a>
@@ -260,7 +262,7 @@
                 <span>{{ t('nav.water') }}</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-water">
+            <div class="collapse nav-group-body" id="nav-group-water" data-bs-parent="#nav-accordion">
                 <a href="/water/" class="{% if request.url.path == '/water/' %}aktiv{% endif %}">{{ t('nav.overview') }}</a>
                 <a href="/water/metering-points" class="{% if '/water/metering-points' in request.url.path %}aktiv{% endif %}">{{ t('nav.metering_points') }}</a>
                 <a href="/water/readings" class="{% if '/water/readings' in request.url.path %}aktiv{% endif %}">{{ t('nav.readings') }}</a>
@@ -277,7 +279,7 @@
                 <span>{{ t('nav.electricity') }}</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-electricity">
+            <div class="collapse nav-group-body" id="nav-group-electricity" data-bs-parent="#nav-accordion">
                 <a href="/electricity/" class="{% if request.url.path == '/electricity/' %}aktiv{% endif %}">{{ t('nav.overview') }}</a>
                 <a href="/electricity/metering-points" class="{% if '/electricity/metering-points' in request.url.path %}aktiv{% endif %}">{{ t('nav.metering_points') }}</a>
                 <a href="/electricity/readings" class="{% if '/electricity/readings' in request.url.path %}aktiv{% endif %}">{{ t('nav.readings') }}</a>
@@ -294,7 +296,7 @@
                 <span>{{ t('nav.insurance') }}</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-insurance">
+            <div class="collapse nav-group-body" id="nav-group-insurance" data-bs-parent="#nav-accordion">
                 <a href="/insurance/" class="{% if request.url.path == '/insurance/' %}aktiv{% endif %}">{{ t('nav.overview') }}</a>
                 <a href="/insurance/parcels" class="{% if '/insurance/parcels' in request.url.path %}aktiv{% endif %}">{{ t('nav.parcels') }}</a>
                 <a href="/insurance/configuration" class="{% if '/insurance/configuration' in request.url.path %}aktiv{% endif %}">{{ t('nav.configuration') }}</a>
@@ -311,12 +313,14 @@
                 <span>{{ t('nav.administration') }}</span>
                 <i class="bi bi-chevron-down nav-group-chevron"></i>
             </button>
-            <div class="collapse nav-group-body" id="nav-group-administration">
+            <div class="collapse nav-group-body" id="nav-group-administration" data-bs-parent="#nav-accordion">
                 <a href="/admin/" class="{% if '/admin/' == request.url.path %}aktiv{% endif %}">{{ t('nav.users') }}</a>
                 <a href="/admin/settings" class="{% if '/admin/settings' in request.url.path %}aktiv{% endif %}">{{ t('nav.settings') }}</a>
             </div>
         </div>
         {% endif %}
+
+        </div>
     </div>
     <div class="sidebar-footer">
         <i class="bi bi-person-circle me-1"></i> {{ user.name }}<br>
@@ -400,36 +404,55 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Navigation: Modul-Gruppen aufklappbar machen, Zustand pro Browser merken.
-    // Die Gruppe mit der aktuell aktiven Seite klappt immer auf, unabhängig
-    // vom gespeicherten Zustand – niemand soll seine aktuelle Seite "verlieren".
-    document.querySelectorAll('.nav-group').forEach(function (gruppe) {
-        var name = gruppe.dataset.group;
-        var body = gruppe.querySelector('.nav-group-body');
-        var toggle = gruppe.querySelector('.nav-group-toggle');
-        var enthaeltAktiv = gruppe.querySelector('a.aktiv') !== null;
-        var gespeichert = localStorage.getItem('navGroup:' + name);
-
-        var sollAufklappen = enthaeltAktiv || gespeichert !== 'zu';
-
-        if (sollAufklappen) {
-            body.classList.add('show');
-            toggle.classList.remove('collapsed');
-            toggle.setAttribute('aria-expanded', 'true');
-        } else {
-            body.classList.remove('show');
-            toggle.classList.add('collapsed');
-            toggle.setAttribute('aria-expanded', 'false');
-        }
-
-        // Zustand merken, sobald der Nutzer selbst auf-/zuklappt
-        body.addEventListener('shown.bs.collapse', function () {
-            localStorage.setItem('navGroup:' + name, 'auf');
+    // Navigation: Modul-Gruppen aufklappbar, aber bewusst nur EINE
+    // gleichzeitig offen (Akkordeon, über data-bs-parent="#nav-accordion")
+    // -- damit die Seitenleiste benutzbar bleibt, wenn weitere Module dazu-
+    // kommen. Aufklappen einer Gruppe klappt automatisch alle anderen zu
+    // (das erledigt Bootstrap selbst beim Klick, dank data-bs-parent).
+    // Die Gruppe mit der aktuell aktiven Seite gewinnt beim Laden immer,
+    // unabhängig vom gespeicherten Zustand -- niemand soll seine aktuelle
+    // Seite "verlieren". Es wird nur EIN Gruppenname gespeichert (nicht
+    // mehr pro Gruppe), da immer höchstens eine offen sein kann.
+    (function () {
+        var gruppen = document.querySelectorAll('.nav-group');
+        var aktiveGruppe = null;
+        gruppen.forEach(function (gruppe) {
+            if (gruppe.querySelector('a.aktiv')) {
+                aktiveGruppe = gruppe.dataset.group;
+            }
         });
-        body.addEventListener('hidden.bs.collapse', function () {
-            localStorage.setItem('navGroup:' + name, 'zu');
+
+        var offeneGruppe = aktiveGruppe || localStorage.getItem('navGroupOffen');
+
+        gruppen.forEach(function (gruppe) {
+            var name = gruppe.dataset.group;
+            var body = gruppe.querySelector('.nav-group-body');
+            var toggle = gruppe.querySelector('.nav-group-toggle');
+
+            if (name === offeneGruppe) {
+                body.classList.add('show');
+                toggle.classList.remove('collapsed');
+                toggle.setAttribute('aria-expanded', 'true');
+            } else {
+                body.classList.remove('show');
+                toggle.classList.add('collapsed');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            body.addEventListener('shown.bs.collapse', function () {
+                localStorage.setItem('navGroupOffen', name);
+            });
+            body.addEventListener('hidden.bs.collapse', function () {
+                // Nur löschen, wenn diese Gruppe tatsächlich noch als die
+                // offene galt -- sonst würde das automatische Zuklappen
+                // durch das Akkordeon den gerade frisch gespeicherten
+                // Namen einer ANDEREN, neu geöffneten Gruppe überschreiben.
+                if (localStorage.getItem('navGroupOffen') === name) {
+                    localStorage.removeItem('navGroupOffen');
+                }
+            });
         });
-    });
+    })();
 });
 </script>
 {% block extra_scripts %}{% endblock %}
