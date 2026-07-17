@@ -1059,6 +1059,10 @@
     "quick_export_members_csv": "Eksportuj członków jako CSV",
     "quick_export_parcels_csv": "Eksportuj działki jako CSV",
     "quick_manage_users": "Zarządzaj użytkownikami",
-    "quick_api_docs": "Dokumentacja API (Swagger)"
+    "quick_api_docs": "Dokumentacja API (Swagger)",
+    "purchase_requests_card_title": "Otwarte wnioski zakupowe",
+    "purchase_requests_empty": "Brak otwartych wniosków zakupowych.",
+    "purchase_requests_view_all": "Pokaż wszystkie",
+    "purchase_requests_new_button": "Nowy wniosek zakupowy"
   }
 }

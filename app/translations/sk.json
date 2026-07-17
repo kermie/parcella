@@ -1059,6 +1059,10 @@
     "quick_export_members_csv": "Exportovať členov ako CSV",
     "quick_export_parcels_csv": "Exportovať parcely ako CSV",
     "quick_manage_users": "Spravovať používateľov",
-    "quick_api_docs": "API dokumentácia (Swagger)"
+    "quick_api_docs": "API dokumentácia (Swagger)",
+    "purchase_requests_card_title": "Otvorené žiadosti o nákup",
+    "purchase_requests_empty": "Žiadne otvorené žiadosti o nákup.",
+    "purchase_requests_view_all": "Zobraziť všetky",
+    "purchase_requests_new_button": "Nová žiadosť o nákup"
   }
 }

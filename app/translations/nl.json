@@ -1059,6 +1059,10 @@
     "quick_export_members_csv": "Leden exporteren als CSV",
     "quick_export_parcels_csv": "Percelen exporteren als CSV",
     "quick_manage_users": "Gebruikers beheren",
-    "quick_api_docs": "API-documentatie (Swagger)"
+    "quick_api_docs": "API-documentatie (Swagger)",
+    "purchase_requests_card_title": "Openstaande aankoopverzoeken",
+    "purchase_requests_empty": "Geen openstaande aankoopverzoeken.",
+    "purchase_requests_view_all": "Alles bekijken",
+    "purchase_requests_new_button": "Nieuw aankoopverzoek"
   }
 }

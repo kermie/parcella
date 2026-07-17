@@ -16,6 +16,7 @@ from sqlalchemy.orm import selectinload
 from app.config import settings
 from app.database import get_db, AsyncSessionLocal, active_member_filter
 from app.models import User, UserRole, Member, Parcel, ParcelStatus, MemberParcel
+from app.models import PurchaseRequest, PurchaseRequestStatus
 from app.auth import hash_password, get_current_user
 from app.module_flags import lade_modul_flags
 from app.i18n import load_translations, load_current_language
@@ -228,6 +229,23 @@ async def startseite(request: Request):
         )
         recent_members = neueste_result.scalars().all()
 
+        # Offene Einkaufswünsche fürs Dashboard -- nur relevant, wenn das
+        # Modul überhaupt aktiv ist (siehe request.state.module_flags im
+        # Template), aber die Abfrage kostet nichts, wenn leer/deaktiviert.
+        purchase_requests_open_count = await db.scalar(
+            select(func.count()).select_from(PurchaseRequest).where(
+                PurchaseRequest.status == PurchaseRequestStatus.OPEN
+            )
+        )
+        offene_ekw_result = await db.execute(
+            select(PurchaseRequest)
+            .options(selectinload(PurchaseRequest.requested_by))
+            .where(PurchaseRequest.status == PurchaseRequestStatus.OPEN)
+            .order_by(PurchaseRequest.created_at.desc())
+            .limit(5)
+        )
+        recent_purchase_requests = offene_ekw_result.scalars().all()
+
     stats = {
         "mitglieder_gesamt": members_total or 0,
         "mitglieder_aktiv": members_active or 0,
@@ -235,6 +253,7 @@ async def startseite(request: Request):
         "parzellen_gekuendigt": parcels_terminated or 0,
         "parzellen_unbesetzt": parcels_vacant or 0,
         "flaeche_gesamt_qm": float(area_total or 0),
+        "einkaufswuensche_offen": purchase_requests_open_count or 0,
     }
 
     return templates.TemplateResponse(
@@ -244,6 +263,7 @@ async def startseite(request: Request):
             "user": user,
             "stats": stats,
             "neueste_mitglieder": recent_members,
+            "offene_einkaufswuensche": recent_purchase_requests,
         },
     )
 

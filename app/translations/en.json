@@ -1059,6 +1059,10 @@
     "quick_export_members_csv": "Export Members as CSV",
     "quick_export_parcels_csv": "Export Parcels as CSV",
     "quick_manage_users": "Manage Users",
-    "quick_api_docs": "API Documentation (Swagger)"
+    "quick_api_docs": "API Documentation (Swagger)",
+    "purchase_requests_card_title": "Open Purchase Requests",
+    "purchase_requests_empty": "No open purchase requests.",
+    "purchase_requests_view_all": "View All",
+    "purchase_requests_new_button": "New Purchase Request"
   }
 }
