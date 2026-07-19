@@ -96,10 +96,15 @@ version publicly available. Details and contribution guidelines in
   contain more sensitive information
 - ✅ Public signup API: lets an external CMS (WordPress, TYPO3, Contao,
   or anything else) submit work-session signups without a Parcella
-  login, identifying only by parcel number. Off by default (it opens a
-  public write endpoint) and protected by a regenerable shared token;
-  a reference WordPress connector plugin is included under
-  `integrations/wordpress/`
+  login, identifying only by parcel number (never a member name -- the
+  public site must not expose who lives where). Parcella matches the
+  optional submitted name against the parcel's current residents and
+  registers just that member if it's unambiguous, or every current
+  resident as a precaution if it isn't, creating real participants the
+  board can review and correct like any other signup. Off by default
+  (it opens a public write endpoint) and protected by a regenerable
+  shared token; a reference WordPress connector plugin is included
+  under `integrations/wordpress/`
 
 ## Planned (next phases)
 

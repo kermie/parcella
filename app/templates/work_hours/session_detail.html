@@ -179,56 +179,6 @@
         </div>
     </div>
 
-    <!-- Signups made through the public signup API (external CMS forms) -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="bi bi-globe me-2"></i>{{ t('work_hours.session_detail.public_signups_card_title') }}
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>{{ t('work_hours.session_detail.col_parcel') }}</th>
-                        <th>{{ t('work_hours.session_detail.col_name') }}</th>
-                        <th>{{ t('work_hours.session_detail.col_contact') }}</th>
-                        <th>{{ t('work_hours.session_detail.col_remarks') }}</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for link in public_signups %}
-                    <tr>
-                        <td>{{ link.signup.parcel.plot_number }}</td>
-                        <td>{{ link.signup.name or '—' }}</td>
-                        <td class="text-muted" style="font-size: 0.85rem;">
-                            {{ link.signup.phone or '' }}{% if link.signup.phone and link.signup.email %} · {% endif %}{{ link.signup.email or '' }}
-                        </td>
-                        <td class="text-muted" style="font-size: 0.85rem;">{{ link.signup.remarks or '' }}</td>
-                        <td class="text-end">
-                            <form method="post"
-                                  action="/work-hours/sessions/{{ session.id }}/public-signups/{{ link.id }}/remove">
-                                <button type="submit" class="btn btn-sm btn-outline-danger border-0"
-                                        onclick="return confirm('{{ t('work_hours.session_detail.remove_public_signup_confirm') }}')">
-                                    <i class="bi bi-x-lg"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted py-3">
-                            {{ t('work_hours.session_detail.no_public_signups') }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div class="card-footer text-muted" style="font-size: 0.8rem;">
-            {{ t('work_hours.session_detail.public_signups_hint') }}
-        </div>
-    </div>
-
     <!-- Tasks scheduled for this session -->
     <div class="col-12">
         <div class="card">

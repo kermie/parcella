@@ -19,7 +19,6 @@ from app.models import (
     WorkHoursConfiguration, WorkHoursMode,
     Member, MemberParcel, Parcel, ParcelStatus,
     WorkTask, TaskWorkload,
-    PublicSessionSignupSession, PublicSessionSignup,
 )
 from app.auth import require_user
 from app.i18n import t_for
@@ -444,20 +443,6 @@ async def einsatz_detail(
     )
     session_tasks = tasks_result.scalars().all()
 
-    # Signups made through the public signup API (see app/routers/api_public.py
-    # and docs/module-public-api.md) -- identified by parcel, not necessarily
-    # a Member, so shown separately from the participations table above.
-    public_signups_result = await db.execute(
-        select(PublicSessionSignupSession)
-        .join(PublicSessionSignupSession.signup)
-        .options(
-            selectinload(PublicSessionSignupSession.signup).selectinload(PublicSessionSignup.parcel),
-        )
-        .where(PublicSessionSignupSession.session_id == session_id)
-        .order_by(PublicSessionSignup.created_at)
-    )
-    public_signups = public_signups_result.scalars().all()
-
     return templates.TemplateResponse(
         "work_hours/session_detail.html",
         {
@@ -470,7 +455,6 @@ async def einsatz_detail(
             "SessionType": SessionType,
             "session_tasks": session_tasks,
             "TaskWorkload": TaskWorkload,
-            "public_signups": public_signups,
         },
     )
 
@@ -548,46 +532,6 @@ async def teilnahme_entfernen(
     participation = result.scalar_one_or_none()
     if participation:
         await db.delete(participation)
-        await db.commit()
-
-    return RedirectResponse(f"/work-hours/sessions/{session_id}", status_code=302)
-
-
-@router.post("/sessions/{session_id}/public-signups/{link_id}/remove")
-async def public_signup_entfernen(
-    session_id: str,
-    link_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """Removes a public signup's link to this specific session, not the
-    whole PublicSessionSignup -- a submission may cover several
-    sessions, and removing it here should only free up this session's
-    capacity, not silently drop the person from other sessions they
-    also signed up for in the same submission. If this was the last
-    remaining link, the now-orphaned signup row is cleaned up too."""
-    await require_user(request, db)
-
-    result = await db.execute(
-        select(PublicSessionSignupSession).where(PublicSessionSignupSession.id == link_id)
-    )
-    link = result.scalar_one_or_none()
-    if link:
-        signup_id = link.signup_id
-        await db.delete(link)
-        await db.flush()
-
-        remaining_result = await db.execute(
-            select(PublicSessionSignupSession).where(PublicSessionSignupSession.signup_id == signup_id)
-        )
-        if remaining_result.scalar_one_or_none() is None:
-            signup_result = await db.execute(
-                select(PublicSessionSignup).where(PublicSessionSignup.id == signup_id)
-            )
-            signup = signup_result.scalar_one_or_none()
-            if signup:
-                await db.delete(signup)
-
         await db.commit()
 
     return RedirectResponse(f"/work-hours/sessions/{session_id}", status_code=302)

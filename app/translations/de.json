@@ -994,15 +994,7 @@
       "add_button": "Hinzufügen",
       "tasks_card_title": "Aufgaben",
       "manage_tasks_link": "Aufgaben verwalten",
-      "no_tasks": "Für diesen Einsatz sind noch keine Aufgaben eingeplant.",
-      "public_signups_card_title": "Öffentliche Anmeldungen",
-      "col_parcel": "Garten",
-      "col_name": "Name",
-      "col_contact": "Kontakt",
-      "col_remarks": "Anmerkungen",
-      "no_public_signups": "Noch keine Anmeldungen über das öffentliche Formular.",
-      "remove_public_signup_confirm": "Diese öffentliche Anmeldung vom Arbeitseinsatz entfernen?",
-      "public_signups_hint": "Über die öffentliche Anmelde-API eingereicht (z. B. über das Formular der Vereins-Website). Um diese Stunden einem Mitglied für die Jahresauswertung gutzuschreiben, oben zusätzlich als regulären Teilnehmer eintragen."
+      "no_tasks": "Für diesen Einsatz sind noch keine Aufgaben eingeplant."
     },
     "session_form": {
       "title_edit": "Einsatz bearbeiten",

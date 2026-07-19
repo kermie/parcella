@@ -23,18 +23,6 @@ msgstr "API-Token"
 msgid "Only used for the write (signup submission) call, sent server-side. Never exposed to visitors."
 msgstr "Wird nur für den schreibenden Aufruf (Anmeldung) serverseitig verwendet. Wird Besuchern niemals angezeigt."
 
-msgid "Form fields"
-msgstr "Formularfelder"
-
-msgid "Show phone number field"
-msgstr "Telefonnummernfeld anzeigen"
-
-msgid "Show email address field"
-msgstr "E-Mail-Adressfeld anzeigen"
-
-msgid "Both fields are optional to fill in either way; these settings only control whether they appear on the form at all."
-msgstr "Beide Felder sind ohnehin optional auszufüllen; diese Einstellungen legen nur fest, ob sie im Formular überhaupt angezeigt werden."
-
 msgid "Place the form anywhere with the shortcode:"
 msgstr "Das Formular kann mit folgendem Shortcode überall eingebunden werden:"
 
@@ -79,12 +67,6 @@ msgstr "Gartennummer"
 
 msgid "Please choose..."
 msgstr "Bitte wählen..."
-
-msgid "Phone number"
-msgstr "Telefonnummer"
-
-msgid "Email address"
-msgstr "E-Mail-Adresse"
 
 msgid "I would like to sign up for the following work sessions:"
 msgstr "Ich möchte mich zu folgenden Arbeitseinsätzen anmelden:"

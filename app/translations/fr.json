@@ -994,15 +994,7 @@
       "add_button": "Ajouter",
       "tasks_card_title": "Tâches",
       "manage_tasks_link": "Gérer les tâches",
-      "no_tasks": "Aucune tâche encore planifiée pour cette session.",
-      "public_signups_card_title": "Inscriptions publiques",
-      "col_parcel": "Parcelle",
-      "col_name": "Nom",
-      "col_contact": "Contact",
-      "col_remarks": "Remarques",
-      "no_public_signups": "Aucune inscription via le formulaire public pour l'instant.",
-      "remove_public_signup_confirm": "Retirer cette inscription publique du chantier ?",
-      "public_signups_hint": "Soumis via l'API publique d'inscription (par ex. le formulaire du site de l'association). Pour créditer ces heures à un membre dans le bilan annuel, ajoutez-le également ci-dessus comme participant régulier."
+      "no_tasks": "Aucune tâche encore planifiée pour cette session."
     },
     "session_form": {
       "title_edit": "Modifier la session",

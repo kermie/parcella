@@ -39,10 +39,25 @@ is the three HTTP endpoints, not this PHP code.
 - Styling is deliberately minimal (a few inline rules for the honeypot
   and feedback messages) so it inherits your theme's form styling.
   Override `.parcella-work-signup` in your theme's CSS as needed.
-- Phone and email fields can each be hidden entirely under Settings ->
-  Parcella Connector if your club doesn't want to collect them. Both
-  are optional either way -- these settings only control whether the
-  fields appear on the form at all.
+- The form only collects a parcel number, an optional name, and
+  optional remarks -- no phone or email field. Once a signup matches
+  (or falls back to registering) real Parcella members, their contact
+  details already live on the Member record; collecting them again on
+  the public form would just be redundant data with nowhere useful to
+  go. If your fork of this plugin needs them for some other reason, the
+  underlying Parcella API still accepts optional `phone`/`email` fields
+  in the signup payload -- just add the inputs back and include them in
+  the array built in `parcella_signup_render_shortcode()`.
+- The name field's HTML `name` attribute is `parcella_signup_name`, not
+  `name` -- WordPress reserves `name` as a core query variable (used to
+  look up a page/post by slug). A form field literally called `name`
+  gets picked up by `WP::parse_request()` and causes a 404 the moment
+  it's non-empty, since WordPress tries to find a page with that slug
+  instead of rendering the current page. Worth remembering if you're
+  customizing this plugin: WordPress also reserves `page`, `paged`,
+  `author`, `cat`, `tag`, `feed`, `search`, `attachment`, and several
+  others as query variables -- avoid using any of them as a form field
+  name on the front end.
 
 ## Translations
 

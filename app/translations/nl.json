@@ -994,15 +994,7 @@
       "add_button": "Toevoegen",
       "tasks_card_title": "Taken",
       "manage_tasks_link": "Taken beheren",
-      "no_tasks": "Voor deze sessie zijn nog geen taken ingepland.",
-      "public_signups_card_title": "Publieke aanmeldingen",
-      "col_parcel": "Perceel",
-      "col_name": "Naam",
-      "col_contact": "Contact",
-      "col_remarks": "Opmerkingen",
-      "no_public_signups": "Nog geen aanmeldingen via het publieke formulier.",
-      "remove_public_signup_confirm": "Deze publieke aanmelding van de werkbeurt verwijderen?",
-      "public_signups_hint": "Ingediend via de publieke aanmeld-API (bijv. het formulier op de verenigingswebsite). Om deze uren aan een lid toe te schrijven in het jaaroverzicht, voeg het lid hierboven ook als reguliere deelnemer toe."
+      "no_tasks": "Voor deze sessie zijn nog geen taken ingepland."
     },
     "session_form": {
       "title_edit": "Sessie bewerken",

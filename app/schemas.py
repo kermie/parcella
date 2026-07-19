@@ -705,5 +705,4 @@ class PublicSignupSessionResult(BaseModel):
 
 
 class PublicSignupResult(BaseModel):
-    signup_id: Optional[str] = None
     results: List[PublicSignupSessionResult]

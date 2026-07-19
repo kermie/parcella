@@ -994,15 +994,7 @@
       "add_button": "Pridať",
       "tasks_card_title": "Úlohy",
       "manage_tasks_link": "Spravovať úlohy",
-      "no_tasks": "Pre túto zmenu zatiaľ nie sú naplánované žiadne úlohy.",
-      "public_signups_card_title": "Verejné prihlášky",
-      "col_parcel": "Záhrada",
-      "col_name": "Meno",
-      "col_contact": "Kontakt",
-      "col_remarks": "Poznámky",
-      "no_public_signups": "Zatiaľ žiadne prihlášky cez verejný formulár.",
-      "remove_public_signup_confirm": "Odstrániť túto verejnú prihlášku z brigády?",
-      "public_signups_hint": "Odoslané cez verejné API pre prihlášky (napr. formulár na webe spolku). Ak chcete tieto hodiny započítať členovi do ročného vyhodnotenia, pridajte ho vyššie navyše ako bežného účastníka."
+      "no_tasks": "Pre túto zmenu zatiaľ nie sú naplánované žiadne úlohy."
     },
     "session_form": {
       "title_edit": "Upraviť sedenie",

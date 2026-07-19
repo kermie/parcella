@@ -994,15 +994,7 @@
       "add_button": "Add",
       "tasks_card_title": "Tasks",
       "manage_tasks_link": "Manage Tasks",
-      "no_tasks": "No tasks scheduled for this session yet.",
-      "public_signups_card_title": "Public Signups",
-      "col_parcel": "Parcel",
-      "col_name": "Name",
-      "col_contact": "Contact",
-      "col_remarks": "Remarks",
-      "no_public_signups": "No signups via the public form yet.",
-      "remove_public_signup_confirm": "Remove this public signup from the session?",
-      "public_signups_hint": "Submitted through the public signup API (e.g. the club website's form). To credit these hours to a member's annual total, add them above as a regular participant as well."
+      "no_tasks": "No tasks scheduled for this session yet."
     },
     "session_form": {
       "title_edit": "Edit Session",

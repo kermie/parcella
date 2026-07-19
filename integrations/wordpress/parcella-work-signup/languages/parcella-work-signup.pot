@@ -10,6 +10,9 @@ msgstr ""
 msgid "Parcella Connector"
 msgstr ""
 
+msgid "Connects this site to your Parcella installation's public signup API. Find the base URL and API token on the \"Integrations\" page in Parcella's admin area (Administration -> Integrations)."
+msgstr ""
+
 msgid "Parcella base URL"
 msgstr ""
 
@@ -17,18 +20,6 @@ msgid "API token"
 msgstr ""
 
 msgid "Only used for the write (signup submission) call, sent server-side. Never exposed to visitors."
-msgstr ""
-
-msgid "Form fields"
-msgstr ""
-
-msgid "Show phone number field"
-msgstr ""
-
-msgid "Show email address field"
-msgstr ""
-
-msgid "Both fields are optional to fill in either way; these settings only control whether they appear on the form at all."
 msgstr ""
 
 msgid "Place the form anywhere with the shortcode:"
@@ -74,12 +65,6 @@ msgid "Parcel number"
 msgstr ""
 
 msgid "Please choose..."
-msgstr ""
-
-msgid "Phone number"
-msgstr ""
-
-msgid "Email address"
 msgstr ""
 
 msgid "I would like to sign up for the following work sessions:"

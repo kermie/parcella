@@ -14,6 +14,20 @@ for installation. Writing an equivalent connector for another CMS means
 implementing the same three-endpoint contract below; none of the logic
 needs to be reimplemented per CMS.
 
+## The core constraint: no member names on the public site
+
+The public form only ever collects a **parcel number**, never a member
+name picked from a list -- the club's public website must not expose
+which members live on which parcel. That one requirement shapes
+everything else in this module: Parcella, not the form, has to work out
+who is actually signing up.
+
+A submitted name is still accepted as free text (useful when several
+people live on one parcel), and is used to narrow down *which* current
+resident to register -- but it's never presented as a choice on the
+public side, and an unmatched or ambiguous name doesn't block the
+signup; see "Matching logic" below.
+
 ## Off by default
 
 Unlike every other optional module (`app/module_flags.py`), this one
@@ -26,23 +40,45 @@ silently being available after an upgrade.
 
 ## Data model
 
-```
-public_session_signups          -- one row per form submission
-                                    (parcel_id, optional name/phone/email/remarks)
-public_session_signup_sessions  -- join table: one submission can cover
-                                    several work sessions (checkbox list)
-```
+There is no dedicated public-signup table. A signup creates real
+`SessionParticipation` rows directly, with `status=REGISTERED`, exactly
+as if a board member had added that member from the session detail
+page. This was a deliberate change from an earlier version of this
+module that stored public signups in their own
+`public_session_signups`/`public_session_signup_sessions` tables,
+displayed in a separate UI card -- removed in migration
+`0028_drop_signup_tables` once it became clear the signups needed to
+behave like real participations (visible in the normal participants
+table, contributing to the normal work-hours totals), not a parallel
+structure the board had to check in a second place.
 
-Deliberately **not** `SessionParticipation`: that model requires a real
-`Member`, but the public form only asks for a parcel number. The
-submitter might be a tenant, a partner, or a helping neighbor who isn't
-necessarily a `Member` record -- see "Key decisions" below.
+The submission's phone/email/remarks/submitted-name (and, when the
+fallback below kicks in, a flag explaining why) are folded into the
+`note` field of each `SessionParticipation` row created -- visible right
+in the existing participants table, no separate UI needed.
 
-`WorkSession.available_spots` (used everywhere capacity is checked or
-displayed) counts both real `SessionParticipation` rows and
-`PublicSessionSignupSession` links, so a session filled half by members
-signing up internally and half by the public form still enforces one
-shared capacity correctly.
+## Matching logic
+
+On each submission, Parcella looks up the parcel's **current**
+residents (`MemberParcel` rows with `assigned_until IS NULL`) and tries
+to match the optionally-submitted name against them
+(case-insensitive, whitespace-normalized, checked against both
+`"First Last"` and `"Last First"`):
+
+- **Exactly one match** -> only that member is registered.
+- **No name given, no match, or more than one plausible match** ->
+  *every* current resident of the parcel is registered, each with a
+  note flagging that the match was ambiguous and asking the board to
+  verify and remove whoever didn't actually sign up.
+- **No current residents at all** -> the signup is rejected for that
+  session with reason `"No members are currently assigned to this
+  parcel"` (nothing to register).
+
+Overregistering is the deliberately safer default over the alternatives
+(registering nobody, or silently guessing wrong with no trace) --
+removing an extra participant from the normal participants table is a
+one-click action the board already knows how to do; a signup that
+silently went nowhere is much harder to notice and fix.
 
 ## Endpoints
 
@@ -67,26 +103,27 @@ defense-in-depth on top of the token.
 `POST .../signup` accepts multiple `session_ids` in one submission and
 evaluates each independently -- a full session is rejected with a
 `reason` while other sessions in the same submission can still succeed.
-See the admin "Integrations" page (Administration -> Integrations) for
-the current token, endpoint URLs, and a regenerate button.
+Capacity (`WorkSession.max_participants`/`available_spots`) is checked
+against however many members are about to be registered for that
+session (one if matched, all current residents otherwise) -- a session
+with room for only 1 more spot rejects a 2-resident parcel's signup for
+that session entirely, rather than registering only one of them.
+Submitting the same parcel/session combination twice does not create
+duplicate participations. See the admin "Integrations" page
+(Administration -> Integrations) for the current token, endpoint URLs,
+and a regenerate button.
 
 ## Key decisions
 
-**Parcel number is enough; no Member match required.** Considered
-requiring the submitted name to match an existing Member on that parcel,
-which would allow linking straight to `SessionParticipation`. Rejected
-per an explicit product decision: someone helping out on behalf of a
-parcel (a partner, a neighbor) should be able to sign up without being a
-Member record themselves. The tradeoff is that public signups don't
-show up in a member's own work-hours history -- they're recorded
-against the parcel, not a person. Public signups for a session are
-shown in a dedicated "Public Signups" card on the session's detail page
-(`app/templates/work_hours/session_detail.html`), separate from the
-regular participations table, and can be removed from there once
-processed. If a club wants those hours credited to a specific member's
-annual total, a board member currently has to add that member as a
-regular participant as well from the same page -- there's no automatic
-link between a public signup and a `SessionParticipation`.
+**Signups are real `SessionParticipation` rows, not a parallel
+structure.** See "Data model" above -- this replaced an earlier design
+that kept public signups in their own tables specifically so a
+submitter didn't have to be a `Member`. That constraint (a helping
+neighbor without a Member record) turned out to be less important in
+practice than the signups actually behaving like normal participants;
+the parcel-based matching/fallback logic above resolves it well enough
+for the common case, and there's no dedicated place left for a
+non-Member submitter to go anyway.
 
 **A dedicated token, not the member API's JWT.** The existing REST API
 (`app/api_auth.py`) issues per-user JWTs from a login -- there's no
@@ -96,11 +133,11 @@ is simple to document in one settings screen and easy to rotate if a
 site's credentials leak.
 
 **Capacity check is not fully race-safe.** Two submissions arriving at
-nearly the same moment could both read `available_spots > 0` before
-either commits, both succeeding when only one spot existed. Accepted as
-a known limitation for a small club's traffic volume rather than adding
-row-level locking; worth revisiting if a club's usage pattern makes
-this a real problem in practice.
+nearly the same moment could both read `available_spots` as sufficient
+before either commits, both succeeding when only one spot existed.
+Accepted as a known limitation for a small club's traffic volume rather
+than adding row-level locking; worth revisiting if a club's usage
+pattern makes this a real problem in practice.
 
 **Blank optional fields must be treated as absent, not validated as-is.**
 Found via the WordPress connector: an HTML form submits an untouched
@@ -127,7 +164,9 @@ Any connector needs to, in order:
 1. `GET /work-sessions/upcoming` and `GET /parcels` to render a form
    (cache both briefly -- see the WordPress plugin's use of transients).
 2. Collect parcel number (required), optional name/phone/email/remarks,
-   and one or more chosen session IDs.
+   and one or more chosen session IDs. The name field, if offered,
+   should never be a dropdown of members -- see "The core constraint"
+   above.
 3. `POST /work-sessions/signup` with the API token in
    `X-Parcella-API-Token`, server-side only.
 4. Handle a per-session `accepted`/`reason` in the response -- a

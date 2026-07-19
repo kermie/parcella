@@ -20,8 +20,6 @@ if (!defined('ABSPATH')) {
 define('PARCELLA_SIGNUP_VERSION', '1.0.0');
 define('PARCELLA_SIGNUP_OPTION_BASE_URL', 'parcella_signup_base_url');
 define('PARCELLA_SIGNUP_OPTION_API_TOKEN', 'parcella_signup_api_token');
-define('PARCELLA_SIGNUP_OPTION_SHOW_PHONE', 'parcella_signup_show_phone');
-define('PARCELLA_SIGNUP_OPTION_SHOW_EMAIL', 'parcella_signup_show_email');
 
 // Loads translations from languages/parcella-work-signup-{locale}.mo,
 // e.g. languages/parcella-work-signup-de_DE.mo for a German site. Falls
@@ -54,12 +52,6 @@ add_action('admin_init', function () {
     ]);
     register_setting('parcella_signup_settings', PARCELLA_SIGNUP_OPTION_API_TOKEN, [
         'sanitize_callback' => 'sanitize_text_field',
-    ]);
-    register_setting('parcella_signup_settings', PARCELLA_SIGNUP_OPTION_SHOW_PHONE, [
-        'sanitize_callback' => 'rest_sanitize_boolean',
-    ]);
-    register_setting('parcella_signup_settings', PARCELLA_SIGNUP_OPTION_SHOW_EMAIL, [
-        'sanitize_callback' => 'rest_sanitize_boolean',
     ]);
 });
 
@@ -99,35 +91,6 @@ function parcella_signup_render_settings_page() {
                                class="regular-text" autocomplete="off">
                         <p class="description">
                             <?php esc_html_e('Only used for the write (signup submission) call, sent server-side. Never exposed to visitors.', 'parcella-work-signup'); ?>
-                        </p>
-                    </td>
-                </tr>
-                <tr>
-                    <th scope="row"><?php esc_html_e('Form fields', 'parcella-work-signup'); ?></th>
-                    <td>
-                        <!--
-                            Hidden field before each checkbox: unchecked
-                            checkboxes are omitted entirely from $_POST,
-                            so without this the setting could never be
-                            turned back off once turned on. The hidden
-                            "0" is submitted first and the checkbox's "1"
-                            overrides it in $_POST when checked.
-                        -->
-                        <label>
-                            <input type="hidden" name="<?php echo esc_attr(PARCELLA_SIGNUP_OPTION_SHOW_PHONE); ?>" value="0">
-                            <input type="checkbox" name="<?php echo esc_attr(PARCELLA_SIGNUP_OPTION_SHOW_PHONE); ?>" value="1"
-                                   <?php checked(get_option(PARCELLA_SIGNUP_OPTION_SHOW_PHONE, '1'), '1'); ?>>
-                            <?php esc_html_e('Show phone number field', 'parcella-work-signup'); ?>
-                        </label>
-                        <br>
-                        <label>
-                            <input type="hidden" name="<?php echo esc_attr(PARCELLA_SIGNUP_OPTION_SHOW_EMAIL); ?>" value="0">
-                            <input type="checkbox" name="<?php echo esc_attr(PARCELLA_SIGNUP_OPTION_SHOW_EMAIL); ?>" value="1"
-                                   <?php checked(get_option(PARCELLA_SIGNUP_OPTION_SHOW_EMAIL, '1'), '1'); ?>>
-                            <?php esc_html_e('Show email address field', 'parcella-work-signup'); ?>
-                        </label>
-                        <p class="description">
-                            <?php esc_html_e('Both fields are optional to fill in either way; these settings only control whether they appear on the form at all.', 'parcella-work-signup'); ?>
                         </p>
                     </td>
                 </tr>
@@ -250,9 +213,7 @@ function parcella_signup_render_shortcode($atts) {
 
         $payload = [
             'parcel_number' => sanitize_text_field(wp_unslash($_POST['parcel_number'] ?? '')),
-            'name' => sanitize_text_field(wp_unslash($_POST['name'] ?? '')),
-            'phone' => sanitize_text_field(wp_unslash($_POST['phone'] ?? '')),
-            'email' => sanitize_email(wp_unslash($_POST['email'] ?? '')),
+            'name' => sanitize_text_field(wp_unslash($_POST['parcella_signup_name'] ?? '')),
             'remarks' => sanitize_textarea_field(wp_unslash($_POST['remarks'] ?? '')),
             'session_ids' => $session_ids,
             // Honeypot: a hidden field real visitors never fill in (see
@@ -311,7 +272,18 @@ function parcella_signup_render_shortcode($atts) {
 
                 <p>
                     <label for="parcella-name"><?php esc_html_e('Name', 'parcella-work-signup'); ?></label><br>
-                    <input type="text" id="parcella-name" name="name">
+                    <!--
+                        Field is deliberately NOT called "name": WordPress
+                        treats "name" as a reserved core query variable
+                        (used to look up a post/page by slug). A POST
+                        field literally called "name" gets picked up by
+                        WP::parse_request() and WordPress tries to find a
+                        page with that slug instead of just rendering
+                        this page's own content -- which 404s the moment
+                        this field is non-empty. Namespacing it avoids
+                        the collision entirely.
+                    -->
+                    <input type="text" id="parcella-name" name="parcella_signup_name">
                 </p>
 
                 <p>
@@ -325,20 +297,6 @@ function parcella_signup_render_shortcode($atts) {
                         <?php endforeach; ?>
                     </select>
                 </p>
-
-                <?php if (get_option(PARCELLA_SIGNUP_OPTION_SHOW_PHONE, '1') === '1'): ?>
-                <p>
-                    <label for="parcella-phone"><?php esc_html_e('Phone number', 'parcella-work-signup'); ?></label><br>
-                    <input type="tel" id="parcella-phone" name="phone">
-                </p>
-                <?php endif; ?>
-
-                <?php if (get_option(PARCELLA_SIGNUP_OPTION_SHOW_EMAIL, '1') === '1'): ?>
-                <p>
-                    <label for="parcella-email"><?php esc_html_e('Email address', 'parcella-work-signup'); ?></label><br>
-                    <input type="email" id="parcella-email" name="email">
-                </p>
-                <?php endif; ?>
 
                 <p>
                     <?php esc_html_e('I would like to sign up for the following work sessions:', 'parcella-work-signup'); ?><br>

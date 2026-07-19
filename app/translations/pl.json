@@ -994,15 +994,7 @@
       "add_button": "Dodaj",
       "tasks_card_title": "Zadania",
       "manage_tasks_link": "Zarządzaj zadaniami",
-      "no_tasks": "Dla tego wpisu nie zaplanowano jeszcze żadnych zadań.",
-      "public_signups_card_title": "Publiczne zgłoszenia",
-      "col_parcel": "Działka",
-      "col_name": "Imię i nazwisko",
-      "col_contact": "Kontakt",
-      "col_remarks": "Uwagi",
-      "no_public_signups": "Brak jeszcze zgłoszeń przez formularz publiczny.",
-      "remove_public_signup_confirm": "Usunąć to publiczne zgłoszenie z tego dnia roboczego?",
-      "public_signups_hint": "Przesłane przez publiczne API zgłoszeń (np. formularz na stronie stowarzyszenia). Aby zaliczyć te godziny członkowi w rocznym zestawieniu, dodaj go dodatkowo powyżej jako zwykłego uczestnika."
+      "no_tasks": "Dla tego wpisu nie zaplanowano jeszcze żadnych zadań."
     },
     "session_form": {
       "title_edit": "Edytuj wpis",

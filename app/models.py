@@ -499,25 +499,13 @@ class WorkSession(Base):
     participations: Mapped[List["SessionParticipation"]] = relationship(
         "SessionParticipation", back_populates="session", cascade="all, delete-orphan"
     )
-    public_signup_links: Mapped[List["PublicSessionSignupSession"]] = relationship(
-        "PublicSessionSignupSession", back_populates="session", cascade="all, delete-orphan"
-    )
     created_by: Mapped[Optional["User"]] = relationship("User")
 
     @property
     def available_spots(self) -> Optional[int]:
-        """
-        Remaining open spots, or None if the session has no capacity limit.
-
-        Counts both real member participations (excluding no-shows) and
-        signups made through the public signup API (see
-        PublicSessionSignup below) -- both draw from the same capacity,
-        so both must be counted for the limit to mean anything.
-        """
         if self.max_participants is None:
             return None
         registered = sum(1 for t in self.participations if t.status != ParticipationStatus.NO_SHOW)
-        registered += len(self.public_signup_links)
         return max(0, self.max_participants - registered)
 
     def __repr__(self) -> str:
@@ -554,64 +542,6 @@ class SessionParticipation(Base):
 
     __table_args__ = (
         UniqueConstraint("session_id", "member_id", name="uq_session_member"),
-    )
-
-
-# ---------------------------------------------------------------------------
-# Public signup API: lets an external site (e.g. the club's WordPress
-# site, via a small connector plugin) create work-session signups without
-# a Parcella login. Deliberately NOT a SessionParticipation: those require
-# a real Member, but a public form only asks for a parcel number -- the
-# submitter may be a partner, tenant, or helping neighbor who isn't
-# necessarily a Member record themselves. See docs/module-public-api.md.
-# ---------------------------------------------------------------------------
-
-class PublicSessionSignup(Base):
-    """One submission of the public work-session signup form. Identifies
-    only by parcel (required); name/phone/email are optional free text,
-    not validated against Member records."""
-    __tablename__ = "public_session_signups"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    parcel_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-
-    parcel: Mapped["Parcel"] = relationship("Parcel")
-    session_links: Mapped[List["PublicSessionSignupSession"]] = relationship(
-        "PublicSessionSignupSession", back_populates="signup", cascade="all, delete-orphan"
-    )
-
-    def __repr__(self) -> str:
-        return f"<PublicSessionSignup parcel={self.parcel_id}>"
-
-
-class PublicSessionSignupSession(Base):
-    """Join table: one public signup can cover several work sessions at
-    once (the public form is a checkbox list, same as SessionParticipation
-    is one row per member per session)."""
-    __tablename__ = "public_session_signup_sessions"
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    signup_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("public_session_signups.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    session_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("work_sessions.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-
-    signup: Mapped["PublicSessionSignup"] = relationship("PublicSessionSignup", back_populates="session_links")
-    session: Mapped["WorkSession"] = relationship("WorkSession", back_populates="public_signup_links")
-
-    __table_args__ = (
-        UniqueConstraint("signup_id", "session_id", name="uq_public_signup_session"),
     )
 
 
