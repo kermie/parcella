@@ -105,9 +105,20 @@ version publicly available. Details and contribution guidelines in
   (it opens a public write endpoint) and protected by a regenerable
   shared token; a reference WordPress connector plugin is included
   under `integrations/wordpress/`
+- 🚧 Announcements module (foundation): author a piece of club news
+  once (Markdown body, image, optional shortened print version) and
+  prepare it for delivery to a blog draft, member email, and a
+  printable one-page PDF notice. This first phase covers authoring and
+  the data model only -- off by default, admin/board only. See
+  `docs/module-announcements.md`. Sending to each channel is a
+  follow-up phase.
 
 ## Planned (next phases)
 
+- Announcements: blog channel (WordPress REST API publisher, extensible
+  to other CMSes), email channel (send to members with
+  `email_info = true`), print channel (branded one-page PDF with
+  auto-shorten + QR code fallback)
 - Password change for logged-in users
 - Assign a member to a club role (UI)
 - Invoicing (per parcel, area, or member)

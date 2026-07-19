@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ t('announcements.list.title') }}{% endblock %}
+{% block page_title %}{{ t('announcements.list.title') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/announcements/new" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>{{ t('announcements.list.new_button') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>{{ t('announcements.list.col_title') }}</th>
+                        <th>{{ t('announcements.list.col_status') }}</th>
+                        <th>{{ t('announcements.list.col_created') }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in announcements %}
+                    <tr>
+                        <td style="width: 48px;">
+                            {% if a.image_url %}
+                            <img src="{{ a.image_url }}" alt="" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                            {% else %}
+                            <i class="bi bi-megaphone text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/announcements/{{ a.id }}/edit" class="text-decoration-none fw-semibold" style="color: var(--gv-gruen);">{{ a.title }}</a>
+                        </td>
+                        <td>
+                            {% if a.status.value == 'DRAFT' %}
+                            <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('announcements.list.status_draft') }}</span>
+                            {% elif a.status.value == 'PUBLISHED' %}
+                            <span class="badge badge-aktiv">{{ t('announcements.list.status_published') }}</span>
+                            {% else %}
+                            <span class="badge" style="background: #e5e7eb; color: #4b5563;">{{ t('announcements.list.status_archived') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted" style="font-size: 0.85rem;">{{ a.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="text-end">
+                            <a href="/announcements/{{ a.id }}/edit" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-megaphone d-block mb-2" style="font-size: 1.5rem;"></i>
+                            {{ t('announcements.list.empty') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

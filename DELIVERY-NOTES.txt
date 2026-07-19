@@ -1,34 +1,81 @@
-DELIVERY NOTES -- Remove phone/email fields from the WordPress form
+DELIVERY NOTES -- Announcements module, foundation piece
 ======================================================================
 
-Confirmed: remarks were already flowing into the participant's Note
-field on the session detail page (tested live: submitted a signup with
-remarks, checked the API response -- it showed up exactly there,
-alongside the submitted name). Nothing needed for that part.
+New module for the announcements feature we discussed: authoring a
+single piece of club news (Markdown body, optional image, optional
+print-only shortened text) with a data model ready to track delivery
+to three channels. This delivery is the FOUNDATION only -- authoring
+and the data model. Nothing is sent anywhere yet: no blog draft, no
+email, no PDF. Those are follow-up deliveries, each building on top of
+what's here without changing its shape.
 
-Removed entirely, per your call that phone/email is redundant once a
-signup resolves to a real Member record:
-- Both input fields, gone from the form.
-- The "Show phone number field" / "Show email address field" settings
-  checkboxes, gone from Settings -> Parcella Connector (along with
-  whatever was causing them not to save -- moot now, but my best guess
-  was the hidden-field trick for unchecking wasn't the culprit; more
-  likely something about how the settings API round-tripped the
-  boolean value. Not worth chasing further since the feature's gone).
-- The corresponding options (parcella_signup_show_phone /
-  parcella_signup_show_email) are simply unused now; no cleanup step
-  needed, WordPress just won't reference them anymore.
-- Cleaned up the translation files (.po/.mo/.pot) to drop the six
-  strings that were only used by these fields.
+## What's included
 
-The form now collects: name (optional), parcel number (required),
-work session checkboxes, and remarks (optional). The underlying
-Parcella API still accepts optional phone/email in the signup payload
--- untouched, in case a different club's fork of this plugin still
-wants them.
+- New tables: `announcements`, `announcement_deliveries`
+  (migration 0029_announcements)
+- New module flag `announcements`, OFF by default (same reasoning as
+  public_signup_api -- it will hold outbound credentials and can
+  eventually email every member, so it needs a deliberate opt-in)
+- New admin-only pages under /announcements/ (list, create, edit) --
+  restricted to admin/board, same as the Integrations page
+- A Markdown editor (EasyMDE, live preview) for the body text
+- Image upload per announcement (PNG/JPEG/WebP, up to 5 MB)
+- All 7 language files updated (29 new keys each, verified matching)
+- docs/module-announcements.md (full design) and a new section in
+  docs/architecture-decisions.md
+- tests/test_announcements.py (5 tests: module-flag gating, create/
+  edit round-trip including Markdown->HTML rendering, validation,
+  delete, and the admin/board-only permission boundary) -- all passing
+  alongside the full existing suite (45/45)
 
 ## To apply
 
-Overwrite your existing plugin folder with this one (all 5 files
-included). No database changes, no Parcella backend restart needed --
-this is entirely inside the WordPress plugin.
+1. Unzip into your repo root (overwrites the files listed below,
+   git status will show them as modified; adds the new files as
+   untracked).
+2. Run `pip install -r requirements.txt` (adds `markdown==3.7` -- the
+   only new dependency).
+3. Run the new migration: `alembic upgrade head`
+   (0028_drop_signup_tables -> 0029_announcements). No data migration,
+   no existing table touched -- purely additive.
+4. Restart the app (Docker or otherwise) so the new router and
+   templates are picked up.
+5. The module stays invisible until you switch it on in
+   Admin -> Settings ("Announcements"), same as Public Signup API.
+
+No manual file deletions needed for this one -- everything here is new
+or additive.
+
+## Files changed
+
+New:
+- app/announcement_utils.py
+- app/routers/announcements.py
+- app/templates/announcements/list.html
+- app/templates/announcements/form.html
+- migrations/versions/0029_announcements.py
+- docs/module-announcements.md
+- tests/test_announcements.py
+
+Modified:
+- app/models.py (Announcement, AnnouncementDelivery + 3 enums)
+- app/module_flags.py (new "announcements" flag, default False)
+- app/routers/admin.py (module toggle registered in the Settings page)
+- app/main.py (router import + registration)
+- app/templates/base.html (nav link, admin/board visible only when
+  the module flag is on)
+- requirements.txt (+ markdown==3.7)
+- app/translations/*.json (all 7 -- 29 new keys each)
+- docs/architecture-decisions.md (new "Announcements module
+  (foundation)" section)
+- README.md (feature checklist + planned-next-phases updated)
+
+## What's next (not in this delivery)
+
+- Blog channel: WordPress REST API publisher (draft posts via
+  Application Password), extending the Integrations page
+- Email channel: send to members with email_info = true, reusing the
+  existing ticket-mailer infrastructure
+- Print channel: WeasyPrint one-page PDF with your branding, the
+  auto-shorten-and-QR-code logic against print_text_override once it
+  doesn't fit on one page

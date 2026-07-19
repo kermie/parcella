@@ -35,7 +35,8 @@
     "calendar_birthdays": "Anniversaires",
     "calendar_council_presence": "Présence du conseil",
     "calendar_council_absence": "Absence du conseil",
-    "integrations": "Intégrations"
+    "integrations": "Intégrations",
+    "announcements": "Annonces"
   },
   "errors": {
     "ticket_not_found": "Ticket non trouvé",
@@ -241,7 +242,9 @@
         "calendar_name": "Calendrier",
         "calendar_desc": "Calendrier communautaire (assemblées, inspections, sessions de travail), anniversaires des membres, et présence/absence du conseil, chacun avec un export ICS. Désactivez si votre association n'en a pas besoin.",
         "public_signup_api_name": "API publique d'inscription",
-        "public_signup_api_desc": "Permet à un site externe (par ex. une extension WordPress) de soumettre des inscriptions aux chantiers collectifs sans connexion à Parcella. Désactivé par défaut car cela ouvre un point d'accès public en écriture ; le jeton d'accès se trouve sur la page Intégrations."
+        "public_signup_api_desc": "Permet à un site externe (par ex. une extension WordPress) de soumettre des inscriptions aux chantiers collectifs sans connexion à Parcella. Désactivé par défaut car cela ouvre un point d'accès public en écriture ; le jeton d'accès se trouve sur la page Intégrations.",
+        "announcements_name": "Annonces",
+        "announcements_desc": "Rédigez une actualité du club une seule fois et préparez-la pour le blog, l'e-mail aux membres et une affiche imprimée."
       },
       "region_header": "Région",
       "region_help": "Détermine le format des nombres et de l'adresse (par ex. séparateur de milliers, ordre du code postal et de la ville). Indépendant de la langue de l'interface.",
@@ -1227,6 +1230,38 @@
       "entry_not_found": "Entrée introuvable",
       "invalid_token": "Jeton d'accès invalide ou manquant",
       "not_your_entry": "Vous ne pouvez supprimer que vos propres entrées"
+    }
+  },
+  "announcements": {
+    "list": {
+      "title": "Annonces",
+      "new_button": "Nouvelle annonce",
+      "col_title": "Titre",
+      "col_status": "Statut",
+      "col_created": "Créée le",
+      "status_draft": "Brouillon",
+      "status_published": "Publiée",
+      "status_archived": "Archivée",
+      "empty": "Aucune annonce pour le moment."
+    },
+    "form": {
+      "title": "Annonce",
+      "error_missing_fields": "Veuillez indiquer un titre et un texte.",
+      "error_invalid_image_type": "Veuillez charger une image PNG, JPEG ou WebP.",
+      "error_image_too_large": "L'image est trop volumineuse (5 Mo maximum).",
+      "label_title": "Titre",
+      "label_image": "Image",
+      "remove_image": "Supprimer l'image",
+      "image_hint": "PNG, JPEG ou WebP, jusqu'à 5 Mo. Utilisée comme image mise en avant du blog et dans l'e-mail.",
+      "label_body": "Texte",
+      "body_hint": "Rédigé en Markdown. Ce même texte est utilisé pour le brouillon du blog et l'e-mail aux membres.",
+      "body_placeholder": "Rédigez votre annonce ici...",
+      "label_print_override": "Version imprimée (optionnel)",
+      "print_override_hint": "Laissez vide pour imprimer le texte complet ci-dessus. S'il ne tient pas sur une page, une version raccourcie sera proposée ici -- modifiable librement.",
+      "print_fits": "Tient sur une page imprimée.",
+      "print_too_long": "Probablement trop long pour une page -- envisagez de raccourcir.",
+      "save_button": "Enregistrer",
+      "cancel_button": "Annuler"
     }
   }
 }

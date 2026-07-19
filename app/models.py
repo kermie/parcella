@@ -1224,3 +1224,116 @@ class CouncilAbsence(Base):
 
     def __repr__(self) -> str:
         return f"<CouncilAbsence {self.user_id} {self.start_date}-{self.end_date}>"
+
+
+class AnnouncementStatus(str, enum.Enum):
+    """Lifecycle of an announcement itself (not of any individual channel
+    delivery -- see AnnouncementDelivery for per-channel state)."""
+    DRAFT = "DRAFT"
+    PUBLISHED = "PUBLISHED"
+    ARCHIVED = "ARCHIVED"
+
+
+class AnnouncementChannel(str, enum.Enum):
+    BLOG = "BLOG"
+    EMAIL = "EMAIL"
+    PRINT = "PRINT"
+
+
+class AnnouncementDeliveryStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+
+
+class Announcement(Base):
+    """
+    A single piece of club news/information, authored once here and
+    delivered out to up to three channels (blog draft via CMS API,
+    member email, printable PDF one-pager). See docs/module-announcements.md
+    for the overall design.
+
+    body_markdown is the single canonical source text, used as-is for
+    both the blog draft and the email (same container, per product
+    decision -- no separate email override). body_html is derived from
+    it at save time (markdown -> HTML -> sanitized) and cached here so
+    it isn't re-rendered on every read; it is NOT hand-edited directly.
+
+    print_text_override is the one deliberate exception: nullable
+    Markdown that, when set, is used for the PDF instead of
+    body_markdown. It starts empty (full text is used), gets
+    auto-filled with a shortened version if the full text doesn't fit
+    on one printed page, and remains freely hand-editable afterward --
+    it is a real editable field, not just a computed preview.
+    """
+    __tablename__ = "announcements"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    body_markdown: Mapped[str] = mapped_column(Text, nullable=False)
+    body_html: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    image_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    print_text_override: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[AnnouncementStatus] = mapped_column(
+        SAEnum(AnnouncementStatus), default=AnnouncementStatus.DRAFT, nullable=False
+    )
+    created_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    created_by: Mapped[Optional["User"]] = relationship("User")
+    deliveries: Mapped[List["AnnouncementDelivery"]] = relationship(
+        "AnnouncementDelivery", back_populates="announcement", cascade="all, delete-orphan"
+    )
+
+    @property
+    def image_url(self) -> Optional[str]:
+        return f"/static/uploads/{self.image_filename}" if self.image_filename else None
+
+    def delivery_for(self, channel: "AnnouncementChannel") -> Optional["AnnouncementDelivery"]:
+        return next((d for d in self.deliveries if d.channel == channel), None)
+
+    def __repr__(self) -> str:
+        return f"<Announcement {self.title!r} ({self.status.value})>"
+
+
+class AnnouncementDelivery(Base):
+    """
+    Tracks one channel's delivery attempt for an announcement. One row
+    per (announcement, channel) -- upserted, not appended, so retrying a
+    failed send updates the existing row rather than creating a history
+    of attempts. external_reference holds the channel-specific pointer
+    needed afterward (currently only used by BLOG: the published post's
+    public URL, needed by the PRINT channel to generate its QR code).
+    """
+    __tablename__ = "announcement_deliveries"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    announcement_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("announcements.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    channel: Mapped[AnnouncementChannel] = mapped_column(SAEnum(AnnouncementChannel), nullable=False)
+    status: Mapped[AnnouncementDeliveryStatus] = mapped_column(
+        SAEnum(AnnouncementDeliveryStatus), default=AnnouncementDeliveryStatus.PENDING, nullable=False
+    )
+    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    external_reference: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    announcement: Mapped["Announcement"] = relationship("Announcement", back_populates="deliveries")
+
+    __table_args__ = (
+        UniqueConstraint("announcement_id", "channel", name="uq_announcement_delivery_channel"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<AnnouncementDelivery {self.announcement_id} {self.channel.value} ({self.status.value})>"

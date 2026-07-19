@@ -32,7 +32,7 @@ from app.branding import load_branding
 load_translations()
 from app.templating import templates
 from app.ticket_mailer import process_incoming_mails
-from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, purchase_requests, calendar as calendar_router
+from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, purchase_requests, calendar as calendar_router, announcements as announcements_router
 from app.routers.metering import erstelle_metering_router
 from app.models import MeteringMedium
 from app.routers import api_auth, api_members, api_parcels, api_club_settings, api_stats
@@ -175,6 +175,7 @@ app.include_router(insurance.router)
 app.include_router(tickets.router)
 app.include_router(purchase_requests.router)
 app.include_router(calendar_router.router)
+app.include_router(announcements_router.router)
 
 # Zählerwesen: EINE Codebasis (app/routers/metering.py), zweimal
 # instanziiert für Wasser und Strom – siehe erstelle_metering_router().

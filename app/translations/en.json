@@ -35,7 +35,8 @@
     "calendar_birthdays": "Birthdays",
     "calendar_council_presence": "Council Presence",
     "calendar_council_absence": "Council Absence",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "announcements": "Announcements"
   },
   "errors": {
     "ticket_not_found": "Ticket not found",
@@ -241,7 +242,9 @@
         "calendar_name": "Calendar",
         "calendar_desc": "Community calendar (meetings, inspections, work sessions), member birthdays, and council presence/absence tracking, each with an ICS export. Disable if your association doesn't need these.",
         "public_signup_api_name": "Public signup API",
-        "public_signup_api_desc": "Lets an external website (e.g. a WordPress plugin) submit work-session signups without a Parcella login. Off by default since it opens a public write endpoint; see the Integrations page for the access token."
+        "public_signup_api_desc": "Lets an external website (e.g. a WordPress plugin) submit work-session signups without a Parcella login. Off by default since it opens a public write endpoint; see the Integrations page for the access token.",
+        "announcements_name": "Announcements",
+        "announcements_desc": "Author club news once and prepare it for the blog, member email, and a printable notice."
       },
       "region_header": "Region",
       "region_help": "Determines number and address format (e.g. thousands separator, order of postal code and city). Independent of the interface language.",
@@ -1227,6 +1230,38 @@
       "entry_not_found": "Entry not found",
       "invalid_token": "Invalid or missing access token",
       "not_your_entry": "You can only delete your own entries"
+    }
+  },
+  "announcements": {
+    "list": {
+      "title": "Announcements",
+      "new_button": "New Announcement",
+      "col_title": "Title",
+      "col_status": "Status",
+      "col_created": "Created",
+      "status_draft": "Draft",
+      "status_published": "Published",
+      "status_archived": "Archived",
+      "empty": "No announcements yet."
+    },
+    "form": {
+      "title": "Announcement",
+      "error_missing_fields": "Please provide both a title and a body text.",
+      "error_invalid_image_type": "Please upload a PNG, JPEG, or WebP image.",
+      "error_image_too_large": "The image is too large (maximum 5 MB).",
+      "label_title": "Title",
+      "label_image": "Image",
+      "remove_image": "Remove image",
+      "image_hint": "PNG, JPEG, or WebP, up to 5 MB. Used as the blog's featured image and shown in the email.",
+      "label_body": "Body text",
+      "body_hint": "Written in Markdown. This same text is used for both the blog draft and the member email.",
+      "body_placeholder": "Write your announcement here...",
+      "label_print_override": "Print version (optional)",
+      "print_override_hint": "Leave empty to print the full text above. If it doesn't fit on one page, a shortened version will be suggested here -- feel free to edit it.",
+      "print_fits": "Fits on one printed page.",
+      "print_too_long": "Likely too long for one printed page -- consider shortening.",
+      "save_button": "Save",
+      "cancel_button": "Cancel"
     }
   }
 }

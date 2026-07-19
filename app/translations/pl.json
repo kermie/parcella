@@ -35,7 +35,8 @@
     "calendar_birthdays": "Urodziny",
     "calendar_council_presence": "Obecność zarządu",
     "calendar_council_absence": "Nieobecność zarządu",
-    "integrations": "Integracje"
+    "integrations": "Integracje",
+    "announcements": "Ogłoszenia"
   },
   "errors": {
     "ticket_not_found": "Nie znaleziono zgłoszenia",
@@ -241,7 +242,9 @@
         "calendar_name": "Kalendarz",
         "calendar_desc": "Kalendarz stowarzyszenia (zebrania, kontrole, wpisy prac), urodziny członków oraz obecność/nieobecność zarządu, każdy z eksportem ICS. Wyłącz, jeśli Twoje stowarzyszenie tego nie potrzebuje.",
         "public_signup_api_name": "Publiczne API zgłoszeń",
-        "public_signup_api_desc": "Umożliwia zewnętrznej stronie (np. wtyczce WordPress) przesyłanie zgłoszeń na dni robocze bez logowania do Parcella. Domyślnie wyłączone, ponieważ otwiera publiczny punkt zapisu; token dostępu znajdziesz na stronie Integracje."
+        "public_signup_api_desc": "Umożliwia zewnętrznej stronie (np. wtyczce WordPress) przesyłanie zgłoszeń na dni robocze bez logowania do Parcella. Domyślnie wyłączone, ponieważ otwiera publiczny punkt zapisu; token dostępu znajdziesz na stronie Integracje.",
+        "announcements_name": "Ogłoszenia",
+        "announcements_desc": "Twórz wiadomości dla klubu raz i przygotuj je do bloga, e-maila do członków oraz wydruku."
       },
       "region_header": "Region",
       "region_help": "Określa format liczb i adresu (np. separator tysięcy, kolejność kodu pocztowego i miejscowości). Niezależnie od języka interfejsu.",
@@ -1227,6 +1230,38 @@
       "entry_not_found": "Nie znaleziono wpisu",
       "invalid_token": "Nieprawidłowy lub brakujący token dostępu",
       "not_your_entry": "Możesz usuwać tylko własne wpisy"
+    }
+  },
+  "announcements": {
+    "list": {
+      "title": "Ogłoszenia",
+      "new_button": "Nowe ogłoszenie",
+      "col_title": "Tytuł",
+      "col_status": "Status",
+      "col_created": "Utworzono",
+      "status_draft": "Szkic",
+      "status_published": "Opublikowano",
+      "status_archived": "Zarchiwizowano",
+      "empty": "Brak ogłoszeń."
+    },
+    "form": {
+      "title": "Ogłoszenie",
+      "error_missing_fields": "Podaj tytuł i treść.",
+      "error_invalid_image_type": "Prześlij obraz PNG, JPEG lub WebP.",
+      "error_image_too_large": "Obraz jest za duży (maksymalnie 5 MB).",
+      "label_title": "Tytuł",
+      "label_image": "Obraz",
+      "remove_image": "Usuń obraz",
+      "image_hint": "PNG, JPEG lub WebP, do 5 MB. Używane jako obraz wyróżniający na blogu i w e-mailu.",
+      "label_body": "Treść",
+      "body_hint": "Napisane w Markdown. Ten sam tekst jest używany zarówno dla szkicu bloga, jak i e-maila do członków.",
+      "body_placeholder": "Napisz tutaj treść ogłoszenia...",
+      "label_print_override": "Wersja do druku (opcjonalnie)",
+      "print_override_hint": "Pozostaw puste, aby wydrukować pełny tekst powyżej. Jeśli nie zmieści się na jednej stronie, zostanie tu zaproponowana skrócona wersja -- można ją edytować.",
+      "print_fits": "Mieści się na jednej stronie wydruku.",
+      "print_too_long": "Prawdopodobnie za długie na jedną stronę -- rozważ skrócenie.",
+      "save_button": "Zapisz",
+      "cancel_button": "Anuluj"
     }
   }
 }

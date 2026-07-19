@@ -201,6 +201,7 @@ MODULE_FELDER = [
     ("modul_purchase_requests", "admin.settings.modules.purchase_requests_name", "admin.settings.modules.purchase_requests_desc"),
     ("modul_calendar", "admin.settings.modules.calendar_name", "admin.settings.modules.calendar_desc"),
     ("modul_public_signup_api", "admin.settings.modules.public_signup_api_name", "admin.settings.modules.public_signup_api_desc"),
+    ("modul_announcements", "admin.settings.modules.announcements_name", "admin.settings.modules.announcements_desc"),
 ]
 
 

@@ -35,7 +35,8 @@
     "calendar_birthdays": "Geburtstage",
     "calendar_council_presence": "Vorstandspräsenz",
     "calendar_council_absence": "Vorstandsabwesenheit",
-    "integrations": "Integrationen"
+    "integrations": "Integrationen",
+    "announcements": "Mitteilungen"
   },
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
@@ -241,7 +242,9 @@
         "calendar_name": "Kalender",
         "calendar_desc": "Vereinskalender (Versammlungen, Begehungen, Arbeitseinsätze), Mitglieder-Geburtstage sowie Vorstandspräsenz/-abwesenheit, jeweils mit ICS-Export. Deaktivieren, falls Ihr Verein das nicht benötigt.",
         "public_signup_api_name": "Öffentliche Anmelde-API",
-        "public_signup_api_desc": "Ermöglicht einer externen Website (z. B. einem WordPress-Plugin), Anmeldungen zu Arbeitseinsätzen ohne Parcella-Login einzureichen. Standardmäßig deaktiviert, da dies einen öffentlichen Schreib-Endpunkt öffnet; das Zugriffs-Token findest du auf der Seite Integrationen."
+        "public_signup_api_desc": "Ermöglicht einer externen Website (z. B. einem WordPress-Plugin), Anmeldungen zu Arbeitseinsätzen ohne Parcella-Login einzureichen. Standardmäßig deaktiviert, da dies einen öffentlichen Schreib-Endpunkt öffnet; das Zugriffs-Token findest du auf der Seite Integrationen.",
+        "announcements_name": "Mitteilungen",
+        "announcements_desc": "Vereinsnachrichten einmal verfassen und für Blog, Mitglieder-E-Mail und Aushang vorbereiten."
       },
       "region_header": "Region",
       "region_help": "Bestimmt Zahlen- und Adressformat (z.B. Tausendertrennzeichen, Reihenfolge von PLZ und Ort). Unabhängig von der Oberflächensprache.",
@@ -1227,6 +1230,38 @@
       "entry_not_found": "Eintrag nicht gefunden",
       "invalid_token": "Ungültiges oder fehlendes Zugriffstoken",
       "not_your_entry": "Sie können nur eigene Einträge löschen"
+    }
+  },
+  "announcements": {
+    "list": {
+      "title": "Mitteilungen",
+      "new_button": "Neue Mitteilung",
+      "col_title": "Titel",
+      "col_status": "Status",
+      "col_created": "Erstellt",
+      "status_draft": "Entwurf",
+      "status_published": "Veröffentlicht",
+      "status_archived": "Archiviert",
+      "empty": "Noch keine Mitteilungen vorhanden."
+    },
+    "form": {
+      "title": "Mitteilung",
+      "error_missing_fields": "Bitte Titel und Text angeben.",
+      "error_invalid_image_type": "Bitte ein PNG-, JPEG- oder WebP-Bild hochladen.",
+      "error_image_too_large": "Das Bild ist zu groß (maximal 5 MB).",
+      "label_title": "Titel",
+      "label_image": "Bild",
+      "remove_image": "Bild entfernen",
+      "image_hint": "PNG, JPEG oder WebP, bis 5 MB. Wird als Blog-Titelbild und in der E-Mail verwendet.",
+      "label_body": "Text",
+      "body_hint": "In Markdown geschrieben. Derselbe Text wird für den Blog-Entwurf und die Mitglieder-E-Mail verwendet.",
+      "body_placeholder": "Hier die Mitteilung schreiben...",
+      "label_print_override": "Druckversion (optional)",
+      "print_override_hint": "Leer lassen, um den vollständigen Text oben zu drucken. Falls er nicht auf eine Seite passt, wird hier eine gekürzte Fassung vorgeschlagen -- frei bearbeitbar.",
+      "print_fits": "Passt auf eine gedruckte Seite.",
+      "print_too_long": "Wahrscheinlich zu lang für eine gedruckte Seite -- Kürzung empfohlen.",
+      "save_button": "Speichern",
+      "cancel_button": "Abbrechen"
     }
   }
 }

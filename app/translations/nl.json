@@ -35,7 +35,8 @@
     "calendar_birthdays": "Verjaardagen",
     "calendar_council_presence": "Aanwezigheid bestuur",
     "calendar_council_absence": "Afwezigheid bestuur",
-    "integrations": "Integraties"
+    "integrations": "Integraties",
+    "announcements": "Mededelingen"
   },
   "errors": {
     "ticket_not_found": "Ticket niet gevonden",
@@ -241,7 +242,9 @@
         "calendar_name": "Kalender",
         "calendar_desc": "Verenigingskalender (vergaderingen, inspecties, werksessies), verjaardagen van leden en aanwezigheid/afwezigheid van het bestuur, elk met ICS-export. Schakel uit als je vereniging dit niet nodig heeft.",
         "public_signup_api_name": "Publieke aanmeld-API",
-        "public_signup_api_desc": "Laat een externe website (bijv. een WordPress-plugin) aanmeldingen voor werkbeurten indienen zonder Parcella-login. Standaard uitgeschakeld omdat dit een publiek schrijf-eindpunt opent; het toegangstoken staat op de pagina Integraties."
+        "public_signup_api_desc": "Laat een externe website (bijv. een WordPress-plugin) aanmeldingen voor werkbeurten indienen zonder Parcella-login. Standaard uitgeschakeld omdat dit een publiek schrijf-eindpunt opent; het toegangstoken staat op de pagina Integraties.",
+        "announcements_name": "Mededelingen",
+        "announcements_desc": "Stel clubnieuws één keer op en bereid het voor op de blog, ledenmail en een gedrukte mededeling."
       },
       "region_header": "Regio",
       "region_help": "Bepaalt het getal- en adresformaat (bijv. duizendtalscheidingsteken, volgorde van postcode en plaats). Onafhankelijk van de interfacetaal.",
@@ -1227,6 +1230,38 @@
       "entry_not_found": "Item niet gevonden",
       "invalid_token": "Ongeldig of ontbrekend toegangstoken",
       "not_your_entry": "Je kunt alleen je eigen items verwijderen"
+    }
+  },
+  "announcements": {
+    "list": {
+      "title": "Mededelingen",
+      "new_button": "Nieuwe mededeling",
+      "col_title": "Titel",
+      "col_status": "Status",
+      "col_created": "Aangemaakt",
+      "status_draft": "Concept",
+      "status_published": "Gepubliceerd",
+      "status_archived": "Gearchiveerd",
+      "empty": "Nog geen mededelingen."
+    },
+    "form": {
+      "title": "Mededeling",
+      "error_missing_fields": "Vul zowel een titel als een tekst in.",
+      "error_invalid_image_type": "Upload een PNG-, JPEG- of WebP-afbeelding.",
+      "error_image_too_large": "De afbeelding is te groot (maximaal 5 MB).",
+      "label_title": "Titel",
+      "label_image": "Afbeelding",
+      "remove_image": "Afbeelding verwijderen",
+      "image_hint": "PNG, JPEG of WebP, tot 5 MB. Wordt gebruikt als uitgelichte afbeelding voor de blog en in de e-mail.",
+      "label_body": "Tekst",
+      "body_hint": "Geschreven in Markdown. Dezelfde tekst wordt gebruikt voor zowel het blogconcept als de ledenmail.",
+      "body_placeholder": "Schrijf hier je mededeling...",
+      "label_print_override": "Afdrukversie (optioneel)",
+      "print_override_hint": "Laat leeg om de volledige tekst hierboven af te drukken. Past deze niet op één pagina, dan wordt hier een verkorte versie voorgesteld -- vrij te bewerken.",
+      "print_fits": "Past op één afgedrukte pagina.",
+      "print_too_long": "Waarschijnlijk te lang voor één pagina -- overweeg in te korten.",
+      "save_button": "Opslaan",
+      "cancel_button": "Annuleren"
     }
   }
 }

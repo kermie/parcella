@@ -40,6 +40,11 @@ MODULE_DEFAULTS: Dict[str, bool] = {
     # which is a deliberate security-relevant choice a club must opt into,
     # not something that should silently turn on for existing installs.
     "public_signup_api": False,
+    # Also defaults to False, for the same reason: it stores outbound
+    # credentials (WordPress application password) and, once used, can
+    # send an email to every member with email_info=True. A club should
+    # opt in deliberately rather than have this silently available.
+    "announcements": False,
 }
 
 

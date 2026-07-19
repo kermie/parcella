@@ -35,7 +35,8 @@
     "calendar_birthdays": "Narozeniny",
     "calendar_council_presence": "Přítomnost výboru",
     "calendar_council_absence": "Nepřítomnost výboru",
-    "integrations": "Integrace"
+    "integrations": "Integrace",
+    "announcements": "Oznámení"
   },
   "errors": {
     "ticket_not_found": "Ticket nebyl nalezen",
@@ -241,7 +242,9 @@
         "calendar_name": "Kalendář",
         "calendar_desc": "Kalendář spolku (schůze, kontroly, pracovní směny), narozeniny členů a přítomnost/nepřítomnost výboru, každý s exportem ICS. Vypněte, pokud to váš spolek nepotřebuje.",
         "public_signup_api_name": "Veřejné API pro přihlášky",
-        "public_signup_api_desc": "Umožňuje externímu webu (např. pluginu WordPress) odesílat přihlášky na pracovní brigády bez přihlášení do Parcella. Ve výchozím nastavení vypnuto, protože otevírá veřejný zapisovací endpoint; přístupový token najdete na stránce Integrace."
+        "public_signup_api_desc": "Umožňuje externímu webu (např. pluginu WordPress) odesílat přihlášky na pracovní brigády bez přihlášení do Parcella. Ve výchozím nastavení vypnuto, protože otevírá veřejný zapisovací endpoint; přístupový token najdete na stránce Integrace.",
+        "announcements_name": "Oznámení",
+        "announcements_desc": "Napište zprávu pro klub jednou a připravte ji pro blog, e-mail členům a tištěné oznámení."
       },
       "region_header": "Region",
       "region_help": "Určuje formát čísel a adresy (např. oddělovač tisíců, pořadí PSČ a města). Nezávisle na jazyce rozhraní.",
@@ -1227,6 +1230,38 @@
       "entry_not_found": "Záznam nenalezen",
       "invalid_token": "Neplatný nebo chybějící přístupový token",
       "not_your_entry": "Můžete mazat pouze vlastní záznamy"
+    }
+  },
+  "announcements": {
+    "list": {
+      "title": "Oznámení",
+      "new_button": "Nové oznámení",
+      "col_title": "Název",
+      "col_status": "Stav",
+      "col_created": "Vytvořeno",
+      "status_draft": "Koncept",
+      "status_published": "Zveřejněno",
+      "status_archived": "Archivováno",
+      "empty": "Zatím žádná oznámení."
+    },
+    "form": {
+      "title": "Oznámení",
+      "error_missing_fields": "Zadejte prosím název i text.",
+      "error_invalid_image_type": "Nahrajte prosím obrázek PNG, JPEG nebo WebP.",
+      "error_image_too_large": "Obrázek je příliš velký (maximálně 5 MB).",
+      "label_title": "Název",
+      "label_image": "Obrázek",
+      "remove_image": "Odstranit obrázek",
+      "image_hint": "PNG, JPEG nebo WebP, max. 5 MB. Použije se jako hlavní obrázek blogu a v e-mailu.",
+      "label_body": "Text",
+      "body_hint": "Napsáno v Markdownu. Stejný text se použije pro koncept blogu i e-mail členům.",
+      "body_placeholder": "Napište zde text oznámení...",
+      "label_print_override": "Tisková verze (volitelné)",
+      "print_override_hint": "Ponechte prázdné pro tisk celého textu výše. Pokud se nevejde na jednu stránku, zde bude navržena zkrácená verze -- lze ji upravit.",
+      "print_fits": "Vejde se na jednu tištěnou stránku.",
+      "print_too_long": "Pravděpodobně příliš dlouhé na jednu stránku -- zvažte zkrácení.",
+      "save_button": "Uložit",
+      "cancel_button": "Zrušit"
     }
   }
 }
