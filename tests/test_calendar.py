@@ -52,6 +52,42 @@ async def test_community_calendar_and_public_ics(client, admin_user):
         assert "BEGIN:VCALENDAR" in ics_response.text
 
 
+async def test_community_calendar_excludes_special_sessions(client, admin_user):
+    """Only STANDARD work sessions belong on the community calendar --
+    SPECIAL (spontaneous/unplanned) ones shouldn't appear in the list
+    view or the public ICS feed."""
+    await web_login(client, "admin@example.com")
+
+    from app.database import AsyncSessionLocal
+    from app.models import WorkSession, SessionType
+
+    async with AsyncSessionLocal() as session:
+        session.add(WorkSession(
+            title="Planned Leaf Raking", type=SessionType.STANDARD,
+            date=date.today() + timedelta(days=10),
+        ))
+        session.add(WorkSession(
+            title="Spontaneous Bench Painting", type=SessionType.SPECIAL,
+            date=date.today() + timedelta(days=5),
+        ))
+        await session.commit()
+
+    overview = await client.get("/calendar/community")
+    assert overview.status_code == 200
+    assert "Planned Leaf Raking" in overview.text
+    assert "Spontaneous Bench Painting" not in overview.text
+
+    from httpx import AsyncClient, ASGITransport
+    from app.main import app as fastapi_app
+
+    transport = ASGITransport(app=fastapi_app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as anon_client:
+        ics_response = await anon_client.get("/calendar/community.ics")
+        assert ics_response.status_code == 200
+        assert "Planned Leaf Raking" in ics_response.text
+        assert "Spontaneous Bench Painting" not in ics_response.text
+
+
 async def test_private_ics_feeds_require_correct_token(client, admin_user):
     await web_login(client, "admin@example.com")
 

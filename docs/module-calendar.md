@@ -6,8 +6,9 @@ items list, per the original feature request), each with its own ICS
 export:
 
 1. **Community calendar** -- member meetings, parcel inspections
-   (entered directly), merged with work sessions (read from the
-   existing `work_sessions` table, not duplicated).
+   (entered directly), merged with STANDARD-type work sessions (read
+   from the existing `work_sessions` table, not duplicated; SPECIAL
+   sessions are excluded, see "Key decisions" below).
 2. **Birthdays** -- derived entirely from `Member.date_of_birth`, no
    table of its own.
 3. **Council presence** -- scheduled on-site slots for board/council
@@ -38,6 +39,20 @@ places with the date, one of them silently stale). Instead, the
 community calendar's list view and its ICS feed both query
 `CalendarEvent` and `WorkSession` separately and merge the results at
 read time. One extra query, zero sync bugs, by construction.
+
+**Only STANDARD-type work sessions appear on the community
+calendar.** `WorkSession.type` (`SessionType.STANDARD` vs `SPECIAL`,
+see `app/models.py`) already distinguishes a planned, signup-eligible
+session from a spontaneous/unplanned one ("paint the garden bench
+today"). The community calendar's whole point is helping members plan
+ahead, so both the list view
+(`app/routers/calendar.py::community_overview`) and the ICS feed
+(`app/ics_utils.py::build_community_calendar`) filter to
+`type == SessionType.STANDARD` -- a SPECIAL session simply never
+appears there, in either place. Both filters need to stay in sync if
+this is ever revisited; there's no shared query helper between the two
+today since they're otherwise structured quite differently (one
+renders a template, one builds an `icalendar.Calendar`).
 
 **Birthdays are not stored anywhere.** A member's birthday calendar
 entry is entirely computed from `Member.date_of_birth` each time it's

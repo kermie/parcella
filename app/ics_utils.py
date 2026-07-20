@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.models import ClubSetting, CalendarEvent, CalendarEventType, WorkSession, CouncilPresence, CouncilAbsence
+from app.models import ClubSetting, CalendarEvent, CalendarEventType, WorkSession, SessionType, CouncilPresence, CouncilAbsence
 from app.birthdays import all_birthdays_for_calendar
 
 ICS_TOKEN_SETTING_KEY = "ics_secret_token"
@@ -104,8 +104,15 @@ async def build_community_calendar(db: AsyncSession, base_url: str) -> Calendar:
             description=e.description, location=e.location,
         )
 
+    # STANDARD only -- SPECIAL sessions are spontaneous/unplanned work
+    # (e.g. "paint the garden bench today") and deliberately don't
+    # appear on the community calendar or its public feed, since they
+    # aren't something members plan around in advance. See
+    # docs/module-calendar.md for the reasoning.
     sessions_result = await db.execute(
-        select(WorkSession).where(WorkSession.date >= date.today()).order_by(WorkSession.date)
+        select(WorkSession)
+        .where(WorkSession.date >= date.today(), WorkSession.type == SessionType.STANDARD)
+        .order_by(WorkSession.date)
     )
     for s in sessions_result.scalars().all():
         summary = f"Work session: {s.title}"

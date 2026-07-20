@@ -1,102 +1,36 @@
-DELIVERY NOTES -- Announcements: print channel (final channel!)
+DELIVERY NOTES -- Community calendar: only STANDARD work sessions
 ======================================================================
 
-This completes the announcements module -- all three channels (email,
-blog, print) are now built. One new migration this time.
+Small, focused change confirming the scope we discussed: the
+community calendar already merges work sessions in at read time
+(nothing duplicated into a second table -- that was a deliberate
+earlier design decision, see docs/module-calendar.md). What changed is
+which sessions get merged in.
 
-## What's new
+## What changed
 
-- A "Generate PDF" button in the Delivery channels panel, next to
-  email and blog. Click it and your browser downloads a one-page,
-  branded PDF: your club's logo and name as a running header/footer,
-  the announcement's image, and the body text.
-- If the full text doesn't fit on one page, it's shortened
-  automatically (paragraph by paragraph, keeping as much as fits) and
-  a QR code is added linking to the blog post -- but only if that blog
-  post has actually been PUBLISHED (not just sitting as a draft).
-  Parcella checks WordPress live, at the moment you click the button,
-  so this always reflects the current real state, not something cached
-  from when the draft was first created.
-- The shortened text gets saved into the announcement's "Print version
-  (optional)" field automatically, so you can see exactly what got cut
-  and adjust it further if you want -- it's not a black box.
-- If even a single paragraph won't fit alongside the header/footer/
-  image, nothing gets silently mangled: you'll see a clear message
-  asking you to shorten the text yourself, and no PDF is generated for
-  that attempt.
+Both places that build the community calendar now filter to
+`WorkSession.type == SessionType.STANDARD`:
+- The list view (`/calendar/community`)
+- The public ICS feed (`/calendar/community.ics`)
 
-## Before you can use this
+SPECIAL (spontaneous/unplanned, e.g. "paint the garden bench today")
+sessions no longer appear on the community calendar in either place.
+They're untouched everywhere else -- Work Hours itself, signups,
+hour-tracking, all unaffected. This is purely about what shows up on
+the calendar.
 
-Nothing extra needed beyond what you already have -- no new
-credentials, no new settings page. The club logo comes from what
-you've already set under Admin -> Settings; the QR code only appears
-for announcements that have already gone through the blog channel AND
-been published.
-
-## New dependencies
-
-- **WeasyPrint** (HTML/CSS -> PDF rendering) -- needs a few system
-  libraries (Pango, Cairo, GDK-Pixbuf) that pip alone can't install.
-  I've added these to the Dockerfile, so `docker compose up -d --build
-  web` handles it -- nothing to install by hand.
-- **qrcode** -- generates the QR code image, pure Python, no extra
-  system dependencies.
-
-Because this changes the Dockerfile (not just requirements.txt),
-**you do need the `--build` flag this time**, not just a restart.
+No schema change, no migration.
 
 ## Testing
 
-6 new tests, all passing against real PostgreSQL, and I actually
-verified the generated PDFs are genuinely one page (using pypdf to
-read back the page count, not just trusting the code didn't crash):
-short content generates without any shortening, long content gets
-shortened and the override is genuinely persisted to the database (not
-just used for one render), the QR code appears when (and only when) a
-mocked WordPress confirms the post is published, an unshortenable wall
-of text is correctly rejected without producing a PDF, and archived
-announcements can't generate one at all. 67/67 across the whole test
-suite.
+One new test confirms both a STANDARD session shows up and a SPECIAL
+one doesn't, in both the list view and the public ICS feed. 68/68
+across the whole suite, all passing.
 
 ## To apply
 
 1. Unzip into your repo root.
-2. `docker compose up -d --build web` -- the `--build` is required
-   this time (new system packages in the Dockerfile), a plain restart
-   won't pick up WeasyPrint's dependencies.
-3. Run the new migration: `alembic upgrade head` takes you to
-   `0031_delivery_external_id` (adds one nullable column to
-   `announcement_deliveries`; purely additive, nothing to review).
-4. Nothing else to configure -- try it on an existing announcement.
-
-## Files changed since the previous delivery
-
-New:
-- app/print_publisher.py
-- migrations/versions/0031_delivery_external_id.py
-
-Modified:
-- app/models.py (external_id column + updated docstrings on
-  AnnouncementDelivery)
-- app/blog_publisher.py (new get_public_url_if_published method)
-- app/routers/announcements.py (new POST /{id}/print endpoint; blog
-  send now also stores the WordPress post ID)
-- app/templates/announcements/form.html (print channel status/button)
-- app/translations/*.json (net +2 keys -- 1144 keys per file now,
-  verified matching)
-- requirements.txt (+ weasyprint==69.0, qrcode[pil]==8.2)
-- requirements-dev.txt (+ pypdf, test-only, for verifying PDF page
-  counts in tests)
-- Dockerfile (+ system libraries WeasyPrint needs)
-- tests/test_announcements.py (6 new tests)
-- docs/module-announcements.md, docs/architecture-decisions.md,
-  README.md (print channel documented; Announcements module marked
-  complete)
-
-## What's left
-
-Nothing from the original three-channel scope -- email, blog, and
-print are all built and tested. Anything further (admin-configurable
-email pacing, a second CMS connector, a combined "publish and print in
-one click" flow, etc.) would be new work, not something outstanding
-from this feature.
+2. `docker compose up -d --build web` (or a plain restart is enough
+   this time -- no dependency or Dockerfile change).
+3. No migration to run.

@@ -30,7 +30,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import (
-    CalendarEvent, CalendarEventType, WorkSession,
+    CalendarEvent, CalendarEventType, WorkSession, SessionType,
     CouncilPresence, CouncilAbsence, User,
 )
 from app.auth import require_user, require_admin
@@ -85,8 +85,15 @@ async def community_overview(request: Request, db: AsyncSession = Depends(get_db
     )
     events = events_result.scalars().all()
 
+    # STANDARD only -- SPECIAL sessions are spontaneous/unplanned (e.g.
+    # "paint the garden bench today") and deliberately don't show up
+    # here, since they aren't something members plan their week around.
+    # Same filter as the ICS feed (app/ics_utils.py's
+    # build_community_calendar) -- keep both in sync if this changes.
     sessions_result = await db.execute(
-        select(WorkSession).where(WorkSession.date >= date.today()).order_by(WorkSession.date)
+        select(WorkSession)
+        .where(WorkSession.date >= date.today(), WorkSession.type == SessionType.STANDARD)
+        .order_by(WorkSession.date)
     )
     sessions = sessions_result.scalars().all()
 
