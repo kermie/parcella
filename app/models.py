@@ -1242,6 +1242,7 @@ class AnnouncementChannel(str, enum.Enum):
 
 class AnnouncementDeliveryStatus(str, enum.Enum):
     PENDING = "PENDING"
+    SENDING = "SENDING"
     SENT = "SENT"
     FAILED = "FAILED"
 
@@ -1294,7 +1295,11 @@ class Announcement(Base):
 
     @property
     def image_url(self) -> Optional[str]:
-        return f"/static/uploads/{self.image_filename}" if self.image_filename else None
+        # Must match UPLOAD_DIR in app/routers/announcements.py
+        # ("app/static/uploads/announcements/") -- unlike the singleton
+        # club logo (served straight from /static/uploads/), each
+        # announcement's image lives in its own subfolder.
+        return f"/static/uploads/announcements/{self.image_filename}" if self.image_filename else None
 
     def delivery_for(self, channel: "AnnouncementChannel") -> Optional["AnnouncementDelivery"]:
         return next((d for d in self.deliveries if d.channel == channel), None)
@@ -1324,6 +1329,12 @@ class AnnouncementDelivery(Base):
     )
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     external_reference: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    # Despite the name, this doubles as a general status-detail field,
+    # not strictly an error: while SENDING it holds a progress note
+    # ("12 of 800 sent so far"), and on a partial SENT it holds the
+    # failure count. It's only ever a true error message when the
+    # status is FAILED. Kept as one field rather than adding a second
+    # column, since only one of these is ever relevant at a time.
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

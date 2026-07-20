@@ -272,7 +272,17 @@
       "endpoint_url": "URL",
       "endpoint_auth": "Autentizace",
       "auth_none": "Žádná (veřejné čtení)",
-      "wordpress_hint": "Referenční konektorový plugin pro WordPress najdete ve složce integrations/wordpress projektu."
+      "wordpress_hint": "Referenční konektorový plugin pro WordPress najdete ve složce integrations/wordpress projektu.",
+      "wordpress_blog_title": "WordPress (koncepty blogu)",
+      "wordpress_blog_desc": "Používá modul Oznámení k publikování konceptů blogu. Vytvořte aplikační heslo ve svém uživatelském profilu WordPress (Uživatelé -> Profil -> Aplikační hesla) -- nepoužívejte zde běžné přihlašovací heslo WordPress.",
+      "wordpress_saved": "Nastavení WordPress uloženo",
+      "wordpress_site_url_label": "URL adresa webu WordPress",
+      "wordpress_username_label": "Uživatelské jméno WordPress",
+      "wordpress_app_password_label": "Aplikační heslo",
+      "wordpress_app_password_hint": "Nejde o běžné přihlašovací heslo WordPress -- vygenerujte ho ve svém uživatelském profilu WordPress.",
+      "wordpress_save_button": "Uložit",
+      "wordpress_test_button": "Otestovat připojení",
+      "wordpress_test_success": "Připojení úspěšné"
     }
   },
   "members": {
@@ -1261,7 +1271,28 @@
       "print_fits": "Vejde se na jednu tištěnou stránku.",
       "print_too_long": "Pravděpodobně příliš dlouhé na jednu stránku -- zvažte zkrácení.",
       "save_button": "Uložit",
-      "cancel_button": "Zrušit"
+      "cancel_button": "Zrušit",
+      "channels_title": "Distribuční kanály",
+      "channel_email": "E-mail členům",
+      "channel_blog": "Koncept blogu",
+      "channel_print": "Tisknutelné PDF",
+      "channel_coming_soon": "Již brzy",
+      "delivery_sent": "Odesláno",
+      "delivery_failed": "Selhalo",
+      "delivery_not_sent": "Zatím neodesláno",
+      "send_email_button": "Odeslat nyní",
+      "send_email_confirm": "Odeslat toto oznámení e-mailem všem aktuálním členům s povolenými e-mailovými upozorněními?",
+      "save_does_not_send_hint": "Uložení pouze ukládá vaše změny -- nic se tím neodesílá ani nezveřejňuje. Jakmile budete připraveni, použijte tlačítka níže.",
+      "test_email_title": "Odeslat testovací e-mail",
+      "test_email_hint": "Odešle aktuální obsah na jednu adresu ke kontrole. Nikdy se nepočítá jako skutečné odeslání a nikdy nejde členům.",
+      "test_email_button": "Odeslat test",
+      "test_email_success": "Testovací e-mail byl úspěšně odeslán",
+      "test_email_failed": "Testovací e-mail se nepodařilo odeslat -- zkontrolujte konfiguraci SMTP v Administrace -> Nastavení.",
+      "test_email_missing_address": "Zadejte prosím e-mailovou adresu.",
+      "delivery_sending": "Odesílá se...",
+      "sending_refresh_hint": "Probíhá -- načtěte stránku znovu, abyste viděli aktuální stav.",
+      "blog_edit_draft_link": "Otevřít koncept ve WordPress",
+      "send_blog_button": "Vytvořit koncept"
     }
   }
 }

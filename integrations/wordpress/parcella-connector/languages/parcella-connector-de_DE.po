@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Parcella Work Session Signup 1.0.0\n"
+"Project-Id-Version: Parcella Connector 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/kermie/parcella/issues\n"
 "Language: de_DE\n"
 "MIME-Version: 1.0\n"
@@ -11,8 +11,8 @@ msgstr ""
 msgid "Parcella Connector"
 msgstr "Parcella-Connector"
 
-msgid "Connects this site to your Parcella installation's public signup API. Find the base URL and API token on the \"Integrations\" page in Parcella's admin area (Administration -> Integrations)."
-msgstr "Verbindet diese Website mit der öffentlichen Anmelde-API deiner Parcella-Installation. Basis-URL und API-Token findest du auf der Seite \"Integrationen\" im Parcella-Administrationsbereich (Administration -> Integrationen)."
+msgid "Shared connection settings for every Parcella integration on this site. Find the base URL and API token on the \"Integrations\" page in Parcella's admin area (Administration -> Integrations)."
+msgstr "Gemeinsame Verbindungseinstellungen für jede Parcella-Integration auf dieser Website. Basis-URL und API-Token findest du auf der Seite \"Integrationen\" im Parcella-Administrationsbereich (Administration -> Integrationen)."
 
 msgid "Parcella base URL"
 msgstr "Parcella-Basis-URL"
@@ -20,11 +20,29 @@ msgstr "Parcella-Basis-URL"
 msgid "API token"
 msgstr "API-Token"
 
-msgid "Only used for the write (signup submission) call, sent server-side. Never exposed to visitors."
-msgstr "Wird nur für den schreibenden Aufruf (Anmeldung) serverseitig verwendet. Wird Besuchern niemals angezeigt."
+msgid "Sent server-side only, for any module below that needs to write back to Parcella. Never exposed to visitors."
+msgstr "Wird nur serverseitig verwendet, für jedes Modul unten, das Daten an Parcella zurückschreiben muss. Wird Besuchern niemals angezeigt."
 
-msgid "Place the form anywhere with the shortcode:"
-msgstr "Das Formular kann mit folgendem Shortcode überall eingebunden werden:"
+msgid "Modules"
+msgstr "Module"
+
+msgid "Module"
+msgstr "Modul"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Usage"
+msgstr "Verwendung"
+
+msgid "Work session signup"
+msgstr "Anmeldung zu Arbeitseinsätzen"
+
+msgid "Active"
+msgstr "Aktiv"
+
+msgid "More modules (tickets, applicant management, calendar) are planned. Each will appear in this table once added, sharing the connection settings above -- no separate credentials to configure per module."
+msgstr "Weitere Module (Tickets, Bewerberverwaltung, Kalender) sind geplant. Jedes erscheint nach der Einführung in dieser Tabelle und nutzt die obigen Verbindungseinstellungen -- keine separaten Zugangsdaten pro Modul nötig."
 
 msgid "This form is not fully configured yet. Please contact the site administrator."
 msgstr "Dieses Formular ist noch nicht vollständig eingerichtet. Bitte wende dich an die Website-Administration."

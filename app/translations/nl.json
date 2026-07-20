@@ -272,7 +272,17 @@
       "endpoint_url": "URL",
       "endpoint_auth": "Authenticatie",
       "auth_none": "Geen (publiek leesbaar)",
-      "wordpress_hint": "Een referentie-WordPress-connectorplugin staat in de map integrations/wordpress van het project."
+      "wordpress_hint": "Een referentie-WordPress-connectorplugin staat in de map integrations/wordpress van het project.",
+      "wordpress_blog_title": "WordPress (blogconcepten)",
+      "wordpress_blog_desc": "Wordt gebruikt door de module Mededelingen om blogconcepten te publiceren. Maak een toepassingswachtwoord aan in je WordPress-gebruikersprofiel (Gebruikers -> Profiel -> Toepassingswachtwoorden) -- gebruik hier niet je gewone WordPress-inlogwachtwoord.",
+      "wordpress_saved": "WordPress-instellingen opgeslagen",
+      "wordpress_site_url_label": "URL van de WordPress-site",
+      "wordpress_username_label": "WordPress-gebruikersnaam",
+      "wordpress_app_password_label": "Toepassingswachtwoord",
+      "wordpress_app_password_hint": "Niet je gewone WordPress-inlogwachtwoord -- genereer er een in je WordPress-gebruikersprofiel.",
+      "wordpress_save_button": "Opslaan",
+      "wordpress_test_button": "Verbinding testen",
+      "wordpress_test_success": "Verbinding geslaagd"
     }
   },
   "members": {
@@ -1261,7 +1271,28 @@
       "print_fits": "Past op één afgedrukte pagina.",
       "print_too_long": "Waarschijnlijk te lang voor één pagina -- overweeg in te korten.",
       "save_button": "Opslaan",
-      "cancel_button": "Annuleren"
+      "cancel_button": "Annuleren",
+      "channels_title": "Verspreidingskanalen",
+      "channel_email": "Ledenmail",
+      "channel_blog": "Blogconcept",
+      "channel_print": "Afdrukbare PDF",
+      "channel_coming_soon": "Binnenkort",
+      "delivery_sent": "Verzonden",
+      "delivery_failed": "Mislukt",
+      "delivery_not_sent": "Nog niet verzonden",
+      "send_email_button": "Nu verzenden",
+      "send_email_confirm": "Deze mededeling per e-mail versturen naar alle huidige leden met e-mailmeldingen ingeschakeld?",
+      "save_does_not_send_hint": "Opslaan bewaart alleen je wijzigingen -- er wordt niets verzonden of gepubliceerd. Gebruik de knoppen hieronder zodra je klaar bent.",
+      "test_email_title": "Test-e-mail versturen",
+      "test_email_hint": "Verstuurt de huidige inhoud ter controle naar één adres. Telt nooit als echte verzending en gaat nooit naar leden.",
+      "test_email_button": "Test versturen",
+      "test_email_success": "Test-e-mail succesvol verzonden",
+      "test_email_failed": "Kon de test-e-mail niet verzenden -- controleer de SMTP-configuratie onder Beheer -> Instellingen.",
+      "test_email_missing_address": "Voer een e-mailadres in.",
+      "delivery_sending": "Bezig met verzenden...",
+      "sending_refresh_hint": "Bezig -- laad deze pagina opnieuw voor de actuele stand.",
+      "blog_edit_draft_link": "Concept openen in WordPress",
+      "send_blog_button": "Concept aanmaken"
     }
   }
 }

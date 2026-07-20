@@ -1,0 +1,134 @@
+# Translations template for Parcella Connector.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the Parcella Connector
+# project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Parcella Connector 2.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/kermie/parcella/issues\n"
+"POT-Creation-Date: 2026-07-20 18:04+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+msgid "Parcella Connector"
+msgstr ""
+
+msgid ""
+"Shared connection settings for every Parcella integration on this site. "
+"Find the base URL and API token on the \"Integrations\" page in "
+"Parcella's admin area (Administration -> Integrations)."
+msgstr ""
+
+msgid "Parcella base URL"
+msgstr ""
+
+msgid "API token"
+msgstr ""
+
+msgid ""
+"Sent server-side only, for any module below that needs to write back to "
+"Parcella. Never exposed to visitors."
+msgstr ""
+
+msgid "Modules"
+msgstr ""
+
+msgid "Module"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Usage"
+msgstr ""
+
+msgid "Work session signup"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid ""
+"More modules (tickets, applicant management, calendar) are planned. Each "
+"will appear in this table once added, sharing the connection settings "
+"above -- no separate credentials to configure per module."
+msgstr ""
+
+msgid ""
+"This form is not fully configured yet. Please contact the site "
+"administrator."
+msgstr ""
+
+msgid "Could not reach Parcella. Please try again later."
+msgstr ""
+
+msgid ""
+"This form is not correctly configured (invalid API token). Please contact"
+" the site administrator."
+msgstr ""
+
+msgid "Too many submissions right now. Please try again in a little while."
+msgstr ""
+
+msgid "That parcel number was not found. Please check it and try again."
+msgstr ""
+
+msgid "Something went wrong submitting your signup. Please try again later."
+msgstr ""
+
+msgid "Please provide a parcel number and select at least one session."
+msgstr ""
+
+msgid "The signup form is temporarily unavailable. Please try again later."
+msgstr ""
+
+msgid "Thank you, your signup has been received."
+msgstr ""
+
+msgid ""
+"Some of the selected sessions could not be booked (likely full). Please "
+"choose another date for those."
+msgstr ""
+
+msgid "There are currently no upcoming work sessions open for signup."
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Parcel number"
+msgstr ""
+
+msgid "Please choose..."
+msgstr ""
+
+msgid "I would like to sign up for the following work sessions:"
+msgstr ""
+
+#. translators: 1: date, 2: start time, 3: end time, 4: session title
+msgid "%1$s, %2$s - %3$s %4$s"
+msgstr ""
+
+#, python-format
+msgid "(%d spot left)"
+msgid_plural "(%d spots left)"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Remarks or individual session requests"
+msgstr ""
+
+msgid "Leave this field empty"
+msgstr ""
+
+msgid "Sign up"
+msgstr ""
+

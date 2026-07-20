@@ -68,7 +68,98 @@
         <i class="bi bi-check-lg me-1"></i>{{ t('announcements.form.save_button') }}
     </button>
     <a href="/announcements/" class="btn btn-outline-secondary">{{ t('announcements.form.cancel_button') }}</a>
+    <div class="form-text mt-1">{{ t('announcements.form.save_does_not_send_hint') }}</div>
 </form>
+
+{% if announcement %}
+
+{% if test_email_result %}
+<div class="alert {% if test_email_result == 'success' %}alert-success{% else %}alert-warning{% endif %} mt-3">
+    {% if test_email_result == 'success' %}
+    {{ t('announcements.form.test_email_success') }} ({{ test_email_address }})
+    {% elif test_email_result == 'failed' %}
+    {{ t('announcements.form.test_email_failed') }}
+    {% else %}
+    {{ t('announcements.form.test_email_missing_address') }}
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="card mt-3">
+    <div class="card-body">
+        <h6 class="card-title">{{ t('announcements.form.test_email_title') }}</h6>
+        <p class="text-muted" style="font-size: 0.85rem;">{{ t('announcements.form.test_email_hint') }}</p>
+        <form method="post" action="/announcements/{{ announcement.id }}/send/test-email" class="d-flex gap-2">
+            <input type="email" name="test_email" class="form-control" placeholder="you@example.com" required style="max-width: 320px;">
+            <button type="submit" class="btn btn-outline-secondary">{{ t('announcements.form.test_email_button') }}</button>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-body">
+        <h6 class="card-title">{{ t('announcements.form.channels_title') }}</h6>
+        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <div>
+                <i class="bi bi-envelope me-2"></i>{{ t('announcements.form.channel_email') }}
+                {% if email_delivery %}
+                    {% if email_delivery.status.value == 'SENT' %}
+                    <span class="badge badge-aktiv ms-2">{{ t('announcements.form.delivery_sent') }}</span>
+                    <span class="text-muted ms-1" style="font-size: 0.85rem;">{{ email_delivery.sent_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% elif email_delivery.status.value == 'SENDING' %}
+                    <span class="badge ms-2" style="background: #dbeafe; color: #1e40af;">
+                        <span class="spinner-border spinner-border-sm" style="width: 0.7rem; height: 0.7rem;"></span>
+                        {{ t('announcements.form.delivery_sending') }}
+                    </span>
+                    {% else %}
+                    <span class="badge ms-2" style="background: #fee2e2; color: #991b1b;">{{ t('announcements.form.delivery_failed') }}</span>
+                    {% endif %}
+                    {% if email_delivery.error_message %}
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ email_delivery.error_message }}</div>
+                    {% endif %}
+                {% else %}
+                <span class="badge ms-2" style="background: #e5e7eb; color: #4b5563;">{{ t('announcements.form.delivery_not_sent') }}</span>
+                {% endif %}
+            </div>
+            {% if email_delivery and email_delivery.status.value == 'SENDING' %}
+            <span class="text-muted" style="font-size: 0.8rem;">{{ t('announcements.form.sending_refresh_hint') }}</span>
+            {% else %}
+            <form method="post" action="/announcements/{{ announcement.id }}/send/email"
+                  onsubmit="return confirm('{{ t('announcements.form.send_email_confirm') }}');">
+                <button type="submit" class="btn btn-sm btn-outline-primary">{{ t('announcements.form.send_email_button') }}</button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+            <div>
+                <i class="bi bi-wordpress me-2"></i>{{ t('announcements.form.channel_blog') }}
+                {% if blog_delivery %}
+                    {% if blog_delivery.status.value == 'SENT' %}
+                    <span class="badge badge-aktiv ms-2">{{ t('announcements.form.delivery_sent') }}</span>
+                    <a href="{{ blog_delivery.external_reference }}" target="_blank" rel="noopener noreferrer" class="ms-2" style="font-size: 0.85rem;">{{ t('announcements.form.blog_edit_draft_link') }}</a>
+                    {% else %}
+                    <span class="badge ms-2" style="background: #fee2e2; color: #991b1b;">{{ t('announcements.form.delivery_failed') }}</span>
+                    {% endif %}
+                    {% if blog_delivery.error_message %}
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ blog_delivery.error_message }}</div>
+                    {% endif %}
+                {% else %}
+                <span class="badge ms-2" style="background: #e5e7eb; color: #4b5563;">{{ t('announcements.form.delivery_not_sent') }}</span>
+                {% endif %}
+            </div>
+            <form method="post" action="/announcements/{{ announcement.id }}/send/blog">
+                <button type="submit" class="btn btn-sm btn-outline-primary">{{ t('announcements.form.send_blog_button') }}</button>
+            </form>
+        </div>
+        <div class="d-flex align-items-center justify-content-between py-2">
+            <div>
+                <i class="bi bi-printer me-2"></i>{{ t('announcements.form.channel_print') }}
+                <span class="badge ms-2" style="background: #e5e7eb; color: #4b5563;">{{ t('announcements.form.channel_coming_soon') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}

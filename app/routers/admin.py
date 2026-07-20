@@ -2,6 +2,7 @@
 Admin-Router: Benutzerverwaltung, Einladungen, Vereinseinstellungen.
 """
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 import urllib.parse
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
@@ -14,6 +15,7 @@ from app.models import User, Invitation, InvitationStatus, UserRole, ClubSetting
 from app.auth import require_admin, create_invitation_token, hash_password
 from app.email_service import sende_email
 from app.crypto_utils import verschluesseln
+from app.blog_publisher import load_wordpress_configuration, WordPressPublisher, BlogPublishError
 from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
 from app.branding import save_logo_upload, remove_logo_file
@@ -366,11 +368,22 @@ async def integrations_seite(request: Request, db: AsyncSession = Depends(get_db
     entry = result.scalar_one_or_none()
     modul_aktiv = (entry.value.strip().lower() in ("true", "1", "ja", "an")) if entry else False
 
+    wordpress_result = await db.execute(
+        select(ClubSetting).where(ClubSetting.key.in_(["wordpress_site_url", "wordpress_username", "wordpress_app_password"]))
+    )
+    wordpress_stored = {e.key: e.value for e in wordpress_result.scalars().all()}
+
     return templates.TemplateResponse("admin/integrations.html", {
         "request": request, "user": user,
         "api_token": token,
         "modul_aktiv": modul_aktiv,
         "base_url": str(request.base_url).rstrip("/"),
+        "wordpress_site_url": wordpress_stored.get("wordpress_site_url", ""),
+        "wordpress_username": wordpress_stored.get("wordpress_username", ""),
+        "wordpress_app_password_set": bool(wordpress_stored.get("wordpress_app_password")),
+        "wordpress_saved": request.query_params.get("wordpress_saved"),
+        "wordpress_test_result": request.query_params.get("wordpress_test"),
+        "wordpress_test_message": request.query_params.get("wordpress_test_message"),
     })
 
 
@@ -379,3 +392,75 @@ async def integrations_token_neu(request: Request, db: AsyncSession = Depends(ge
     await require_admin(request, db)
     await regenerate_public_api_token(db)
     return RedirectResponse("/admin/integrations?erfolg=1", status_code=302)
+
+
+async def _upsert_club_setting(db: AsyncSession, key: str, value: Optional[str], description: str = "") -> None:
+    result = await db.execute(select(ClubSetting).where(ClubSetting.key == key))
+    entry = result.scalar_one_or_none()
+    if entry:
+        entry.value = value
+    else:
+        db.add(ClubSetting(key=key, value=value, description=description))
+
+
+@router.post("/integrations/wordpress")
+async def integrations_wordpress_speichern(request: Request, db: AsyncSession = Depends(get_db)):
+    """Saves the WordPress blog-draft credentials. Same "blank
+    Application Password field = leave the existing one unchanged"
+    convention as SMTP -- site URL and username are always overwritten
+    with whatever's submitted (they're not secret, so there's no
+    "leave unchanged" case worth supporting for them)."""
+    await require_admin(request, db)
+    form = await request.form()
+
+    site_url = (form.get("wordpress_site_url") or "").strip() or None
+    username = (form.get("wordpress_username") or "").strip() or None
+    app_password = (form.get("wordpress_app_password") or "").strip()
+
+    await _upsert_club_setting(db, "wordpress_site_url", site_url, "WordPress site URL for blog drafts")
+    await _upsert_club_setting(db, "wordpress_username", username, "WordPress username for blog drafts")
+    if app_password:
+        await _upsert_club_setting(
+            db, "wordpress_app_password", verschluesseln(app_password), "WordPress Application Password (encrypted)",
+        )
+
+    await db.commit()
+    return RedirectResponse("/admin/integrations?wordpress_saved=1", status_code=303)
+
+
+@router.post("/integrations/wordpress/test")
+async def integrations_wordpress_testen(request: Request, db: AsyncSession = Depends(get_db)):
+    """Tests WordPress connectivity using whatever is currently in the
+    form -- freshly typed values if provided, falling back to the
+    already-saved configuration for any field left blank (same
+    convention as saving). Doesn't persist anything; this is purely a
+    connectivity check, usable before committing to save."""
+    await require_admin(request, db)
+    form = await request.form()
+
+    saved_config = await load_wordpress_configuration(db)
+
+    site_url = (form.get("wordpress_site_url") or "").strip() or (saved_config["site_url"] if saved_config else None)
+    username = (form.get("wordpress_username") or "").strip() or (saved_config["username"] if saved_config else None)
+    app_password = (form.get("wordpress_app_password") or "").strip() or (saved_config["app_password"] if saved_config else None)
+
+    from urllib.parse import quote
+
+    if not site_url or not username or not app_password:
+        message = quote("Please fill in all three fields first.")
+        return RedirectResponse(f"/admin/integrations?wordpress_test=failed&wordpress_test_message={message}", status_code=303)
+
+    publisher = WordPressPublisher(site_url=site_url, username=username, application_password=app_password)
+    try:
+        await publisher.test_connection()
+        result = "success"
+        message = ""
+    except BlogPublishError as e:
+        result = "failed"
+        message = str(e)
+    finally:
+        await publisher.aclose()
+
+    return RedirectResponse(
+        f"/admin/integrations?wordpress_test={result}&wordpress_test_message={quote(message)}", status_code=303,
+    )

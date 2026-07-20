@@ -1,81 +1,115 @@
-DELIVERY NOTES -- Announcements module, foundation piece
+DELIVERY NOTES -- WordPress credentials moved to Integrations + plugin
+consolidated into parcella-connector
 ======================================================================
 
-New module for the announcements feature we discussed: authoring a
-single piece of club news (Markdown body, optional image, optional
-print-only shortened text) with a data model ready to track delivery
-to three channels. This delivery is the FOUNDATION only -- authoring
-and the data model. Nothing is sent anywhere yet: no blog draft, no
-email, no PDF. Those are follow-up deliveries, each building on top of
-what's here without changing its shape.
+Two changes this time, both from your feedback. No new migration, no
+schema change.
 
-## What's included
+## 1. WordPress blog credentials: Settings -> Integrations
 
-- New tables: `announcements`, `announcement_deliveries`
-  (migration 0029_announcements)
-- New module flag `announcements`, OFF by default (same reasoning as
-  public_signup_api -- it will hold outbound credentials and can
-  eventually email every member, so it needs a deliberate opt-in)
-- New admin-only pages under /announcements/ (list, create, edit) --
-  restricted to admin/board, same as the Integrations page
-- A Markdown editor (EasyMDE, live preview) for the body text
-- Image upload per announcement (PNG/JPEG/WebP, up to 5 MB)
-- All 7 language files updated (29 new keys each, verified matching)
-- docs/module-announcements.md (full design) and a new section in
-  docs/architecture-decisions.md
-- tests/test_announcements.py (5 tests: module-flag gating, create/
-  edit round-trip including Markdown->HTML rendering, validation,
-  delete, and the admin/board-only permission boundary) -- all passing
-  alongside the full existing suite (45/45)
+Same three fields (site URL, username, Application Password), same
+encrypted storage, same "blank password field = keep the existing
+one" behavior -- just living on Admin -> Integrations now (a new card,
+right below the public-signup API section) instead of Admin ->
+Settings. The underlying database keys are unchanged, so if you'd
+already saved credentials via Settings, they'll show up correctly
+under Integrations without re-entering anything.
+
+Admin -> Settings no longer has a WordPress card at all.
+
+## 2. WordPress plugin: parcella-work-signup -> parcella-connector
+
+Restructured into `integrations/wordpress/parcella-connector/`:
+- `parcella-connector.php` -- shared settings screen (base URL + API
+  token), a "Modules" table showing what's active
+- `includes/modules/signup.php` -- the work-session signup shortcode,
+  moved here unchanged in behavior
+- Future integrations (tickets, applicants, calendar) become new files
+  under `includes/modules/`, sharing the same settings screen -- no
+  new credentials to configure per module
+
+**If you'd already installed the old plugin** (sandbox or otherwise):
+deactivate "Parcella Work Session Signup", install and activate
+"Parcella Connector" instead. Your base URL and API token carry over
+automatically -- I deliberately kept the underlying WordPress option
+names identical. Any page using `[parcella_work_signup]` keeps working
+unchanged; the shortcode tag didn't change either.
+
+## Manual cleanup needed after unzipping
+
+This one's on you to do manually, since I can't delete files outside
+what I'm packaging: **delete the old
+`integrations/wordpress/parcella-work-signup/` folder** from your repo
+after unzipping this. It's fully superseded by parcella-connector; I
+haven't included it in this ZIP, but it won't disappear from your
+working copy on its own.
+
+## Testing
+
+10 tests updated/added: the two WordPress connection-test cases now
+hit `/admin/integrations/wordpress/test` (was `/admin/settings/...`),
+plus 3 new ones for the Integrations page itself -- saving works,
+a blank Application Password field leaves the existing one alone, and
+the saved password is never echoed back into the page HTML. 62/62
+across the whole suite, all passing against real PostgreSQL.
+
+The new PHP files were syntax-checked (`php -l`) and the German
+translation catalog was compiled and round-trip verified (including
+plural forms) using Babel, since msgfmt wasn't available in my
+environment -- functionally identical output either way.
 
 ## To apply
 
-1. Unzip into your repo root (overwrites the files listed below,
-   git status will show them as modified; adds the new files as
-   untracked).
-2. Run `pip install -r requirements.txt` (adds `markdown==3.7` -- the
-   only new dependency).
-3. Run the new migration: `alembic upgrade head`
-   (0028_drop_signup_tables -> 0029_announcements). No data migration,
-   no existing table touched -- purely additive.
-4. Restart the app (Docker or otherwise) so the new router and
-   templates are picked up.
-5. The module stays invisible until you switch it on in
-   Admin -> Settings ("Announcements"), same as Public Signup API.
+1. Unzip into your repo root.
+2. Delete the old `integrations/wordpress/parcella-work-signup/`
+   folder (see above).
+3. `docker compose up -d --build web` (no new dependency, but keeps
+   things consistent).
+4. No migration to run.
+5. If WordPress credentials were already configured via Settings,
+   nothing to do -- they'll appear under Integrations automatically.
+   If not yet configured, fill them in there now.
+6. On your WordPress site: swap the plugin as described above whenever
+   convenient (not urgent -- the old plugin keeps working standalone
+   until you do).
 
-No manual file deletions needed for this one -- everything here is new
-or additive.
+## On your "git push" request
 
-## Files changed
+I can't push directly to your GitHub repo -- I work from a clone with
+no write credentials to kermie/parcella, by design (so nothing I do
+can touch your actual repo or history without you reviewing it first).
+What I can do is hand you everything ready to commit in one motion,
+which is what this ZIP is. Suggested flow on your end:
+
+    unzip <this-zip> -d /path/to/your/parcella/repo
+    rm -rf integrations/wordpress/parcella-work-signup
+    git add -A
+    git commit -m "Move WordPress blog credentials to Integrations; consolidate WordPress plugin into parcella-connector"
+    git push
+
+Happy to draft a longer commit message body summarizing both changes
+if you'd like one, or split this into two commits (one per change)
+before you push -- just say which you'd prefer.
+
+## Files changed since the previous delivery
 
 New:
-- app/announcement_utils.py
-- app/routers/announcements.py
-- app/templates/announcements/list.html
-- app/templates/announcements/form.html
-- migrations/versions/0029_announcements.py
-- docs/module-announcements.md
-- tests/test_announcements.py
+- integrations/wordpress/parcella-connector/ (entire new plugin)
+
+Removed (delete manually, see above):
+- integrations/wordpress/parcella-work-signup/ (entire old plugin)
 
 Modified:
-- app/models.py (Announcement, AnnouncementDelivery + 3 enums)
-- app/module_flags.py (new "announcements" flag, default False)
-- app/routers/admin.py (module toggle registered in the Settings page)
-- app/main.py (router import + registration)
-- app/templates/base.html (nav link, admin/board visible only when
-  the module flag is on)
-- requirements.txt (+ markdown==3.7)
-- app/translations/*.json (all 7 -- 29 new keys each)
-- docs/architecture-decisions.md (new "Announcements module
-  (foundation)" section)
-- README.md (feature checklist + planned-next-phases updated)
-
-## What's next (not in this delivery)
-
-- Blog channel: WordPress REST API publisher (draft posts via
-  Application Password), extending the Integrations page
-- Email channel: send to members with email_info = true, reusing the
-  existing ticket-mailer infrastructure
-- Print channel: WeasyPrint one-page PDF with your branding, the
-  auto-shorten-and-QR-code logic against print_text_override once it
-  doesn't fit on one page
+- app/routers/admin.py (WordPress fields removed from SETTINGS_FIELDS;
+  new POST /integrations/wordpress and /integrations/wordpress/test
+  endpoints; GET /integrations now also loads WordPress config for
+  prefill)
+- app/templates/admin/settings.html (WordPress card removed)
+- app/templates/admin/integrations.html (new WordPress card)
+- app/blog_publisher.py (docstring updated to reference Integrations)
+- app/translations/*.json (8 keys removed, 10 added -- net +2, 1142
+  keys per file now, verified matching)
+- tests/test_announcements.py (endpoint URLs updated; 3 new tests for
+  the Integrations page)
+- docs/module-announcements.md, docs/architecture-decisions.md,
+  docs/module-public-api.md (updated for both changes)

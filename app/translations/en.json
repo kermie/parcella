@@ -272,7 +272,17 @@
       "endpoint_url": "URL",
       "endpoint_auth": "Authentication",
       "auth_none": "None (public read)",
-      "wordpress_hint": "A reference WordPress connector plugin is included in the project's integrations/wordpress folder."
+      "wordpress_hint": "A reference WordPress connector plugin is included in the project's integrations/wordpress folder.",
+      "wordpress_blog_title": "WordPress (blog drafts)",
+      "wordpress_blog_desc": "Used by the Announcements module to publish blog drafts. Create an Application Password under your WordPress user profile (Users -> Profile -> Application Passwords) -- don't use your regular WordPress login password here.",
+      "wordpress_saved": "WordPress settings saved",
+      "wordpress_site_url_label": "WordPress site URL",
+      "wordpress_username_label": "WordPress username",
+      "wordpress_app_password_label": "Application Password",
+      "wordpress_app_password_hint": "Not your regular WordPress login password -- generate one under your WordPress user profile.",
+      "wordpress_save_button": "Save",
+      "wordpress_test_button": "Test connection",
+      "wordpress_test_success": "Connection successful"
     }
   },
   "members": {
@@ -1261,7 +1271,28 @@
       "print_fits": "Fits on one printed page.",
       "print_too_long": "Likely too long for one printed page -- consider shortening.",
       "save_button": "Save",
-      "cancel_button": "Cancel"
+      "cancel_button": "Cancel",
+      "channels_title": "Delivery channels",
+      "channel_email": "Member email",
+      "channel_blog": "Blog draft",
+      "channel_print": "Printable PDF",
+      "channel_coming_soon": "Coming soon",
+      "delivery_sent": "Sent",
+      "delivery_failed": "Failed",
+      "delivery_not_sent": "Not sent yet",
+      "send_email_button": "Send now",
+      "send_email_confirm": "Send this announcement by email to all current members with email notifications enabled?",
+      "save_does_not_send_hint": "Saving only stores your changes -- it doesn't send or publish anything. Use the buttons below once you're ready.",
+      "test_email_title": "Send a test email",
+      "test_email_hint": "Sends the current content to one address for review. Never counted as a real send and never goes to members.",
+      "test_email_button": "Send test",
+      "test_email_success": "Test email sent successfully",
+      "test_email_failed": "Could not send the test email -- check the SMTP configuration under Admin -> Settings.",
+      "test_email_missing_address": "Please enter an email address.",
+      "delivery_sending": "Sending...",
+      "sending_refresh_hint": "In progress -- reload this page to see the latest count.",
+      "blog_edit_draft_link": "Open draft in WordPress",
+      "send_blog_button": "Create draft"
     }
   }
 }

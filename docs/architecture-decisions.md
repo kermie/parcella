@@ -862,3 +862,186 @@ API via application password), the email send, and the PDF
 generation/shortening pipeline are each separate follow-up phases,
 each building on `Announcement`/`AnnouncementDelivery` rather than
 changing their shape.
+
+## Announcements module: email channel
+
+**Recipients are current parcel residents, not "all members".**
+Mirrors the definition already used elsewhere (e.g. insurance
+household grouping): `MemberParcel.assigned_until IS NULL`, not
+soft-deleted, membership not lapsed, `email_notifications = True`.
+Someone who used to garden here but has moved on shouldn't get club
+news; someone currently gardening but who opted out of email shouldn't
+either.
+
+**A member with no stored email address is skipped, not treated as a
+failure.** That's a data-completeness gap that belongs to Members
+admin, not something an announcement send should surface as an error
+per attempt.
+
+**Channel-level delivery status, not per-recipient.** Consistent with
+`AnnouncementDelivery`'s original design: a partial failure (some
+recipients unreachable) is still recorded as `SENT`, with the failure
+count folded into `error_message`, since the announcement genuinely
+went out. Only a *total* failure -- zero successful sends, including
+the zero-recipients case -- is recorded as `FAILED`, so it stands out
+visually and invites a retry rather than being buried in a list of
+mostly-successful sends.
+
+**Reuses `app/email_service.py`'s existing `sende_email()` rather than
+introducing a second SMTP pathway.** The announcement content is
+wrapped in a minimal branded HTML shell (club name, header image,
+`body_html`) and sent per-recipient through the same SMTP
+configuration the rest of the app already uses.
+
+## Announcements module: pacing, background send, and test email
+
+**Sending is paced (a handful per minute) rather than firing every
+email at once, per explicit request.** An SMTP relay rate-limiting or
+flagging the account is a real risk at a few hundred recipients sent
+in one burst. `EMAIL_BATCH_SIZE` / `EMAIL_BATCH_PAUSE_SECONDS` in
+`app/announcement_mailer.py` control this; both are read at call time
+rather than baked into a closure, so an admin-configurable pacing
+setting can replace them later without touching the pacing logic
+itself.
+
+**Pacing means the send has to run outside the request/response
+cycle.** At 8 per minute, 800 recipients take well over an hour --
+far too long to hold an HTTP connection open, and well past any
+reasonable request timeout. The router marks the delivery `SENDING`
+and returns immediately; the actual paced loop runs as a FastAPI
+`BackgroundTasks` job. This is the first use of `BackgroundTasks` in
+the project. Because the background task keeps running after the
+request's DB session has already closed, it opens its own
+(`AsyncSessionLocal`) -- exactly the pattern `app.main`'s ticket-inbox
+polling loop already uses for the same reason.
+
+**A `SENDING` status, not just PENDING/SENT/FAILED, so "in progress"
+is visible rather than indistinguishable from "not started" or
+silently blocking the UI.** Since Postgres can't add an enum value and
+use it in the same transaction, the migration
+(`0030_announcement_sending_status`) wraps the `ALTER TYPE ... ADD
+VALUE` in Alembic's `autocommit_block()`. `error_message` is repurposed
+during `SENDING` to hold a running progress note rather than an error
+-- documented as a deliberate dual-use field rather than adding a
+dedicated progress column for something that's only ever needed
+transiently.
+
+**A server-side guard against double-sends, not just a disabled
+button.** The "Send now" button is hidden client-side while a send is
+`SENDING`, but the router also rejects a second `POST .../send/email`
+outright (409) if the delivery is already `SENDING` -- a stale tab, a
+double click racing the first response, or someone re-submitting a
+cached page shouldn't be able to trigger the roster being emailed
+twice.
+
+**Test email is a genuinely separate code path, not a "send to one
+person" flag on the real send.** It isn't paced (it's exactly one
+email so pacing is moot), it never touches `AnnouncementDelivery`
+(a test was never a delivery attempt), and the email itself carries a
+visible "this is a test" banner -- so a board member previewing the
+content can never mistake it for, or have it counted as, the real
+send.
+
+**The main form's Save button was clarified rather than restructured,
+after a board member reasonably read "Save" as "this might send
+something."** The save action was already, and remains, purely
+persistence -- title/body/print-override to the database, nothing
+else. Rather than rename or restructure it, a one-line hint was added
+under the button making that explicit, since the actual send actions
+already live in their own clearly-separate "Delivery channels" panel
+below the form.
+
+## Announcements module: blog channel (WordPress)
+
+**A small `BlogPublisher` interface with one implementation, not a
+WordPress-specific router.** `WordPressPublisher` is the only class
+today, but every method it exposes (`test_connection`,
+`publish_draft`) is generic enough that a TYPO3 or Joomla connector
+later is a new class, not a change to the router or to
+`AnnouncementDelivery`.
+
+**WordPress's own built-in mechanisms, no custom plugin needed for
+this direction.** The public-signup connector needed a WordPress
+plugin because Parcella was *receiving* data from an external site
+with no way to authenticate that inbound call except a shared token.
+Here Parcella is the one *calling out*, using WordPress's REST API
+(`wp-json/wp/v2/posts`, `/media`) and its own Application Password
+authentication (WP 5.6+) -- nothing to install on the WordPress side.
+
+**Credentials reuse the exact same storage mechanism as SMTP, not a
+bespoke Integrations-page form.** Adding
+`wordpress_site_url`/`wordpress_username`/`wordpress_app_password` to
+the existing `SETTINGS_FIELDS` list means they get encrypted storage,
+the "blank = unchanged" convention, and the masked-password placeholder
+UI for free -- all already built for SMTP. A "Test connection" button
+was added alongside (calling `wp-json/wp/v2/users/me`), since getting
+Application Password auth wrong is easy to do and better caught before
+a real draft attempt than after.
+
+**Every post is created as a draft; the publisher never gets a
+"publish immediately" option.** This was the scope from the original
+ask ("draft that we can enrich... and publish as we like it") and
+stays a hard behavior, not a configurable one -- there's no code path
+in `WordPressPublisher.publish_draft` that sets any other `status`.
+
+**`AnnouncementDelivery.external_reference` stores the WordPress edit
+URL, not a public post URL.** There isn't a public URL yet for a
+draft. This is a known constraint for the not-yet-built print channel:
+its QR code needs something actually public to point at, so it can
+only be generated after a board member publishes the WordPress draft
+themselves -- documented as a real ordering dependency between blog
+and print, not silently papered over.
+
+## Blog channel: credentials moved from Settings to Integrations
+
+WordPress blog credentials were initially added to Admin -> Settings,
+reusing the generic `SETTINGS_FIELDS` mechanism (encrypted storage,
+"blank = unchanged", masked placeholder -- all built for SMTP) purely
+because it was the path of least implementation effort. On review,
+that reasoning was about implementation convenience, not where a board
+member configuring this would actually expect to find it: Integrations
+is already "the page where Parcella connects to other systems" (it's
+where the public-signup API token lives), and WordPress blog
+credentials are the same category of thing, just pointed in the
+opposite direction. Moved to a dedicated card on
+Admin -> Integrations with its own form handling
+(`app/routers/admin.py`'s `integrations_wordpress_speichern` /
+`integrations_wordpress_testen`), hand-rolling the same "blank
+Application Password field leaves the existing one unchanged"
+convention rather than reusing `SETTINGS_FIELDS` -- a small amount of
+extra code in exchange for the credentials living where they
+conceptually belong. No schema change was needed: the underlying
+`ClubSetting` keys (`wordpress_site_url`/`wordpress_username`/
+`wordpress_app_password`) are unchanged, only which admin page reads
+and writes them.
+
+## WordPress connector plugin: consolidated into one plugin
+
+The original `parcella-work-signup` plugin was single-purpose (just
+the work-session signup form). With more WordPress <-> Parcella
+integrations planned in the same direction -- WordPress calling
+Parcella, the same direction as signup -- (a contact-form-to-tickets
+bridge, applicant management, calendar display via shortcode instead
+of passive ICS), each shipping as its own separate plugin would mean a
+club installs and configures N plugins, each asking for the same base
+URL and API token again. Consolidated into `parcella-connector`: one
+plugin, one settings screen (Settings -> Parcella Connector) holding
+the shared base URL/token, with each capability living in its own file
+under `includes/modules/` (`signup.php` today).
+
+This consolidation applies only to the WordPress-calls-Parcella
+direction. The blog channel (Parcella calls WordPress, using
+WordPress's own built-in REST API) stays entirely separate and needs
+no plugin at all -- see the blog-channel ADR entries above for why
+folding it into this plugin would add a dependency for zero capability
+gained.
+
+**Upgrade path preserves existing configuration.** The WordPress
+option names (`parcella_signup_base_url`, `parcella_signup_api_token`)
+were deliberately kept unchanged from the old plugin, even though
+everything else was renamed (`parcella_signup_*` function prefixes to
+`parcella_connector_signup_*`, text domain, settings page slug). A club
+that already configured the old plugin just deactivates it, installs
+this one, and their base URL/token carry over with nothing to
+re-enter. The `[parcella_work_signup]` shortcode tag is also unchanged,
+so existing pages/posts using it keep working without edits.

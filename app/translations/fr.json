@@ -272,7 +272,17 @@
       "endpoint_url": "URL",
       "endpoint_auth": "Authentification",
       "auth_none": "Aucune (lecture publique)",
-      "wordpress_hint": "Une extension WordPress connecteur de référence se trouve dans le dossier integrations/wordpress du projet."
+      "wordpress_hint": "Une extension WordPress connecteur de référence se trouve dans le dossier integrations/wordpress du projet.",
+      "wordpress_blog_title": "WordPress (brouillons de blog)",
+      "wordpress_blog_desc": "Utilisé par le module Annonces pour publier des brouillons de blog. Créez un mot de passe d'application dans votre profil utilisateur WordPress (Utilisateurs -> Profil -> Mots de passe d'application) -- n'utilisez pas votre mot de passe de connexion WordPress habituel ici.",
+      "wordpress_saved": "Paramètres WordPress enregistrés",
+      "wordpress_site_url_label": "URL du site WordPress",
+      "wordpress_username_label": "Nom d'utilisateur WordPress",
+      "wordpress_app_password_label": "Mot de passe d'application",
+      "wordpress_app_password_hint": "Pas votre mot de passe de connexion WordPress habituel -- générez-en un dans votre profil utilisateur WordPress.",
+      "wordpress_save_button": "Enregistrer",
+      "wordpress_test_button": "Tester la connexion",
+      "wordpress_test_success": "Connexion réussie"
     }
   },
   "members": {
@@ -1261,7 +1271,28 @@
       "print_fits": "Tient sur une page imprimée.",
       "print_too_long": "Probablement trop long pour une page -- envisagez de raccourcir.",
       "save_button": "Enregistrer",
-      "cancel_button": "Annuler"
+      "cancel_button": "Annuler",
+      "channels_title": "Canaux de diffusion",
+      "channel_email": "E-mail aux membres",
+      "channel_blog": "Brouillon de blog",
+      "channel_print": "PDF imprimable",
+      "channel_coming_soon": "Bientôt disponible",
+      "delivery_sent": "Envoyé",
+      "delivery_failed": "Échec",
+      "delivery_not_sent": "Pas encore envoyé",
+      "send_email_button": "Envoyer maintenant",
+      "send_email_confirm": "Envoyer cette annonce par e-mail à tous les membres actuels ayant activé les notifications par e-mail ?",
+      "save_does_not_send_hint": "Enregistrer se contente de sauvegarder vos modifications -- rien n'est envoyé ni publié. Utilisez les boutons ci-dessous quand vous serez prêt.",
+      "test_email_title": "Envoyer un e-mail de test",
+      "test_email_hint": "Envoie le contenu actuel à une adresse pour relecture. N'est jamais compté comme un envoi réel et ne va jamais aux membres.",
+      "test_email_button": "Envoyer le test",
+      "test_email_success": "E-mail de test envoyé avec succès",
+      "test_email_failed": "Impossible d'envoyer l'e-mail de test -- vérifiez la configuration SMTP dans Admin -> Paramètres.",
+      "test_email_missing_address": "Veuillez saisir une adresse e-mail.",
+      "delivery_sending": "Envoi en cours...",
+      "sending_refresh_hint": "En cours -- rechargez cette page pour voir l'état actuel.",
+      "blog_edit_draft_link": "Ouvrir le brouillon dans WordPress",
+      "send_blog_button": "Créer le brouillon"
     }
   }
 }

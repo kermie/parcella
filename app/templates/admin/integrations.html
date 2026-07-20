@@ -64,4 +64,45 @@
     </div>
 </div>
 
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-wordpress me-2"></i>{{ t('admin.integrations.wordpress_blog_title') }}</div>
+    <div class="card-body">
+        <p class="text-muted">{{ t('admin.integrations.wordpress_blog_desc') }}</p>
+
+        {% if wordpress_saved %}
+        <div class="alert alert-success">{{ t('admin.integrations.wordpress_saved') }}</div>
+        {% endif %}
+
+        <form method="post" action="/admin/integrations/wordpress">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ t('admin.integrations.wordpress_site_url_label') }}</label>
+                <input type="url" name="wordpress_site_url" class="form-control"
+                       value="{{ wordpress_site_url }}" placeholder="https://example.com">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ t('admin.integrations.wordpress_username_label') }}</label>
+                <input type="text" name="wordpress_username" class="form-control" value="{{ wordpress_username }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ t('admin.integrations.wordpress_app_password_label') }}</label>
+                <input type="password" name="wordpress_app_password" class="form-control" autocomplete="off"
+                       placeholder="{% if wordpress_app_password_set %}{{ t('admin.settings.password_set_placeholder') }}{% else %}{{ t('admin.settings.password_unset_placeholder') }}{% endif %}">
+                <div class="form-text">{{ t('admin.integrations.wordpress_app_password_hint') }}</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>{{ t('admin.integrations.wordpress_save_button') }}
+            </button>
+            <button type="submit" formaction="/admin/integrations/wordpress/test" formmethod="post" class="btn btn-outline-secondary">
+                {{ t('admin.integrations.wordpress_test_button') }}
+            </button>
+            {% if wordpress_test_result == 'success' %}
+            <span class="text-success ms-2"><i class="bi bi-check-circle"></i> {{ t('admin.integrations.wordpress_test_success') }}</span>
+            {% elif wordpress_test_result == 'failed' %}
+            <div class="text-danger mt-2"><i class="bi bi-x-circle"></i> {{ wordpress_test_message }}</div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
 {% endblock %}

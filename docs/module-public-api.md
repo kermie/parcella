@@ -8,11 +8,14 @@ clubs already have a public website (usually WordPress) with its own
 inevitably drifts out of sync with what's actually scheduled in
 Parcella, because someone has to update it by hand in two places.
 
-A reference WordPress connector plugin lives in
-`integrations/wordpress/parcella-work-signup/` -- see its own README
-for installation. Writing an equivalent connector for another CMS means
-implementing the same three-endpoint contract below; none of the logic
-needs to be reimplemented per CMS.
+A reference WordPress connector lives in the "signup" module of the
+consolidated `integrations/wordpress/parcella-connector/` plugin (see
+its own README for installation) -- this plugin also hosts other
+WordPress <-> Parcella integrations (see
+docs/architecture-decisions.md for why it was consolidated rather than
+shipping a separate plugin per integration). Writing an equivalent
+connector for another CMS means implementing the same three-endpoint
+contract below; none of the logic needs to be reimplemented per CMS.
 
 ## The core constraint: no member names on the public site
 

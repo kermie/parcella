@@ -272,7 +272,17 @@
       "endpoint_url": "URL",
       "endpoint_auth": "Uwierzytelnianie",
       "auth_none": "Brak (publiczny odczyt)",
-      "wordpress_hint": "Przykładowa wtyczka-łącznik WordPress znajduje się w folderze integrations/wordpress projektu."
+      "wordpress_hint": "Przykładowa wtyczka-łącznik WordPress znajduje się w folderze integrations/wordpress projektu.",
+      "wordpress_blog_title": "WordPress (szkice bloga)",
+      "wordpress_blog_desc": "Używane przez moduł Ogłoszenia do publikowania szkiców bloga. Utwórz hasło aplikacji w profilu użytkownika WordPress (Użytkownicy -> Profil -> Hasła aplikacji) -- nie używaj tutaj zwykłego hasła logowania WordPress.",
+      "wordpress_saved": "Zapisano ustawienia WordPress",
+      "wordpress_site_url_label": "Adres URL witryny WordPress",
+      "wordpress_username_label": "Nazwa użytkownika WordPress",
+      "wordpress_app_password_label": "Hasło aplikacji",
+      "wordpress_app_password_hint": "To nie jest zwykłe hasło logowania WordPress -- wygeneruj je w profilu użytkownika WordPress.",
+      "wordpress_save_button": "Zapisz",
+      "wordpress_test_button": "Testuj połączenie",
+      "wordpress_test_success": "Połączenie udane"
     }
   },
   "members": {
@@ -1261,7 +1271,28 @@
       "print_fits": "Mieści się na jednej stronie wydruku.",
       "print_too_long": "Prawdopodobnie za długie na jedną stronę -- rozważ skrócenie.",
       "save_button": "Zapisz",
-      "cancel_button": "Anuluj"
+      "cancel_button": "Anuluj",
+      "channels_title": "Kanały dystrybucji",
+      "channel_email": "E-mail do członków",
+      "channel_blog": "Szkic bloga",
+      "channel_print": "PDF do druku",
+      "channel_coming_soon": "Wkrótce",
+      "delivery_sent": "Wysłano",
+      "delivery_failed": "Niepowodzenie",
+      "delivery_not_sent": "Jeszcze nie wysłano",
+      "send_email_button": "Wyślij teraz",
+      "send_email_confirm": "Wysłać to ogłoszenie e-mailem do wszystkich obecnych członków z włączonymi powiadomieniami e-mail?",
+      "save_does_not_send_hint": "Zapisanie tylko przechowuje zmiany -- nic nie zostaje wysłane ani opublikowane. Gdy będziesz gotowy, użyj przycisków poniżej.",
+      "test_email_title": "Wyślij e-mail testowy",
+      "test_email_hint": "Wysyła bieżącą treść na jeden adres do sprawdzenia. Nigdy nie liczy się jako prawdziwa wysyłka i nigdy nie trafia do członków.",
+      "test_email_button": "Wyślij test",
+      "test_email_success": "E-mail testowy wysłany pomyślnie",
+      "test_email_failed": "Nie udało się wysłać e-maila testowego -- sprawdź konfigurację SMTP w Admin -> Ustawienia.",
+      "test_email_missing_address": "Podaj adres e-mail.",
+      "delivery_sending": "Wysyłanie...",
+      "sending_refresh_hint": "W toku -- odśwież stronę, aby zobaczyć aktualny stan.",
+      "blog_edit_draft_link": "Otwórz szkic w WordPress",
+      "send_blog_button": "Utwórz szkic"
     }
   }
 }

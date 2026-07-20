@@ -1,11 +1,17 @@
 """
 Announcements module router.
 
-Foundation piece only (see docs/module-announcements.md): authoring an
-Announcement (title, Markdown body, optional image, optional print
-override) and its lifecycle (draft/published/archived). Sending it out
-to the three channels (blog draft, email, PDF) is built on top of this
-in later phases -- this router does not yet send anything anywhere.
+Authoring an Announcement (title, Markdown body, optional image,
+optional print override) and its lifecycle (draft/published/archived),
+plus two of its three delivery channels:
+- email: a paced real send to current members
+  (app.announcement_mailer.run_paced_email_send, run as a background
+  task so a large roster doesn't hold the request open) and a one-off
+  test send to a single address for review before committing to the
+  real thing.
+- blog: publishes a draft post to WordPress (app.blog_publisher),
+  using whatever credentials are configured under Admin -> Settings.
+The print channel is not built yet.
 
 Restricted to board/admin (require_admin), same reasoning as the
 public_signup_api's Integrations page: this creates content that will
@@ -13,19 +19,23 @@ be pushed to a public blog and to every member's inbox, so authoring
 it isn't a general member-facing feature.
 """
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Announcement, AnnouncementStatus
+from app.models import Announcement, AnnouncementStatus, AnnouncementChannel, AnnouncementDeliveryStatus
 from app.auth import require_admin
 from app.module_flags import require_modul
 from app.announcement_utils import render_markdown_to_html, likely_fits_one_print_page
+from app.announcement_mailer import start_paced_email_send, run_paced_email_send, send_test_email
+from app.blog_publisher import get_wordpress_publisher, BlogPublishError
 from app.templating import templates
 
 router = APIRouter(
@@ -75,7 +85,11 @@ def _delete_announcement_image(filename: Optional[str]) -> None:
 
 
 async def _get_announcement_or_404(db: AsyncSession, announcement_id: str) -> Announcement:
-    result = await db.execute(select(Announcement).where(Announcement.id == announcement_id))
+    result = await db.execute(
+        select(Announcement)
+        .where(Announcement.id == announcement_id)
+        .options(selectinload(Announcement.deliveries))
+    )
     announcement = result.scalar_one_or_none()
     if announcement is None:
         raise HTTPException(status_code=404, detail="Announcement not found")
@@ -166,6 +180,10 @@ async def announcement_edit_form(
     return templates.TemplateResponse("announcements/form.html", {
         "request": request, "user": user, "announcement": announcement,
         "fits_one_page": fits_one_page, "error": None,
+        "email_delivery": announcement.delivery_for(AnnouncementChannel.EMAIL),
+        "blog_delivery": announcement.delivery_for(AnnouncementChannel.BLOG),
+        "test_email_result": request.query_params.get("test_email_result"),
+        "test_email_address": request.query_params.get("test_email_address"),
     })
 
 
@@ -208,6 +226,123 @@ async def announcement_update(
     announcement.body_html = render_markdown_to_html(body_markdown)
     announcement.print_text_override = print_text_override
 
+    await db.commit()
+    return RedirectResponse(url=f"/announcements/{announcement.id}/edit", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Channel: email
+# ---------------------------------------------------------------------------
+
+@router.post("/{announcement_id}/send/email")
+async def announcement_send_email(
+    announcement_id: str, request: Request, background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+    announcement = await _get_announcement_or_404(db, announcement_id)
+
+    if announcement.status == AnnouncementStatus.ARCHIVED:
+        raise HTTPException(status_code=400, detail="Cannot send an archived announcement")
+
+    existing_delivery = announcement.delivery_for(AnnouncementChannel.EMAIL)
+    if existing_delivery is not None and existing_delivery.status == AnnouncementDeliveryStatus.SENDING:
+        raise HTTPException(status_code=409, detail="A send is already in progress for this announcement")
+
+    _delivery, recipient_count = await start_paced_email_send(announcement, db)
+    await db.commit()
+
+    if recipient_count > 0:
+        base_url = str(request.base_url).rstrip("/")
+        background_tasks.add_task(run_paced_email_send, announcement.id, base_url)
+
+    return RedirectResponse(url=f"/announcements/{announcement.id}/edit", status_code=303)
+
+
+@router.post("/{announcement_id}/send/test-email")
+async def announcement_send_test_email(
+    announcement_id: str, request: Request, db: AsyncSession = Depends(get_db),
+):
+    """Sends the current content to a single address for review. Does
+    not touch AnnouncementDelivery -- a test send is never mistaken for
+    (or counted as) a real one."""
+    await require_admin(request, db)
+    announcement = await _get_announcement_or_404(db, announcement_id)
+    form = await request.form()
+    address = (form.get("test_email") or "").strip()
+
+    result = "missing_address"
+    if address:
+        sent = await send_test_email(announcement, db, request, address)
+        result = "success" if sent else "failed"
+
+    return RedirectResponse(
+        url=f"/announcements/{announcement.id}/edit?test_email_result={result}&test_email_address={address}",
+        status_code=303,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Channel: blog (WordPress)
+# ---------------------------------------------------------------------------
+
+_IMAGE_MIME_BY_EXTENSION = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+
+
+def _read_announcement_image(announcement: Announcement) -> tuple:
+    """Returns (bytes, filename, mime) for the announcement's image, or
+    (None, None, None) if it has none / the file is missing on disk."""
+    if not announcement.image_filename:
+        return None, None, None
+    path = UPLOAD_DIR / announcement.image_filename
+    if not path.exists():
+        return None, None, None
+    extension = path.suffix.lower()
+    mime = _IMAGE_MIME_BY_EXTENSION.get(extension, "application/octet-stream")
+    return path.read_bytes(), announcement.image_filename, mime
+
+
+@router.post("/{announcement_id}/send/blog")
+async def announcement_send_blog(
+    announcement_id: str, request: Request, db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+    announcement = await _get_announcement_or_404(db, announcement_id)
+
+    if announcement.status == AnnouncementStatus.ARCHIVED:
+        raise HTTPException(status_code=400, detail="Cannot send an archived announcement")
+
+    delivery = announcement.delivery_for(AnnouncementChannel.BLOG)
+    if delivery is None:
+        from app.models import AnnouncementDelivery
+        delivery = AnnouncementDelivery(announcement_id=announcement.id, channel=AnnouncementChannel.BLOG)
+        db.add(delivery)
+
+    publisher = await get_wordpress_publisher(db)
+    if publisher is None:
+        delivery.status = AnnouncementDeliveryStatus.FAILED
+        delivery.error_message = "WordPress isn't configured yet -- add the site URL, username, and Application Password under Admin -> Settings."
+        delivery.sent_at = datetime.now(timezone.utc)
+        await db.commit()
+        return RedirectResponse(url=f"/announcements/{announcement.id}/edit", status_code=303)
+
+    image_bytes, image_filename, image_mime = _read_announcement_image(announcement)
+
+    try:
+        result = await publisher.publish_draft(
+            title=announcement.title, html_content=announcement.body_html,
+            image_bytes=image_bytes, image_filename=image_filename, image_mime=image_mime,
+        )
+        delivery.status = AnnouncementDeliveryStatus.SENT
+        delivery.external_reference = result.edit_url
+        delivery.error_message = None
+    except BlogPublishError as e:
+        delivery.status = AnnouncementDeliveryStatus.FAILED
+        delivery.error_message = str(e)
+    finally:
+        await publisher.aclose()
+
+    delivery.sent_at = datetime.now(timezone.utc)
     await db.commit()
     return RedirectResponse(url=f"/announcements/{announcement.id}/edit", status_code=303)
 

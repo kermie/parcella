@@ -87,24 +87,101 @@ programmatically, which so far only the (not-yet-built) WordPress
 publisher will, and that's an outbound call Parcella makes, not an
 inbound API surface.
 
+## Email channel (built)
+
+`app/announcement_mailer.py` sends the announcement to current parcel
+residents (`MemberParcel.assigned_until IS NULL`) who aren't
+soft-deleted, whose membership hasn't lapsed, and who have
+`email_notifications = True` -- the "e-mail info = yes" flag from the
+original request. Members with no stored email address are silently
+skipped (a Members-admin data-completeness issue, not a sending
+failure). The email body is the announcement's `body_html` wrapped in
+a minimal branded shell (club name + header image + the same content
+that would go to the blog) -- reusing `app/email_service.py`'s
+existing `sende_email()`.
+
+**Sending is paced, not all-at-once.** `EMAIL_BATCH_SIZE` (default 8)
+emails go out, then a pause of `EMAIL_BATCH_PAUSE_SECONDS` (default 60)
+before the next batch, repeating until everyone's been sent to. For a
+roster of a few hundred, that's realistically tens of minutes -- too
+long to hold an HTTP request open -- so the actual sending runs as a
+FastAPI `BackgroundTasks` job (`run_paced_email_send`), started from
+the request but continuing after the response has already gone back to
+the browser. Because the request's DB session closes once the response
+is sent, the background task opens its own (`AsyncSessionLocal`),
+mirroring the existing pattern in `app.main`'s ticket-inbox polling
+loop.
+
+To make an in-progress send visible without adding new columns, a
+`SENDING` status was added to `AnnouncementDeliveryStatus` (migration
+`0030`). While sending, `error_message` is repurposed to hold a running
+progress note ("140 of 800 sent so far") rather than an error --
+see the field's docstring in `app/models.py`. The edit page shows this
+with a spinner and disables the "Send now" button while a send is
+`SENDING`; the router also rejects a second `POST .../send/email` with
+409 if one is already in progress, as a server-side backstop against
+double-sends (e.g. a double click or a stale tab).
+
+`AnnouncementDelivery` stays channel-level, not per-recipient (see the
+model docstring), so a partial failure -- some recipients unreachable
+-- is still recorded as `SENT` with the failure count noted in
+`error_message`; a *total* failure (zero successful sends, or zero
+qualifying recipients at all) is recorded as `FAILED` so it's visually
+distinct and invites a retry.
+
+**Test send.** Before committing to the real send, a board member can
+send the exact current content to one address of their choosing via
+`POST /announcements/{id}/send/test-email`. This is deliberately
+separate machinery from the real send: it isn't paced (it's one
+email), it doesn't touch `AnnouncementDelivery` at all, and the email
+itself carries a visible "this is a test" banner so it's never
+mistaken for the real thing if it lands in the same inbox as a
+previous real send.
+
+## Blog channel (built)
+
+`app/blog_publisher.py` defines a small `BlogPublisher` interface with
+one implementation so far, `WordPressPublisher`, using WordPress's own
+built-in REST API (`wp-json/wp/v2/posts`, `wp-json/wp/v2/media`) and
+its own built-in authentication (an Application Password, WP 5.6+) --
+no custom plugin needed on the WordPress side for this direction. This
+is the opposite direction from the public-signup connector: there, a
+WordPress plugin pushes data INTO Parcella; here, Parcella pushes a
+draft OUT to WordPress.
+
+Credentials (site URL, username, Application Password) are configured
+under Admin -> Integrations (alongside the public-signup API token --
+Integrations is the page for "how Parcella connects to other
+systems," in either direction), with the same encryption
+(`app.crypto_utils`) and "blank = keep existing" convention used
+elsewhere for secrets, hand-rolled for this page rather than reusing
+the generic Settings-field mechanism. A "Test connection" button calls
+`wp-json/wp/v2/users/me` to verify the credentials before you commit
+to using them for a real send.
+
+Every post is created with `status="draft"` -- the publisher never
+decides to actually publish. Whether and when to make it public stays
+a human decision in the WordPress admin, which is also why
+`AnnouncementDelivery.external_reference` stores the **edit** URL
+(`wp-admin/post.php?post={id}&action=edit`), not a public post URL --
+there isn't a public one yet. This matters for the not-yet-built print
+channel: its QR code needs a URL that's actually public, so it can
+only be generated once a board member has published the WordPress
+draft themselves; nothing in Parcella currently blocks running print
+before that happens, since the QR code is just omitted if there's no
+public URL to point at yet (see "What's not built yet" below).
+
+If the image can't be found on disk (unlikely, but possible if it was
+manually deleted outside the app), the draft is still created without
+a featured image rather than failing outright.
+
 ## What's not built yet
 
-- **Blog channel**: a `BlogPublisher` abstraction with a
-  `WordPressPublisher` implementation (WordPress REST API, application
-  password stored per club, draft-only posts), extending the existing
-  Integrations page.
-- **Email channel**: reuses the existing HTML email infrastructure
-  (`app/ticket_mailer.py`'s approach) to send to all members with
-  `email_info = true`, with batching and a per-recipient send log.
-  distinct from `AnnouncementDelivery`, which tracks channel-level
-  status, not per-recipient status.
 - **Print channel**: a WeasyPrint-based HTML->PDF pipeline with the
   club's branding (logo/name from `app/branding.py`) as header/footer,
   a check-and-shorten loop against `print_text_override`, and a QR code
-  to the blog post when shortening happens.
+  to the (published) blog post when shortening happens.
   `app/announcement_utils.likely_fits_one_print_page()` is a rough
   word-count heuristic used today only as a UI hint; the actual
   one-page decision in that phase will measure the real rendered PDF
   page count instead.
-- Actually wiring up "send to channel X" buttons/endpoints and updating
-  `AnnouncementDelivery` rows accordingly.
