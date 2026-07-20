@@ -842,3 +842,200 @@ async def test_integrations_page_shows_wordpress_prefill_without_exposing_passwo
     assert "board" in page.text
     # The actual secret must never be echoed back into the page.
     assert "super-secret-value" not in page.text
+
+
+# ---------------------------------------------------------------------------
+# Print channel (one-page branded PDF)
+# ---------------------------------------------------------------------------
+
+def _pdf_page_count(pdf_bytes: bytes) -> int:
+    import io
+    from pypdf import PdfReader
+    return len(PdfReader(io.BytesIO(pdf_bytes)).pages)
+
+
+async def test_generate_print_pdf_short_content_fits_without_shortening(client, admin_user):
+    token = await login(client, "admin@example.com")
+    await _enable_module(client, auth_header(token))
+    await web_login(client, "admin@example.com")
+
+    create = await client.post(
+        "/announcements/new",
+        data={"title": "Kurze Mitteilung", "body_markdown": "Bitte am Samstag zum Arbeitseinsatz kommen."},
+    )
+    announcement_id = create.headers["location"].split("/")[2]
+
+    response = await client.post(f"/announcements/{announcement_id}/print")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert _pdf_page_count(response.content) == 1
+
+    from app.database import AsyncSessionLocal
+    from app.models import Announcement, AnnouncementChannel
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Announcement).where(Announcement.id == announcement_id)
+            .options(selectinload(Announcement.deliveries))
+        )
+        announcement = result.scalar_one()
+        delivery = announcement.delivery_for(AnnouncementChannel.PRINT)
+        assert delivery.status.value == "SENT"
+        assert delivery.error_message is None
+        # Short content shouldn't have touched the print override.
+        assert announcement.print_text_override is None
+
+
+async def test_generate_print_pdf_shortens_long_content_and_persists_override(client, admin_user):
+    token = await login(client, "admin@example.com")
+    await _enable_module(client, auth_header(token))
+    await web_login(client, "admin@example.com")
+
+    long_body = "\n\n".join(f"Absatz Nummer {i}. " * 30 for i in range(1, 20))
+    create = await client.post(
+        "/announcements/new",
+        data={"title": "Lange Mitteilung", "body_markdown": long_body},
+    )
+    announcement_id = create.headers["location"].split("/")[2]
+
+    response = await client.post(f"/announcements/{announcement_id}/print")
+    assert response.status_code == 200
+    assert _pdf_page_count(response.content) == 1
+
+    from app.database import AsyncSessionLocal
+    from app.models import Announcement, AnnouncementChannel
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Announcement).where(Announcement.id == announcement_id)
+            .options(selectinload(Announcement.deliveries))
+        )
+        announcement = result.scalar_one()
+        delivery = announcement.delivery_for(AnnouncementChannel.PRINT)
+        assert delivery.status.value == "SENT"
+        assert "shortened" in delivery.error_message.lower()
+        # No blog post exists for this announcement, so no QR/online note.
+        assert "no qr code" in delivery.error_message.lower()
+        # The shortened text must actually be persisted, not just used
+        # in-memory for this one render.
+        assert announcement.print_text_override is not None
+        assert announcement.print_text_override != long_body
+        assert len(announcement.print_text_override) < len(long_body)
+
+
+async def test_generate_print_pdf_includes_qr_when_blog_post_is_published(client, admin_user, monkeypatch):
+    token = await login(client, "admin@example.com")
+    await _enable_module(client, auth_header(token))
+    await web_login(client, "admin@example.com")
+    await _configure_wordpress(client, auth_header(token))
+
+    long_body = "\n\n".join(f"Absatz Nummer {i}. " * 30 for i in range(1, 20))
+    create = await client.post(
+        "/announcements/new",
+        data={"title": "Mit veroeffentlichtem Blogpost", "body_markdown": long_body},
+    )
+    announcement_id = create.headers["location"].split("/")[2]
+
+    # Simulate an already-created, already-published WordPress draft.
+    from app.database import AsyncSessionLocal
+    from app.models import AnnouncementDelivery, AnnouncementChannel, AnnouncementDeliveryStatus
+
+    async with AsyncSessionLocal() as session:
+        session.add(AnnouncementDelivery(
+            announcement_id=announcement_id, channel=AnnouncementChannel.BLOG,
+            status=AnnouncementDeliveryStatus.SENT, external_id="42",
+            external_reference="https://blog.example.com/wp-admin/post.php?post=42&action=edit",
+        ))
+        await session.commit()
+
+    import httpx as httpx_module
+
+    def handler(request: httpx_module.Request) -> httpx_module.Response:
+        if request.url.path == "/wp-json/wp/v2/posts/42":
+            return httpx_module.Response(200, json={"status": "publish", "link": "https://blog.example.com/2026/herbst"})
+        return httpx_module.Response(404)
+
+    mock_client = httpx_module.AsyncClient(transport=httpx_module.MockTransport(handler))
+
+    async def fake_get_wordpress_publisher(db, client=None):
+        from app.blog_publisher import WordPressPublisher
+        return WordPressPublisher(
+            site_url="https://blog.example.com", username="board",
+            application_password="abcd 1234 efgh 5678", client=mock_client,
+        )
+
+    monkeypatch.setattr("app.routers.announcements.get_wordpress_publisher", fake_get_wordpress_publisher)
+
+    response = await client.post(f"/announcements/{announcement_id}/print")
+    assert response.status_code == 200
+    assert _pdf_page_count(response.content) == 1
+
+    from app.models import Announcement
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Announcement).where(Announcement.id == announcement_id)
+            .options(selectinload(Announcement.deliveries))
+        )
+        announcement = result.scalar_one()
+        delivery = announcement.delivery_for(AnnouncementChannel.PRINT)
+        assert delivery.status.value == "SENT"
+        assert "qr code" in delivery.error_message.lower()
+        assert "was added" in delivery.error_message.lower()
+
+    await mock_client.aclose()
+
+
+async def test_generate_print_pdf_too_long_is_marked_failed_without_pdf(client, admin_user):
+    token = await login(client, "admin@example.com")
+    await _enable_module(client, auth_header(token))
+    await web_login(client, "admin@example.com")
+
+    unshortenable_body = "Ein einziger enorm langer Absatz ohne Leerzeilen. " * 400
+    create = await client.post(
+        "/announcements/new",
+        data={"title": "Viel zu lang", "body_markdown": unshortenable_body},
+    )
+    announcement_id = create.headers["location"].split("/")[2]
+
+    response = await client.post(f"/announcements/{announcement_id}/print")
+    # No PDF -- redirected back to the edit page instead.
+    assert response.status_code == 303
+
+    from app.database import AsyncSessionLocal
+    from app.models import Announcement, AnnouncementChannel
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Announcement).where(Announcement.id == announcement_id)
+            .options(selectinload(Announcement.deliveries))
+        )
+        announcement = result.scalar_one()
+        delivery = announcement.delivery_for(AnnouncementChannel.PRINT)
+        assert delivery.status.value == "FAILED"
+        assert "shorten" in delivery.error_message.lower()
+
+
+async def test_generate_print_pdf_rejects_archived_announcement(client, admin_user):
+    token = await login(client, "admin@example.com")
+    await _enable_module(client, auth_header(token))
+    await web_login(client, "admin@example.com")
+
+    create = await client.post(
+        "/announcements/new",
+        data={"title": "Alt", "body_markdown": "Content."},
+    )
+    announcement_id = create.headers["location"].split("/")[2]
+
+    await client.post(f"/announcements/{announcement_id}/archive")
+
+    response = await client.post(f"/announcements/{announcement_id}/print")
+    assert response.status_code == 400

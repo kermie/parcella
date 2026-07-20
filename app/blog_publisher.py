@@ -155,6 +155,32 @@ class WordPressPublisher(BlogPublisher):
         edit_url = f"{self.site_url}/wp-admin/post.php?post={post_id}&action=edit"
         return BlogDraftResult(edit_url=edit_url, post_id=post_id)
 
+    async def get_public_url_if_published(self, post_id: str) -> Optional[str]:
+        """Asks WordPress directly whether this post has been published
+        (a human still has to do that themselves in the WP admin -- see
+        publish_draft's docstring) and, if so, returns its current
+        public URL. Returns None if it's still a draft, was deleted, or
+        WordPress can't be reached -- callers should treat all of those
+        the same way: no working public link to point a QR code at yet.
+        Deliberately re-queries live rather than trusting anything
+        cached at draft-creation time, since a draft's publish state
+        (and even, in principle, its permalink) can change after the
+        fact.
+        """
+        client = await self._get_client()
+        try:
+            response = await client.get(f"{self.site_url}/wp-json/wp/v2/posts/{post_id}", headers=self._auth_header())
+        except httpx.HTTPError:
+            return None
+
+        if response.status_code != 200:
+            return None
+
+        data = response.json()
+        if data.get("status") != "publish":
+            return None
+        return data.get("link")
+
 
 async def load_wordpress_configuration(db: AsyncSession) -> Optional[dict]:
     """Loads {site_url, username, app_password} from ClubSettings, or

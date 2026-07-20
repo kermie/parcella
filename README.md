@@ -103,22 +103,21 @@ version publicly available. Details and contribution guidelines in
   resident as a precaution if it isn't, creating real participants the
   board can review and correct like any other signup. Off by default
   (it opens a public write endpoint) and protected by a regenerable
-  shared token; a reference WordPress connector plugin is included
-  under `integrations/wordpress/`
-- 🚧 Announcements module (foundation): author a piece of club news
-  once (Markdown body, image, optional shortened print version) and
-  prepare it for delivery to a blog draft, member email, and a
-  printable one-page PDF notice. This first phase covers authoring and
-  the data model only -- off by default, admin/board only. See
-  `docs/module-announcements.md`. Sending to each channel is a
-  follow-up phase.
+  shared token; a reference WordPress connector plugin
+  (`parcella-connector`) is included under `integrations/wordpress/`,
+  consolidating every WordPress <-> Parcella integration (currently
+  signup; more planned) behind one shared settings screen
+- ✅ Announcements module: author a piece of club news once (Markdown
+  body, image, optional print override) and deliver it to all three
+  channels -- a paced email send to current members with notifications
+  enabled (plus a one-off test send), a WordPress blog draft via the
+  site's REST API (credentials on Admin -> Integrations), and a
+  one-page branded PDF that auto-shortens and adds a QR code to the
+  published blog post if the full text doesn't fit. Off by default,
+  admin/board only. See `docs/module-announcements.md`.
 
 ## Planned (next phases)
 
-- Announcements: blog channel (WordPress REST API publisher, extensible
-  to other CMSes), email channel (send to members with
-  `email_info = true`), print channel (branded one-page PDF with
-  auto-shorten + QR code fallback)
 - Password change for logged-in users
 - Assign a member to a club role (UI)
 - Invoicing (per parcel, area, or member)
@@ -139,6 +138,7 @@ version publicly available. Details and contribution guidelines in
 | Migrations | Alembic |
 | i18n/l10n | JSON translation catalogs + Babel (number/currency formatting) |
 | Calendar/ICS | icalendar (RFC 5545 feed generation) |
+| Announcements | markdown (authoring), bleach (sanitizing), WeasyPrint (PDF), qrcode (print QR codes) |
 | Container | Docker + docker compose |
 
 ---

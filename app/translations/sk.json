@@ -1276,7 +1276,6 @@
       "channel_email": "E-mail členom",
       "channel_blog": "Koncept blogu",
       "channel_print": "Tlačiteľné PDF",
-      "channel_coming_soon": "Už čoskoro",
       "delivery_sent": "Odoslané",
       "delivery_failed": "Zlyhalo",
       "delivery_not_sent": "Zatiaľ neodoslané",
@@ -1292,7 +1291,10 @@
       "delivery_sending": "Odosiela sa...",
       "sending_refresh_hint": "Prebieha -- načítajte stránku znova, aby ste videli aktuálny stav.",
       "blog_edit_draft_link": "Otvoriť koncept vo WordPress",
-      "send_blog_button": "Vytvoriť koncept"
+      "send_blog_button": "Vytvoriť koncept",
+      "print_generated": "PDF vytvorené",
+      "print_too_long_status": "Príliš dlhé na jednu stranu",
+      "print_generate_button": "Vytvoriť PDF"
     }
   }
 }

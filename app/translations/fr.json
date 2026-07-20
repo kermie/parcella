@@ -1276,7 +1276,6 @@
       "channel_email": "E-mail aux membres",
       "channel_blog": "Brouillon de blog",
       "channel_print": "PDF imprimable",
-      "channel_coming_soon": "Bientôt disponible",
       "delivery_sent": "Envoyé",
       "delivery_failed": "Échec",
       "delivery_not_sent": "Pas encore envoyé",
@@ -1292,7 +1291,10 @@
       "delivery_sending": "Envoi en cours...",
       "sending_refresh_hint": "En cours -- rechargez cette page pour voir l'état actuel.",
       "blog_edit_draft_link": "Ouvrir le brouillon dans WordPress",
-      "send_blog_button": "Créer le brouillon"
+      "send_blog_button": "Créer le brouillon",
+      "print_generated": "PDF généré",
+      "print_too_long_status": "Trop long pour une page",
+      "print_generate_button": "Générer le PDF"
     }
   }
 }

@@ -175,13 +175,69 @@ If the image can't be found on disk (unlikely, but possible if it was
 manually deleted outside the app), the draft is still created without
 a featured image rather than failing outright.
 
+## Print channel (built)
+
+`app/print_publisher.py` renders a one-page, branded PDF via
+WeasyPrint (HTML/CSS -> PDF): a running header (club logo + name) and
+footer on an A4 page via `@top-center`/`@bottom-center`, the
+announcement's image, and the body text. Since the whole point is
+"fits on one page," there's no need for WeasyPrint's more elaborate
+multi-page repeating-header machinery beyond that.
+
+**The auto-shorten loop, exactly as originally scoped:**
+1. Render with the full text (the manual `print_text_override` if the
+   admin already set one, otherwise the full `body_markdown`).
+2. If that's one page, done -- no QR code, `print_text_override` is
+   left untouched.
+3. If not, shorten paragraph-by-paragraph (dropping from the end,
+   most content kept first) and re-render each attempt until one fits.
+   The QR code and "read the rest online" note are added starting from
+   the first shortened attempt -- untouched text never gets a QR code.
+4. The shortened text that fits gets written back onto
+   `print_text_override` (persisted, freely editable afterward,
+   consistent with the field's original design) so the admin can
+   review/adjust it, and so regenerating later doesn't repeat the
+   search.
+5. If even a single paragraph still doesn't fit alongside the
+   header/footer/image, generation stops (`PrintTooLongError`) and asks
+   a human to shorten manually, rather than silently truncating
+   mid-sentence or producing a multi-page "one-pager".
+
+**The QR code only appears once, and only if, there's a genuinely
+public blog post to point at.** Since drafts aren't public,
+`app.blog_publisher.WordPressPublisher.get_public_url_if_published()`
+is called live, at print-generation time, using the BLOG delivery's
+stored `external_id` (the WordPress post ID) -- not a cached URL --
+and asks WordPress directly whether the post's `status` is now
+`publish` and, if so, what its current `link` is. If the post is still
+a draft (or was never sent to the blog at all), the QR code is simply
+omitted; nothing blocks generating the PDF anyway.
+
+**Images and the logo are embedded as base64 data URIs**, not
+filesystem paths or HTTP URLs, so the PDF doesn't depend on WeasyPrint
+resolving relative paths correctly or on the app's own HTTP server
+being reachable from itself at render time.
+
+**Delivery tracking**: like the other channels, `AnnouncementDelivery`
+for PRINT is channel-level. A successful generation is `SENT` with
+`error_message` repurposed (same convention as SENDING for email) to
+note whether shortening happened and whether a QR code was included --
+useful context for an admin glancing at the delivery panel without
+having to open the PDF. A `PrintTooLongError` is recorded as `FAILED`
+with the reason, and no PDF is returned for that request (the
+"Generate PDF" button, an ordinary HTML form POST, either downloads a
+PDF or redirects back to the same page showing the failure -- both are
+valid outcomes for the same button).
+
+**System dependencies**: WeasyPrint needs Pango/Cairo/GDK-Pixbuf at the
+OS level (added to `Dockerfile`), not just the `weasyprint` Python
+package -- see `requirements.txt` / `Dockerfile` for the exact
+packages.
+
 ## What's not built yet
 
-- **Print channel**: a WeasyPrint-based HTML->PDF pipeline with the
-  club's branding (logo/name from `app/branding.py`) as header/footer,
-  a check-and-shorten loop against `print_text_override`, and a QR code
-  to the (published) blog post when shortening happens.
-  `app/announcement_utils.likely_fits_one_print_page()` is a rough
-  word-count heuristic used today only as a UI hint; the actual
-  one-page decision in that phase will measure the real rendered PDF
-  page count instead.
+Nothing -- all three channels (email, blog, print) are now built. Any
+further refinement (e.g. admin-configurable pacing numbers for email,
+multi-CMS blog support, a "publish and print" one-click flow) would be
+a new, separate piece of work rather than something left over from the
+original scope.

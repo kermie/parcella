@@ -1,115 +1,102 @@
-DELIVERY NOTES -- WordPress credentials moved to Integrations + plugin
-consolidated into parcella-connector
+DELIVERY NOTES -- Announcements: print channel (final channel!)
 ======================================================================
 
-Two changes this time, both from your feedback. No new migration, no
-schema change.
+This completes the announcements module -- all three channels (email,
+blog, print) are now built. One new migration this time.
 
-## 1. WordPress blog credentials: Settings -> Integrations
+## What's new
 
-Same three fields (site URL, username, Application Password), same
-encrypted storage, same "blank password field = keep the existing
-one" behavior -- just living on Admin -> Integrations now (a new card,
-right below the public-signup API section) instead of Admin ->
-Settings. The underlying database keys are unchanged, so if you'd
-already saved credentials via Settings, they'll show up correctly
-under Integrations without re-entering anything.
+- A "Generate PDF" button in the Delivery channels panel, next to
+  email and blog. Click it and your browser downloads a one-page,
+  branded PDF: your club's logo and name as a running header/footer,
+  the announcement's image, and the body text.
+- If the full text doesn't fit on one page, it's shortened
+  automatically (paragraph by paragraph, keeping as much as fits) and
+  a QR code is added linking to the blog post -- but only if that blog
+  post has actually been PUBLISHED (not just sitting as a draft).
+  Parcella checks WordPress live, at the moment you click the button,
+  so this always reflects the current real state, not something cached
+  from when the draft was first created.
+- The shortened text gets saved into the announcement's "Print version
+  (optional)" field automatically, so you can see exactly what got cut
+  and adjust it further if you want -- it's not a black box.
+- If even a single paragraph won't fit alongside the header/footer/
+  image, nothing gets silently mangled: you'll see a clear message
+  asking you to shorten the text yourself, and no PDF is generated for
+  that attempt.
 
-Admin -> Settings no longer has a WordPress card at all.
+## Before you can use this
 
-## 2. WordPress plugin: parcella-work-signup -> parcella-connector
+Nothing extra needed beyond what you already have -- no new
+credentials, no new settings page. The club logo comes from what
+you've already set under Admin -> Settings; the QR code only appears
+for announcements that have already gone through the blog channel AND
+been published.
 
-Restructured into `integrations/wordpress/parcella-connector/`:
-- `parcella-connector.php` -- shared settings screen (base URL + API
-  token), a "Modules" table showing what's active
-- `includes/modules/signup.php` -- the work-session signup shortcode,
-  moved here unchanged in behavior
-- Future integrations (tickets, applicants, calendar) become new files
-  under `includes/modules/`, sharing the same settings screen -- no
-  new credentials to configure per module
+## New dependencies
 
-**If you'd already installed the old plugin** (sandbox or otherwise):
-deactivate "Parcella Work Session Signup", install and activate
-"Parcella Connector" instead. Your base URL and API token carry over
-automatically -- I deliberately kept the underlying WordPress option
-names identical. Any page using `[parcella_work_signup]` keeps working
-unchanged; the shortcode tag didn't change either.
+- **WeasyPrint** (HTML/CSS -> PDF rendering) -- needs a few system
+  libraries (Pango, Cairo, GDK-Pixbuf) that pip alone can't install.
+  I've added these to the Dockerfile, so `docker compose up -d --build
+  web` handles it -- nothing to install by hand.
+- **qrcode** -- generates the QR code image, pure Python, no extra
+  system dependencies.
 
-## Manual cleanup needed after unzipping
-
-This one's on you to do manually, since I can't delete files outside
-what I'm packaging: **delete the old
-`integrations/wordpress/parcella-work-signup/` folder** from your repo
-after unzipping this. It's fully superseded by parcella-connector; I
-haven't included it in this ZIP, but it won't disappear from your
-working copy on its own.
+Because this changes the Dockerfile (not just requirements.txt),
+**you do need the `--build` flag this time**, not just a restart.
 
 ## Testing
 
-10 tests updated/added: the two WordPress connection-test cases now
-hit `/admin/integrations/wordpress/test` (was `/admin/settings/...`),
-plus 3 new ones for the Integrations page itself -- saving works,
-a blank Application Password field leaves the existing one alone, and
-the saved password is never echoed back into the page HTML. 62/62
-across the whole suite, all passing against real PostgreSQL.
-
-The new PHP files were syntax-checked (`php -l`) and the German
-translation catalog was compiled and round-trip verified (including
-plural forms) using Babel, since msgfmt wasn't available in my
-environment -- functionally identical output either way.
+6 new tests, all passing against real PostgreSQL, and I actually
+verified the generated PDFs are genuinely one page (using pypdf to
+read back the page count, not just trusting the code didn't crash):
+short content generates without any shortening, long content gets
+shortened and the override is genuinely persisted to the database (not
+just used for one render), the QR code appears when (and only when) a
+mocked WordPress confirms the post is published, an unshortenable wall
+of text is correctly rejected without producing a PDF, and archived
+announcements can't generate one at all. 67/67 across the whole test
+suite.
 
 ## To apply
 
 1. Unzip into your repo root.
-2. Delete the old `integrations/wordpress/parcella-work-signup/`
-   folder (see above).
-3. `docker compose up -d --build web` (no new dependency, but keeps
-   things consistent).
-4. No migration to run.
-5. If WordPress credentials were already configured via Settings,
-   nothing to do -- they'll appear under Integrations automatically.
-   If not yet configured, fill them in there now.
-6. On your WordPress site: swap the plugin as described above whenever
-   convenient (not urgent -- the old plugin keeps working standalone
-   until you do).
-
-## On your "git push" request
-
-I can't push directly to your GitHub repo -- I work from a clone with
-no write credentials to kermie/parcella, by design (so nothing I do
-can touch your actual repo or history without you reviewing it first).
-What I can do is hand you everything ready to commit in one motion,
-which is what this ZIP is. Suggested flow on your end:
-
-    unzip <this-zip> -d /path/to/your/parcella/repo
-    rm -rf integrations/wordpress/parcella-work-signup
-    git add -A
-    git commit -m "Move WordPress blog credentials to Integrations; consolidate WordPress plugin into parcella-connector"
-    git push
-
-Happy to draft a longer commit message body summarizing both changes
-if you'd like one, or split this into two commits (one per change)
-before you push -- just say which you'd prefer.
+2. `docker compose up -d --build web` -- the `--build` is required
+   this time (new system packages in the Dockerfile), a plain restart
+   won't pick up WeasyPrint's dependencies.
+3. Run the new migration: `alembic upgrade head` takes you to
+   `0031_delivery_external_id` (adds one nullable column to
+   `announcement_deliveries`; purely additive, nothing to review).
+4. Nothing else to configure -- try it on an existing announcement.
 
 ## Files changed since the previous delivery
 
 New:
-- integrations/wordpress/parcella-connector/ (entire new plugin)
-
-Removed (delete manually, see above):
-- integrations/wordpress/parcella-work-signup/ (entire old plugin)
+- app/print_publisher.py
+- migrations/versions/0031_delivery_external_id.py
 
 Modified:
-- app/routers/admin.py (WordPress fields removed from SETTINGS_FIELDS;
-  new POST /integrations/wordpress and /integrations/wordpress/test
-  endpoints; GET /integrations now also loads WordPress config for
-  prefill)
-- app/templates/admin/settings.html (WordPress card removed)
-- app/templates/admin/integrations.html (new WordPress card)
-- app/blog_publisher.py (docstring updated to reference Integrations)
-- app/translations/*.json (8 keys removed, 10 added -- net +2, 1142
-  keys per file now, verified matching)
-- tests/test_announcements.py (endpoint URLs updated; 3 new tests for
-  the Integrations page)
+- app/models.py (external_id column + updated docstrings on
+  AnnouncementDelivery)
+- app/blog_publisher.py (new get_public_url_if_published method)
+- app/routers/announcements.py (new POST /{id}/print endpoint; blog
+  send now also stores the WordPress post ID)
+- app/templates/announcements/form.html (print channel status/button)
+- app/translations/*.json (net +2 keys -- 1144 keys per file now,
+  verified matching)
+- requirements.txt (+ weasyprint==69.0, qrcode[pil]==8.2)
+- requirements-dev.txt (+ pypdf, test-only, for verifying PDF page
+  counts in tests)
+- Dockerfile (+ system libraries WeasyPrint needs)
+- tests/test_announcements.py (6 new tests)
 - docs/module-announcements.md, docs/architecture-decisions.md,
-  docs/module-public-api.md (updated for both changes)
+  README.md (print channel documented; Announcements module marked
+  complete)
+
+## What's left
+
+Nothing from the original three-channel scope -- email, blog, and
+print are all built and tested. Anything further (admin-configurable
+email pacing, a second CMS connector, a combined "publish and print in
+one click" flow, etc.) would be new work, not something outstanding
+from this feature.

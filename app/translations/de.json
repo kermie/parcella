@@ -1276,7 +1276,6 @@
       "channel_email": "Mitglieder-E-Mail",
       "channel_blog": "Blog-Entwurf",
       "channel_print": "Druckbares PDF",
-      "channel_coming_soon": "Demnächst",
       "delivery_sent": "Gesendet",
       "delivery_failed": "Fehlgeschlagen",
       "delivery_not_sent": "Noch nicht gesendet",
@@ -1292,7 +1291,10 @@
       "delivery_sending": "Wird gesendet...",
       "sending_refresh_hint": "Läuft -- Seite neu laden, um den aktuellen Stand zu sehen.",
       "blog_edit_draft_link": "Entwurf in WordPress öffnen",
-      "send_blog_button": "Entwurf erstellen"
+      "send_blog_button": "Entwurf erstellen",
+      "print_generated": "PDF erstellt",
+      "print_too_long_status": "Zu lang für eine Seite",
+      "print_generate_button": "PDF erstellen"
     }
   }
 }

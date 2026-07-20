@@ -1276,7 +1276,6 @@
       "channel_email": "Member email",
       "channel_blog": "Blog draft",
       "channel_print": "Printable PDF",
-      "channel_coming_soon": "Coming soon",
       "delivery_sent": "Sent",
       "delivery_failed": "Failed",
       "delivery_not_sent": "Not sent yet",
@@ -1292,7 +1291,10 @@
       "delivery_sending": "Sending...",
       "sending_refresh_hint": "In progress -- reload this page to see the latest count.",
       "blog_edit_draft_link": "Open draft in WordPress",
-      "send_blog_button": "Create draft"
+      "send_blog_button": "Create draft",
+      "print_generated": "PDF generated",
+      "print_too_long_status": "Too long for one page",
+      "print_generate_button": "Generate PDF"
     }
   }
 }

@@ -1313,9 +1313,21 @@ class AnnouncementDelivery(Base):
     Tracks one channel's delivery attempt for an announcement. One row
     per (announcement, channel) -- upserted, not appended, so retrying a
     failed send updates the existing row rather than creating a history
-    of attempts. external_reference holds the channel-specific pointer
-    needed afterward (currently only used by BLOG: the published post's
-    public URL, needed by the PRINT channel to generate its QR code).
+    of attempts.
+
+    external_reference holds a human-facing pointer for the admin UI --
+    currently only used by BLOG, where it's the WordPress **edit** URL
+    (wp-admin/post.php?post=...&action=edit), not a public one, since a
+    draft doesn't have a public URL yet.
+
+    external_id holds a raw external identifier for re-querying the
+    system of record later, rather than trusting a value cached at
+    delivery time -- currently only used by BLOG, storing the
+    WordPress post ID as a string. The PRINT channel uses this to ask
+    WordPress directly, at PDF-generation time, whether the post has
+    since been published and what its current public URL is, rather
+    than storing (and risking a stale) public URL here on the BLOG
+    delivery row itself.
     """
     __tablename__ = "announcement_deliveries"
 
@@ -1329,6 +1341,7 @@ class AnnouncementDelivery(Base):
     )
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     external_reference: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    external_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     # Despite the name, this doubles as a general status-detail field,
     # not strictly an error: while SENDING it holds a progress note
     # ("12 of 800 sent so far"), and on a partial SENT it holds the

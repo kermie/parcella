@@ -154,8 +154,23 @@
         <div class="d-flex align-items-center justify-content-between py-2">
             <div>
                 <i class="bi bi-printer me-2"></i>{{ t('announcements.form.channel_print') }}
-                <span class="badge ms-2" style="background: #e5e7eb; color: #4b5563;">{{ t('announcements.form.channel_coming_soon') }}</span>
+                {% if print_delivery %}
+                    {% if print_delivery.status.value == 'SENT' %}
+                    <span class="badge badge-aktiv ms-2">{{ t('announcements.form.print_generated') }}</span>
+                    <span class="text-muted ms-1" style="font-size: 0.85rem;">{{ print_delivery.sent_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    {% else %}
+                    <span class="badge ms-2" style="background: #fee2e2; color: #991b1b;">{{ t('announcements.form.print_too_long_status') }}</span>
+                    {% endif %}
+                    {% if print_delivery.error_message %}
+                    <div class="text-muted" style="font-size: 0.8rem;">{{ print_delivery.error_message }}</div>
+                    {% endif %}
+                {% else %}
+                <span class="badge ms-2" style="background: #e5e7eb; color: #4b5563;">{{ t('announcements.form.delivery_not_sent') }}</span>
+                {% endif %}
             </div>
+            <form method="post" action="/announcements/{{ announcement.id }}/print">
+                <button type="submit" class="btn btn-sm btn-outline-primary">{{ t('announcements.form.print_generate_button') }}</button>
+            </form>
         </div>
     </div>
 </div>

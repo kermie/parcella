@@ -3,15 +3,17 @@ Announcements module router.
 
 Authoring an Announcement (title, Markdown body, optional image,
 optional print override) and its lifecycle (draft/published/archived),
-plus two of its three delivery channels:
+plus all three delivery channels:
 - email: a paced real send to current members
   (app.announcement_mailer.run_paced_email_send, run as a background
   task so a large roster doesn't hold the request open) and a one-off
   test send to a single address for review before committing to the
   real thing.
 - blog: publishes a draft post to WordPress (app.blog_publisher),
-  using whatever credentials are configured under Admin -> Settings.
-The print channel is not built yet.
+  using whatever credentials are configured under Admin -> Integrations.
+- print: renders a one-page branded PDF (app.print_publisher),
+  auto-shortening the text and adding a QR code if it doesn't fit as-is
+  -- see app.print_publisher's module docstring for the full logic.
 
 Restricted to board/admin (require_admin), same reasoning as the
 public_signup_api's Integrations page: this creates content that will
@@ -23,7 +25,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Request, Depends, HTTPException, UploadFile, BackgroundTasks, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -36,6 +38,8 @@ from app.module_flags import require_modul
 from app.announcement_utils import render_markdown_to_html, likely_fits_one_print_page
 from app.announcement_mailer import start_paced_email_send, run_paced_email_send, send_test_email
 from app.blog_publisher import get_wordpress_publisher, BlogPublishError
+from app.print_publisher import render_announcement_print_pdf, PrintTooLongError
+from app.branding import load_branding
 from app.templating import templates
 
 router = APIRouter(
@@ -182,6 +186,7 @@ async def announcement_edit_form(
         "fits_one_page": fits_one_page, "error": None,
         "email_delivery": announcement.delivery_for(AnnouncementChannel.EMAIL),
         "blog_delivery": announcement.delivery_for(AnnouncementChannel.BLOG),
+        "print_delivery": announcement.delivery_for(AnnouncementChannel.PRINT),
         "test_email_result": request.query_params.get("test_email_result"),
         "test_email_address": request.query_params.get("test_email_address"),
     })
@@ -335,6 +340,7 @@ async def announcement_send_blog(
         )
         delivery.status = AnnouncementDeliveryStatus.SENT
         delivery.external_reference = result.edit_url
+        delivery.external_id = str(result.post_id)
         delivery.error_message = None
     except BlogPublishError as e:
         delivery.status = AnnouncementDeliveryStatus.FAILED
@@ -345,6 +351,79 @@ async def announcement_send_blog(
     delivery.sent_at = datetime.now(timezone.utc)
     await db.commit()
     return RedirectResponse(url=f"/announcements/{announcement.id}/edit", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Channel: print
+# ---------------------------------------------------------------------------
+
+async def _get_public_blog_url(db: AsyncSession, announcement: Announcement) -> Optional[str]:
+    """Returns the announcement's blog post's current public URL, or
+    None if there isn't one yet (never published to WordPress, or
+    published as a draft that hasn't since been made public). Always
+    asks WordPress live rather than trusting anything cached -- see
+    app.blog_publisher.WordPressPublisher.get_public_url_if_published."""
+    blog_delivery = announcement.delivery_for(AnnouncementChannel.BLOG)
+    if blog_delivery is None or blog_delivery.status != AnnouncementDeliveryStatus.SENT or not blog_delivery.external_id:
+        return None
+
+    publisher = await get_wordpress_publisher(db)
+    if publisher is None:
+        return None
+    try:
+        return await publisher.get_public_url_if_published(blog_delivery.external_id)
+    finally:
+        await publisher.aclose()
+
+
+@router.post("/{announcement_id}/print")
+async def announcement_generate_print_pdf(
+    announcement_id: str, request: Request, db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+    announcement = await _get_announcement_or_404(db, announcement_id)
+
+    if announcement.status == AnnouncementStatus.ARCHIVED:
+        raise HTTPException(status_code=400, detail="Cannot generate a print PDF for an archived announcement")
+
+    delivery = announcement.delivery_for(AnnouncementChannel.PRINT)
+    if delivery is None:
+        from app.models import AnnouncementDelivery
+        delivery = AnnouncementDelivery(announcement_id=announcement.id, channel=AnnouncementChannel.PRINT)
+        db.add(delivery)
+
+    branding = await load_branding(db)
+    logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
+    image_path = UPLOAD_DIR / announcement.image_filename if announcement.image_filename else None
+    public_blog_url = await _get_public_blog_url(db, announcement)
+
+    try:
+        result = render_announcement_print_pdf(
+            announcement, branding["club_name"], logo_path, image_path, public_blog_url,
+        )
+    except PrintTooLongError as e:
+        delivery.status = AnnouncementDeliveryStatus.FAILED
+        delivery.error_message = str(e)
+        delivery.sent_at = datetime.now(timezone.utc)
+        await db.commit()
+        return RedirectResponse(url=f"/announcements/{announcement.id}/edit", status_code=303)
+
+    delivery.status = AnnouncementDeliveryStatus.SENT
+    delivery.sent_at = datetime.now(timezone.utc)
+    if result.was_shortened and result.qr_included:
+        delivery.error_message = "Text was shortened automatically to fit one page; a QR code linking to the published blog post was added."
+    elif result.was_shortened:
+        delivery.error_message = "Text was shortened automatically to fit one page. No QR code was added since the blog post isn't published yet."
+    else:
+        delivery.error_message = None
+    await db.commit()
+
+    filename = f"{announcement.title[:50].strip().replace(' ', '_') or 'announcement'}.pdf"
+    return Response(
+        content=result.pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ---------------------------------------------------------------------------
