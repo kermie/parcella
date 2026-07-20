@@ -318,7 +318,8 @@
       "csv_date_format_help": "Datumsformat: {iso} oder {de}.",
       "csv_multi_help": "Mehrere E-Mail-Adressen / Telefonnummern jeweils durch Semikolon trennen.",
       "csv_template_tip": "Tipp: Einfach einen {link} als Vorlage verwenden.",
-      "csv_export_link_text": "CSV-Export"
+      "csv_export_link_text": "CSV-Export",
+      "signin_sheet_link": "Anwesenheitsliste"
     },
     "form": {
       "title_edit": "{name} bearbeiten",
@@ -380,6 +381,14 @@
     },
     "errors": {
       "member_not_found": "Member nicht gefunden"
+    },
+    "signin_sheet": {
+      "title": "Anwesenheitsliste",
+      "description": "Erstellt eine PDF-Liste aller aktuellen Mitglieder, gruppiert nach Parzelle, mit einer Unterschriftszeile für jede Person -- zum Ausdrucken und Mitbringen zur Mitgliederversammlung.",
+      "label_headline": "Überschrift",
+      "headline_hint": "Wird oben auf dem PDF angezeigt. Kann frei angepasst werden.",
+      "generate_button": "PDF erstellen",
+      "cancel_button": "Abbrechen"
     }
   },
   "parcels": {

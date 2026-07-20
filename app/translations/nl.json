@@ -318,7 +318,8 @@
       "csv_date_format_help": "Datumformaat: {iso} of {de}.",
       "csv_multi_help": "Scheid meerdere e-mailadressen / telefoonnummers met een puntkomma.",
       "csv_template_tip": "Tip: gebruik gewoon een {link} als sjabloon.",
-      "csv_export_link_text": "CSV-export"
+      "csv_export_link_text": "CSV-export",
+      "signin_sheet_link": "Presentielijst"
     },
     "form": {
       "title_edit": "{name} bewerken",
@@ -380,6 +381,14 @@
     },
     "errors": {
       "member_not_found": "Lid niet gevonden"
+    },
+    "signin_sheet": {
+      "title": "Presentielijst vergadering",
+      "description": "Genereert een PDF-lijst van alle huidige leden, gegroepeerd per perceel, met een handtekeningregel voor iedereen -- om af te drukken en mee te nemen naar de algemene ledenvergadering.",
+      "label_headline": "Kop",
+      "headline_hint": "Wordt bovenaan de PDF getoond. Vrij aan te passen.",
+      "generate_button": "PDF genereren",
+      "cancel_button": "Annuleren"
     }
   },
   "parcels": {

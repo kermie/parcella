@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ t('members.signin_sheet.title') }}{% endblock %}
+{% block page_title %}{{ t('members.signin_sheet.title') }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px;">
+    <div class="card-body">
+        <p class="text-muted">{{ t('members.signin_sheet.description') }}</p>
+
+        <form method="post" action="/members/signin-sheet">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">{{ t('members.signin_sheet.label_headline') }}</label>
+                <input type="text" name="headline" class="form-control" value="{{ default_headline }}">
+                <div class="form-text">{{ t('members.signin_sheet.headline_hint') }}</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('members.signin_sheet.generate_button') }}
+            </button>
+            <a href="/members/" class="btn btn-outline-secondary">{{ t('members.signin_sheet.cancel_button') }}</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

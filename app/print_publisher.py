@@ -36,6 +36,7 @@ from weasyprint import HTML
 
 from app.models import Announcement
 from app.announcement_utils import render_markdown_to_html
+from app.pdf_utils import file_to_data_uri
 
 # A4, single page, with running header/footer boxes -- see the @page
 # rule below. Since the whole point of this channel is "fits on one
@@ -75,13 +76,6 @@ class PrintRenderResult:
     qr_included: bool
 
 
-def _file_to_data_uri(path: Optional[Path], mime: str) -> Optional[str]:
-    if path is None or not path.exists():
-        return None
-    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f"data:{mime};base64,{encoded}"
-
-
 def _qr_data_uri(url: str) -> str:
     img = qrcode.make(url)
     buffer = io.BytesIO()
@@ -94,13 +88,6 @@ def _split_paragraphs(markdown_text: str) -> List[str]:
     # Blank-line-separated paragraphs, the same convention Markdown
     # itself uses to tell paragraphs apart.
     return [p.strip() for p in markdown_text.split("\n\n") if p.strip()]
-
-
-def _image_mime_for(path: Path) -> str:
-    extension = path.suffix.lower()
-    return {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}.get(
-        extension, "application/octet-stream"
-    )
 
 
 def _build_html(
@@ -139,10 +126,10 @@ def render_announcement_print_pdf(
     shortest attempt -- callers should not catch this to try again
     with different parameters; it means a human needs to shorten the
     source text."""
-    logo_data_uri = _file_to_data_uri(logo_path, "image/png")
+    logo_data_uri = file_to_data_uri(logo_path, "image/png")
     image_data_uri = None
     if image_path is not None and image_path.exists():
-        image_data_uri = _file_to_data_uri(image_path, _image_mime_for(image_path))
+        image_data_uri = file_to_data_uri(image_path)
 
     def render(body_markdown: str, include_online_note: bool):
         online_note_html = ""

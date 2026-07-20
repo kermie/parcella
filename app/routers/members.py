@@ -3,11 +3,13 @@ Mitglieder-Router: Liste, Anlegen, Bearbeiten, CSV-Import/Export.
 """
 import csv
 import io
+import itertools
 from datetime import date, datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import selectinload
@@ -16,6 +18,8 @@ from app.database import get_db, active_member_filter
 from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
 from app.auth import get_current_user, require_user, require_admin
 from app.i18n import t_for
+from app.branding import load_branding
+from app.meeting_signin_sheet import render_meeting_signin_sheet_pdf
 
 router = APIRouter(prefix="/members", tags=["members"])
 from app.templating import templates
@@ -97,6 +101,62 @@ async def mitglieder_liste(
             "suche": suche,
             "auch_inaktive": auch_inaktive,
         },
+    )
+
+
+# ---------------------------------------------------------------------------
+# General-meeting sign-in sheet (PDF): current members, grouped by
+# parcel, one signature line each. Not gated by a module flag -- same
+# permission level as the member list itself (require_user), since
+# it's just another view onto the same data, not a separate feature
+# area with its own security surface.
+# ---------------------------------------------------------------------------
+
+@router.get("/signin-sheet", response_class=HTMLResponse)
+async def signin_sheet_form(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_user(request, db)
+    default_headline = f"General meeting on {date.today().isoformat()}"
+    return templates.TemplateResponse("members/signin_sheet.html", {
+        "request": request, "user": user, "default_headline": default_headline,
+    })
+
+
+@router.post("/signin-sheet")
+async def signin_sheet_generate(request: Request, db: AsyncSession = Depends(get_db)):
+    await require_user(request, db)
+    form = await request.form()
+    headline = (form.get("headline") or "").strip()
+    if not headline:
+        headline = f"General meeting on {date.today().isoformat()}"
+
+    # Current residents only (assigned_until IS NULL -- same "who lives
+    # here right now" definition used elsewhere, e.g. the announcement
+    # email channel), same active-membership filter as the member list
+    # itself. Already sorted by parcel then name, so grouping
+    # consecutive rows below doesn't need to re-sort.
+    result = await db.execute(
+        select(Parcel.plot_number, Member.first_name, Member.last_name)
+        .join(MemberParcel, MemberParcel.parcel_id == Parcel.id)
+        .join(Member, Member.id == MemberParcel.member_id)
+        .where(MemberParcel.assigned_until.is_(None), active_member_filter())
+        .order_by(Parcel.plot_number, Member.last_name, Member.first_name)
+    )
+    rows = result.all()
+
+    parcel_members = [
+        (plot_number, [f"{first_name} {last_name}" for _, first_name, last_name in group])
+        for plot_number, group in itertools.groupby(rows, key=lambda row: row[0])
+    ]
+
+    branding = await load_branding(db)
+    logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
+
+    pdf_bytes = render_meeting_signin_sheet_pdf(headline, branding["club_name"], logo_path, parcel_members)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="signin-sheet.pdf"'},
     )
 
 

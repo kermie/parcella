@@ -1,36 +1,50 @@
-DELIVERY NOTES -- Community calendar: only STANDARD work sessions
+DELIVERY NOTES -- General-meeting sign-in sheet (PDF)
 ======================================================================
 
-Small, focused change confirming the scope we discussed: the
-community calendar already merges work sessions in at read time
-(nothing duplicated into a second table -- that was a deliberate
-earlier design decision, see docs/module-calendar.md). What changed is
-which sessions get merged in.
+New small feature, not part of the announcements module -- lives under
+Members, since it's really just a printable view of the member list.
+No migration, no new module flag (same permission level as the member
+list itself -- if you can see the member list, you can generate this).
 
-## What changed
+## What it does
 
-Both places that build the community calendar now filter to
-`WorkSession.type == SessionType.STANDARD`:
-- The list view (`/calendar/community`)
-- The public ICS feed (`/calendar/community.ics`)
+New "Sign-in sheet" button on the Members list page. Takes you to a
+one-field form (an editable headline, pre-filled with "General meeting
+on <today's date>") and generates a PDF:
 
-SPECIAL (spontaneous/unplanned, e.g. "paint the garden bench today")
-sessions no longer appear on the community calendar in either place.
-They're untouched everywhere else -- Work Hours itself, signups,
-hour-tracking, all unaffected. This is purely about what shows up on
-the calendar.
-
-No schema change, no migration.
-
-## Testing
-
-One new test confirms both a STANDARD session shows up and a SPECIAL
-one doesn't, in both the list view and the public ICS feed. 68/68
-across the whole suite, all passing.
+- Current residents only, grouped by parcel number
+- Parcel | Name | Signature (blank line) columns
+- Parcels with more than one current resident get one row per person,
+  with the parcel number shown once spanning all their rows
+- Branded header (your club logo/name) and footer, repeating on every
+  page
+- "Page X of Y" numbering, since a real roster can run several pages
+  -- unlike the announcement flyer, this is NOT limited to one page
 
 ## To apply
 
 1. Unzip into your repo root.
-2. `docker compose up -d --build web` (or a plain restart is enough
-   this time -- no dependency or Dockerfile change).
+2. `docker compose up -d --build web` (no new dependency -- reuses
+   WeasyPrint from the print channel -- but keeps things consistent).
 3. No migration to run.
+4. Try it: Members -> Sign-in sheet.
+
+## A small refactor along the way
+
+`app/pdf_utils.py` is new -- it's the small "embed a local image as a
+base64 data URI" helper, factored out of `app/print_publisher.py` now
+that a second PDF generator needs the same thing. Both
+`print_publisher.py` and the new `meeting_signin_sheet.py` use it; pure
+refactor, no behavior change to the announcement print channel (its
+existing tests still pass unchanged).
+
+## Testing
+
+4 new tests: the form shows a sensible default headline, members are
+correctly grouped by parcel (including a shared parcel with two
+co-tenants, each getting their own signature line), former residents
+(ended parcel assignments) are excluded, and a blank headline falls
+back to the default rather than producing an empty title. One of these
+verifies actual PDF content via pypdf text extraction, not just "a PDF
+came back." 72/72 across the whole suite, all passing against real
+PostgreSQL.

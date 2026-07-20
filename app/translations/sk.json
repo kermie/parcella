@@ -318,7 +318,8 @@
       "csv_date_format_help": "Formát dátumu: {iso} alebo {de}.",
       "csv_multi_help": "Oddeľte viac e-mailových adries / telefónnych čísel bodkočiarkou.",
       "csv_template_tip": "Tip: použite jednoducho {link} ako šablónu.",
-      "csv_export_link_text": "CSV export"
+      "csv_export_link_text": "CSV export",
+      "signin_sheet_link": "Prezenčná listina"
     },
     "form": {
       "title_edit": "Upraviť {name}",
@@ -380,6 +381,14 @@
     },
     "errors": {
       "member_not_found": "Člen nenájdený"
+    },
+    "signin_sheet": {
+      "title": "Prezenčná listina zo schôdze",
+      "description": "Vygeneruje zoznam PDF všetkých súčasných členov, zoskupených podľa záhradiek, s podpisovým riadkom pre každého -- na vytlačenie a prinesenie na členskú schôdzu.",
+      "label_headline": "Nadpis",
+      "headline_hint": "Zobrazuje sa v hornej časti PDF. Môžete ho ľubovoľne upraviť.",
+      "generate_button": "Vytvoriť PDF",
+      "cancel_button": "Zrušiť"
     }
   },
   "parcels": {

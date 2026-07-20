@@ -59,6 +59,47 @@ the export file in Excel and saved it again (Excel switches to a comma
 depending on locale settings). It now uses `csv.Sniffer()` to detect the
 delimiter, with semicolon as the fallback.
 
+## General-meeting sign-in sheet
+
+`/members/signin-sheet` generates a PDF (`app/meeting_signin_sheet.py`,
+WeasyPrint): current residents, grouped by parcel number, one
+signature line each -- for printing and bringing to a physical
+members' meeting.
+
+**Not gated by a module flag, and permission-checked the same as the
+member list itself (`require_user`).** It's just another view onto
+member data that's already visible to anyone who can see the member
+list, not a separate feature area with its own security surface --
+adding a module flag here would be ceremony without a real decision
+behind it.
+
+**Deliberately not constrained to one page**, unlike the announcement
+flyer (`app/print_publisher.py`): a real roster can run to several
+pages, and there's no "shorten it" option for a list of people who need
+to physically sign something. It's a normal multi-page document with a
+repeating header/footer (same `@top-center`/`@bottom-center` running-
+element technique as the flyer) and "Page X of Y" numbering via
+`counter(page)`/`counter(pages)`.
+
+**The headline is a plain editable text field, not a template with
+placeholders.** The original ask included an example like "General
+meeting on {date}" -- that's illustrative phrasing, not a literal
+`{date}` token to substitute. The form pre-fills a sensible default
+(today's date) into an ordinary text input; the admin can edit it to
+say anything before generating.
+
+**Parcels with multiple current residents get one row per person,
+sharing a single rowspan'd parcel-number cell.** Reads like a real
+paper sign-in sheet: the parcel number appears once per group, but
+every co-tenant still gets their own name and their own signature
+line.
+
+**`app/pdf_utils.py` was factored out of `app/print_publisher.py`**
+once this became the second PDF generator embedding local images as
+base64 data URIs (the club logo, in both cases) -- shared to avoid a
+second copy of the same small helper, not because either module
+depends on the other.
+
 ## Known pitfalls
 
 - `row.get("Column", "")` does NOT protect against `None` values when a

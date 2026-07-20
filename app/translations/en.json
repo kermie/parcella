@@ -318,7 +318,8 @@
       "csv_date_format_help": "Date format: {iso} or {de}.",
       "csv_multi_help": "Separate multiple email addresses / phone numbers with a semicolon.",
       "csv_template_tip": "Tip: just use a {link} as a template.",
-      "csv_export_link_text": "CSV export"
+      "csv_export_link_text": "CSV export",
+      "signin_sheet_link": "Sign-in sheet"
     },
     "form": {
       "title_edit": "Edit {name}",
@@ -380,6 +381,14 @@
     },
     "errors": {
       "member_not_found": "Member not found"
+    },
+    "signin_sheet": {
+      "title": "Meeting sign-in sheet",
+      "description": "Generates a PDF list of all current members, grouped by parcel, with a signature line for each -- for printing and bringing to a general meeting.",
+      "label_headline": "Headline",
+      "headline_hint": "Shown at the top of the PDF. Feel free to edit it.",
+      "generate_button": "Generate PDF",
+      "cancel_button": "Cancel"
     }
   },
   "parcels": {

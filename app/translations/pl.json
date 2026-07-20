@@ -318,7 +318,8 @@
       "csv_date_format_help": "Format daty: {iso} lub {de}.",
       "csv_multi_help": "Kilka adresów e-mail / numerów telefonów rozdzielać średnikiem.",
       "csv_template_tip": "Wskazówka: po prostu użyj {link} jako szablonu.",
-      "csv_export_link_text": "Eksport CSV"
+      "csv_export_link_text": "Eksport CSV",
+      "signin_sheet_link": "Lista obecności"
     },
     "form": {
       "title_edit": "Edytuj {name}",
@@ -380,6 +381,14 @@
     },
     "errors": {
       "member_not_found": "Nie znaleziono członka"
+    },
+    "signin_sheet": {
+      "title": "Lista obecności na zebraniu",
+      "description": "Generuje listę PDF wszystkich obecnych członków, pogrupowaną według działek, z linią na podpis dla każdej osoby -- do wydrukowania i zabrania na zebranie ogólne.",
+      "label_headline": "Nagłówek",
+      "headline_hint": "Wyświetlany na górze pliku PDF. Można go dowolnie edytować.",
+      "generate_button": "Generuj PDF",
+      "cancel_button": "Anuluj"
     }
   },
   "parcels": {

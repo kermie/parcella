@@ -318,7 +318,8 @@
       "csv_date_format_help": "Format de date : {iso} ou {de}.",
       "csv_multi_help": "Séparez plusieurs adresses e-mail / numéros de téléphone par un point-virgule.",
       "csv_template_tip": "Astuce : utilisez simplement un {link} comme modèle.",
-      "csv_export_link_text": "Export CSV"
+      "csv_export_link_text": "Export CSV",
+      "signin_sheet_link": "Feuille de présence"
     },
     "form": {
       "title_edit": "Modifier {name}",
@@ -380,6 +381,14 @@
     },
     "errors": {
       "member_not_found": "Membre introuvable"
+    },
+    "signin_sheet": {
+      "title": "Feuille de présence de l'assemblée",
+      "description": "Génère une liste PDF de tous les membres actuels, regroupés par parcelle, avec une ligne de signature pour chacun -- à imprimer et apporter à l'assemblée générale.",
+      "label_headline": "Titre",
+      "headline_hint": "Affiché en haut du PDF. Modifiable librement.",
+      "generate_button": "Générer le PDF",
+      "cancel_button": "Annuler"
     }
   },
   "parcels": {
