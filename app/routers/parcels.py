@@ -30,7 +30,7 @@ router = APIRouter(prefix="/parcels", tags=["parcels"])
 from app.templating import templates
 
 
-async def _get_parcel_mit_details(db: AsyncSession, parcel_id: str) -> Optional[Parcel]:
+async def _get_parcel_with_details(db: AsyncSession, parcel_id: str) -> Optional[Parcel]:
     result = await db.execute(
         select(Parcel)
         .options(
@@ -42,7 +42,7 @@ async def _get_parcel_mit_details(db: AsyncSession, parcel_id: str) -> Optional[
 
 
 @router.get("/", response_class=HTMLResponse)
-async def parzellen_liste(
+async def parcels_list(
     request: Request,
     suche: str = "",
     status_filter: str = "",
@@ -81,7 +81,7 @@ async def parzellen_liste(
 
 
 @router.get("/new", response_class=HTMLResponse)
-async def parzelle_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
+async def parcel_new_page(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
         "parcels/form.html",
@@ -90,7 +90,7 @@ async def parzelle_neu_seite(request: Request, db: AsyncSession = Depends(get_db
 
 
 @router.post("/new")
-async def parzelle_erstellen(
+async def parcel_create(
     request: Request,
     plot_number: str = Form(...),
     area_sqm: str = Form(""),
@@ -135,13 +135,13 @@ async def parzelle_erstellen(
 
 
 @router.get("/{parcel_id}", response_class=HTMLResponse)
-async def parzelle_detail(
+async def parcel_detail(
     parcel_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_user(request, db)
-    parcel = await _get_parcel_mit_details(db, parcel_id)
+    parcel = await _get_parcel_with_details(db, parcel_id)
 
     if not parcel:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.parcel_not_found"))
@@ -207,13 +207,13 @@ async def parzelle_detail(
 
 
 @router.get("/{parcel_id}/edit", response_class=HTMLResponse)
-async def parzelle_bearbeiten_seite(
+async def parcel_edit_page(
     parcel_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_user(request, db)
-    parcel = await _get_parcel_mit_details(db, parcel_id)
+    parcel = await _get_parcel_with_details(db, parcel_id)
 
     if not parcel:
         raise HTTPException(status_code=404)
@@ -225,7 +225,7 @@ async def parzelle_bearbeiten_seite(
 
 
 @router.post("/{parcel_id}/edit")
-async def parzelle_aktualisieren(
+async def parcel_update(
     parcel_id: str,
     request: Request,
     plot_number: str = Form(...),
@@ -236,7 +236,7 @@ async def parzelle_aktualisieren(
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_user(request, db)
-    parcel = await _get_parcel_mit_details(db, parcel_id)
+    parcel = await _get_parcel_with_details(db, parcel_id)
 
     if not parcel:
         raise HTTPException(status_code=404)
@@ -268,7 +268,7 @@ async def parzelle_aktualisieren(
 
 
 @router.post("/{parcel_id}/permanently-delete")
-async def parzelle_endgueltig_loeschen(
+async def parcel_permanently_delete(
     parcel_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -280,7 +280,7 @@ async def parzelle_endgueltig_loeschen(
     """
     await require_user(request, db)
 
-    parcel = await _get_parcel_mit_details(db, parcel_id)
+    parcel = await _get_parcel_with_details(db, parcel_id)
     if not parcel:
         raise HTTPException(status_code=404)
 
@@ -298,7 +298,7 @@ async def parzelle_endgueltig_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.post("/{parcel_id}/member/assign")
-async def mitglied_zuordnen(
+async def member_assign(
     parcel_id: str,
     request: Request,
     member_id: str = Form(...),
@@ -336,7 +336,7 @@ async def mitglied_zuordnen(
 
 
 @router.get("/{parcel_id}/member/{assignment_id}/edit", response_class=HTMLResponse)
-async def mitglied_zuordnung_bearbeiten_seite(
+async def member_assignment_edit_page(
     parcel_id: str,
     assignment_id: str,
     request: Request,
@@ -353,7 +353,7 @@ async def mitglied_zuordnung_bearbeiten_seite(
     if not zuordnung:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.assignment_not_found"))
 
-    parcel = await _get_parcel_mit_details(db, parcel_id)
+    parcel = await _get_parcel_with_details(db, parcel_id)
 
     return templates.TemplateResponse(
         "parcels/assignment_form.html",
@@ -367,7 +367,7 @@ async def mitglied_zuordnung_bearbeiten_seite(
 
 
 @router.post("/{parcel_id}/member/{assignment_id}/edit")
-async def mitglied_zuordnung_aktualisieren(
+async def member_assignment_update(
     parcel_id: str,
     assignment_id: str,
     request: Request,
@@ -395,7 +395,7 @@ async def mitglied_zuordnung_aktualisieren(
 
 
 @router.post("/{parcel_id}/member/{assignment_id}/remove")
-async def mitglied_entfernen(
+async def member_remove(
     parcel_id: str,
     assignment_id: str,
     request: Request,
@@ -422,7 +422,7 @@ async def mitglied_entfernen(
 
 
 @router.post("/{parcel_id}/member/{assignment_id}/delete-history")
-async def fruehere_zuordnung_loeschen(
+async def former_assignment_delete(
     parcel_id: str,
     assignment_id: str,
     request: Request,
@@ -467,7 +467,7 @@ async def fruehere_zuordnung_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.post("/{parcel_id}/cloud-folder", dependencies=[Depends(require_module("cloud_storage"))])
-async def parzelle_cloud_folder_setzen(
+async def parcel_cloud_folder_set(
     parcel_id: str,
     request: Request,
     relative_path: str = Form(...),
@@ -483,7 +483,7 @@ async def parzelle_cloud_folder_setzen(
 
 
 @router.post("/{parcel_id}/cloud-folder/upload", dependencies=[Depends(require_module("cloud_storage"))])
-async def parzelle_cloud_datei_hochladen(
+async def parcel_cloud_file_upload(
     parcel_id: str,
     request: Request,
     file: UploadFile = File(...),
@@ -512,7 +512,7 @@ async def parzelle_cloud_datei_hochladen(
 
 
 @router.get("/{parcel_id}/cloud-folder/download", dependencies=[Depends(require_module("cloud_storage"))])
-async def parzelle_cloud_datei_herunterladen(
+async def parcel_cloud_file_download(
     parcel_id: str,
     request: Request,
     filename: str,
@@ -546,7 +546,7 @@ async def parzelle_cloud_datei_herunterladen(
 # ---------------------------------------------------------------------------
 
 @router.get("/export/csv")
-async def parzellen_export_csv(request: Request, db: AsyncSession = Depends(get_db)):
+async def parcels_export_csv(request: Request, db: AsyncSession = Depends(get_db)):
     await require_user(request, db)
 
     result = await db.execute(
@@ -593,7 +593,7 @@ async def parzellen_export_csv(request: Request, db: AsyncSession = Depends(get_
 # ---------------------------------------------------------------------------
 
 @router.post("/import/csv")
-async def parzellen_import_csv(
+async def parcels_import_csv(
     request: Request,
     datei: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),

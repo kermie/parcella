@@ -25,7 +25,7 @@ router = APIRouter(prefix="/members", tags=["members"])
 from app.templating import templates
 
 
-async def _get_member_mit_details(db: AsyncSession, member_id: str) -> Optional[Member]:
+async def _get_member_with_details(db: AsyncSession, member_id: str) -> Optional[Member]:
     result = await db.execute(
         select(Member)
         .options(
@@ -39,7 +39,7 @@ async def _get_member_mit_details(db: AsyncSession, member_id: str) -> Optional[
 
 
 @router.get("/", response_class=HTMLResponse)
-async def mitglieder_liste(
+async def members_list(
     request: Request,
     suche: str = "",
     auch_inaktive: bool = False,
@@ -160,7 +160,7 @@ async def signin_sheet_generate(request: Request, db: AsyncSession = Depends(get
 
 
 @router.get("/new", response_class=HTMLResponse)
-async def mitglied_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
+async def member_new_page(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
         "members/form.html",
@@ -169,7 +169,7 @@ async def mitglied_neu_seite(request: Request, db: AsyncSession = Depends(get_db
 
 
 @router.post("/new")
-async def mitglied_erstellen(
+async def member_create(
     request: Request,
     first_name: str = Form(...),
     last_name: str = Form(...),
@@ -214,13 +214,13 @@ async def mitglied_erstellen(
 
 
 @router.get("/{member_id}", response_class=HTMLResponse)
-async def mitglied_detail(
+async def member_detail(
     member_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_user(request, db)
-    member = await _get_member_mit_details(db, member_id)
+    member = await _get_member_with_details(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404, detail=t_for(request, "members.errors.member_not_found"))
@@ -243,13 +243,13 @@ async def mitglied_detail(
 
 
 @router.get("/{member_id}/edit", response_class=HTMLResponse)
-async def mitglied_bearbeiten_seite(
+async def member_edit_page(
     member_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_user(request, db)
-    member = await _get_member_mit_details(db, member_id)
+    member = await _get_member_with_details(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404, detail=t_for(request, "members.errors.member_not_found"))
@@ -261,7 +261,7 @@ async def mitglied_bearbeiten_seite(
 
 
 @router.post("/{member_id}/edit")
-async def mitglied_aktualisieren(
+async def member_update(
     member_id: str,
     request: Request,
     first_name: str = Form(...),
@@ -278,7 +278,7 @@ async def mitglied_aktualisieren(
     db: AsyncSession = Depends(get_db),
 ):
     await require_user(request, db)
-    member = await _get_member_mit_details(db, member_id)
+    member = await _get_member_with_details(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404)
@@ -308,7 +308,7 @@ async def mitglied_aktualisieren(
 
 
 @router.post("/{member_id}/delete")
-async def mitglied_loeschen(
+async def member_delete(
     member_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -319,7 +319,7 @@ async def mitglied_loeschen(
     Admin/board only (same permission level as require_admin elsewhere
     in the project, see app/auth.py)."""
     await require_admin(request, db)
-    member = await _get_member_mit_details(db, member_id)
+    member = await _get_member_with_details(db, member_id)
 
     if not member:
         raise HTTPException(status_code=404, detail=t_for(request, "members.errors.member_not_found"))
@@ -339,7 +339,7 @@ async def mitglied_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.post("/{member_id}/phone/add")
-async def telefon_hinzufuegen(
+async def phone_add(
     member_id: str,
     request: Request,
     number: str = Form(...),
@@ -360,7 +360,7 @@ async def telefon_hinzufuegen(
 
 
 @router.post("/{member_id}/phone/{phone_id}/delete")
-async def telefon_loeschen(
+async def phone_delete(
     member_id: str,
     phone_id: str,
     request: Request,
@@ -381,7 +381,7 @@ async def telefon_loeschen(
 
 
 @router.post("/{member_id}/email/add")
-async def email_hinzufuegen(
+async def email_add(
     member_id: str,
     request: Request,
     address: str = Form(...),
@@ -402,7 +402,7 @@ async def email_hinzufuegen(
 
 
 @router.post("/{member_id}/email/{email_id}/delete")
-async def email_loeschen(
+async def email_delete(
     member_id: str,
     email_id: str,
     request: Request,
@@ -427,7 +427,7 @@ async def email_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.get("/export/csv")
-async def mitglieder_export_csv(request: Request, db: AsyncSession = Depends(get_db)):
+async def members_export_csv(request: Request, db: AsyncSession = Depends(get_db)):
     await require_user(request, db)
 
     result = await db.execute(
@@ -479,7 +479,7 @@ async def mitglieder_export_csv(request: Request, db: AsyncSession = Depends(get
 # ---------------------------------------------------------------------------
 
 @router.post("/import/csv")
-async def mitglieder_import_csv(
+async def members_import_csv(
     request: Request,
     datei: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
