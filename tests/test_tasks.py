@@ -150,14 +150,36 @@ async def test_readonly_member_gets_403_on_web_board(client, admin_user):
 
 
 async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user):
+    from app.models import User, UserRole
+    from app.auth import hash_password
+    from app.database import AsyncSessionLocal
+
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
     await _enable_module(client, headers)
 
+    # Assigned to a *different* user than the logged-in one on purpose: if
+    # it were the same user, SQLAlchemy could resolve the relationship from
+    # the session's identity map without a real lazy-load query, masking a
+    # missing selectinload() on the board query (this happened once -- see
+    # docs/module-tasks.md).
+    async with AsyncSessionLocal() as session:
+        board_member = User(
+            email="board-member@example.com", name="Board Member",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        session.add(board_member)
+        await session.commit()
+        await session.refresh(board_member)
+
     await web_login(client, "admin@example.com")
 
     create_response = await client.post(
-        "/tasks/new", data={"title": "Fix the gate lock", "description": "Squeaky hinge", "due_date": "2026-08-01"},
+        "/tasks/new",
+        data={
+            "title": "Fix the gate lock", "description": "Squeaky hinge", "due_date": "2026-08-01",
+            "assigned_to_id": board_member.id,
+        },
     )
     assert create_response.status_code in (302, 303)
 
@@ -165,6 +187,7 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
     assert board_response.status_code == 200
     assert "Fix the gate lock" in board_response.text
     assert "UndefinedError" not in board_response.text
+    assert board_member.name in board_response.text
 
     import re
     m = re.search(r'/tasks/([a-f0-9-]+)/edit', board_response.text)

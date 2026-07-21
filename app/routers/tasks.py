@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import Task, TaskStatus, User
@@ -43,7 +44,11 @@ async def _active_users(db: AsyncSession):
 async def board(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_admin(request, db)
 
-    result = await db.execute(select(Task).order_by(Task.status, Task.position))
+    result = await db.execute(
+        select(Task)
+        .options(selectinload(Task.assigned_to))
+        .order_by(Task.status, Task.position)
+    )
     all_tasks = result.scalars().all()
 
     columns = {status: [] for status in TaskStatus}
