@@ -54,7 +54,7 @@ async def _calculate_hours_for_member(
     """Calculates a member's required-work-hours standing for a year."""
 
     # Session participations (only ATTENDED counts)
-    einsatz_stunden = await db.scalar(
+    session_hours = await db.scalar(
         select(func.coalesce(func.sum(SessionParticipation.hours_completed), 0))
         .join(WorkSession)
         .where(
@@ -65,7 +65,7 @@ async def _calculate_hours_for_member(
     ) or 0
 
     # Sponsorship (active in the queried year)
-    patenschaft_stunden = await db.scalar(
+    sponsorship_hours = await db.scalar(
         select(func.coalesce(func.sum(Sponsorship.credited_hours), 0))
         .where(
             Sponsorship.member_id == member_id,
@@ -75,9 +75,9 @@ async def _calculate_hours_for_member(
     ) or 0
 
     return {
-        "einsatz_stunden": float(einsatz_stunden),
-        "patenschaft_stunden": float(patenschaft_stunden),
-        "gesamt": float(einsatz_stunden) + float(patenschaft_stunden),
+        "session_hours": float(session_hours),
+        "sponsorship_hours": float(sponsorship_hours),
+        "total": float(session_hours) + float(sponsorship_hours),
     }
 
 
@@ -100,7 +100,7 @@ async def _is_exempt(db: AsyncSession, member_id: str, year: int) -> bool:
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
-async def pflichtstunden_uebersicht(
+async def work_hours_overview(
     request: Request,
     year: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
@@ -147,7 +147,7 @@ async def pflichtstunden_uebersicht(
 # ---------------------------------------------------------------------------
 
 @router.get("/configuration", response_class=HTMLResponse)
-async def konfiguration_seite(request: Request, db: AsyncSession = Depends(get_db)):
+async def configuration_page(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
 
     result = await db.execute(
@@ -168,7 +168,7 @@ async def konfiguration_seite(request: Request, db: AsyncSession = Depends(get_d
 
 
 @router.get("/configuration/{configuration_id}/edit", response_class=HTMLResponse)
-async def konfiguration_bearbeiten_seite(
+async def configuration_edit_page(
     configuration_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -194,7 +194,7 @@ async def konfiguration_bearbeiten_seite(
 
 
 @router.post("/configuration/{configuration_id}/edit")
-async def konfiguration_aktualisieren(
+async def configuration_update(
     configuration_id: str,
     request: Request,
     year: int = Form(...),
@@ -233,7 +233,7 @@ async def konfiguration_aktualisieren(
 
 
 @router.post("/configuration/{configuration_id}/delete")
-async def konfiguration_loeschen(
+async def configuration_delete(
     configuration_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -252,7 +252,7 @@ async def konfiguration_loeschen(
 
 
 @router.post("/configuration/new")
-async def konfiguration_erstellen(
+async def configuration_create(
     request: Request,
     year: int = Form(...),
     hours_required: str = Form(...),
@@ -288,7 +288,7 @@ async def konfiguration_erstellen(
 # ---------------------------------------------------------------------------
 
 @router.get("/sessions/new", response_class=HTMLResponse)
-async def einsatz_neu_seite(request: Request, db: AsyncSession = Depends(get_db)):
+async def session_new_page(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_user(request, db)
     return templates.TemplateResponse(
         "work_hours/session_form.html",
@@ -302,7 +302,7 @@ async def einsatz_neu_seite(request: Request, db: AsyncSession = Depends(get_db)
 
 
 @router.post("/sessions/new")
-async def einsatz_erstellen(
+async def session_create(
     request: Request,
     title: str = Form(...),
     description: str = Form(""),
@@ -333,7 +333,7 @@ async def einsatz_erstellen(
 
 
 @router.get("/sessions/{session_id}/edit", response_class=HTMLResponse)
-async def einsatz_bearbeiten_seite(
+async def session_edit_page(
     session_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -357,7 +357,7 @@ async def einsatz_bearbeiten_seite(
 
 
 @router.post("/sessions/{session_id}/edit")
-async def einsatz_aktualisieren(
+async def session_update(
     session_id: str,
     request: Request,
     title: str = Form(...),
@@ -393,7 +393,7 @@ async def einsatz_aktualisieren(
 
 
 @router.post("/sessions/{session_id}/delete")
-async def einsatz_loeschen(
+async def session_delete(
     session_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -412,7 +412,7 @@ async def einsatz_loeschen(
 
 
 @router.get("/sessions/{session_id}", response_class=HTMLResponse)
-async def einsatz_detail(
+async def session_detail(
     session_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -464,7 +464,7 @@ async def einsatz_detail(
 
 
 @router.get("/sessions/{session_id}/attendee-sheet")
-async def einsatz_teilnehmerliste_pdf(
+async def session_attendee_sheet_pdf(
     session_id: str, request: Request, db: AsyncSession = Depends(get_db),
 ):
     """Generates the attendee sheet PDF for this session: registered
@@ -547,7 +547,7 @@ async def einsatz_teilnehmerliste_pdf(
 
 
 @router.post("/sessions/{session_id}/participants/add")
-async def teilnehmer_hinzufuegen(
+async def participant_add(
     session_id: str,
     request: Request,
     member_id: str = Form(...),
@@ -581,7 +581,7 @@ async def teilnehmer_hinzufuegen(
 
 
 @router.post("/sessions/{session_id}/participants/{participation_id}/status")
-async def teilnahme_status_aendern(
+async def participation_status_change(
     session_id: str,
     participation_id: str,
     request: Request,
@@ -605,7 +605,7 @@ async def teilnahme_status_aendern(
 
 
 @router.post("/sessions/{session_id}/participants/{participation_id}/remove")
-async def teilnahme_entfernen(
+async def participation_remove(
     session_id: str,
     participation_id: str,
     request: Request,
@@ -629,7 +629,7 @@ async def teilnahme_entfernen(
 # ---------------------------------------------------------------------------
 
 @router.get("/club-roles", response_class=HTMLResponse)
-async def vereinsrollen_seite(
+async def club_roles_page(
     request: Request,
     year: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
@@ -678,7 +678,7 @@ async def vereinsrollen_seite(
 
 
 @router.post("/club-roles/assign-member")
-async def mitglied_vereinsrolle_zuordnen(
+async def member_club_role_assign(
     request: Request,
     member_id: str = Form(...),
     club_role_id: str = Form(...),
@@ -713,7 +713,7 @@ async def mitglied_vereinsrolle_zuordnen(
 
 
 @router.get("/club-roles/assignment/{assignment_id}/edit", response_class=HTMLResponse)
-async def mitglied_vereinsrolle_bearbeiten_seite(
+async def member_club_role_edit_page(
     assignment_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -755,7 +755,7 @@ async def mitglied_vereinsrolle_bearbeiten_seite(
 
 
 @router.post("/club-roles/assignment/{assignment_id}/edit")
-async def mitglied_vereinsrolle_aktualisieren(
+async def member_club_role_update(
     assignment_id: str,
     request: Request,
     member_id: str = Form(...),
@@ -787,7 +787,7 @@ async def mitglied_vereinsrolle_aktualisieren(
 
 
 @router.post("/club-roles/assignment/{assignment_id}/remove")
-async def mitglied_vereinsrolle_entfernen(
+async def member_club_role_remove(
     assignment_id: str,
     request: Request,
     year: int = Form(0),
@@ -808,7 +808,7 @@ async def mitglied_vereinsrolle_entfernen(
 
 
 @router.post("/club-roles/new")
-async def vereinsrolle_erstellen(
+async def club_role_create(
     request: Request,
     name: str = Form(...),
     description: str = Form(""),
@@ -830,7 +830,7 @@ async def vereinsrolle_erstellen(
 
 
 @router.get("/club-roles/{role_id}/edit", response_class=HTMLResponse)
-async def vereinsrolle_bearbeiten_seite(
+async def club_role_edit_page(
     role_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -853,7 +853,7 @@ async def vereinsrolle_bearbeiten_seite(
 
 
 @router.post("/club-roles/{role_id}/edit")
-async def vereinsrolle_aktualisieren(
+async def club_role_update(
     role_id: str,
     request: Request,
     name: str = Form(...),
@@ -877,7 +877,7 @@ async def vereinsrolle_aktualisieren(
 
 
 @router.post("/club-roles/{role_id}/delete")
-async def vereinsrolle_loeschen(
+async def club_role_delete(
     role_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -896,7 +896,7 @@ async def vereinsrolle_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.get("/sponsorships", response_class=HTMLResponse)
-async def patenschaften_seite(
+async def sponsorships_page(
     request: Request,
     year: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
@@ -956,7 +956,7 @@ async def patenschaften_seite(
 
 
 @router.post("/sponsorships/new")
-async def patenschaft_erstellen(
+async def sponsorship_create(
     request: Request,
     member_id: str = Form(""),
     area: str = Form(...),
@@ -982,7 +982,7 @@ async def patenschaft_erstellen(
 
 
 @router.get("/sponsorships/{sponsorship_id}/edit", response_class=HTMLResponse)
-async def patenschaft_bearbeiten_seite(
+async def sponsorship_edit_page(
     sponsorship_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -1023,7 +1023,7 @@ async def patenschaft_bearbeiten_seite(
 
 
 @router.post("/sponsorships/{sponsorship_id}/edit")
-async def patenschaft_aktualisieren(
+async def sponsorship_update(
     sponsorship_id: str,
     request: Request,
     member_id: str = Form(""),
@@ -1055,7 +1055,7 @@ async def patenschaft_aktualisieren(
 
 
 @router.post("/sponsorships/{sponsorship_id}/delete")
-async def patenschaft_loeschen(
+async def sponsorship_delete(
     sponsorship_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -1074,7 +1074,7 @@ async def patenschaft_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.get("/evaluation", response_class=HTMLResponse)
-async def auswertung(
+async def evaluation(
     request: Request,
     year: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
@@ -1133,7 +1133,7 @@ async def auswertung(
             for m in paechter:
                 stand = await _calculate_hours_for_member(db, m.id, year)
                 befreit = await _is_exempt(db, m.id, year)
-                gesamt_stunden += stand["gesamt"]
+                gesamt_stunden += stand["total"]
                 paechter_details.append({
                     "member": m,
                     "stand": stand,
@@ -1179,7 +1179,7 @@ async def auswertung(
             stand = await _calculate_hours_for_member(db, m.id, year)
             befreit = await _is_exempt(db, m.id, year)
             pflicht = float(config.hours_required)
-            offen = max(0.0, pflicht - stand["gesamt"])
+            offen = max(0.0, pflicht - stand["total"])
             schuldbetrag = offen * float(config.rate_per_hour_eur)
 
             zeilen.append({
@@ -1189,7 +1189,7 @@ async def auswertung(
                 "pflicht_stunden": pflicht,
                 "offen_stunden": offen if not befreit else 0.0,
                 "schuldbetrag": schuldbetrag if not befreit else 0.0,
-                "erfuellt": befreit or stand["gesamt"] >= pflicht,
+                "erfuellt": befreit or stand["total"] >= pflicht,
             })
 
     return templates.TemplateResponse(
@@ -1207,7 +1207,7 @@ async def auswertung(
 
 
 @router.get("/evaluation/csv")
-async def auswertung_export_csv(
+async def evaluation_export_csv(
     request: Request,
     year: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
@@ -1255,9 +1255,9 @@ async def auswertung_export_csv(
             for m in paechter:
                 stand = await _calculate_hours_for_member(db, m.id, year)
                 befreit = await _is_exempt(db, m.id, year)
-                gesamt += stand["gesamt"]
-                einsatz_h += stand["einsatz_stunden"]
-                paten_h += stand["patenschaft_stunden"]
+                gesamt += stand["total"]
+                einsatz_h += stand["session_hours"]
+                paten_h += stand["sponsorship_hours"]
                 if befreit:
                     ist_befreit = True
                 namen.append(m.full_name)
@@ -1349,7 +1349,7 @@ async def tasks_overview(request: Request, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/tasks/new")
-async def task_erstellen(
+async def task_create(
     request: Request,
     title: str = Form(...),
     description: str = Form(""),
@@ -1372,7 +1372,7 @@ async def task_erstellen(
 
 
 @router.post("/tasks/{task_id}/schedule")
-async def task_zu_einsatz_zuordnen(
+async def task_assign_to_session(
     task_id: str,
     request: Request,
     session_id: str = Form(""),
@@ -1397,7 +1397,7 @@ async def task_zu_einsatz_zuordnen(
 
 
 @router.post("/tasks/{task_id}/assign")
-async def task_teilnehmer_zuordnen(
+async def task_participant_assign(
     task_id: str,
     request: Request,
     participation_id: str = Form(""),
@@ -1432,7 +1432,7 @@ async def task_teilnehmer_zuordnen(
 
 
 @router.post("/tasks/{task_id}/toggle-done")
-async def task_erledigt_umschalten(
+async def task_toggle_done(
     task_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -1449,7 +1449,7 @@ async def task_erledigt_umschalten(
 
 
 @router.post("/tasks/{task_id}/delete")
-async def task_loeschen(
+async def task_delete(
     task_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),

@@ -4,7 +4,7 @@ same codebase. A MeteringPoint has a "medium" (WATER/ELECTRICITY); the
 entire logic (consumption calculation, plausibility checking, readings,
 evaluation) is identical regardless of medium.
 
-erstelle_metering_router() is a factory function: it produces a fully
+create_metering_router() is a factory function: it produces a fully
 configured router for ONE medium. main.py instantiates it twice (for
 /water and /electricity) -- so the logic stays maintained in a single
 place instead of being duplicated per medium.
@@ -50,7 +50,7 @@ def _parse_zahl(value: str, dezimalstellen: int) -> Optional[Decimal]:
     return zahl.quantize(quant)
 
 
-def erstelle_metering_router(
+def create_metering_router(
     medium: MeteringMedium,
     url_prefix: str,
     modul_name: str,

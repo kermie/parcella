@@ -44,7 +44,7 @@ router = APIRouter(
 # ---------------------------------------------------------------------------
 
 @router.get("/configuration", response_model=List[WorkHoursConfigurationOut], summary="List configurations")
-async def konfigurationen_auflisten(
+async def configurations_list(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
 ):
@@ -55,7 +55,7 @@ async def konfigurationen_auflisten(
 
 
 @router.get("/configuration/{year}", response_model=WorkHoursConfigurationOut, summary="Retrieve configuration for a year")
-async def konfiguration_abrufen(
+async def configuration_get(
     year: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
@@ -63,10 +63,10 @@ async def konfiguration_abrufen(
     result = await db.execute(
         select(WorkHoursConfiguration).where(WorkHoursConfiguration.year == year)
     )
-    konfig = result.scalar_one_or_none()
-    if not konfig:
+    config = result.scalar_one_or_none()
+    if not config:
         raise HTTPException(status_code=404, detail=f"No configuration for {year}")
-    return konfig
+    return config
 
 
 @router.put(
@@ -74,35 +74,35 @@ async def konfiguration_abrufen(
     summary="Set configuration (upsert)",
     description="Creates the configuration for a year or updates it if one already exists.",
 )
-async def konfiguration_setzen(
+async def configuration_set(
     year: int,
-    daten: WorkHoursConfigurationCreate,
+    data: WorkHoursConfigurationCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
     result = await db.execute(
         select(WorkHoursConfiguration).where(WorkHoursConfiguration.year == year)
     )
-    konfig = result.scalar_one_or_none()
+    config = result.scalar_one_or_none()
 
-    if konfig:
-        konfig.hours_required = daten.hours_required
-        konfig.rate_per_hour_eur = daten.rate_per_hour_eur
-        konfig.mode = WorkHoursMode(daten.mode)
-        konfig.note = daten.note
+    if config:
+        config.hours_required = data.hours_required
+        config.rate_per_hour_eur = data.rate_per_hour_eur
+        config.mode = WorkHoursMode(data.mode)
+        config.note = data.note
     else:
-        konfig = WorkHoursConfiguration(
+        config = WorkHoursConfiguration(
             year=year,
-            hours_required=daten.hours_required,
-            rate_per_hour_eur=daten.rate_per_hour_eur,
-            mode=WorkHoursMode(daten.mode),
-            note=daten.note,
+            hours_required=data.hours_required,
+            rate_per_hour_eur=data.rate_per_hour_eur,
+            mode=WorkHoursMode(data.mode),
+            note=data.note,
         )
-        db.add(konfig)
+        db.add(config)
 
     await db.commit()
-    await db.refresh(konfig)
-    return konfig
+    await db.refresh(config)
+    return config
 
 
 # ---------------------------------------------------------------------------
@@ -110,7 +110,7 @@ async def konfiguration_setzen(
 # ---------------------------------------------------------------------------
 
 @router.get("/club-roles", response_model=List[ClubRoleOut], summary="List club roles")
-async def vereinsrollen_auflisten(
+async def club_roles_list(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
 ):
@@ -122,16 +122,16 @@ async def vereinsrollen_auflisten(
     "/club-roles", response_model=ClubRoleOut, status_code=status.HTTP_201_CREATED,
     summary="Create club role",
 )
-async def vereinsrolle_erstellen(
-    daten: ClubRoleCreate,
+async def club_role_create(
+    data: ClubRoleCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
     role = ClubRole(
-        name=daten.name,
-        description=daten.description,
-        hours_exempt=daten.hours_exempt,
-        exemption_reason=ExemptionReason(daten.exemption_reason) if daten.exemption_reason else None,
+        name=data.name,
+        description=data.description,
+        hours_exempt=data.hours_exempt,
+        exemption_reason=ExemptionReason(data.exemption_reason) if data.exemption_reason else None,
     )
     db.add(role)
     await db.commit()
@@ -140,9 +140,9 @@ async def vereinsrolle_erstellen(
 
 
 @router.put("/club-roles/{role_id}", response_model=ClubRoleOut, summary="Update club role")
-async def vereinsrolle_aktualisieren(
+async def club_role_update(
     role_id: str,
-    daten: ClubRoleCreate,
+    data: ClubRoleCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
@@ -151,10 +151,10 @@ async def vereinsrolle_aktualisieren(
     if not role:
         raise HTTPException(status_code=404, detail="Club role not found")
 
-    role.name = daten.name
-    role.description = daten.description
-    role.hours_exempt = daten.hours_exempt
-    role.exemption_reason = ExemptionReason(daten.exemption_reason) if daten.exemption_reason else None
+    role.name = data.name
+    role.description = data.description
+    role.hours_exempt = data.hours_exempt
+    role.exemption_reason = ExemptionReason(data.exemption_reason) if data.exemption_reason else None
 
     await db.commit()
     await db.refresh(role)
@@ -166,7 +166,7 @@ async def vereinsrolle_aktualisieren(
     summary="Delete club role",
     description="Also deletes the role's member assignments (cascade).",
 )
-async def vereinsrolle_loeschen(
+async def club_role_delete(
     role_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
@@ -182,7 +182,7 @@ async def vereinsrolle_loeschen(
     "/club-roles/assignments", response_model=List[MemberClubRoleOut],
     summary="List member club-role assignments",
 )
-async def zuordnungen_auflisten(
+async def assignments_list(
     year: Optional[int] = Query(None),
     member_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
@@ -201,12 +201,12 @@ async def zuordnungen_auflisten(
     "/club-roles/assignments", response_model=MemberClubRoleOut,
     status_code=status.HTTP_201_CREATED, summary="Assign member to a club role",
 )
-async def zuordnung_erstellen(
-    daten: MemberClubRoleCreate,
+async def assignment_create(
+    data: MemberClubRoleCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    assignment = MemberClubRole(**daten.model_dump())
+    assignment = MemberClubRole(**data.model_dump())
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
@@ -217,7 +217,7 @@ async def zuordnung_erstellen(
     "/club-roles/assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove assignment",
 )
-async def zuordnung_loeschen(
+async def assignment_delete(
     assignment_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
@@ -234,7 +234,7 @@ async def zuordnung_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.get("/sessions", response_model=List[WorkSessionOut], summary="List work sessions")
-async def einsaetze_auflisten(
+async def sessions_list(
     year: Optional[int] = Query(None, description="Filter by year"),
     type: Optional[str] = Query(None, description="STANDARD or SPECIAL"),
     db: AsyncSession = Depends(get_db),
@@ -251,7 +251,7 @@ async def einsaetze_auflisten(
 
 
 @router.get("/sessions/{session_id}", response_model=WorkSessionOut, summary="Retrieve session")
-async def einsatz_abrufen(
+async def session_get(
     session_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
@@ -267,15 +267,15 @@ async def einsatz_abrufen(
     "/sessions", response_model=WorkSessionOut, status_code=status.HTTP_201_CREATED,
     summary="Create work session",
 )
-async def einsatz_erstellen(
-    daten: WorkSessionCreate,
+async def session_create(
+    data: WorkSessionCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
     session = WorkSession(
-        title=daten.title, description=daten.description, type=SessionType(daten.type),
-        date=daten.date, time_from=daten.time_from, time_until=daten.time_until,
-        max_participants=daten.max_participants, hours_per_participant=daten.hours_per_participant,
+        title=data.title, description=data.description, type=SessionType(data.type),
+        date=data.date, time_from=data.time_from, time_until=data.time_until,
+        max_participants=data.max_participants, hours_per_participant=data.hours_per_participant,
         created_by_id=user.id,
     )
     db.add(session)
@@ -285,9 +285,9 @@ async def einsatz_erstellen(
 
 
 @router.put("/sessions/{session_id}", response_model=WorkSessionOut, summary="Update session")
-async def einsatz_aktualisieren(
+async def session_update(
     session_id: str,
-    daten: WorkSessionUpdate,
+    data: WorkSessionUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
@@ -296,11 +296,11 @@ async def einsatz_aktualisieren(
     if not session:
         raise HTTPException(status_code=404, detail="Work session not found")
 
-    update_daten = daten.model_dump(exclude_unset=True)
+    update_daten = data.model_dump(exclude_unset=True)
     if "type" in update_daten:
         update_daten["type"] = SessionType(update_daten["type"])
-    for feld, value in update_daten.items():
-        setattr(session, feld, value)
+    for field, value in update_daten.items():
+        setattr(session, field, value)
 
     await db.commit()
     await db.refresh(session)
@@ -311,7 +311,7 @@ async def einsatz_aktualisieren(
     "/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete session", description="Also deletes all participations (cascade).",
 )
-async def einsatz_loeschen(
+async def session_delete(
     session_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
@@ -331,7 +331,7 @@ async def einsatz_loeschen(
     "/sessions/{session_id}/participations", response_model=List[SessionParticipationOut],
     summary="List participations of a session",
 )
-async def teilnahmen_auflisten(
+async def participations_list(
     session_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
@@ -346,24 +346,24 @@ async def teilnahmen_auflisten(
     "/sessions/{session_id}/participations", response_model=SessionParticipationOut,
     status_code=status.HTTP_201_CREATED, summary="Register participation",
 )
-async def teilnahme_erstellen(
+async def participation_create(
     session_id: str,
-    daten: SessionParticipationCreate,
+    data: SessionParticipationCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
     existing = await db.execute(
         select(SessionParticipation).where(
-            SessionParticipation.session_id == session_id, SessionParticipation.member_id == daten.member_id
+            SessionParticipation.session_id == session_id, SessionParticipation.member_id == data.member_id
         )
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Member is already registered")
 
     participation = SessionParticipation(
-        session_id=session_id, member_id=daten.member_id,
-        status=ParticipationStatus(daten.status), hours_completed=daten.hours_completed,
-        note=daten.note,
+        session_id=session_id, member_id=data.member_id,
+        status=ParticipationStatus(data.status), hours_completed=data.hours_completed,
+        note=data.note,
     )
     db.add(participation)
     await db.commit()
@@ -375,10 +375,10 @@ async def teilnahme_erstellen(
     "/sessions/{session_id}/participations/{participation_id}", response_model=SessionParticipationOut,
     summary="Update participation",
 )
-async def teilnahme_aktualisieren(
+async def participation_update(
     session_id: str,
     participation_id: str,
-    daten: SessionParticipationUpdate,
+    data: SessionParticipationUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
@@ -391,11 +391,11 @@ async def teilnahme_aktualisieren(
     if not participation:
         raise HTTPException(status_code=404, detail="Participation not found")
 
-    update_daten = daten.model_dump(exclude_unset=True)
+    update_daten = data.model_dump(exclude_unset=True)
     if "status" in update_daten:
         update_daten["status"] = ParticipationStatus(update_daten["status"])
-    for feld, value in update_daten.items():
-        setattr(participation, feld, value)
+    for field, value in update_daten.items():
+        setattr(participation, field, value)
 
     await db.commit()
     await db.refresh(participation)
@@ -406,7 +406,7 @@ async def teilnahme_aktualisieren(
     "/sessions/{session_id}/participations/{participation_id}", status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove participation",
 )
-async def teilnahme_loeschen(
+async def participation_delete(
     session_id: str,
     participation_id: str,
     db: AsyncSession = Depends(get_db),
@@ -428,7 +428,7 @@ async def teilnahme_loeschen(
 # ---------------------------------------------------------------------------
 
 @router.get("/sponsorships", response_model=List[SponsorshipOut], summary="List sponsorships")
-async def patenschaften_auflisten(
+async def sponsorships_list(
     year: Optional[int] = Query(None, description="Only sponsorships active in this year"),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
@@ -448,12 +448,12 @@ async def patenschaften_auflisten(
     summary="Create sponsorship",
     description="member_id is optional -- a sponsorship can be created before it's assigned to anyone.",
 )
-async def patenschaft_erstellen(
-    daten: SponsorshipCreate,
+async def sponsorship_create(
+    data: SponsorshipCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    sponsorship = Sponsorship(**daten.model_dump())
+    sponsorship = Sponsorship(**data.model_dump())
     db.add(sponsorship)
     await db.commit()
     await db.refresh(sponsorship)
@@ -461,9 +461,9 @@ async def patenschaft_erstellen(
 
 
 @router.put("/sponsorships/{sponsorship_id}", response_model=SponsorshipOut, summary="Update sponsorship")
-async def patenschaft_aktualisieren(
+async def sponsorship_update(
     sponsorship_id: str,
-    daten: SponsorshipUpdate,
+    data: SponsorshipUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
@@ -472,8 +472,8 @@ async def patenschaft_aktualisieren(
     if not sponsorship:
         raise HTTPException(status_code=404, detail="Sponsorship not found")
 
-    for feld, value in daten.model_dump(exclude_unset=True).items():
-        setattr(sponsorship, feld, value)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(sponsorship, field, value)
 
     await db.commit()
     await db.refresh(sponsorship)
@@ -484,7 +484,7 @@ async def patenschaft_aktualisieren(
     "/sponsorships/{sponsorship_id}", status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete sponsorship",
 )
-async def patenschaft_loeschen(
+async def sponsorship_delete(
     sponsorship_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
@@ -509,7 +509,7 @@ async def patenschaft_loeschen(
         "exemption status."
     ),
 )
-async def auswertung_abrufen(
+async def evaluation_get(
     year: int,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
@@ -522,8 +522,8 @@ async def auswertung_abrufen(
     if not config:
         raise HTTPException(status_code=404, detail=f"No configuration for {year}")
 
-    zeilen: List[EvaluationRowOut] = []
-    pflicht = Decimal(str(config.hours_required))
+    rows: List[EvaluationRowOut] = []
+    required = Decimal(str(config.hours_required))
 
     if config.mode == WorkHoursMode.PER_PARCEL:
         result = await db.execute(
@@ -532,26 +532,26 @@ async def auswertung_abrufen(
             .where(Parcel.status == ParcelStatus.ACTIVE)
             .order_by(Parcel.plot_number)
         )
-        for parzelle in result.scalars().all():
-            paechter = [z.member for z in parzelle.member_assignments]
-            if not paechter:
+        for parcel in result.scalars().all():
+            tenants = [z.member for z in parcel.member_assignments]
+            if not tenants:
                 continue
-            gesamt = Decimal("0")
+            total = Decimal("0")
             # Same rule as the web UI: ONE exempt tenant is enough to
             # exempt the whole parcel (any(), not all() -- see
             # docs/architecture-decisions.md).
-            ist_befreit = False
-            for m in paechter:
+            is_exempt = False
+            for m in tenants:
                 stand = await _calculate_hours_for_member(db, m.id, year)
-                gesamt += Decimal(str(stand["gesamt"]))
+                total += Decimal(str(stand["total"]))
                 if await _is_exempt(db, m.id, year):
-                    ist_befreit = True
-            offen = max(Decimal("0"), pflicht - gesamt) if not ist_befreit else Decimal("0")
-            zeilen.append(EvaluationRowOut(
-                label=parzelle.plot_number,
-                hours_required=pflicht, hours_completed=gesamt, hours_open=offen,
-                amount_due_eur=offen * Decimal(str(config.rate_per_hour_eur)),
-                exempt=ist_befreit, fulfilled=ist_befreit or gesamt >= pflicht,
+                    is_exempt = True
+            outstanding = max(Decimal("0"), required - total) if not is_exempt else Decimal("0")
+            rows.append(EvaluationRowOut(
+                label=parcel.plot_number,
+                hours_required=required, hours_completed=total, hours_open=outstanding,
+                amount_due_eur=outstanding * Decimal(str(config.rate_per_hour_eur)),
+                exempt=is_exempt, fulfilled=is_exempt or total >= required,
             ))
     else:
         result = await db.execute(
@@ -563,16 +563,16 @@ async def auswertung_abrufen(
         for m in result.scalars().all():
             stand = await _calculate_hours_for_member(db, m.id, year)
             befreit = await _is_exempt(db, m.id, year)
-            gesamt = Decimal(str(stand["gesamt"]))
-            offen = max(Decimal("0"), pflicht - gesamt) if not befreit else Decimal("0")
-            zeilen.append(EvaluationRowOut(
+            total = Decimal(str(stand["total"]))
+            outstanding = max(Decimal("0"), required - total) if not befreit else Decimal("0")
+            rows.append(EvaluationRowOut(
                 label=m.full_name,
-                hours_required=pflicht, hours_completed=gesamt, hours_open=offen,
-                amount_due_eur=offen * Decimal(str(config.rate_per_hour_eur)),
-                exempt=befreit, fulfilled=befreit or gesamt >= pflicht,
+                hours_required=required, hours_completed=total, hours_open=outstanding,
+                amount_due_eur=outstanding * Decimal(str(config.rate_per_hour_eur)),
+                exempt=befreit, fulfilled=befreit or total >= required,
             ))
 
-    return zeilen
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -601,15 +601,15 @@ async def list_tasks(
 
 @router.post("/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED, summary="Create a task")
 async def create_task(
-    daten: TaskCreate,
+    data: TaskCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
     task = WorkTask(
-        title=daten.title,
-        description=daten.description,
-        workload=TaskWorkload(daten.workload),
-        session_id=daten.session_id,
+        title=data.title,
+        description=data.description,
+        workload=TaskWorkload(data.workload),
+        session_id=data.session_id,
         created_by_id=user.id,
     )
     db.add(task)
@@ -621,7 +621,7 @@ async def create_task(
 @router.put("/tasks/{task_id}", response_model=TaskOut, summary="Update a task")
 async def update_task(
     task_id: str,
-    daten: TaskUpdate,
+    data: TaskUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
@@ -630,23 +630,23 @@ async def update_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if daten.title is not None:
-        task.title = daten.title
-    if daten.description is not None:
-        task.description = daten.description
-    if daten.workload is not None:
-        task.workload = TaskWorkload(daten.workload)
-    if daten.session_id is not None:
+    if data.title is not None:
+        task.title = data.title
+    if data.description is not None:
+        task.description = data.description
+    if data.workload is not None:
+        task.workload = TaskWorkload(data.workload)
+    if data.session_id is not None:
         # An assignment to a specific participant only makes sense for the
         # session they actually signed up for -- clear it when the
         # session changes, same rule the web UI enforces.
-        if daten.session_id != task.session_id:
+        if data.session_id != task.session_id:
             task.assigned_participation_id = None
-        task.session_id = daten.session_id or None
-    if daten.assigned_participation_id is not None:
+        task.session_id = data.session_id or None
+    if data.assigned_participation_id is not None:
         if not task.session_id:
             raise HTTPException(status_code=400, detail="This task isn't scheduled to a session yet")
-        participation_id = daten.assigned_participation_id or None
+        participation_id = data.assigned_participation_id or None
         if participation_id:
             check = await db.execute(
                 select(SessionParticipation).where(
@@ -657,8 +657,8 @@ async def update_task(
             if not check.scalar_one_or_none():
                 raise HTTPException(status_code=400, detail="This participant isn't signed up for this session")
         task.assigned_participation_id = participation_id
-    if daten.is_done is not None:
-        task.is_done = daten.is_done
+    if data.is_done is not None:
+        task.is_done = data.is_done
 
     await db.commit()
     await db.refresh(task)

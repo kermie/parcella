@@ -20,27 +20,27 @@ from sqlalchemy.orm import selectinload
 router = APIRouter(prefix="/api/v1/parcels", tags=["API: Parcels"])
 
 
-async def _hole_parcel_oder_404(db: AsyncSession, parcel_id: str, mit_details: bool = False) -> Parcel:
+async def _get_parcel_or_404(db: AsyncSession, parcel_id: str, with_details: bool = False) -> Parcel:
     query = select(Parcel).where(Parcel.id == parcel_id)
-    if mit_details:
+    if with_details:
         query = query.options(
             selectinload(Parcel.member_assignments).selectinload(MemberParcel.member)
         )
     result = await db.execute(query)
-    parzelle = result.scalar_one_or_none()
-    if not parzelle:
+    parcel = result.scalar_one_or_none()
+    if not parcel:
         raise HTTPException(status_code=404, detail="Parcel not found")
-    return parzelle
+    return parcel
 
 
-def _zu_detail_schema(parzelle: Parcel) -> ParcelDetailOut:
-    out = ParcelDetailOut.model_validate(parzelle)
+def _to_detail_schema(parcel: Parcel) -> ParcelDetailOut:
+    out = ParcelDetailOut.model_validate(parcel)
     out.members = [
         ParcelAssignmentBrief(
             member_id=z.member.id,
             name=z.member.full_name,
         )
-        for z in parzelle.member_assignments
+        for z in parcel.member_assignments
     ]
     return out
 
@@ -50,8 +50,8 @@ def _zu_detail_schema(parzelle: Parcel) -> ParcelDetailOut:
     response_model=List[ParcelOut],
     summary="List parcels",
 )
-async def parzellen_auflisten(
-    suche: Optional[str] = Query(None, description="Search in plot number"),
+async def parcels_list(
+    search: Optional[str] = Query(None, description="Search in plot number"),
     status_filter: Optional[ParcelStatus] = Query(None, alias="status"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
@@ -60,8 +60,8 @@ async def parzellen_auflisten(
 ):
     query = select(Parcel).order_by(Parcel.plot_number).limit(limit).offset(offset)
 
-    if suche:
-        query = query.where(Parcel.plot_number.ilike(f"%{suche}%"))
+    if search:
+        query = query.where(Parcel.plot_number.ilike(f"%{search}%"))
     if status_filter:
         query = query.where(Parcel.status == status_filter)
 
@@ -75,13 +75,13 @@ async def parzellen_auflisten(
     summary="Retrieve a single parcel",
     description="Returns a parcel including assigned members.",
 )
-async def parzelle_abrufen(
+async def parcel_get(
     parcel_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
 ):
-    parzelle = await _hole_parcel_oder_404(db, parcel_id, mit_details=True)
-    return _zu_detail_schema(parzelle)
+    parcel = await _get_parcel_or_404(db, parcel_id, with_details=True)
+    return _to_detail_schema(parcel)
 
 
 @router.post(
@@ -90,29 +90,29 @@ async def parzelle_abrufen(
     status_code=status.HTTP_201_CREATED,
     summary="Create new parcel",
 )
-async def parzelle_erstellen(
-    daten: ParcelCreate,
+async def parcel_create(
+    data: ParcelCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    plot_number = daten.plot_number.strip().upper()
+    plot_number = data.plot_number.strip().upper()
 
     existing = await db.execute(select(Parcel).where(Parcel.plot_number == plot_number))
     if existing.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Gartennummer '{plot_number}' existiert bereits.",
+            detail=f"Plot number '{plot_number}' already exists.",
         )
 
-    parzelle = Parcel(
+    parcel = Parcel(
         plot_number=plot_number,
-        area_sqm=daten.area_sqm,
-        notes=daten.notes,
+        area_sqm=data.area_sqm,
+        notes=data.notes,
     )
-    db.add(parzelle)
+    db.add(parcel)
     await db.commit()
-    await db.refresh(parzelle)
-    return parzelle
+    await db.refresh(parcel)
+    return parcel
 
 
 @router.put(
@@ -121,35 +121,35 @@ async def parzelle_erstellen(
     summary="Update parcel",
     description="Partial update: only the fields provided are changed. Also covers status changes (active/terminated/deleted) and termination data.",
 )
-async def parzelle_aktualisieren(
+async def parcel_update(
     parcel_id: str,
-    daten: ParcelUpdate,
+    data: ParcelUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    parzelle = await _hole_parcel_oder_404(db, parcel_id)
+    parcel = await _get_parcel_or_404(db, parcel_id)
 
-    update_daten = daten.model_dump(exclude_unset=True)
+    update_data = data.model_dump(exclude_unset=True)
 
-    if "plot_number" in update_daten and update_daten["plot_number"]:
-        neue_nummer = update_daten["plot_number"].strip().upper()
-        if neue_nummer != parzelle.plot_number:
+    if "plot_number" in update_data and update_data["plot_number"]:
+        new_number = update_data["plot_number"].strip().upper()
+        if new_number != parcel.plot_number:
             existing = await db.execute(
-                select(Parcel).where(Parcel.plot_number == neue_nummer, Parcel.id != parcel_id)
+                select(Parcel).where(Parcel.plot_number == new_number, Parcel.id != parcel_id)
             )
             if existing.scalar_one_or_none():
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Gartennummer '{neue_nummer}' existiert bereits.",
+                    detail=f"Plot number '{new_number}' already exists.",
                 )
-        update_daten["plot_number"] = neue_nummer
+        update_data["plot_number"] = new_number
 
-    for feld, value in update_daten.items():
-        setattr(parzelle, feld, value)
+    for field, value in update_data.items():
+        setattr(parcel, field, value)
 
     await db.commit()
-    await db.refresh(parzelle)
-    return parzelle
+    await db.refresh(parcel)
+    return parcel
 
 
 @router.delete(
@@ -158,18 +158,18 @@ async def parzelle_aktualisieren(
     summary="Mark parcel as deleted",
     description="Sets the status to 'deleted' (no actual DB deletion, history is preserved).",
 )
-async def parzelle_loeschen(
+async def parcel_delete(
     parcel_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    parzelle = await _hole_parcel_oder_404(db, parcel_id)
-    parzelle.status = ParcelStatus.DELETED
+    parcel = await _get_parcel_or_404(db, parcel_id)
+    parcel.status = ParcelStatus.DELETED
     await db.commit()
 
 
 # ---------------------------------------------------------------------------
-# Member-Zuordnung (Unterressource)
+# Member assignment (sub-resource)
 # ---------------------------------------------------------------------------
 
 @router.post(
@@ -179,19 +179,19 @@ async def parzelle_loeschen(
     summary="Assign member to a parcel",
     description="Enables multiple parcels per member and multiple members sharing a parcel.",
 )
-async def member_zuordnen(
+async def member_assign(
     parcel_id: str,
-    daten: AssignmentCreate,
+    data: AssignmentCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    if daten.parcel_id != parcel_id:
+    if data.parcel_id != parcel_id:
         raise HTTPException(status_code=400, detail="parcel_id in body must match the URL")
 
-    await _hole_parcel_oder_404(db, parcel_id)
+    await _get_parcel_or_404(db, parcel_id)
 
     member_result = await db.execute(
-        select(Member).where(Member.id == daten.member_id, Member.deleted_at.is_(None))
+        select(Member).where(Member.id == data.member_id, Member.deleted_at.is_(None))
     )
     if not member_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Member not found")
@@ -199,7 +199,7 @@ async def member_zuordnen(
     existing = await db.execute(
         select(MemberParcel).where(
             MemberParcel.parcel_id == parcel_id,
-            MemberParcel.member_id == daten.member_id,
+            MemberParcel.member_id == data.member_id,
         )
     )
     if existing.scalar_one_or_none():
@@ -207,9 +207,9 @@ async def member_zuordnen(
 
     assignment = MemberParcel(
         parcel_id=parcel_id,
-        member_id=daten.member_id,
-        assigned_from=daten.assigned_from,
-        assigned_until=daten.assigned_until,
+        member_id=data.member_id,
+        assigned_from=data.assigned_from,
+        assigned_until=data.assigned_until,
     )
     db.add(assignment)
     await db.commit()
@@ -222,7 +222,7 @@ async def member_zuordnen(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove member assignment",
 )
-async def assignment_entfernen(
+async def assignment_remove(
     parcel_id: str,
     assignment_id: str,
     db: AsyncSession = Depends(get_db),

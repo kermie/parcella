@@ -33,12 +33,12 @@ load_translations()
 from app.templating import templates
 from app.ticket_mailer import process_incoming_mails
 from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, purchase_requests, calendar as calendar_router, announcements as announcements_router, inventory as inventory_router
-from app.routers.metering import erstelle_metering_router
+from app.routers.metering import create_metering_router
 from app.models import MeteringMedium
 from app.routers import api_auth, api_members, api_parcels, api_club_settings, api_stats
 from app.routers import api_work_hours, api_insurance, api_tickets, api_purchase_requests, api_inventory
 from app.routers import api_public
-from app.routers.api_metering import erstelle_metering_api_router
+from app.routers.api_metering import create_metering_api_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -179,12 +179,12 @@ app.include_router(announcements_router.router)
 app.include_router(inventory_router.router)
 
 # Metering: ONE codebase (app/routers/metering.py), instantiated twice
-# for water and electricity -- see erstelle_metering_router().
-water_router = erstelle_metering_router(
+# for water and electricity -- see create_metering_router().
+water_router = create_metering_router(
     medium=MeteringMedium.WATER, url_prefix="/water", modul_name="water",
     medium_label_key="metering.medium.water", unit="m³", icon="bi-droplet", dezimalstellen=1,
 )
-electricity_router = erstelle_metering_router(
+electricity_router = create_metering_router(
     medium=MeteringMedium.ELECTRICITY, url_prefix="/electricity", modul_name="electricity",
     medium_label_key="metering.medium.electricity", unit="kWh", icon="bi-lightning-charge", dezimalstellen=0,
 )
@@ -204,8 +204,8 @@ app.include_router(api_tickets.router)
 app.include_router(api_purchase_requests.router)
 app.include_router(api_public.router)
 
-api_water_router = erstelle_metering_api_router(MeteringMedium.WATER, "/water", "water")
-api_electricity_router = erstelle_metering_api_router(MeteringMedium.ELECTRICITY, "/electricity", "electricity")
+api_water_router = create_metering_api_router(MeteringMedium.WATER, "/water", "water")
+api_electricity_router = create_metering_api_router(MeteringMedium.ELECTRICITY, "/electricity", "electricity")
 app.include_router(api_water_router)
 app.include_router(api_electricity_router)
 

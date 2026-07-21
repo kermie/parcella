@@ -215,7 +215,7 @@ class ClubSettingUpdate(BaseModel):
 # Generic list response (pagination-ready)
 # ---------------------------------------------------------------------------
 
-class PaginierteAntwort(BaseModel):
+class PaginatedResponse(BaseModel):
     gesamt: int
     limit: int
     offset: int
@@ -443,7 +443,7 @@ class MeteringPointDetailOut(MeteringPointOut):
     former_meters: List[MeterOut] = []
 
 
-class MeterTauschRequest(BaseModel):
+class MeterSwapRequest(BaseModel):
     neue_nummer: str
     removed_at: date
     installed_at: date

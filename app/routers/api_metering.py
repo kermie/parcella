@@ -19,12 +19,12 @@ from app.module_flags import require_module
 from app.meter_utils import calculate_consumption, check_monotonicity, format_monotonicity_error_de, total_consumption_for_type
 from app.schemas import (
     MeteringPointOut, MeteringPointDetailOut, MeteringPointCreate, MeteringPointUpdate,
-    MeterOut, MeterTauschRequest, MeterReadingCreate, MeterReadingOut,
+    MeterOut, MeterSwapRequest, MeterReadingCreate, MeterReadingOut,
     ConsumptionRowOut,
 )
 
 
-def erstelle_metering_api_router(
+def create_metering_api_router(
     medium: MeteringMedium, url_prefix: str, modul_name: str,
 ) -> APIRouter:
     router = APIRouter(
@@ -146,7 +146,7 @@ def erstelle_metering_api_router(
     )
     async def zaehler_tauschen(
         metering_point_id: str,
-        daten: MeterTauschRequest,
+        daten: MeterSwapRequest,
         db: AsyncSession = Depends(get_db),
         user: User = Depends(require_write_access),
     ):

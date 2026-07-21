@@ -14,16 +14,16 @@ from app.api_auth import get_current_api_user, require_write_access
 from app.schemas import (
     MemberOut, MemberDetailOut, MemberCreate, MemberUpdate,
     PhoneOut, PhoneCreate, EmailAddressOut, EmailAddressCreate,
-    PaginierteAntwort, MemberAssignmentBrief,
+    PaginatedResponse, MemberAssignmentBrief,
 )
 from app.models import User
 
 router = APIRouter(prefix="/api/v1/members", tags=["API: Members"])
 
 
-async def _hole_member_oder_404(db: AsyncSession, member_id: str, mit_details: bool = False) -> Member:
+async def _get_member_or_404(db: AsyncSession, member_id: str, with_details: bool = False) -> Member:
     query = select(Member).where(Member.id == member_id, Member.deleted_at.is_(None))
-    if mit_details:
+    if with_details:
         query = query.options(
             selectinload(Member.phone_numbers),
             selectinload(Member.email_addresses),
@@ -41,7 +41,7 @@ async def _hole_member_oder_404(db: AsyncSession, member_id: str, mit_details: b
     return member
 
 
-def _zu_detail_schema(member: Member) -> MemberDetailOut:
+def _to_detail_schema(member: Member) -> MemberDetailOut:
     out = MemberDetailOut.model_validate(member)
     out.parcels = [
         MemberAssignmentBrief(
@@ -59,9 +59,9 @@ def _zu_detail_schema(member: Member) -> MemberDetailOut:
     summary="List members",
     description="Returns all (non-deleted) members. Supports full-text search and pagination.",
 )
-async def mitglieder_auflisten(
-    suche: Optional[str] = Query(None, description="Search in first/last name and city"),
-    nur_aktive: bool = Query(False, description="Only active memberships (member_until in the future or empty)"),
+async def members_list(
+    search: Optional[str] = Query(None, description="Search in first/last name and city"),
+    active_only: bool = Query(False, description="Only active memberships (member_until in the future or empty)"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -75,19 +75,19 @@ async def mitglieder_auflisten(
         .limit(limit)
         .offset(offset)
     )
-    if suche:
+    if search:
         query = query.where(
             or_(
-                Member.first_name.ilike(f"%{suche}%"),
-                Member.last_name.ilike(f"%{suche}%"),
-                Member.city.ilike(f"%{suche}%"),
+                Member.first_name.ilike(f"%{search}%"),
+                Member.last_name.ilike(f"%{search}%"),
+                Member.city.ilike(f"%{search}%"),
             )
         )
 
     result = await db.execute(query)
     members = result.scalars().all()
 
-    if nur_aktive:
+    if active_only:
         members = [m for m in members if m.is_active]
 
     return members
@@ -99,13 +99,13 @@ async def mitglieder_auflisten(
     summary="Retrieve a single member",
     description="Returns a member including assigned parcels, phone numbers, and email addresses.",
 )
-async def mitglied_abrufen(
+async def member_get(
     member_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_api_user),
 ):
-    member = await _hole_member_oder_404(db, member_id, mit_details=True)
-    return _zu_detail_schema(member)
+    member = await _get_member_or_404(db, member_id, with_details=True)
+    return _to_detail_schema(member)
 
 
 @router.post(
@@ -114,12 +114,12 @@ async def mitglied_abrufen(
     status_code=status.HTTP_201_CREATED,
     summary="Create new member",
 )
-async def mitglied_erstellen(
-    daten: MemberCreate,
+async def member_create(
+    data: MemberCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    member = Member(**daten.model_dump())
+    member = Member(**data.model_dump())
     db.add(member)
     await db.commit()
     await db.refresh(member, attribute_names=["phone_numbers", "email_addresses"])
@@ -132,16 +132,16 @@ async def mitglied_erstellen(
     summary="Update member",
     description="Partial update: only the fields provided are changed.",
 )
-async def mitglied_aktualisieren(
+async def member_update(
     member_id: str,
-    daten: MemberUpdate,
+    data: MemberUpdate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    member = await _hole_member_oder_404(db, member_id)
+    member = await _get_member_or_404(db, member_id)
 
-    for feld, value in daten.model_dump(exclude_unset=True).items():
-        setattr(member, feld, value)
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(member, field, value)
 
     await db.commit()
     await db.refresh(member, attribute_names=["phone_numbers", "email_addresses"])
@@ -154,14 +154,14 @@ async def mitglied_aktualisieren(
     summary="Delete member (soft delete)",
     description="Marks the member as deleted (deleted_at set). Data remains in the database.",
 )
-async def mitglied_loeschen(
+async def member_delete(
     member_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
     from datetime import datetime, timezone
 
-    member = await _hole_member_oder_404(db, member_id)
+    member = await _get_member_or_404(db, member_id)
     member.deleted_at = datetime.now(timezone.utc)
     await db.commit()
 
@@ -176,40 +176,40 @@ async def mitglied_loeschen(
     status_code=status.HTTP_201_CREATED,
     summary="Add phone number",
 )
-async def telefon_hinzufuegen(
+async def phone_add(
     member_id: str,
-    daten: PhoneCreate,
+    data: PhoneCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    await _hole_member_oder_404(db, member_id)
-    telefon = MemberPhone(member_id=member_id, **daten.model_dump())
-    db.add(telefon)
+    await _get_member_or_404(db, member_id)
+    phone = MemberPhone(member_id=member_id, **data.model_dump())
+    db.add(phone)
     await db.commit()
-    await db.refresh(telefon)
-    return telefon
+    await db.refresh(phone)
+    return phone
 
 
 @router.delete(
-    "/{member_id}/phone_numbers/{telefon_id}",
+    "/{member_id}/phone_numbers/{phone_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove phone number",
 )
-async def telefon_entfernen(
+async def phone_remove(
     member_id: str,
-    telefon_id: str,
+    phone_id: str,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
     result = await db.execute(
         select(MemberPhone).where(
-            MemberPhone.id == telefon_id, MemberPhone.member_id == member_id
+            MemberPhone.id == phone_id, MemberPhone.member_id == member_id
         )
     )
-    telefon = result.scalar_one_or_none()
-    if not telefon:
+    phone = result.scalar_one_or_none()
+    if not phone:
         raise HTTPException(status_code=404, detail="Phone number not found")
-    await db.delete(telefon)
+    await db.delete(phone)
     await db.commit()
 
 
@@ -223,18 +223,18 @@ async def telefon_entfernen(
     status_code=status.HTTP_201_CREATED,
     summary="Add email address",
 )
-async def email_hinzufuegen(
+async def email_add(
     member_id: str,
-    daten: EmailAddressCreate,
+    data: EmailAddressCreate,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_write_access),
 ):
-    await _hole_member_oder_404(db, member_id)
+    await _get_member_or_404(db, member_id)
     email_obj = MemberEmail(
         member_id=member_id,
-        address=str(daten.address).lower(),
-        label=daten.label,
-        is_primary=daten.is_primary,
+        address=str(data.address).lower(),
+        label=data.label,
+        is_primary=data.is_primary,
     )
     db.add(email_obj)
     await db.commit()
@@ -247,7 +247,7 @@ async def email_hinzufuegen(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove email address",
 )
-async def email_entfernen(
+async def email_remove(
     member_id: str,
     email_id: str,
     db: AsyncSession = Depends(get_db),

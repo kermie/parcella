@@ -195,7 +195,7 @@ SETTINGS_FIELDS = [
 # Optional feature areas that each club can toggle on/off.
 # Keys follow the convention "modul_<name>" (see app/module_flags.py).
 # Name/description are resolved via translation keys (see below).
-MODULE_FELDER = [
+MODULE_FIELDS = [
     ("modul_work_hours", "admin.settings.modules.work_hours_name", "admin.settings.modules.work_hours_desc"),
     ("modul_water", "admin.settings.modules.water_name", "admin.settings.modules.water_desc"),
     ("modul_electricity", "admin.settings.modules.electricity_name", "admin.settings.modules.electricity_desc"),
@@ -211,7 +211,7 @@ MODULE_FELDER = [
 
 
 @router.get("/settings", response_class=HTMLResponse)
-async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_db)):
+async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_admin(request, db)
 
     result = await db.execute(select(ClubSetting))
@@ -220,7 +220,7 @@ async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_d
     resolved_felder = [(key, t_for(request, label_key)) for key, label_key in SETTINGS_FIELDS]
     resolved_module_felder = [
         (key, t_for(request, name_key), t_for(request, desc_key))
-        for key, name_key, desc_key in MODULE_FELDER
+        for key, name_key, desc_key in MODULE_FIELDS
     ]
 
     return templates.TemplateResponse(
@@ -239,7 +239,7 @@ async def einstellungen_seite(request: Request, db: AsyncSession = Depends(get_d
 
 
 @router.post("/settings")
-async def einstellungen_speichern(
+async def settings_save(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
@@ -298,7 +298,7 @@ async def einstellungen_speichern(
 
     # Modul-Umschalter: Checkboxen senden bei "aus" gar keinen Wert im
     # Formular, daher explizit "true"/"false" statt nur form.get(...).
-    for key, description, _hinweis in MODULE_FELDER:
+    for key, description, _hint in MODULE_FIELDS:
         value = "true" if key in form else "false"
 
         result = await db.execute(
