@@ -284,7 +284,18 @@
       "wordpress_app_password_hint": "Pas votre mot de passe de connexion WordPress habituel -- générez-en un dans votre profil utilisateur WordPress.",
       "wordpress_save_button": "Enregistrer",
       "wordpress_test_button": "Tester la connexion",
-      "wordpress_test_success": "Connexion réussie"
+      "wordpress_test_success": "Connexion réussie",
+      "nextcloud_title": "Nextcloud (documents de parcelle)",
+      "nextcloud_desc": "Permet au conseil/à l'administrateur de parcourir, téléverser et télécharger des fichiers depuis un dossier de l'instance Nextcloud du club pour chaque parcelle -- baux, demandes d'adhésion, correspondance des tickets. Créez un mot de passe d'application dans les paramètres de sécurité de votre utilisateur Nextcloud (Paramètres -> Sécurité -> Appareils et sessions) -- n'utilisez pas ici votre mot de passe de connexion Nextcloud habituel.",
+      "cloud_storage_module_disabled_notice": "Le connecteur de stockage cloud est actuellement désactivé, les documents de parcelle ne seront donc pas affichés.",
+      "nextcloud_saved": "Paramètres Nextcloud enregistrés",
+      "nextcloud_base_url_label": "URL Nextcloud",
+      "nextcloud_username_label": "Nom d'utilisateur Nextcloud",
+      "nextcloud_app_password_label": "Mot de passe d'application",
+      "nextcloud_app_password_hint": "Pas votre mot de passe de connexion Nextcloud habituel -- générez-en un dans les paramètres de sécurité de votre utilisateur Nextcloud.",
+      "nextcloud_save_button": "Enregistrer",
+      "nextcloud_test_button": "Tester la connexion",
+      "nextcloud_test_success": "Connexion réussie"
     }
   },
   "members": {
@@ -484,6 +495,19 @@
       "delete_history_tooltip": "Supprimer l'entrée",
       "delete_history_confirm": "Vraiment supprimer définitivement cette entrée ? Cette action est irréversible.",
       "cannot_delete_active_assignment": "Une affectation active ne peut pas être supprimée -- veuillez d'abord mettre fin au bail.",
+      "cloud_documents_header": "Documents (Nextcloud)",
+      "cloud_folder_saved": "Chemin du dossier enregistré",
+      "cloud_upload_ok": "Fichier téléversé",
+      "cloud_folder_path_label": "Chemin du dossier",
+      "cloud_folder_path_placeholder": "p.ex. kgv_dokumente/parzellen/G016/2024-03_016_Mueller",
+      "cloud_folder_save_button": "Enregistrer",
+      "cloud_no_folder_hint": "Aucun dossier n'est encore configuré pour le bail actuel. Indiquez le chemin du dossier déjà partagé avec ces locataires dans Nextcloud.",
+      "cloud_col_name": "Nom",
+      "cloud_col_modified": "Dernière modification",
+      "cloud_folder_empty": "Ce dossier est vide.",
+      "cloud_upload_button": "Téléverser",
+      "cloud_not_configured": "Nextcloud n'est pas encore configuré. Configurez-le sous Admin -> Intégrations.",
+      "cloud_no_active_folder": "Aucun dossier actif n'est configuré pour cette parcelle.",
       "page_title": "Parcelle {plot_number}"
     },
     "errors": {

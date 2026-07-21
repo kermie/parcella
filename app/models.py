@@ -243,6 +243,10 @@ class Parcel(Base):
     metering_points: Mapped[List["MeteringPoint"]] = relationship(
         "MeteringPoint", back_populates="parcel"
     )
+    cloud_folders: Mapped[List["ParcelCloudFolder"]] = relationship(
+        "ParcelCloudFolder", back_populates="parcel",
+        order_by="ParcelCloudFolder.created_at.desc()",
+    )
 
     def __repr__(self) -> str:
         return f"<Parcel {self.plot_number}>"
@@ -284,6 +288,59 @@ class MemberParcel(Base):
     )
 
 
+# ---------------------------------------------------------------------------
+# Cloud storage: per-parcel folder path in a connected cloud backend
+# (Nextcloud today). See app/cloud_storage.py and app/parcel_cloud_folders.py.
+# ---------------------------------------------------------------------------
+
+class ParcelCloudFolder(Base):
+    """
+    The cloud-storage folder path currently assigned to a parcel (e.g.
+    a Nextcloud path holding the current tenants' lease paperwork).
+
+    Scoped to the parcel, not to a single MemberParcel row: a parcel can
+    have several co-tenants at once (couples, families), each with their
+    own MemberParcel row for the same lease period, and this folder is
+    shared by all of them -- one folder per tenancy period, not one per
+    person.
+
+    Only one row per parcel should have is_active=True at a time; older
+    rows are kept (is_active=False) as history rather than deleted, same
+    principle as ended MemberParcel assignments. is_active is flipped to
+    False automatically when the parcel's last active resident's tenancy
+    ends (see app.parcel_cloud_folders.deactivate_if_vacant) -- so a
+    fresh set of tenants moving in after a full turnover never inherits
+    the previous tenants' folder; a board member must deliberately set a
+    new one.
+    """
+    __tablename__ = "parcel_cloud_folders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    parcel_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    relative_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    set_by_user_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    deactivated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    parcel: Mapped["Parcel"] = relationship("Parcel", back_populates="cloud_folders")
+    set_by_user: Mapped[Optional["User"]] = relationship("User")
+
+    __table_args__ = (
+        Index(
+            "uq_parcel_cloud_folders_one_active_per_parcel",
+            "parcel_id", unique=True,
+            postgresql_where=(is_active == True),  # noqa: E712
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------

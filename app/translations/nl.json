@@ -284,7 +284,18 @@
       "wordpress_app_password_hint": "Niet je gewone WordPress-inlogwachtwoord -- genereer er een in je WordPress-gebruikersprofiel.",
       "wordpress_save_button": "Opslaan",
       "wordpress_test_button": "Verbinding testen",
-      "wordpress_test_success": "Verbinding geslaagd"
+      "wordpress_test_success": "Verbinding geslaagd",
+      "nextcloud_title": "Nextcloud (perceeldocumenten)",
+      "nextcloud_desc": "Hiermee kan het bestuur/de beheerder voor elk perceel bestanden doorzoeken, uploaden en downloaden vanuit een map in de Nextcloud-instantie van de vereniging -- pachtcontracten, lidmaatschapsaanvragen, ticketcorrespondentie. Maak een app-wachtwoord aan bij de beveiligingsinstellingen van uw Nextcloud-gebruiker (Instellingen -> Beveiliging -> Apparaten en sessies) -- gebruik hier niet uw gewone Nextcloud-inlogwachtwoord.",
+      "cloud_storage_module_disabled_notice": "De cloudopslag-connector is momenteel uitgeschakeld, dus perceeldocumenten worden niet getoond.",
+      "nextcloud_saved": "Nextcloud-instellingen opgeslagen",
+      "nextcloud_base_url_label": "Nextcloud-URL",
+      "nextcloud_username_label": "Nextcloud-gebruikersnaam",
+      "nextcloud_app_password_label": "App-wachtwoord",
+      "nextcloud_app_password_hint": "Niet uw gewone Nextcloud-inlogwachtwoord -- genereer er een bij de beveiligingsinstellingen van uw Nextcloud-gebruiker.",
+      "nextcloud_save_button": "Opslaan",
+      "nextcloud_test_button": "Verbinding testen",
+      "nextcloud_test_success": "Verbinding geslaagd"
     }
   },
   "members": {
@@ -484,6 +495,19 @@
       "delete_history_tooltip": "Item verwijderen",
       "delete_history_confirm": "Dit item echt permanent verwijderen? Dit kan niet ongedaan worden gemaakt.",
       "cannot_delete_active_assignment": "Een actieve toewijzing kan niet worden verwijderd -- beëindig eerst de huur.",
+      "cloud_documents_header": "Documenten (Nextcloud)",
+      "cloud_folder_saved": "Mappad opgeslagen",
+      "cloud_upload_ok": "Bestand geüpload",
+      "cloud_folder_path_label": "Mappad",
+      "cloud_folder_path_placeholder": "bijv. kgv_dokumente/parzellen/G016/2024-03_016_Mueller",
+      "cloud_folder_save_button": "Opslaan",
+      "cloud_no_folder_hint": "Voor de huidige pacht is nog geen map geconfigureerd. Geef het pad op naar de map die al met deze pachters is gedeeld in Nextcloud.",
+      "cloud_col_name": "Naam",
+      "cloud_col_modified": "Laatst gewijzigd",
+      "cloud_folder_empty": "Deze map is leeg.",
+      "cloud_upload_button": "Uploaden",
+      "cloud_not_configured": "Nextcloud is nog niet geconfigureerd. Stel dit in onder Admin -> Integraties.",
+      "cloud_no_active_folder": "Voor dit perceel is geen actieve map geconfigureerd.",
       "page_title": "Perceel {plot_number}"
     },
     "errors": {

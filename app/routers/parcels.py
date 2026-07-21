@@ -5,9 +5,10 @@ import csv
 import io
 from datetime import date, datetime, timezone
 from typing import Optional
+from urllib.parse import quote as urlquote
 
 from fastapi import APIRouter, Request, Form, Depends, UploadFile, File, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
@@ -19,6 +20,11 @@ from app.models import (
 from app.auth import require_user, require_admin
 from app.i18n import t_for
 from app.change_tracker import ChangeTracker
+from app.module_flags import require_modul
+from app.cloud_storage import get_nextcloud_provider, CloudStorageError
+from app.parcel_cloud_folders import (
+    get_active_folder, set_active_folder, deactivate_if_vacant, InvalidCloudPathError,
+)
 
 router = APIRouter(prefix="/parcels", tags=["parcels"])
 from app.templating import templates
@@ -163,6 +169,25 @@ async def parzelle_detail(
     )
     aenderungen = aenderungen_result.scalars().all()
 
+    module_flags = getattr(request.state, "module_flags", {})
+    cloud_storage_enabled = bool(module_flags.get("cloud_storage")) and user.role.value in ("admin", "board")
+    cloud_folder = None
+    cloud_files = None
+    cloud_error = None
+    if cloud_storage_enabled:
+        cloud_folder = await get_active_folder(db, parcel_id)
+        if cloud_folder:
+            provider = await get_nextcloud_provider(db)
+            if provider is None:
+                cloud_error = t_for(request, "parcels.cloud_storage.not_configured")
+            else:
+                try:
+                    cloud_files = await provider.list_files(cloud_folder.relative_path)
+                except CloudStorageError as e:
+                    cloud_error = str(e)
+                finally:
+                    await provider.aclose()
+
     return templates.TemplateResponse(
         "parcels/detail.html",
         {
@@ -173,6 +198,10 @@ async def parzelle_detail(
             "alle_mitglieder_json": alle_mitglieder_json,
             "aenderungen": aenderungen,
             "ParcelStatus": ParcelStatus,
+            "cloud_storage_enabled": cloud_storage_enabled,
+            "cloud_folder": cloud_folder,
+            "cloud_files": cloud_files,
+            "cloud_error": cloud_error,
         },
     )
 
@@ -362,6 +391,7 @@ async def mitglied_zuordnung_aktualisieren(
     zuordnung.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
 
     await db.commit()
+    await deactivate_if_vacant(db, parcel_id)
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
@@ -388,6 +418,7 @@ async def mitglied_entfernen(
     if zuordnung and zuordnung.assigned_until is None:
         zuordnung.assigned_until = date.today()
         await db.commit()
+        await deactivate_if_vacant(db, parcel_id)
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
 
@@ -427,6 +458,88 @@ async def fruehere_zuordnung_loeschen(
     await db.delete(zuordnung)
     await db.commit()
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# Cloud storage connector (Nextcloud): board/admin browse, upload, and
+# download for a parcel's configured folder. See app/cloud_storage.py
+# and app/parcel_cloud_folders.py. Board/admin only -- member access to
+# the actual files is granted separately, directly in Nextcloud.
+# ---------------------------------------------------------------------------
+
+@router.post("/{parcel_id}/cloud-folder", dependencies=[Depends(require_modul("cloud_storage"))])
+async def parzelle_cloud_folder_setzen(
+    parcel_id: str,
+    request: Request,
+    relative_path: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_admin(request, db)
+    try:
+        await set_active_folder(db, parcel_id, relative_path, set_by_user_id=user.id)
+    except InvalidCloudPathError as e:
+        message = urlquote(str(e))
+        return RedirectResponse(f"/parcels/{parcel_id}?cloud_error={message}", status_code=303)
+    return RedirectResponse(f"/parcels/{parcel_id}?cloud_folder_saved=1", status_code=303)
+
+
+@router.post("/{parcel_id}/cloud-folder/upload", dependencies=[Depends(require_modul("cloud_storage"))])
+async def parzelle_cloud_datei_hochladen(
+    parcel_id: str,
+    request: Request,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+
+    folder = await get_active_folder(db, parcel_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail=t_for(request, "parcels.detail.cloud_no_active_folder"))
+
+    provider = await get_nextcloud_provider(db)
+    if provider is None:
+        raise HTTPException(status_code=400, detail=t_for(request, "parcels.detail.cloud_not_configured"))
+
+    try:
+        content = await file.read()
+        await provider.upload_file(folder.relative_path, file.filename, content)
+    except CloudStorageError as e:
+        message = urlquote(str(e))
+        return RedirectResponse(f"/parcels/{parcel_id}?cloud_error={message}", status_code=303)
+    finally:
+        await provider.aclose()
+
+    return RedirectResponse(f"/parcels/{parcel_id}?cloud_upload_ok=1", status_code=303)
+
+
+@router.get("/{parcel_id}/cloud-folder/download", dependencies=[Depends(require_modul("cloud_storage"))])
+async def parzelle_cloud_datei_herunterladen(
+    parcel_id: str,
+    request: Request,
+    filename: str,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+
+    folder = await get_active_folder(db, parcel_id)
+    if not folder:
+        raise HTTPException(status_code=404, detail=t_for(request, "parcels.detail.cloud_no_active_folder"))
+
+    provider = await get_nextcloud_provider(db)
+    if provider is None:
+        raise HTTPException(status_code=400, detail=t_for(request, "parcels.detail.cloud_not_configured"))
+
+    try:
+        content = await provider.download_file(folder.relative_path, filename)
+    except CloudStorageError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    finally:
+        await provider.aclose()
+
+    return Response(
+        content=content, media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{urlquote(filename)}"'},
+    )
 
 
 # ---------------------------------------------------------------------------

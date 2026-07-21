@@ -284,7 +284,18 @@
       "wordpress_app_password_hint": "Nejde o běžné přihlašovací heslo WordPress -- vygenerujte ho ve svém uživatelském profilu WordPress.",
       "wordpress_save_button": "Uložit",
       "wordpress_test_button": "Otestovat připojení",
-      "wordpress_test_success": "Připojení úspěšné"
+      "wordpress_test_success": "Připojení úspěšné",
+      "nextcloud_title": "Nextcloud (dokumenty zahrádek)",
+      "nextcloud_desc": "Umožňuje výboru/administrátorovi procházet, nahrávat a stahovat soubory ze složky v Nextcloud instanci spolku pro každou zahrádku -- nájemní smlouvy, členské žádosti, korespondenci z ticketů. Vytvořte heslo aplikace v nastavení zabezpečení svého účtu Nextcloud (Nastavení -> Zabezpečení -> Zařízení a relace) -- nepoužívejte zde své běžné přihlašovací heslo Nextcloud.",
+      "cloud_storage_module_disabled_notice": "Konektor cloudového úložiště je momentálně vypnutý, proto se dokumenty zahrádek nezobrazí.",
+      "nextcloud_saved": "Nastavení Nextcloud uloženo",
+      "nextcloud_base_url_label": "URL adresa Nextcloud",
+      "nextcloud_username_label": "Uživatelské jméno Nextcloud",
+      "nextcloud_app_password_label": "Heslo aplikace",
+      "nextcloud_app_password_hint": "Ne vaše běžné přihlašovací heslo Nextcloud -- vygenerujte jej v nastavení zabezpečení svého účtu Nextcloud.",
+      "nextcloud_save_button": "Uložit",
+      "nextcloud_test_button": "Otestovat připojení",
+      "nextcloud_test_success": "Připojení úspěšné"
     }
   },
   "members": {
@@ -484,6 +495,19 @@
       "delete_history_tooltip": "Smazat záznam",
       "delete_history_confirm": "Opravdu trvale smazat tento záznam? Tuto akci nelze vrátit zpět.",
       "cannot_delete_active_assignment": "Aktivní přiřazení nelze smazat -- nejprve ukončete nájem.",
+      "cloud_documents_header": "Dokumenty (Nextcloud)",
+      "cloud_folder_saved": "Cesta ke složce uložena",
+      "cloud_upload_ok": "Soubor nahrán",
+      "cloud_folder_path_label": "Cesta ke složce",
+      "cloud_folder_path_placeholder": "např. kgv_dokumente/parzellen/G016/2024-03_016_Mueller",
+      "cloud_folder_save_button": "Uložit",
+      "cloud_no_folder_hint": "Pro aktuální nájem ještě není nakonfigurována žádná složka. Zadejte cestu ke složce, která je již v Nextcloud sdílena s těmito nájemci.",
+      "cloud_col_name": "Název",
+      "cloud_col_modified": "Naposledy změněno",
+      "cloud_folder_empty": "Tato složka je prázdná.",
+      "cloud_upload_button": "Nahrát",
+      "cloud_not_configured": "Nextcloud ještě není nakonfigurován. Nastavte jej v Admin -> Integrace.",
+      "cloud_no_active_folder": "Pro tuto zahrádku není nakonfigurována žádná aktivní složka.",
       "page_title": "Zahrádka {plot_number}"
     },
     "errors": {

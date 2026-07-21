@@ -1,0 +1,441 @@
+"""
+Tests for the cloud storage connector (app/cloud_storage.py,
+app/parcel_cloud_folders.py, and the parcel Documents routes).
+
+NextcloudProvider is exercised against an httpx.MockTransport, the same
+approach used for WordPressPublisher in tests/test_announcements.py --
+no real Nextcloud instance is reachable from this test environment.
+"""
+import pytest
+from sqlalchemy import select
+
+from tests.conftest import login, auth_header
+from app.database import AsyncSessionLocal
+from app.models import ParcelCloudFolder
+
+PROPFIND_LISTING = """<?xml version="1.0"?>
+<d:multistatus xmlns:d="DAV:">
+  <d:response>
+    <d:href>/remote.php/dav/files/board/parcels/G016/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:displayname>G016</d:displayname>
+        <d:resourcetype><d:collection/></d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/remote.php/dav/files/board/parcels/G016/lease.pdf</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:displayname>lease.pdf</d:displayname>
+        <d:getcontentlength>12345</d:getcontentlength>
+        <d:getlastmodified>Mon, 01 Jun 2026 10:00:00 GMT</d:getlastmodified>
+        <d:resourcetype/>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+  <d:response>
+    <d:href>/remote.php/dav/files/board/parcels/G016/photos/</d:href>
+    <d:propstat>
+      <d:prop>
+        <d:displayname>photos</d:displayname>
+        <d:resourcetype><d:collection/></d:resourcetype>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>"""
+
+
+def _nextcloud_mock_transport(
+    propfind_status=207, propfind_body=PROPFIND_LISTING,
+    put_status=201, get_status=200, get_body=b"file bytes",
+):
+    import httpx as httpx_module
+
+    def handler(request: httpx_module.Request) -> httpx_module.Response:
+        if request.method == "PROPFIND":
+            return httpx_module.Response(propfind_status, text=propfind_body)
+        if request.method == "PUT":
+            return httpx_module.Response(put_status)
+        if request.method == "GET":
+            return httpx_module.Response(get_status, content=get_body)
+        return httpx_module.Response(404)
+
+    return httpx_module.MockTransport(handler)
+
+
+# ---------------------------------------------------------------------------
+# NextcloudProvider (WebDAV) unit tests
+# ---------------------------------------------------------------------------
+
+async def test_nextcloud_list_files_parses_propfind_response():
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider
+
+    mock_client = httpx_module.AsyncClient(transport=_nextcloud_mock_transport())
+    provider = NextcloudProvider(
+        base_url="https://cloud.example.org", username="board", app_password="secret",
+        client=mock_client,
+    )
+    entries = await provider.list_files("parcels/G016")
+    await provider.aclose()
+
+    names = {e.name for e in entries}
+    assert names == {"lease.pdf", "photos"}
+
+    lease = next(e for e in entries if e.name == "lease.pdf")
+    assert lease.is_directory is False
+    assert lease.size == 12345
+
+    photos = next(e for e in entries if e.name == "photos")
+    assert photos.is_directory is True
+
+    assert [e.name for e in entries] == ["photos", "lease.pdf"]
+
+
+async def test_nextcloud_list_files_404_raises_cloud_storage_error():
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider, CloudStorageError
+
+    mock_client = httpx_module.AsyncClient(transport=_nextcloud_mock_transport(propfind_status=404, propfind_body=""))
+    provider = NextcloudProvider(
+        base_url="https://cloud.example.org", username="board", app_password="secret",
+        client=mock_client,
+    )
+    with pytest.raises(CloudStorageError):
+        await provider.list_files("parcels/does-not-exist")
+    await provider.aclose()
+
+
+async def test_nextcloud_test_connection_401_raises_cloud_storage_error():
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider, CloudStorageError
+
+    def handler(request: httpx_module.Request) -> httpx_module.Response:
+        return httpx_module.Response(401)
+
+    mock_client = httpx_module.AsyncClient(transport=httpx_module.MockTransport(handler))
+    provider = NextcloudProvider(
+        base_url="https://cloud.example.org", username="board", app_password="wrong",
+        client=mock_client,
+    )
+    with pytest.raises(CloudStorageError):
+        await provider.test_connection()
+    await provider.aclose()
+
+
+async def test_nextcloud_upload_conflict_raises_cloud_storage_error():
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider, CloudStorageError
+
+    mock_client = httpx_module.AsyncClient(transport=_nextcloud_mock_transport(put_status=409))
+    provider = NextcloudProvider(
+        base_url="https://cloud.example.org", username="board", app_password="secret",
+        client=mock_client,
+    )
+    with pytest.raises(CloudStorageError):
+        await provider.upload_file("parcels/missing-folder", "file.pdf", b"data")
+    await provider.aclose()
+
+
+async def test_nextcloud_download_returns_bytes():
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider
+
+    mock_client = httpx_module.AsyncClient(transport=_nextcloud_mock_transport(get_body=b"hello world"))
+    provider = NextcloudProvider(
+        base_url="https://cloud.example.org", username="board", app_password="secret",
+        client=mock_client,
+    )
+    content = await provider.download_file("parcels/G016", "lease.pdf")
+    await provider.aclose()
+    assert content == b"hello world"
+
+
+# ---------------------------------------------------------------------------
+# Path sanitization
+# ---------------------------------------------------------------------------
+
+def test_sanitize_relative_path_rejects_parent_traversal():
+    from app.parcel_cloud_folders import sanitize_relative_path, InvalidCloudPathError
+
+    with pytest.raises(InvalidCloudPathError):
+        sanitize_relative_path("../../etc/passwd")
+
+
+def test_sanitize_relative_path_rejects_empty():
+    from app.parcel_cloud_folders import sanitize_relative_path, InvalidCloudPathError
+
+    with pytest.raises(InvalidCloudPathError):
+        sanitize_relative_path("   ")
+
+
+def test_sanitize_relative_path_normalizes_slashes():
+    from app.parcel_cloud_folders import sanitize_relative_path
+
+    assert sanitize_relative_path("/parcels/G016/") == "parcels/G016"
+    assert sanitize_relative_path("parcels//G016") == "parcels/G016"
+
+
+# ---------------------------------------------------------------------------
+# End-to-end: module flag, admin config, folder lifecycle, upload/download
+# ---------------------------------------------------------------------------
+
+async def web_login(client, email: str, password: str = "testpasswort123") -> None:
+    response = await client.post("/auth/login", data={"email": email, "password": password})
+    assert response.status_code in (302, 303)
+
+
+async def _enable_cloud_storage(client, headers):
+    response = await client.put(
+        "/api/v1/club-settings/modul_cloud_storage", json={"value": "true"}, headers=headers,
+    )
+    assert response.status_code == 200, response.text
+
+
+async def _create_member_and_parcel(client, headers, plot_number="G016"):
+    member = (await client.post(
+        "/api/v1/members", json={"first_name": "Ada", "last_name": "Gärtnerin"}, headers=headers,
+    )).json()
+    parcel = (await client.post(
+        "/api/v1/parcels", json={"plot_number": plot_number}, headers=headers,
+    )).json()
+    assignment = (await client.post(
+        f"/api/v1/parcels/{parcel['id']}/assignments",
+        json={"member_id": member["id"], "parcel_id": parcel["id"]},
+        headers=headers,
+    )).json()
+    return member, parcel, assignment
+
+
+async def test_cloud_folder_disabled_by_default(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    response = await client.get("/api/v1/club-settings/modul_cloud_storage", headers=headers)
+    if response.status_code == 200:
+        assert response.json()["value"] not in ("true", "1", "ja", "an")
+
+
+async def test_board_can_set_and_correct_folder_path(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_cloud_storage(client, headers)
+    _, parcel, _ = await _create_member_and_parcel(client, headers)
+
+    await web_login(client, "admin@example.com")
+
+    response = await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/2026-01_G016_Gaertnerin"},
+    )
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ParcelCloudFolder).where(ParcelCloudFolder.parcel_id == parcel["id"])
+        )
+        folders = result.scalars().all()
+    assert len(folders) == 1
+    assert folders[0].is_active is True
+    assert folders[0].relative_path == "kgv_dokumente/parzellen/G016/2026-01_G016_Gaertnerin"
+
+    response = await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/2026-01_G016_Gaertnerin_fixed"},
+    )
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ParcelCloudFolder).where(ParcelCloudFolder.parcel_id == parcel["id"])
+        )
+        folders = result.scalars().all()
+    assert len(folders) == 1
+    assert folders[0].relative_path.endswith("_fixed")
+
+
+async def test_readonly_user_cannot_set_folder_path(client, admin_user):
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_cloud_storage(client, headers)
+    _, parcel, _ = await _create_member_and_parcel(client, headers)
+
+    async with AsyncSessionLocal() as session:
+        session.add(User(
+            email="readonly@example.com", name="Nur Lesen",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        ))
+        await session.commit()
+
+    await web_login(client, "readonly@example.com")
+    response = await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/should-not-work"},
+    )
+    assert response.status_code == 403
+
+
+async def test_folder_deactivates_when_last_resident_tenancy_ends(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_cloud_storage(client, headers)
+    _, parcel, assignment = await _create_member_and_parcel(client, headers)
+
+    await web_login(client, "admin@example.com")
+    await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/2026-01_G016_Gaertnerin"},
+    )
+
+    response = await client.post(f"/parcels/{parcel['id']}/member/{assignment['id']}/remove")
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ParcelCloudFolder).where(ParcelCloudFolder.parcel_id == parcel["id"])
+        )
+        folder = result.scalar_one()
+    assert folder.is_active is False
+    assert folder.deactivated_at is not None
+
+
+async def test_folder_stays_active_when_a_coresident_remains(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_cloud_storage(client, headers)
+
+    member1, parcel, assignment1 = await _create_member_and_parcel(client, headers)
+    member2 = (await client.post(
+        "/api/v1/members", json={"first_name": "Bruno", "last_name": "Mitgärtner"}, headers=headers,
+    )).json()
+    await client.post(
+        f"/api/v1/parcels/{parcel['id']}/assignments",
+        json={"member_id": member2["id"], "parcel_id": parcel["id"]},
+        headers=headers,
+    )
+
+    await web_login(client, "admin@example.com")
+    await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/2026-01_G016_shared"},
+    )
+
+    response = await client.post(f"/parcels/{parcel['id']}/member/{assignment1['id']}/remove")
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ParcelCloudFolder).where(ParcelCloudFolder.parcel_id == parcel["id"])
+        )
+        folder = result.scalar_one()
+    assert folder.is_active is True
+
+
+async def test_upload_and_download_use_configured_folder(client, admin_user, monkeypatch):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_cloud_storage(client, headers)
+    _, parcel, _ = await _create_member_and_parcel(client, headers)
+
+    await web_login(client, "admin@example.com")
+    await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/2026-01_G016_Gaertnerin"},
+    )
+
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider as RealNextcloudProvider
+
+    mock_client = httpx_module.AsyncClient(transport=_nextcloud_mock_transport(get_body=b"lease contents"))
+
+    async def fake_get_nextcloud_provider(db, client=None):
+        return RealNextcloudProvider(
+            base_url="https://cloud.example.org", username="board", app_password="secret",
+            client=mock_client,
+        )
+
+    monkeypatch.setattr("app.routers.parcels.get_nextcloud_provider", fake_get_nextcloud_provider)
+
+    upload_response = await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder/upload",
+        files={"file": ("lease.pdf", b"new lease bytes", "application/pdf")},
+    )
+    assert upload_response.status_code in (302, 303)
+    assert "cloud_upload_ok" in upload_response.headers["location"]
+
+    download_response = await client.get(
+        f"/parcels/{parcel['id']}/cloud-folder/download", params={"filename": "lease.pdf"},
+    )
+    assert download_response.status_code == 200
+    assert download_response.content == b"lease contents"
+
+
+async def test_cloud_storage_module_disabled_returns_404(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    _, parcel, _ = await _create_member_and_parcel(client, headers)
+
+    await web_login(client, "admin@example.com")
+    response = await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/should-not-work"},
+    )
+    assert response.status_code == 404
+
+
+async def test_parcel_detail_page_renders_cloud_documents_card(client, admin_user, monkeypatch):
+    """Regression coverage for the Documents card in parcels/detail.html
+    -- none of the other tests here ever GET that page with an active
+    folder configured, so a template bug (bad variable name, unclosed
+    tag) would otherwise go uncaught."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_cloud_storage(client, headers)
+    _, parcel, _ = await _create_member_and_parcel(client, headers)
+
+    await web_login(client, "admin@example.com")
+    await client.post(
+        f"/parcels/{parcel['id']}/cloud-folder",
+        data={"relative_path": "kgv_dokumente/parzellen/G016/2026-01_G016_Gaertnerin"},
+    )
+
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider as RealNextcloudProvider
+
+    mock_client = httpx_module.AsyncClient(transport=_nextcloud_mock_transport())
+
+    async def fake_get_nextcloud_provider(db, client=None):
+        return RealNextcloudProvider(
+            base_url="https://cloud.example.org", username="board", app_password="secret",
+            client=mock_client,
+        )
+
+    monkeypatch.setattr("app.routers.parcels.get_nextcloud_provider", fake_get_nextcloud_provider)
+
+    response = await client.get(f"/parcels/{parcel['id']}")
+    assert response.status_code == 200
+    assert "kgv_dokumente/parzellen/G016/2026-01_G016_Gaertnerin" in response.text
+    assert "lease.pdf" in response.text
+    assert "photos" in response.text
+
+
+async def test_parcel_detail_page_renders_without_cloud_folder_configured(client, admin_user):
+    """Same page, cloud storage enabled but no folder set yet -- makes
+    sure the "no folder configured" branch of the template also renders
+    without error."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_cloud_storage(client, headers)
+    _, parcel, _ = await _create_member_and_parcel(client, headers)
+
+    await web_login(client, "admin@example.com")
+    response = await client.get(f"/parcels/{parcel['id']}")
+    assert response.status_code == 200

@@ -284,7 +284,18 @@
       "wordpress_app_password_hint": "Not your regular WordPress login password -- generate one under your WordPress user profile.",
       "wordpress_save_button": "Save",
       "wordpress_test_button": "Test connection",
-      "wordpress_test_success": "Connection successful"
+      "wordpress_test_success": "Connection successful",
+      "nextcloud_title": "Nextcloud (parcel documents)",
+      "nextcloud_desc": "Lets board members browse, upload to, and download from a folder in your club's Nextcloud instance for each parcel -- lease agreements, membership paperwork, ticket correspondence. Create an app password under your Nextcloud user's Security settings (Settings -> Security -> Devices & sessions) -- don't use your regular Nextcloud login password here.",
+      "cloud_storage_module_disabled_notice": "The cloud storage connector is currently disabled, so parcel documents won't be shown.",
+      "nextcloud_saved": "Nextcloud settings saved",
+      "nextcloud_base_url_label": "Nextcloud URL",
+      "nextcloud_username_label": "Nextcloud username",
+      "nextcloud_app_password_label": "App password",
+      "nextcloud_app_password_hint": "Not your regular Nextcloud login password -- generate one under your Nextcloud user's Security settings.",
+      "nextcloud_save_button": "Save",
+      "nextcloud_test_button": "Test connection",
+      "nextcloud_test_success": "Connection successful"
     }
   },
   "members": {
@@ -484,6 +495,19 @@
       "delete_history_tooltip": "Delete entry",
       "delete_history_confirm": "Really delete this entry permanently? This cannot be undone.",
       "cannot_delete_active_assignment": "An active assignment cannot be deleted -- please end the tenancy first.",
+      "cloud_documents_header": "Documents (Nextcloud)",
+      "cloud_folder_saved": "Folder path saved",
+      "cloud_upload_ok": "File uploaded",
+      "cloud_folder_path_label": "Folder path",
+      "cloud_folder_path_placeholder": "e.g. kgv_dokumente/parzellen/G016/2024-03_016_Mueller",
+      "cloud_folder_save_button": "Save",
+      "cloud_no_folder_hint": "No folder configured yet for the current tenancy. Set the path to the folder already shared with these tenants in Nextcloud.",
+      "cloud_col_name": "Name",
+      "cloud_col_modified": "Last modified",
+      "cloud_folder_empty": "This folder is empty.",
+      "cloud_upload_button": "Upload",
+      "cloud_not_configured": "Nextcloud is not configured yet. Set it up under Admin -> Integrations.",
+      "cloud_no_active_folder": "No active folder is configured for this parcel.",
       "page_title": "Parcel {plot_number}"
     },
     "errors": {

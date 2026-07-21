@@ -284,7 +284,18 @@
       "wordpress_app_password_hint": "Nejde o bežné prihlasovacie heslo WordPress -- vygenerujte ho vo svojom používateľskom profile WordPress.",
       "wordpress_save_button": "Uložiť",
       "wordpress_test_button": "Otestovať pripojenie",
-      "wordpress_test_success": "Pripojenie úspešné"
+      "wordpress_test_success": "Pripojenie úspešné",
+      "nextcloud_title": "Nextcloud (dokumenty záhradiek)",
+      "nextcloud_desc": "Umožňuje výboru/administrátorovi prehliadať, nahrávať a sťahovať súbory zo zložky v Nextcloud inštancii spolku pre každú záhradku -- nájomné zmluvy, členské žiadosti, korešpondenciu z ticketov. Vytvorte heslo aplikácie v nastaveniach zabezpečenia svojho konta Nextcloud (Nastavenia -> Zabezpečenie -> Zariadenia a relácie) -- nepoužívajte tu svoje bežné prihlasovacie heslo Nextcloud.",
+      "cloud_storage_module_disabled_notice": "Konektor cloudového úložiska je momentálne vypnutý, preto sa dokumenty záhradiek nezobrazia.",
+      "nextcloud_saved": "Nastavenia Nextcloud uložené",
+      "nextcloud_base_url_label": "URL adresa Nextcloud",
+      "nextcloud_username_label": "Používateľské meno Nextcloud",
+      "nextcloud_app_password_label": "Heslo aplikácie",
+      "nextcloud_app_password_hint": "Nie vaše bežné prihlasovacie heslo Nextcloud -- vygenerujte ho v nastaveniach zabezpečenia svojho konta Nextcloud.",
+      "nextcloud_save_button": "Uložiť",
+      "nextcloud_test_button": "Otestovať pripojenie",
+      "nextcloud_test_success": "Pripojenie úspešné"
     }
   },
   "members": {
@@ -484,6 +495,19 @@
       "delete_history_tooltip": "Zmazať záznam",
       "delete_history_confirm": "Naozaj natrvalo zmazať tento záznam? Túto akciu nie je možné vrátiť späť.",
       "cannot_delete_active_assignment": "Aktívne priradenie nie je možné zmazať -- najprv ukončite nájom.",
+      "cloud_documents_header": "Dokumenty (Nextcloud)",
+      "cloud_folder_saved": "Cesta k priečinku uložená",
+      "cloud_upload_ok": "Súbor nahraný",
+      "cloud_folder_path_label": "Cesta k priečinku",
+      "cloud_folder_path_placeholder": "napr. kgv_dokumente/parzellen/G016/2024-03_016_Mueller",
+      "cloud_folder_save_button": "Uložiť",
+      "cloud_no_folder_hint": "Pre aktuálny nájom ešte nie je nakonfigurovaný žiadny priečinok. Zadajte cestu k priečinku, ktorý je už v Nextcloud zdieľaný s týmito nájomcami.",
+      "cloud_col_name": "Názov",
+      "cloud_col_modified": "Naposledy zmenené",
+      "cloud_folder_empty": "Tento priečinok je prázdny.",
+      "cloud_upload_button": "Nahrať",
+      "cloud_not_configured": "Nextcloud ešte nie je nakonfigurovaný. Nastavte ho v Admin -> Integrácie.",
+      "cloud_no_active_folder": "Pre túto záhradku nie je nakonfigurovaný žiadny aktívny priečinok.",
       "page_title": "Záhradka {plot_number}"
     },
     "errors": {

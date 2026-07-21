@@ -269,6 +269,90 @@
     </div>
     {% endif %}
 
+    <!-- Cloud storage (Nextcloud) documents -- board/admin only -->
+    {% if cloud_storage_enabled and user.role.value in ['admin', 'board'] %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-cloud me-2"></i>{{ t('parcels.detail.cloud_documents_header') }}</div>
+            <div class="card-body">
+
+                {% if request.query_params.get('cloud_folder_saved') %}
+                <div class="alert alert-success">{{ t('parcels.detail.cloud_folder_saved') }}</div>
+                {% endif %}
+                {% if request.query_params.get('cloud_upload_ok') %}
+                <div class="alert alert-success">{{ t('parcels.detail.cloud_upload_ok') }}</div>
+                {% endif %}
+                {% if request.query_params.get('cloud_error') %}
+                <div class="alert alert-danger">{{ request.query_params.get('cloud_error') }}</div>
+                {% endif %}
+                {% if cloud_error %}
+                <div class="alert alert-danger">{{ cloud_error }}</div>
+                {% endif %}
+
+                <form method="post" action="/parcels/{{ parcel.id }}/cloud-folder" class="mb-3">
+                    <label class="form-label fw-semibold">{{ t('parcels.detail.cloud_folder_path_label') }}</label>
+                    <div class="input-group">
+                        <input type="text" name="relative_path" class="form-control"
+                               value="{{ cloud_folder.relative_path if cloud_folder else '' }}"
+                               placeholder="{{ t('parcels.detail.cloud_folder_path_placeholder') }}">
+                        <button type="submit" class="btn btn-outline-secondary">
+                            {{ t('parcels.detail.cloud_folder_save_button') }}
+                        </button>
+                    </div>
+                    {% if not cloud_folder %}
+                    <div class="form-text">{{ t('parcels.detail.cloud_no_folder_hint') }}</div>
+                    {% endif %}
+                </form>
+
+                {% if cloud_folder and cloud_files is not none %}
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>{{ t('parcels.detail.cloud_col_name') }}</th>
+                                <th>{{ t('parcels.detail.cloud_col_modified') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in cloud_files %}
+                            <tr>
+                                <td>
+                                    <i class="bi {{ 'bi-folder-fill' if entry.is_directory else 'bi-file-earmark' }} me-2"></i>
+                                    {{ entry.name }}
+                                </td>
+                                <td class="text-muted">{{ entry.last_modified or '–' }}</td>
+                                <td class="text-end">
+                                    {% if not entry.is_directory %}
+                                    <a href="/parcels/{{ parcel.id }}/cloud-folder/download?filename={{ entry.name | urlencode }}"
+                                       class="btn btn-sm btn-outline-secondary border-0">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-muted">{{ t('parcels.detail.cloud_folder_empty') }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <form method="post" action="/parcels/{{ parcel.id }}/cloud-folder/upload" enctype="multipart/form-data">
+                    <div class="input-group">
+                        <input type="file" name="file" class="form-control" required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload me-1"></i>{{ t('parcels.detail.cloud_upload_button') }}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Änderungshistorie der Parzellendaten -->
     {% if aenderungen %}
     <div class="col-12">

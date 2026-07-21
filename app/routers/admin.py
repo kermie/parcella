@@ -16,6 +16,7 @@ from app.auth import require_admin, create_invitation_token, hash_password
 from app.email_service import sende_email
 from app.crypto_utils import verschluesseln
 from app.blog_publisher import load_wordpress_configuration, WordPressPublisher, BlogPublishError
+from app.cloud_storage import load_nextcloud_configuration, NextcloudProvider, CloudStorageError
 from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
 from app.branding import save_logo_upload, remove_logo_file
@@ -374,6 +375,17 @@ async def integrations_seite(request: Request, db: AsyncSession = Depends(get_db
     )
     wordpress_stored = {e.key: e.value for e in wordpress_result.scalars().all()}
 
+    nextcloud_result = await db.execute(
+        select(ClubSetting).where(ClubSetting.key.in_(["nextcloud_base_url", "nextcloud_username", "nextcloud_app_password"]))
+    )
+    nextcloud_stored = {e.key: e.value for e in nextcloud_result.scalars().all()}
+
+    cloud_storage_entry_result = await db.execute(select(ClubSetting).where(ClubSetting.key == "modul_cloud_storage"))
+    cloud_storage_entry = cloud_storage_entry_result.scalar_one_or_none()
+    cloud_storage_aktiv = (
+        cloud_storage_entry.value.strip().lower() in ("true", "1", "ja", "an")
+    ) if cloud_storage_entry else False
+
     return templates.TemplateResponse("admin/integrations.html", {
         "request": request, "user": user,
         "api_token": token,
@@ -385,6 +397,13 @@ async def integrations_seite(request: Request, db: AsyncSession = Depends(get_db
         "wordpress_saved": request.query_params.get("wordpress_saved"),
         "wordpress_test_result": request.query_params.get("wordpress_test"),
         "wordpress_test_message": request.query_params.get("wordpress_test_message"),
+        "nextcloud_base_url": nextcloud_stored.get("nextcloud_base_url", ""),
+        "nextcloud_username": nextcloud_stored.get("nextcloud_username", ""),
+        "nextcloud_app_password_set": bool(nextcloud_stored.get("nextcloud_app_password")),
+        "nextcloud_saved": request.query_params.get("nextcloud_saved"),
+        "nextcloud_test_result": request.query_params.get("nextcloud_test"),
+        "nextcloud_test_message": request.query_params.get("nextcloud_test_message"),
+        "cloud_storage_aktiv": cloud_storage_aktiv,
     })
 
 
@@ -464,4 +483,67 @@ async def integrations_wordpress_testen(request: Request, db: AsyncSession = Dep
 
     return RedirectResponse(
         f"/admin/integrations?wordpress_test={result}&wordpress_test_message={quote(message)}", status_code=303,
+    )
+
+
+@router.post("/integrations/nextcloud")
+async def integrations_nextcloud_speichern(request: Request, db: AsyncSession = Depends(get_db)):
+    """Saves the Nextcloud cloud-storage credentials. Same "blank
+    Application Password field = leave the existing one unchanged"
+    convention as SMTP and WordPress -- base URL and username are
+    always overwritten with whatever's submitted (they're not secret,
+    so there's no "leave unchanged" case worth supporting for them)."""
+    await require_admin(request, db)
+    form = await request.form()
+
+    base_url = (form.get("nextcloud_base_url") or "").strip() or None
+    username = (form.get("nextcloud_username") or "").strip() or None
+    app_password = (form.get("nextcloud_app_password") or "").strip()
+
+    await _upsert_club_setting(db, "nextcloud_base_url", base_url, "Nextcloud server URL for cloud storage")
+    await _upsert_club_setting(db, "nextcloud_username", username, "Nextcloud username for cloud storage")
+    if app_password:
+        await _upsert_club_setting(
+            db, "nextcloud_app_password", verschluesseln(app_password), "Nextcloud Application Password (encrypted)",
+        )
+
+    await db.commit()
+    return RedirectResponse("/admin/integrations?nextcloud_saved=1", status_code=303)
+
+
+@router.post("/integrations/nextcloud/test")
+async def integrations_nextcloud_testen(request: Request, db: AsyncSession = Depends(get_db)):
+    """Tests Nextcloud connectivity using whatever is currently in the
+    form -- freshly typed values if provided, falling back to the
+    already-saved configuration for any field left blank (same
+    convention as saving). Doesn't persist anything; this is purely a
+    connectivity check, usable before committing to save."""
+    await require_admin(request, db)
+    form = await request.form()
+
+    saved_config = await load_nextcloud_configuration(db)
+
+    base_url = (form.get("nextcloud_base_url") or "").strip() or (saved_config["base_url"] if saved_config else None)
+    username = (form.get("nextcloud_username") or "").strip() or (saved_config["username"] if saved_config else None)
+    app_password = (form.get("nextcloud_app_password") or "").strip() or (saved_config["app_password"] if saved_config else None)
+
+    from urllib.parse import quote
+
+    if not base_url or not username or not app_password:
+        message = quote("Please fill in all three fields first.")
+        return RedirectResponse(f"/admin/integrations?nextcloud_test=failed&nextcloud_test_message={message}", status_code=303)
+
+    provider = NextcloudProvider(base_url=base_url, username=username, app_password=app_password)
+    try:
+        await provider.test_connection()
+        result = "success"
+        message = ""
+    except CloudStorageError as e:
+        result = "failed"
+        message = str(e)
+    finally:
+        await provider.aclose()
+
+    return RedirectResponse(
+        f"/admin/integrations?nextcloud_test={result}&nextcloud_test_message={quote(message)}", status_code=303,
     )

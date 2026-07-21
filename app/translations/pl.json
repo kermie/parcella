@@ -284,7 +284,18 @@
       "wordpress_app_password_hint": "To nie jest zwykłe hasło logowania WordPress -- wygeneruj je w profilu użytkownika WordPress.",
       "wordpress_save_button": "Zapisz",
       "wordpress_test_button": "Testuj połączenie",
-      "wordpress_test_success": "Połączenie udane"
+      "wordpress_test_success": "Połączenie udane",
+      "nextcloud_title": "Nextcloud (dokumenty działek)",
+      "nextcloud_desc": "Umożliwia zarządowi/administratorowi przeglądanie, przesyłanie i pobieranie plików z folderu w instancji Nextcloud stowarzyszenia dla każdej działki -- umowy dzierżawy, wnioski członkowskie, korespondencję ze zgłoszeń. Utwórz hasło aplikacji w ustawieniach bezpieczeństwa swojego konta Nextcloud (Ustawienia -> Bezpieczeństwo -> Urządzenia i sesje) -- nie używaj tutaj swojego zwykłego hasła logowania do Nextcloud.",
+      "cloud_storage_module_disabled_notice": "Konektor pamięci w chmurze jest obecnie wyłączony, dlatego dokumenty działek nie będą wyświetlane.",
+      "nextcloud_saved": "Ustawienia Nextcloud zapisane",
+      "nextcloud_base_url_label": "Adres URL Nextcloud",
+      "nextcloud_username_label": "Nazwa użytkownika Nextcloud",
+      "nextcloud_app_password_label": "Hasło aplikacji",
+      "nextcloud_app_password_hint": "Nie Twoje zwykłe hasło logowania do Nextcloud -- wygeneruj je w ustawieniach bezpieczeństwa swojego konta Nextcloud.",
+      "nextcloud_save_button": "Zapisz",
+      "nextcloud_test_button": "Testuj połączenie",
+      "nextcloud_test_success": "Połączenie udane"
     }
   },
   "members": {
@@ -484,6 +495,19 @@
       "delete_history_tooltip": "Usuń wpis",
       "delete_history_confirm": "Czy na pewno trwale usunąć ten wpis? Tej czynności nie można cofnąć.",
       "cannot_delete_active_assignment": "Nie można usunąć aktywnego przypisania -- najpierw zakończ dzierżawę.",
+      "cloud_documents_header": "Dokumenty (Nextcloud)",
+      "cloud_folder_saved": "Ścieżka folderu zapisana",
+      "cloud_upload_ok": "Plik przesłany",
+      "cloud_folder_path_label": "Ścieżka folderu",
+      "cloud_folder_path_placeholder": "np. kgv_dokumente/parzellen/G016/2024-03_016_Mueller",
+      "cloud_folder_save_button": "Zapisz",
+      "cloud_no_folder_hint": "Dla obecnej dzierżawy nie skonfigurowano jeszcze folderu. Podaj ścieżkę do folderu już udostępnionego tym dzierżawcom w Nextcloud.",
+      "cloud_col_name": "Nazwa",
+      "cloud_col_modified": "Ostatnia modyfikacja",
+      "cloud_folder_empty": "Ten folder jest pusty.",
+      "cloud_upload_button": "Prześlij",
+      "cloud_not_configured": "Nextcloud nie jest jeszcze skonfigurowany. Skonfiguruj go w Admin -> Integracje.",
+      "cloud_no_active_folder": "Dla tej działki nie skonfigurowano aktywnego folderu.",
       "page_title": "Działka {plot_number}"
     },
     "errors": {
