@@ -36,7 +36,8 @@
     "calendar_council_absence": "Vorstandsabwesenheit",
     "integrations": "Integrationen",
     "announcements": "Mitteilungen",
-    "inventory": "Inventar"
+    "inventory": "Inventar",
+    "tasks": "Aufgabenboard"
   },
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
@@ -248,7 +249,9 @@
         "inventory_name": "Inventar",
         "inventory_desc": "Erfasst alles, was der Verein besitzt (sowie persönliche Gegenstände, die Mitglieder auf dem Vereinsgelände lagern), gruppiert in eigene Kategorien, mit optionalem Verleihsystem für ausleihbare Gegenstände.",
         "cloud_storage_name": "Cloud-Speicher",
-        "cloud_storage_desc": "Ermöglicht Vorstand/Admin, für jede Parzelle einen Nextcloud-Ordner zu durchsuchen, hochzuladen und herunterzuladen -- Pachtverträge, Mitgliedsanträge, Ticket-Korrespondenz. Die Verbindung zuerst unter Admin -> Integrationen einrichten."
+        "cloud_storage_desc": "Ermöglicht Vorstand/Admin, für jede Parzelle einen Nextcloud-Ordner zu durchsuchen, hochzuladen und herunterzuladen -- Pachtverträge, Mitgliedsanträge, Ticket-Korrespondenz. Die Verbindung zuerst unter Admin -> Integrationen einrichten.",
+        "tasks_name": "Aufgabenboard",
+        "tasks_desc": "Ein allgemeines Kanban-Board (Zu erledigen / In Bearbeitung / Erledigt) für Vereinsangelegenheiten, die nicht an einen Arbeitseinsatz gebunden sind -- z.B. \"Versicherung erneuern\", \"Elektriker anrufen\". Nur für Vorstand/Admin."
       },
       "region_header": "Region",
       "region_help": "Bestimmt Zahlen- und Adressformat (z.B. Tausendertrennzeichen, Reihenfolge von PLZ und Ort). Unabhängig von der Oberflächensprache.",
@@ -1438,6 +1441,38 @@
       "col_since": "Seit",
       "col_fee": "Gebühr",
       "empty": "Aktuell nichts ausgeliehen."
+    }
+  },
+  "tasks": {
+    "errors": {
+      "task_not_found": "Aufgabe nicht gefunden.",
+      "invalid_move": "Ungültige Verschiebeanfrage."
+    },
+    "board": {
+      "title": "Aufgabenboard",
+      "new_task_button": "Neue Aufgabe",
+      "column_todo": "Zu erledigen",
+      "column_in_progress": "In Bearbeitung",
+      "column_done": "Erledigt",
+      "column_empty": "Keine Aufgaben"
+    },
+    "form": {
+      "title_new": "Neue Aufgabe",
+      "title_edit": "Aufgabe bearbeiten",
+      "heading_new": "Neue Aufgabe",
+      "heading_edit": "Aufgabe bearbeiten",
+      "cancel": "Abbrechen",
+      "data_header": "Aufgabe",
+      "label_title": "Titel",
+      "label_description": "Beschreibung",
+      "label_due_date": "Fällig am",
+      "label_assigned_to": "Zugewiesen an",
+      "unassigned_option": "Nicht zugewiesen",
+      "button_save_changes": "Änderungen speichern",
+      "button_create": "Erstellen",
+      "danger_zone_header": "Gefahrenzone",
+      "delete_confirm": "Diese Aufgabe löschen? Das kann nicht rückgängig gemacht werden.",
+      "button_delete": "Aufgabe löschen"
     }
   }
 }

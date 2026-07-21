@@ -36,7 +36,8 @@
     "calendar_council_absence": "Neprítomnosť výboru",
     "integrations": "Integrácie",
     "announcements": "Oznamy",
-    "inventory": "Inventár"
+    "inventory": "Inventár",
+    "tasks": "Nástenka úloh"
   },
   "errors": {
     "ticket_not_found": "Ticket nebol nájdený",
@@ -248,7 +249,9 @@
         "inventory_name": "Inventár",
         "inventory_desc": "Eviduje všetko, čo klub vlastní (aj osobné veci, ktoré si členovia ukladajú na pozemku klubu), rozdelené do vlastných kategórií, s voliteľným systémom požičiavania.",
         "cloud_storage_name": "Cloudové úložisko",
-        "cloud_storage_desc": "Umožňuje výboru/administrátorovi prehliadať, nahrávať a sťahovať súbory zo zložky Nextcloud pre každú záhradku -- nájomné zmluvy, členské žiadosti, korešpondenciu z ticketov. Najprv nastavte pripojenie v Admin -> Integrácie."
+        "cloud_storage_desc": "Umožňuje výboru/administrátorovi prehliadať, nahrávať a sťahovať súbory zo zložky Nextcloud pre každú záhradku -- nájomné zmluvy, členské žiadosti, korešpondenciu z ticketov. Najprv nastavte pripojenie v Admin -> Integrácie.",
+        "tasks_name": "Nástenka úloh",
+        "tasks_desc": "Všeobecná kanban nástenka (Na vybavenie / Prebieha / Hotovo) pre záležitosti spolku, ktoré nie sú viazané na pracovnú zmenu -- napr. \"obnoviť poistku\", \"zavolať elektrikára\". Len pre výbor/administrátora."
       },
       "region_header": "Región",
       "region_help": "Určuje formát čísel a adresy (napr. oddeľovač tisícov, poradie PSČ a mesta). Nezávisle od jazyka rozhrania.",
@@ -1438,6 +1441,38 @@
       "col_since": "Od",
       "col_fee": "Poplatok",
       "empty": "Momentálne nič nie je požičané."
+    }
+  },
+  "tasks": {
+    "errors": {
+      "task_not_found": "Úloha nenájdená.",
+      "invalid_move": "Neplatná požiadavka na presun."
+    },
+    "board": {
+      "title": "Nástenka úloh",
+      "new_task_button": "Nová úloha",
+      "column_todo": "Na vybavenie",
+      "column_in_progress": "Prebieha",
+      "column_done": "Hotovo",
+      "column_empty": "Žiadne úlohy"
+    },
+    "form": {
+      "title_new": "Nová úloha",
+      "title_edit": "Upraviť úlohu",
+      "heading_new": "Nová úloha",
+      "heading_edit": "Upraviť úlohu",
+      "cancel": "Zrušiť",
+      "data_header": "Úloha",
+      "label_title": "Názov",
+      "label_description": "Popis",
+      "label_due_date": "Termín",
+      "label_assigned_to": "Priradené komu",
+      "unassigned_option": "Nepridelené",
+      "button_save_changes": "Uložiť zmeny",
+      "button_create": "Vytvoriť",
+      "danger_zone_header": "Nebezpečná zóna",
+      "delete_confirm": "Odstrániť túto úlohu? Túto akciu nemožno vrátiť späť.",
+      "button_delete": "Odstrániť úlohu"
     }
   }
 }

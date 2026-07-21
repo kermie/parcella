@@ -36,7 +36,8 @@
     "calendar_council_absence": "Absence du conseil",
     "integrations": "Intégrations",
     "announcements": "Annonces",
-    "inventory": "Inventaire"
+    "inventory": "Inventaire",
+    "tasks": "Tableau des tâches"
   },
   "errors": {
     "ticket_not_found": "Ticket non trouvé",
@@ -248,7 +249,9 @@
         "inventory_name": "Inventaire",
         "inventory_desc": "Suit tout ce que le club possède (ainsi que les objets personnels que les membres entreposent sur le terrain du club), regroupés selon vos propres catégories, avec un système de prêt facultatif.",
         "cloud_storage_name": "Stockage cloud",
-        "cloud_storage_desc": "Permet au conseil/à l'administrateur de parcourir, téléverser et télécharger des fichiers depuis un dossier Nextcloud pour chaque parcelle -- baux, demandes d'adhésion, correspondance des tickets. Configurez d'abord la connexion sous Admin -> Intégrations."
+        "cloud_storage_desc": "Permet au conseil/à l'administrateur de parcourir, téléverser et télécharger des fichiers depuis un dossier Nextcloud pour chaque parcelle -- baux, demandes d'adhésion, correspondance des tickets. Configurez d'abord la connexion sous Admin -> Intégrations.",
+        "tasks_name": "Tableau des tâches",
+        "tasks_desc": "Un tableau kanban général (À faire / En cours / Terminé) pour les affaires du club non liées à une session de travail -- p.ex. \"renouveler l'assurance\", \"appeler l'électricien\". Réservé au conseil/administrateur."
       },
       "region_header": "Région",
       "region_help": "Détermine le format des nombres et de l'adresse (par ex. séparateur de milliers, ordre du code postal et de la ville). Indépendant de la langue de l'interface.",
@@ -1438,6 +1441,38 @@
       "col_since": "Depuis",
       "col_fee": "Frais",
       "empty": "Rien n'est actuellement emprunté."
+    }
+  },
+  "tasks": {
+    "errors": {
+      "task_not_found": "Tâche introuvable.",
+      "invalid_move": "Demande de déplacement invalide."
+    },
+    "board": {
+      "title": "Tableau des tâches",
+      "new_task_button": "Nouvelle tâche",
+      "column_todo": "À faire",
+      "column_in_progress": "En cours",
+      "column_done": "Terminé",
+      "column_empty": "Aucune tâche"
+    },
+    "form": {
+      "title_new": "Nouvelle tâche",
+      "title_edit": "Modifier la tâche",
+      "heading_new": "Nouvelle tâche",
+      "heading_edit": "Modifier la tâche",
+      "cancel": "Annuler",
+      "data_header": "Tâche",
+      "label_title": "Titre",
+      "label_description": "Description",
+      "label_due_date": "Échéance",
+      "label_assigned_to": "Assignée à",
+      "unassigned_option": "Non assignée",
+      "button_save_changes": "Enregistrer les modifications",
+      "button_create": "Créer",
+      "danger_zone_header": "Zone de danger",
+      "delete_confirm": "Supprimer cette tâche ? Cette action est irréversible.",
+      "button_delete": "Supprimer la tâche"
     }
   }
 }

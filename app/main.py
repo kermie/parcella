@@ -32,11 +32,11 @@ from app.branding import load_branding
 load_translations()
 from app.templating import templates
 from app.ticket_mailer import process_incoming_mails
-from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, purchase_requests, calendar as calendar_router, announcements as announcements_router, inventory as inventory_router
+from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, purchase_requests, calendar as calendar_router, announcements as announcements_router, inventory as inventory_router, tasks as tasks_router
 from app.routers.metering import create_metering_router
 from app.models import MeteringMedium
 from app.routers import api_auth, api_members, api_parcels, api_club_settings, api_stats
-from app.routers import api_work_hours, api_insurance, api_tickets, api_purchase_requests, api_inventory
+from app.routers import api_work_hours, api_insurance, api_tickets, api_purchase_requests, api_inventory, api_tasks
 from app.routers import api_public
 from app.routers.api_metering import create_metering_api_router
 
@@ -177,6 +177,7 @@ app.include_router(purchase_requests.router)
 app.include_router(calendar_router.router)
 app.include_router(announcements_router.router)
 app.include_router(inventory_router.router)
+app.include_router(tasks_router.router)
 
 # Metering: ONE codebase (app/routers/metering.py), instantiated twice
 # for water and electricity -- see create_metering_router().
@@ -200,6 +201,7 @@ app.include_router(api_stats.router)
 app.include_router(api_work_hours.router)
 app.include_router(api_insurance.router)
 app.include_router(api_inventory.router)
+app.include_router(api_tasks.router)
 app.include_router(api_tickets.router)
 app.include_router(api_purchase_requests.router)
 app.include_router(api_public.router)

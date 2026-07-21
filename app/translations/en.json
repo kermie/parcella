@@ -36,7 +36,8 @@
     "calendar_council_absence": "Council Absence",
     "integrations": "Integrations",
     "announcements": "Announcements",
-    "inventory": "Inventory"
+    "inventory": "Inventory",
+    "tasks": "Task Board"
   },
   "errors": {
     "ticket_not_found": "Ticket not found",
@@ -248,7 +249,9 @@
         "inventory_name": "Inventory",
         "inventory_desc": "Track everything the club owns (and personal items members store on club property), grouped into your own categories, with an optional lending system for borrowable items.",
         "cloud_storage_name": "Cloud storage",
-        "cloud_storage_desc": "Let board members browse, upload to, and download from a Nextcloud folder per parcel -- lease agreements, membership paperwork, ticket correspondence. Configure the connection under Admin -> Integrations first."
+        "cloud_storage_desc": "Let board members browse, upload to, and download from a Nextcloud folder per parcel -- lease agreements, membership paperwork, ticket correspondence. Configure the connection under Admin -> Integrations first.",
+        "tasks_name": "Task board",
+        "tasks_desc": "A general-purpose kanban board (To Do / In Progress / Done) for club business that isn't tied to a work session -- e.g. \"renew the insurance policy\", \"call the electrician\". Admin/board only."
       },
       "region_header": "Region",
       "region_help": "Determines number and address format (e.g. thousands separator, order of postal code and city). Independent of the interface language.",
@@ -1438,6 +1441,38 @@
       "col_since": "Since",
       "col_fee": "Fee",
       "empty": "Nothing currently on loan."
+    }
+  },
+  "tasks": {
+    "errors": {
+      "task_not_found": "Task not found.",
+      "invalid_move": "Invalid move request."
+    },
+    "board": {
+      "title": "Task Board",
+      "new_task_button": "New task",
+      "column_todo": "To Do",
+      "column_in_progress": "In Progress",
+      "column_done": "Done",
+      "column_empty": "No tasks"
+    },
+    "form": {
+      "title_new": "New task",
+      "title_edit": "Edit task",
+      "heading_new": "New task",
+      "heading_edit": "Edit task",
+      "cancel": "Cancel",
+      "data_header": "Task",
+      "label_title": "Title",
+      "label_description": "Description",
+      "label_due_date": "Due date",
+      "label_assigned_to": "Assigned to",
+      "unassigned_option": "Unassigned",
+      "button_save_changes": "Save changes",
+      "button_create": "Create",
+      "danger_zone_header": "Danger zone",
+      "delete_confirm": "Delete this task? This cannot be undone.",
+      "button_delete": "Delete task"
     }
   }
 }

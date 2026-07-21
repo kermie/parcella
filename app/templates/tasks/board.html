@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}{{ t('tasks.board.title') }}{% endblock %}
+{% block page_title %}{{ t('tasks.board.title') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/tasks/new" class="btn btn-sm btn-primary">
+    <i class="bi bi-plus-lg me-1"></i>{{ t('tasks.board.new_task_button') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .kanban-scroll {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+    .kanban-column {
+        flex: 0 0 280px;
+        min-width: 280px;
+        background: var(--bs-tertiary-bg, #f8f9fa);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        min-height: 200px;
+    }
+    .kanban-column.drag-over {
+        background: #e7f5ee;
+        outline: 2px dashed var(--gv-gruen, #2d6a4f);
+        outline-offset: -2px;
+    }
+    .kanban-column-header {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        color: #6c757d;
+        margin-bottom: 0.6rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .kanban-card {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 0.4rem;
+        padding: 0.65rem 0.75rem;
+        margin-bottom: 0.6rem;
+        cursor: grab;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .kanban-card:active { cursor: grabbing; }
+    .kanban-card.dragging { opacity: 0.4; }
+    .kanban-card-title { font-weight: 600; font-size: 0.92rem; }
+    .kanban-card-meta { font-size: 0.75rem; color: #6c757d; margin-top: 0.35rem; }
+    .kanban-card-overdue { color: #b91c1c; font-weight: 600; }
+    .kanban-empty {
+        font-size: 0.8rem; color: #adb5bd; text-align: center; padding: 1rem 0;
+    }
+</style>
+
+<div class="kanban-scroll">
+    {% for status, tasks, label_key in [
+        ('TODO', todo_tasks, 'tasks.board.column_todo'),
+        ('IN_PROGRESS', in_progress_tasks, 'tasks.board.column_in_progress'),
+        ('DONE', done_tasks, 'tasks.board.column_done'),
+    ] %}
+    <div class="kanban-column" data-status="{{ status }}">
+        <div class="kanban-column-header">
+            <span>{{ t(label_key) }}</span>
+            <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ tasks | length }}</span>
+        </div>
+        <div class="kanban-cards" data-status="{{ status }}">
+            {% for task in tasks %}
+            <div class="kanban-card" draggable="true" data-task-id="{{ task.id }}">
+                <div class="kanban-card-title">
+                    <a href="/tasks/{{ task.id }}/edit" class="text-decoration-none text-body">{{ task.title }}</a>
+                </div>
+                {% if task.assigned_to or task.due_date %}
+                <div class="kanban-card-meta">
+                    {% if task.assigned_to %}<i class="bi bi-person-fill"></i> {{ task.assigned_to.name }}{% endif %}
+                    {% if task.assigned_to and task.due_date %} &middot; {% endif %}
+                    {% if task.due_date %}
+                    <span class="{% if task.due_date < today and status != 'DONE' %}kanban-card-overdue{% endif %}">
+                        <i class="bi bi-calendar-event"></i> {{ task.due_date.strftime('%d.%m.%Y') }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="kanban-empty">{{ t('tasks.board.column_empty') }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+(function () {
+    let draggedCard = null;
+
+    document.querySelectorAll('.kanban-card').forEach(card => {
+        card.addEventListener('dragstart', () => {
+            draggedCard = card;
+            card.classList.add('dragging');
+        });
+        card.addEventListener('dragend', () => {
+            card.classList.remove('dragging');
+            draggedCard = null;
+        });
+    });
+
+    function cardAfterPointer(container, y) {
+        const cards = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
+        return cards.reduce((closest, card) => {
+            const box = card.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: card };
+            }
+            return closest;
+        }, { offset: -Infinity, element: null }).element;
+    }
+
+    document.querySelectorAll('.kanban-column').forEach(column => {
+        const cardsContainer = column.querySelector('.kanban-cards');
+
+        column.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            if (!draggedCard) return;
+            column.classList.add('drag-over');
+            const after = cardAfterPointer(cardsContainer, event.clientY);
+            if (after == null) {
+                cardsContainer.appendChild(draggedCard);
+            } else {
+                cardsContainer.insertBefore(draggedCard, after);
+            }
+        });
+
+        column.addEventListener('dragleave', (event) => {
+            if (!column.contains(event.relatedTarget)) {
+                column.classList.remove('drag-over');
+            }
+        });
+
+        column.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            column.classList.remove('drag-over');
+            if (!draggedCard) return;
+
+            const emptyHint = cardsContainer.querySelector('.kanban-empty');
+            if (emptyHint) emptyHint.remove();
+
+            const newStatus = column.dataset.status;
+            const cardIds = [...cardsContainer.querySelectorAll('.kanban-card')].map(c => c.dataset.taskId);
+            const newPosition = cardIds.indexOf(draggedCard.dataset.taskId);
+
+            try {
+                const response = await fetch(`/tasks/${draggedCard.dataset.taskId}/move`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus, position: newPosition }),
+                });
+                if (!response.ok) throw new Error('move failed');
+            } catch (e) {
+                location.reload();
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

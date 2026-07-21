@@ -124,6 +124,16 @@ version publicly available. Details and contribution guidelines in
   system for borrowable items (checkout/return, a suggested per-loan
   fee, a board-wide "who has what out right now" view). Full REST API
   alongside the web UI. See `docs/module-inventory.md`.
+- ✅ Cloud storage module: lets board/admin browse, upload to, and
+  download from a per-parcel document folder in the club's own
+  Nextcloud instance (lease agreements, membership paperwork). Off by
+  default, admin/board only; who can see a folder's contents is managed
+  directly in Nextcloud, not by Parcella. See `docs/module-cloud-storage.md`.
+- ✅ Task board module: a general kanban board (To Do / In Progress /
+  Done) for club business that isn't tied to a work session, with
+  drag-and-drop reordering. Admin/board only, separate from the
+  work-hours module's session-scoped task backlog. Full REST API
+  alongside the web UI. See `docs/module-tasks.md`.
 
 ## Planned (next phases)
 

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{% if task %}{{ t('tasks.form.title_edit') }}{% else %}{{ t('tasks.form.title_new') }}{% endif %}{% endblock %}
+{% block page_title %}{% if task %}{{ t('tasks.form.heading_edit') }}{% else %}{{ t('tasks.form.heading_new') }}{% endif %}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/tasks/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('tasks.form.cancel') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" action="{% if task %}/tasks/{{ task.id }}/edit{% else %}/tasks/new{% endif %}">
+<div class="row g-3" style="max-width: 640px;">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-kanban me-2"></i>{{ t('tasks.form.data_header') }}</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_title') }} <span class="text-danger">*</span></label>
+                        <input type="text" name="title" class="form-control"
+                               value="{{ task.title if task else '' }}" required autofocus>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_description') }}</label>
+                        <textarea name="description" class="form-control" rows="4">{{ task.description if task else '' }}</textarea>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_due_date') }}</label>
+                        <input type="date" name="due_date" class="form-control"
+                               value="{{ task.due_date.isoformat() if task and task.due_date else '' }}">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_assigned_to') }}</label>
+                        <select name="assigned_to_id" class="form-select">
+                            <option value="">{{ t('tasks.form.unassigned_option') }}</option>
+                            {% for u in active_users %}
+                            <option value="{{ u.id }}" {% if task and task.assigned_to_id == u.id %}selected{% endif %}>{{ u.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="d-flex gap-2 justify-content-end">
+            <a href="/tasks/" class="btn btn-outline-secondary">{{ t('tasks.form.cancel') }}</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>
+                {% if task %}{{ t('tasks.form.button_save_changes') }}{% else %}{{ t('tasks.form.button_create') }}{% endif %}
+            </button>
+        </div>
+    </div>
+
+</div>
+</form>
+
+{% if task %}
+<div class="row g-3 mt-2" style="max-width: 640px;">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('tasks.form.danger_zone_header') }}</div>
+            <div class="card-body">
+                <form method="post" action="/tasks/{{ task.id }}/delete"
+                      onsubmit="return confirm('{{ t('tasks.form.delete_confirm') }}')">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>{{ t('tasks.form.button_delete') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

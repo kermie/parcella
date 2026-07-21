@@ -36,7 +36,8 @@
     "calendar_council_absence": "Nieobecność zarządu",
     "integrations": "Integracje",
     "announcements": "Ogłoszenia",
-    "inventory": "Inwentarz"
+    "inventory": "Inwentarz",
+    "tasks": "Tablica zadań"
   },
   "errors": {
     "ticket_not_found": "Nie znaleziono zgłoszenia",
@@ -248,7 +249,9 @@
         "inventory_name": "Inwentarz",
         "inventory_desc": "Śledzi wszystko, co posiada klub (oraz przedmioty osobiste przechowywane przez członków na terenie klubu), pogrupowane we własne kategorie, z opcjonalnym systemem wypożyczeń.",
         "cloud_storage_name": "Magazyn w chmurze",
-        "cloud_storage_desc": "Umożliwia zarządowi/administratorowi przeglądanie, przesyłanie i pobieranie plików z folderu Nextcloud dla każdej działki -- umowy dzierżawy, wnioski członkowskie, korespondencję ze zgłoszeń. Najpierw skonfiguruj połączenie w Admin -> Integracje."
+        "cloud_storage_desc": "Umożliwia zarządowi/administratorowi przeglądanie, przesyłanie i pobieranie plików z folderu Nextcloud dla każdej działki -- umowy dzierżawy, wnioski członkowskie, korespondencję ze zgłoszeń. Najpierw skonfiguruj połączenie w Admin -> Integracje.",
+        "tasks_name": "Tablica zadań",
+        "tasks_desc": "Ogólna tablica kanban (Do zrobienia / W trakcie / Zrobione) dla spraw stowarzyszenia niezwiązanych z sesją roboczą -- np. \"odnowić polisę ubezpieczeniową\", \"zadzwonić do elektryka\". Tylko dla zarządu/administratora."
       },
       "region_header": "Region",
       "region_help": "Określa format liczb i adresu (np. separator tysięcy, kolejność kodu pocztowego i miejscowości). Niezależnie od języka interfejsu.",
@@ -1438,6 +1441,38 @@
       "col_since": "Od",
       "col_fee": "Opłata",
       "empty": "Obecnie nic nie jest wypożyczone."
+    }
+  },
+  "tasks": {
+    "errors": {
+      "task_not_found": "Nie znaleziono zadania.",
+      "invalid_move": "Nieprawidłowe żądanie przeniesienia."
+    },
+    "board": {
+      "title": "Tablica zadań",
+      "new_task_button": "Nowe zadanie",
+      "column_todo": "Do zrobienia",
+      "column_in_progress": "W trakcie",
+      "column_done": "Zrobione",
+      "column_empty": "Brak zadań"
+    },
+    "form": {
+      "title_new": "Nowe zadanie",
+      "title_edit": "Edytuj zadanie",
+      "heading_new": "Nowe zadanie",
+      "heading_edit": "Edytuj zadanie",
+      "cancel": "Anuluj",
+      "data_header": "Zadanie",
+      "label_title": "Tytuł",
+      "label_description": "Opis",
+      "label_due_date": "Termin",
+      "label_assigned_to": "Przypisano do",
+      "unassigned_option": "Nieprzypisane",
+      "button_save_changes": "Zapisz zmiany",
+      "button_create": "Utwórz",
+      "danger_zone_header": "Strefa zagrożenia",
+      "delete_confirm": "Usunąć to zadanie? Tej operacji nie można cofnąć.",
+      "button_delete": "Usuń zadanie"
     }
   }
 }

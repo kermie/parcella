@@ -36,7 +36,8 @@
     "calendar_council_absence": "Nepřítomnost výboru",
     "integrations": "Integrace",
     "announcements": "Oznámení",
-    "inventory": "Inventář"
+    "inventory": "Inventář",
+    "tasks": "Nástěnka úkolů"
   },
   "errors": {
     "ticket_not_found": "Ticket nebyl nalezen",
@@ -248,7 +249,9 @@
         "inventory_name": "Inventář",
         "inventory_desc": "Eviduje vše, co klub vlastní (i osobní věci, které si členové ukládají na pozemku klubu), rozdělené do vlastních kategorií, s volitelným systémem půjčování.",
         "cloud_storage_name": "Cloudové úložiště",
-        "cloud_storage_desc": "Umožňuje výboru/administrátorovi procházet, nahrávat a stahovat soubory ze složky Nextcloud pro každou zahrádku -- nájemní smlouvy, členské žádosti, korespondenci z ticketů. Nejprve nastavte připojení v Admin -> Integrace."
+        "cloud_storage_desc": "Umožňuje výboru/administrátorovi procházet, nahrávat a stahovat soubory ze složky Nextcloud pro každou zahrádku -- nájemní smlouvy, členské žádosti, korespondenci z ticketů. Nejprve nastavte připojení v Admin -> Integrace.",
+        "tasks_name": "Nástěnka úkolů",
+        "tasks_desc": "Obecná kanban nástěnka (K vyřízení / Probíhá / Hotovo) pro záležitosti spolku, které nejsou vázány na pracovní směnu -- např. \"obnovit pojistku\", \"zavolat elektrikáře\". Pouze pro výbor/administrátora."
       },
       "region_header": "Region",
       "region_help": "Určuje formát čísel a adresy (např. oddělovač tisíců, pořadí PSČ a města). Nezávisle na jazyce rozhraní.",
@@ -1438,6 +1441,38 @@
       "col_since": "Od",
       "col_fee": "Poplatek",
       "empty": "Momentálně nic není zapůjčeno."
+    }
+  },
+  "tasks": {
+    "errors": {
+      "task_not_found": "Úkol nenalezen.",
+      "invalid_move": "Neplatný požadavek na přesun."
+    },
+    "board": {
+      "title": "Nástěnka úkolů",
+      "new_task_button": "Nový úkol",
+      "column_todo": "K vyřízení",
+      "column_in_progress": "Probíhá",
+      "column_done": "Hotovo",
+      "column_empty": "Žádné úkoly"
+    },
+    "form": {
+      "title_new": "Nový úkol",
+      "title_edit": "Upravit úkol",
+      "heading_new": "Nový úkol",
+      "heading_edit": "Upravit úkol",
+      "cancel": "Zrušit",
+      "data_header": "Úkol",
+      "label_title": "Název",
+      "label_description": "Popis",
+      "label_due_date": "Termín",
+      "label_assigned_to": "Přiřazeno komu",
+      "unassigned_option": "Nepřiřazeno",
+      "button_save_changes": "Uložit změny",
+      "button_create": "Vytvořit",
+      "danger_zone_header": "Nebezpečná zóna",
+      "delete_confirm": "Smazat tento úkol? Tuto akci nelze vrátit zpět.",
+      "button_delete": "Smazat úkol"
     }
   }
 }

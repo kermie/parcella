@@ -345,6 +345,12 @@
         </a>
         {% endif %}
 
+        {% if request.state.module_flags.tasks and user.role.value in ['admin', 'board'] %}
+        <a href="/tasks/" class="nav-top-link {% if '/tasks' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-kanban"></i> {{ t('nav.tasks') }}
+        </a>
+        {% endif %}
+
         {% if user.role.value in ['admin', 'board'] %}
         <div class="nav-group" data-group="administration">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"

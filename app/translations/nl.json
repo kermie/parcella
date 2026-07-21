@@ -36,7 +36,8 @@
     "calendar_council_absence": "Afwezigheid bestuur",
     "integrations": "Integraties",
     "announcements": "Mededelingen",
-    "inventory": "Inventaris"
+    "inventory": "Inventaris",
+    "tasks": "Takenbord"
   },
   "errors": {
     "ticket_not_found": "Ticket niet gevonden",
@@ -248,7 +249,9 @@
         "inventory_name": "Inventaris",
         "inventory_desc": "Houdt alles bij wat de vereniging bezit (en persoonlijke spullen die leden op het verenigingsterrein opslaan), gegroepeerd in eigen categorieën, met een optioneel uitleensysteem.",
         "cloud_storage_name": "Cloudopslag",
-        "cloud_storage_desc": "Hiermee kan het bestuur/de beheerder voor elk perceel bestanden doorzoeken, uploaden en downloaden vanuit een Nextcloud-map -- pachtcontracten, lidmaatschapsaanvragen, ticketcorrespondentie. Configureer eerst de verbinding onder Admin -> Integraties."
+        "cloud_storage_desc": "Hiermee kan het bestuur/de beheerder voor elk perceel bestanden doorzoeken, uploaden en downloaden vanuit een Nextcloud-map -- pachtcontracten, lidmaatschapsaanvragen, ticketcorrespondentie. Configureer eerst de verbinding onder Admin -> Integraties.",
+        "tasks_name": "Takenbord",
+        "tasks_desc": "Een algemeen kanbanbord (Te doen / Mee bezig / Klaar) voor verenigingszaken die niet aan een werkbeurt gekoppeld zijn -- bijv. \"verzekering verlengen\", \"elektricien bellen\". Alleen voor bestuur/beheerder."
       },
       "region_header": "Regio",
       "region_help": "Bepaalt het getal- en adresformaat (bijv. duizendtalscheidingsteken, volgorde van postcode en plaats). Onafhankelijk van de interfacetaal.",
@@ -1438,6 +1441,38 @@
       "col_since": "Sinds",
       "col_fee": "Vergoeding",
       "empty": "Momenteel niets uitgeleend."
+    }
+  },
+  "tasks": {
+    "errors": {
+      "task_not_found": "Taak niet gevonden.",
+      "invalid_move": "Ongeldig verplaatsingsverzoek."
+    },
+    "board": {
+      "title": "Takenbord",
+      "new_task_button": "Nieuwe taak",
+      "column_todo": "Te doen",
+      "column_in_progress": "Mee bezig",
+      "column_done": "Klaar",
+      "column_empty": "Geen taken"
+    },
+    "form": {
+      "title_new": "Nieuwe taak",
+      "title_edit": "Taak bewerken",
+      "heading_new": "Nieuwe taak",
+      "heading_edit": "Taak bewerken",
+      "cancel": "Annuleren",
+      "data_header": "Taak",
+      "label_title": "Titel",
+      "label_description": "Omschrijving",
+      "label_due_date": "Deadline",
+      "label_assigned_to": "Toegewezen aan",
+      "unassigned_option": "Niet toegewezen",
+      "button_save_changes": "Wijzigingen opslaan",
+      "button_create": "Aanmaken",
+      "danger_zone_header": "Gevarenzone",
+      "delete_confirm": "Deze taak verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "button_delete": "Taak verwijderen"
     }
   }
 }

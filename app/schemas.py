@@ -785,3 +785,47 @@ class ItemLoanOut(BaseModel):
 
 class ItemLoanReturn(BaseModel):
     returned_date: Optional[date] = Field(None, description="Defaults to today if not given")
+
+
+# ---------------------------------------------------------------------------
+# Task board (kanban) -- deliberately prefixed KanbanTask*, not Task*: the
+# work-hours module above already defines Task{Base,Create,Update,Out} for
+# WorkTask, and Python would silently let this section's classes shadow
+# those (same names, later definition wins) instead of raising an error.
+# ---------------------------------------------------------------------------
+
+class KanbanTaskBase(BaseModel):
+    title: str = Field(..., max_length=255)
+    description: Optional[str] = None
+    due_date: Optional[date] = None
+    assigned_to_id: Optional[str] = None
+
+
+class KanbanTaskCreate(KanbanTaskBase):
+    status: str = Field("TODO", description="TODO, IN_PROGRESS or DONE")
+
+
+class KanbanTaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, max_length=255)
+    description: Optional[str] = None
+    due_date: Optional[date] = None
+    assigned_to_id: Optional[str] = None
+
+
+class KanbanTaskMove(BaseModel):
+    status: str = Field(..., description="TODO, IN_PROGRESS or DONE")
+    position: int = Field(..., ge=0, description="Target index within the column (0-based)")
+
+
+class KanbanTaskOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    title: str
+    description: Optional[str] = None
+    status: str
+    position: int
+    due_date: Optional[date] = None
+    assigned_to_id: Optional[str] = None
+    created_by_id: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime

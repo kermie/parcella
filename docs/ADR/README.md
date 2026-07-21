@@ -37,3 +37,4 @@ in chronological order.
 31. [Announcements module: print channel](./0031-announcements-module-print-channel.md)
 32. [Inventory module](./0032-inventory-module.md)
 33. [Cloud storage module (Nextcloud)](./0033-cloud-storage-module-nextcloud.md)
+34. [Task board: a separate module from WorkTask, admin/board only](./0034-task-board-a-separate-module-from-worktask-admin-board-only.md)
