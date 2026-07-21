@@ -35,7 +35,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ClubSetting
-from app.crypto_utils import entschluesseln
+from app.crypto_utils import decrypt
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +196,7 @@ async def load_wordpress_configuration(db: AsyncSession) -> Optional[dict]:
 
     site_url = stored.get("wordpress_site_url")
     username = stored.get("wordpress_username")
-    app_password = entschluesseln(stored.get("wordpress_app_password"))
+    app_password = decrypt(stored.get("wordpress_app_password"))
 
     if not site_url or not username or not app_password:
         return None

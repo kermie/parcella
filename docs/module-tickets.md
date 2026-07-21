@@ -126,7 +126,7 @@ in, regardless of which one it was (see the ticket-status ADR entry for
 the full status set).
 
 **Spam checking is already called, even though it's still a no-op.**
-`pruefe_auf_spam()` from stage 1 is already called for every incoming
+`check_for_spam()` from stage 1 is already called for every incoming
 email, and the result is stored in `spam_suspected`/`spam_score` -- only
 the actual check logic is still empty. In stage 3, therefore, only this
 one function needs to be swapped out, with no changes to callers.

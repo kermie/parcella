@@ -20,7 +20,7 @@ from app.models import PurchaseRequest, PurchaseRequestStatus
 from app.models import Ticket, TicketStatus
 from app.birthdays import upcoming_birthdays
 from app.auth import hash_password, get_current_user
-from app.module_flags import lade_modul_flags
+from app.module_flags import load_module_flags
 from app.i18n import load_translations, load_current_language
 from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
@@ -112,11 +112,11 @@ async def modul_flags_middleware(request: Request, call_next):
     """
     Loads the module flags once per request (e.g. whether work hours is
     active) and stores them under request.state.module_flags. Templates
-    and router dependencies (require_modul) read from there without
+    and router dependencies (require_module) read from there without
     querying the DB again.
     """
     async with AsyncSessionLocal() as db:
-        request.state.module_flags = await lade_modul_flags(db)
+        request.state.module_flags = await load_module_flags(db)
     response = await call_next(request)
     return response
 

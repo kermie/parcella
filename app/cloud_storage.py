@@ -31,7 +31,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ClubSetting
-from app.crypto_utils import entschluesseln
+from app.crypto_utils import decrypt
 
 logger = logging.getLogger(__name__)
 
@@ -280,7 +280,7 @@ async def load_nextcloud_configuration(db: AsyncSession) -> Optional[dict]:
 
     base_url = stored.get("nextcloud_base_url")
     username = stored.get("nextcloud_username")
-    app_password = entschluesseln(stored.get("nextcloud_app_password"))
+    app_password = decrypt(stored.get("nextcloud_app_password"))
 
     if not base_url or not username or not app_password:
         return None

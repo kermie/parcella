@@ -18,12 +18,12 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.models import ClubSetting
-from app.crypto_utils import entschluesseln
+from app.crypto_utils import decrypt
 
 logger = logging.getLogger(__name__)
 
 
-async def lade_smtp_konfiguration(db: AsyncSession) -> dict:
+async def load_smtp_configuration(db: AsyncSession) -> dict:
     """
     Loads the SMTP configuration: database values take precedence,
     missing values are filled in from the .env file (app.config.settings).
@@ -35,32 +35,32 @@ async def lade_smtp_konfiguration(db: AsyncSession) -> dict:
             )
         )
     )
-    gespeichert = {e.key: e.value for e in result.scalars().all() if e.value}
+    stored = {e.key: e.value for e in result.scalars().all() if e.value}
 
     def _bool(value) -> bool:
         if isinstance(value, bool):
             return value
         return str(value).strip().lower() in ("true", "1", "ja", "an")
 
-    port_wert = gespeichert.get("smtp_port")
+    port_value = stored.get("smtp_port")
     try:
-        port = int(port_wert) if port_wert else settings.smtp_port
+        port = int(port_value) if port_value else settings.smtp_port
     except ValueError:
         port = settings.smtp_port
 
     return {
-        "host": gespeichert.get("smtp_host") or settings.smtp_host,
+        "host": stored.get("smtp_host") or settings.smtp_host,
         "port": port,
-        "user": gespeichert.get("smtp_user") or settings.smtp_user,
-        "password": entschluesseln(gespeichert.get("smtp_password")) or settings.smtp_password,
-        "from": gespeichert.get("smtp_from") or settings.smtp_from,
-        "tls": _bool(gespeichert.get("smtp_tls")) if "smtp_tls" in gespeichert else settings.smtp_tls,
+        "user": stored.get("smtp_user") or settings.smtp_user,
+        "password": decrypt(stored.get("smtp_password")) or settings.smtp_password,
+        "from": stored.get("smtp_from") or settings.smtp_from,
+        "tls": _bool(stored.get("smtp_tls")) if "smtp_tls" in stored else settings.smtp_tls,
     }
 
 
-async def sende_email(
-    empfaenger: str,
-    betreff: str,
+async def send_email(
+    recipient: str,
+    subject: str,
     html_body: str,
     text_body: Optional[str] = None,
     db: Optional[AsyncSession] = None,
@@ -73,9 +73,9 @@ async def sende_email(
     used (backwards compatibility).
     """
     if db is not None:
-        konfig = await lade_smtp_konfiguration(db)
+        config = await load_smtp_configuration(db)
     else:
-        konfig = {
+        config = {
             "host": settings.smtp_host,
             "port": settings.smtp_port,
             "user": settings.smtp_user,
@@ -84,15 +84,15 @@ async def sende_email(
             "tls": settings.smtp_tls,
         }
 
-    if not konfig["host"] or not konfig["user"]:
+    if not config["host"] or not config["user"]:
         logger.warning("SMTP not configured -- email will not be sent.")
-        logger.info(f"[DEV] To: {empfaenger} | Subject: {betreff}")
+        logger.info(f"[DEV] To: {recipient} | Subject: {subject}")
         return False
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = betreff
-    msg["From"] = konfig["from"]
-    msg["To"] = empfaenger
+    msg["Subject"] = subject
+    msg["From"] = config["from"]
+    msg["To"] = recipient
 
     if text_body:
         msg.attach(MIMEText(text_body, "plain", "utf-8"))
@@ -101,28 +101,28 @@ async def sende_email(
     try:
         await aiosmtplib.send(
             msg,
-            hostname=konfig["host"],
-            port=konfig["port"],
-            username=konfig["user"],
-            password=konfig["password"],
-            start_tls=konfig["tls"],
+            hostname=config["host"],
+            port=config["port"],
+            username=config["user"],
+            password=config["password"],
+            start_tls=config["tls"],
         )
-        logger.info(f"Email sent to {empfaenger}")
+        logger.info(f"Email sent to {recipient}")
         return True
     except Exception as e:
-        logger.error(f"Email error sending to {empfaenger}: {e}")
+        logger.error(f"Email error sending to {recipient}: {e}")
         return False
 
 
-async def sende_einladung(email: str, einladungslink: str, invited_by: str, db: Optional[AsyncSession] = None) -> bool:
-    betreff = f"Einladung zur {settings.app_name}"
+async def send_invitation(email: str, invitation_link: str, invited_by: str, db: Optional[AsyncSession] = None) -> bool:
+    subject = f"Einladung zur {settings.app_name}"
     html = f"""
     <html><body>
     <h2>Einladung</h2>
     <p>Sie wurden von <strong>{invited_by}</strong> zur <strong>{settings.app_name}</strong> eingeladen.</p>
     <p>Klicken Sie auf den folgenden Link, um Ihr Konto einzurichten:</p>
-    <p><a href="{einladungslink}">Einladung annehmen</a></p>
+    <p><a href="{invitation_link}">Einladung annehmen</a></p>
     <p>Dieser Link ist 7 Tage gültig.</p>
     </body></html>
     """
-    return await sende_email(email, betreff, html, db=db)
+    return await send_email(email, subject, html, db=db)

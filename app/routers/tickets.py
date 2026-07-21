@@ -20,18 +20,18 @@ from app.models import (
     Ticket, TicketMessage, TicketStatus, MessageDirection, User, Member,
 )
 from app.auth import require_user
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.change_tracker import ChangeTracker
 from app.ticket_utils import find_members_by_email
 from app.ticket_mailer import send_ticket_reply, process_incoming_mails
-from app.email_service import sende_email
+from app.email_service import send_email
 from app.i18n import t_for
 from app.config import settings
 
 router = APIRouter(
     prefix="/tickets",
     tags=["tickets"],
-    dependencies=[Depends(require_modul("tickets"))],
+    dependencies=[Depends(require_module("tickets"))],
 )
 from app.templating import templates
 
@@ -279,7 +279,7 @@ async def tickets_bulk_assign(
         <p>Bitte melden Sie sich im Gartenmanager an, um sie zu bearbeiten.</p>
         </body></html>
         """
-        await sende_email(assignee.email, subject, html, db=db)
+        await send_email(assignee.email, subject, html, db=db)
 
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
 
@@ -355,7 +355,7 @@ async def ticket_assign(
         <p>Bitte melden Sie sich im Gartenmanager an, um es zu bearbeiten.</p>
         </body></html>
         """
-        await sende_email(assignee.email, subject, html, db=db)
+        await send_email(assignee.email, subject, html, db=db)
     else:
         ticket.assigned_to_id = None
         ticket.status = TicketStatus.ACTIVE

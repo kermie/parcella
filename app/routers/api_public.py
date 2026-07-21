@@ -43,7 +43,7 @@ from app.models import (
     WorkSession, Parcel, ParcelStatus, MemberParcel, Member,
     SessionParticipation, ParticipationStatus,
 )
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.public_api_auth import require_public_api_token
 from app.schemas import (
     PublicWorkSessionOut, PublicParcelOut, PublicSignupCreate,
@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(
     prefix="/api/v1/public",
     tags=["Public Signup API"],
-    dependencies=[Depends(require_modul("public_signup_api"))],
+    dependencies=[Depends(require_module("public_signup_api"))],
 )
 
 # ---------------------------------------------------------------------------

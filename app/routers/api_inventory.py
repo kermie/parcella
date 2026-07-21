@@ -13,7 +13,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import InventoryCategory, InventoryItem, InventoryOwnerType, ItemLoan, User
 from app.api_auth import get_current_api_user, require_write_access
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.schemas import (
     InventoryCategoryOut, InventoryCategoryCreate,
     InventoryItemOut, InventoryItemCreate, InventoryItemUpdate,
@@ -23,7 +23,7 @@ from app.schemas import (
 router = APIRouter(
     prefix="/api/v1/inventory",
     tags=["API: Inventory"],
-    dependencies=[Depends(require_modul("inventory"))],
+    dependencies=[Depends(require_module("inventory"))],
 )
 
 

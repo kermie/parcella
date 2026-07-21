@@ -32,13 +32,13 @@ from app.models import (
     InventoryCategory, InventoryItem, InventoryOwnerType, ItemLoan, Member,
 )
 from app.auth import require_user, require_admin
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.templating import templates
 
 router = APIRouter(
     prefix="/inventory",
     tags=["inventory"],
-    dependencies=[Depends(require_modul("inventory"))],
+    dependencies=[Depends(require_module("inventory"))],
 )
 
 

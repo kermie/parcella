@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import MeteringPoint, MeteringPointType, MeteringMedium, Meter, MeterReading, User
 from app.api_auth import get_current_api_user, require_write_access
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.meter_utils import calculate_consumption, check_monotonicity, format_monotonicity_error_de, total_consumption_for_type
 from app.schemas import (
     MeteringPointOut, MeteringPointDetailOut, MeteringPointCreate, MeteringPointUpdate,
@@ -30,7 +30,7 @@ def erstelle_metering_api_router(
     router = APIRouter(
         prefix=f"/api/v1{url_prefix}",
         tags=[f"API: {modul_name.capitalize()}"],
-        dependencies=[Depends(require_modul(modul_name))],
+        dependencies=[Depends(require_module(modul_name))],
     )
 
     async def _lade_zaehlpunkt(db: AsyncSession, metering_point_id: str) -> Optional[MeteringPoint]:

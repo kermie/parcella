@@ -20,7 +20,7 @@ from app.models import (
     WorkTask, TaskWorkload,
 )
 from app.api_auth import get_current_api_user, require_write_access
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.schemas import (
     WorkHoursConfigurationOut, WorkHoursConfigurationCreate,
     ClubRoleOut, ClubRoleCreate,
@@ -35,7 +35,7 @@ from app.schemas import (
 router = APIRouter(
     prefix="/api/v1/work-hours",
     tags=["API: Work Hours"],
-    dependencies=[Depends(require_modul("work_hours"))],
+    dependencies=[Depends(require_module("work_hours"))],
 )
 
 

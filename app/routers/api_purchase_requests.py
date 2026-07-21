@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import PurchaseRequest, PurchaseRequestApproval, PurchaseRequestStatus, User, UserRole
 from app.api_auth import get_current_api_user, require_api_role
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.schemas import (
     PurchaseRequestCreate, PurchaseRequestOut, PurchaseRequestDetailOut, PurchaseRequestRejectRequest,
 )
@@ -20,7 +20,7 @@ from app.schemas import (
 router = APIRouter(
     prefix="/api/v1/purchase-requests",
     tags=["API: Purchase Requests"],
-    dependencies=[Depends(require_modul("purchase_requests"))],
+    dependencies=[Depends(require_module("purchase_requests"))],
 )
 
 _REQUIRED_APPROVALS = 2
@@ -95,7 +95,7 @@ async def purchase_request_create(
     await db.refresh(pr)
 
     if pr.confirmation_token:
-        from app.email_service import sende_email
+        from app.email_service import send_email
         from app.config import settings
         betreff = f'Please confirm: purchase request "{pr.title}"'
         html = (
@@ -104,7 +104,7 @@ async def purchase_request_create(
             f"<strong>{pr.title}</strong></p>"
             f"<p>Please log in to review the details.</p></body></html>"
         )
-        await sende_email(pr.requester_email, betreff, html, db=db)
+        await send_email(pr.requester_email, betreff, html, db=db)
 
     return pr
 

@@ -50,7 +50,7 @@ from app.models import (
     Announcement, AnnouncementChannel, AnnouncementDelivery,
     AnnouncementDeliveryStatus, Member, MemberParcel,
 )
-from app.email_service import sende_email
+from app.email_service import send_email
 from app.branding import load_branding
 
 logger = logging.getLogger(__name__)
@@ -134,7 +134,7 @@ async def send_test_email(announcement: Announcement, db: AsyncSession, request,
     base_url = str(request.base_url).rstrip("/")
     image_url = await _resolve_image_url(announcement, base_url)
     html_body = build_announcement_email_html(announcement, branding["club_name"], image_url, test_banner=True)
-    return await sende_email(address, f"[Test] {announcement.title}", html_body, db=db)
+    return await send_email(address, f"[Test] {announcement.title}", html_body, db=db)
 
 
 async def start_paced_email_send(announcement: Announcement, db: AsyncSession) -> Tuple[AnnouncementDelivery, int]:
@@ -198,7 +198,7 @@ async def run_paced_email_send(announcement_id: str, base_url: str) -> None:
             for batch_start in range(0, len(recipients), EMAIL_BATCH_SIZE):
                 batch = recipients[batch_start:batch_start + EMAIL_BATCH_SIZE]
                 for _member, address in batch:
-                    sent = await sende_email(address, announcement.title, html_body, db=db)
+                    sent = await send_email(address, announcement.title, html_body, db=db)
                     if sent:
                         success_count += 1
                     else:

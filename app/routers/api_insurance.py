@@ -15,7 +15,7 @@ from app.models import (
     AccidentInsuranceAdditionalPerson, Parcel, User,
 )
 from app.api_auth import get_current_api_user, require_write_access
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.insurance_utils import calculate_insurance_cost
 from app.schemas import (
     PropertyInsurancePackageOut, PropertyInsurancePackageCreate,
@@ -26,7 +26,7 @@ from app.schemas import (
 router = APIRouter(
     prefix="/api/v1/insurance",
     tags=["API: Insurance"],
-    dependencies=[Depends(require_modul("insurance"))],
+    dependencies=[Depends(require_module("insurance"))],
 )
 
 

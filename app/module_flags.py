@@ -13,8 +13,8 @@ Concept:
 
 Adding a new module:
 1. Entry in MODULE_DEFAULTS with a descriptive name and default value.
-2. Entry in MODULE_FELDER (admin.py) for the settings page.
-3. Guard the router with `dependencies=[Depends(require_modul("<name>"))]`.
+2. Entry in MODULE_FIELDS (admin.py) for the settings page.
+3. Guard the router with `dependencies=[Depends(require_module("<name>"))]`.
 4. Wrap the nav entry in base.html with `{% if request.state.module_flags.<name> %}`.
 """
 from typing import Dict
@@ -54,26 +54,26 @@ MODULE_DEFAULTS: Dict[str, bool] = {
 }
 
 
-def _wert_zu_bool(value: str) -> bool:
+def _value_to_bool(value: str) -> bool:
     return value.strip().lower() in ("true", "1", "ja", "an")
 
 
-async def lade_modul_flags(db: AsyncSession) -> Dict[str, bool]:
+async def load_module_flags(db: AsyncSession) -> Dict[str, bool]:
     """Loads all module flags from the database, filled in with defaults."""
     result = await db.execute(
         select(ClubSetting).where(ClubSetting.key.like("modul_%"))
     )
-    gespeichert = {e.key: e.value for e in result.scalars().all()}
+    stored = {e.key: e.value for e in result.scalars().all()}
 
     flags = dict(MODULE_DEFAULTS)
     for name in MODULE_DEFAULTS:
-        value = gespeichert.get(f"modul_{name}")
+        value = stored.get(f"modul_{name}")
         if value is not None:
-            flags[name] = _wert_zu_bool(value)
+            flags[name] = _value_to_bool(value)
     return flags
 
 
-def require_modul(modul_name: str):
+def require_module(module_name: str):
     """
     Dependency factory for routers: locks every endpoint of a router if
     the module is disabled. Reads from request.state.module_flags (set
@@ -82,7 +82,7 @@ def require_modul(modul_name: str):
 
     async def checker(request: Request):
         flags = getattr(request.state, "module_flags", {})
-        if not flags.get(modul_name, MODULE_DEFAULTS.get(modul_name, True)):
+        if not flags.get(module_name, MODULE_DEFAULTS.get(module_name, True)):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Dieser Funktionsbereich ist in diesem Verein deaktiviert.",

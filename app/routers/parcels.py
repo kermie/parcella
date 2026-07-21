@@ -20,7 +20,7 @@ from app.models import (
 from app.auth import require_user, require_admin
 from app.i18n import t_for
 from app.change_tracker import ChangeTracker
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.cloud_storage import get_nextcloud_provider, CloudStorageError
 from app.parcel_cloud_folders import (
     get_active_folder, set_active_folder, deactivate_if_vacant, InvalidCloudPathError,
@@ -466,7 +466,7 @@ async def fruehere_zuordnung_loeschen(
 # the actual files is granted separately, directly in Nextcloud.
 # ---------------------------------------------------------------------------
 
-@router.post("/{parcel_id}/cloud-folder", dependencies=[Depends(require_modul("cloud_storage"))])
+@router.post("/{parcel_id}/cloud-folder", dependencies=[Depends(require_module("cloud_storage"))])
 async def parzelle_cloud_folder_setzen(
     parcel_id: str,
     request: Request,
@@ -482,7 +482,7 @@ async def parzelle_cloud_folder_setzen(
     return RedirectResponse(f"/parcels/{parcel_id}?cloud_folder_saved=1", status_code=303)
 
 
-@router.post("/{parcel_id}/cloud-folder/upload", dependencies=[Depends(require_modul("cloud_storage"))])
+@router.post("/{parcel_id}/cloud-folder/upload", dependencies=[Depends(require_module("cloud_storage"))])
 async def parzelle_cloud_datei_hochladen(
     parcel_id: str,
     request: Request,
@@ -511,7 +511,7 @@ async def parzelle_cloud_datei_hochladen(
     return RedirectResponse(f"/parcels/{parcel_id}?cloud_upload_ok=1", status_code=303)
 
 
-@router.get("/{parcel_id}/cloud-folder/download", dependencies=[Depends(require_modul("cloud_storage"))])
+@router.get("/{parcel_id}/cloud-folder/download", dependencies=[Depends(require_module("cloud_storage"))])
 async def parzelle_cloud_datei_herunterladen(
     parcel_id: str,
     request: Request,

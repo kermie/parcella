@@ -188,11 +188,11 @@ async def test_send_email_reaches_current_residents_with_notifications_enabled(c
 
     sent_to = []
 
-    async def fake_sende_email(empfaenger, betreff, html_body, text_body=None, db=None):
+    async def fake_send_email(empfaenger, betreff, html_body, text_body=None, db=None):
         sent_to.append(empfaenger)
         return True
 
-    monkeypatch.setattr("app.announcement_mailer.sende_email", fake_sende_email)
+    monkeypatch.setattr("app.announcement_mailer.send_email", fake_send_email)
 
     send = await client.post(f"/announcements/{announcement_id}/send/email")
     assert send.status_code == 303
@@ -226,10 +226,10 @@ async def test_send_email_with_no_recipients_is_marked_failed(client, admin_user
     )
     announcement_id = create.headers["location"].split("/")[2]
 
-    async def fake_sende_email(*args, **kwargs):
+    async def fake_send_email(*args, **kwargs):
         raise AssertionError("should not attempt to send with zero recipients")
 
-    monkeypatch.setattr("app.announcement_mailer.sende_email", fake_sende_email)
+    monkeypatch.setattr("app.announcement_mailer.send_email", fake_send_email)
 
     send = await client.post(f"/announcements/{announcement_id}/send/email")
     assert send.status_code == 303
@@ -267,10 +267,10 @@ async def test_send_email_partial_failure_still_counts_as_sent(client, admin_use
     )
     announcement_id = create.headers["location"].split("/")[2]
 
-    async def flaky_sende_email(empfaenger, betreff, html_body, text_body=None, db=None):
+    async def flaky_send_email(empfaenger, betreff, html_body, text_body=None, db=None):
         return empfaenger != "bounces@example.com"
 
-    monkeypatch.setattr("app.announcement_mailer.sende_email", flaky_sende_email)
+    monkeypatch.setattr("app.announcement_mailer.send_email", flaky_send_email)
 
     send = await client.post(f"/announcements/{announcement_id}/send/email")
     assert send.status_code == 303
@@ -336,14 +336,14 @@ async def test_email_send_is_paced_in_batches(client, admin_user, monkeypatch):
     sent_to = []
     sleep_calls = []
 
-    async def fake_sende_email(empfaenger, betreff, html_body, text_body=None, db=None):
+    async def fake_send_email(empfaenger, betreff, html_body, text_body=None, db=None):
         sent_to.append(empfaenger)
         return True
 
     async def fake_sleep(seconds):
         sleep_calls.append(seconds)
 
-    monkeypatch.setattr(mailer, "sende_email", fake_sende_email)
+    monkeypatch.setattr(mailer, "send_email", fake_send_email)
     monkeypatch.setattr(mailer.asyncio, "sleep", fake_sleep)
 
     send = await client.post(f"/announcements/{announcement_id}/send/email")
@@ -402,7 +402,7 @@ async def test_cannot_start_second_send_while_one_is_in_progress(client, admin_u
     async def should_not_be_called(*args, **kwargs):
         raise AssertionError("should not attempt to send while already in progress")
 
-    monkeypatch.setattr(mailer, "sende_email", should_not_be_called)
+    monkeypatch.setattr(mailer, "send_email", should_not_be_called)
 
     send = await client.post(f"/announcements/{announcement_id}/send/email")
     assert send.status_code == 409
@@ -425,11 +425,11 @@ async def test_send_test_email_to_specific_address(client, admin_user, monkeypat
 
     calls = []
 
-    async def fake_sende_email(empfaenger, betreff, html_body, text_body=None, db=None):
+    async def fake_send_email(empfaenger, betreff, html_body, text_body=None, db=None):
         calls.append((empfaenger, betreff, html_body))
         return True
 
-    monkeypatch.setattr("app.announcement_mailer.sende_email", fake_sende_email)
+    monkeypatch.setattr("app.announcement_mailer.send_email", fake_send_email)
 
     response = await client.post(
         f"/announcements/{announcement_id}/send/test-email",
@@ -471,10 +471,10 @@ async def test_send_test_email_failure_is_reported(client, admin_user, monkeypat
     )
     announcement_id = create.headers["location"].split("/")[2]
 
-    async def failing_sende_email(*args, **kwargs):
+    async def failing_send_email(*args, **kwargs):
         return False
 
-    monkeypatch.setattr("app.announcement_mailer.sende_email", failing_sende_email)
+    monkeypatch.setattr("app.announcement_mailer.send_email", failing_send_email)
 
     response = await client.post(
         f"/announcements/{announcement_id}/send/test-email",
@@ -548,13 +548,13 @@ async def _configure_wordpress(client, headers):
     disable modul_announcements along the way."""
     from app.database import AsyncSessionLocal
     from app.models import ClubSetting
-    from app.crypto_utils import verschluesseln
+    from app.crypto_utils import encrypt
 
     async with AsyncSessionLocal() as session:
         session.add(ClubSetting(key="wordpress_site_url", value="https://blog.example.com", description="test"))
         session.add(ClubSetting(key="wordpress_username", value="board", description="test"))
         session.add(ClubSetting(
-            key="wordpress_app_password", value=verschluesseln("abcd 1234 efgh 5678"), description="test",
+            key="wordpress_app_password", value=encrypt("abcd 1234 efgh 5678"), description="test",
         ))
         await session.commit()
 

@@ -34,9 +34,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models import ClubSetting, Ticket, TicketMessage, TicketStatus, MessageDirection
-from app.email_service import lade_smtp_konfiguration
+from app.email_service import load_smtp_configuration
 from app.ticket_utils import find_members_by_email
-from app.spam_filter import pruefe_auf_spam
+from app.spam_filter import check_for_spam
 from app.html_sanitizer import sanitize_email_html
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ async def load_inbox_configuration(db: AsyncSession) -> Dict[str, Any]:
     specific, since the general configuration is only meant for
     sending.
     """
-    smtp_config = await lade_smtp_konfiguration(db)
+    smtp_config = await load_smtp_configuration(db)
 
     result = await db.execute(
         select(ClubSetting).where(
@@ -389,7 +389,7 @@ async def process_incoming_mails(db: AsyncSession) -> int:
         else:
             # Spam check only for new tickets, not for replies to
             # existing ones -- avoids unnecessary (possibly paid) external calls.
-            spam_result = await pruefe_auf_spam(mail["from_email"], mail["subject"], mail["text"], db)
+            spam_result = await check_for_spam(mail["from_email"], mail["subject"], mail["text"], db)
 
             matches = await find_members_by_email(db, mail["from_email"])
             member_id = matches[0].id if len(matches) == 1 else None
@@ -399,9 +399,9 @@ async def process_incoming_mails(db: AsyncSession) -> int:
                 sender_email=mail["from_email"],
                 sender_name=mail["from_name"] or None,
                 member_id=member_id,
-                spam_suspected=spam_result.ist_spam_verdacht,
+                spam_suspected=spam_result.is_spam_suspected,
                 spam_score=spam_result.score,
-                spam_reasoning=spam_result.begruendung,
+                spam_reasoning=spam_result.reasoning,
             )
             db.add(ticket)
             await db.flush()

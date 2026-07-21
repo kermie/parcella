@@ -34,7 +34,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Announcement, AnnouncementStatus, AnnouncementChannel, AnnouncementDeliveryStatus
 from app.auth import require_admin
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.announcement_utils import render_markdown_to_html, likely_fits_one_print_page
 from app.announcement_mailer import start_paced_email_send, run_paced_email_send, send_test_email
 from app.blog_publisher import get_wordpress_publisher, BlogPublishError
@@ -45,7 +45,7 @@ from app.templating import templates
 router = APIRouter(
     prefix="/announcements",
     tags=["announcements"],
-    dependencies=[Depends(require_modul("announcements"))],
+    dependencies=[Depends(require_module("announcements"))],
 )
 
 UPLOAD_DIR = Path("app/static/uploads/announcements")

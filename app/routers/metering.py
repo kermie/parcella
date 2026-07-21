@@ -29,7 +29,7 @@ from app.models import (
 )
 from app.auth import require_user
 from app.i18n import t_for, translate, DEFAULT_LANGUAGE
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.meter_utils import (
     calculate_consumption, check_monotonicity, total_consumption_for_type, reading_before_year
 )
@@ -80,7 +80,7 @@ def erstelle_metering_router(
     router = APIRouter(
         prefix=url_prefix,
         tags=[modul_name],
-        dependencies=[Depends(require_modul(modul_name))],
+        dependencies=[Depends(require_module(modul_name))],
     )
 
     # German display name, exclusively for the (still German) CSV

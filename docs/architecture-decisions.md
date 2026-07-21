@@ -18,7 +18,7 @@ system:
   (boolean as the string `"true"`/`"false"`)
 - `app/module_flags.py` loads these flags **once per request** via a
   middleware and stores them under `request.state.module_flags`
-- Router dependencies (`require_modul("<name>")`) lock entire routers if
+- Router dependencies (`require_module("<name>")`) lock entire routers if
   disabled (404 instead of the page)
 - Templates conditionally hide navigation blocks
 - **No migration needed for new modules** -- the flags live in the

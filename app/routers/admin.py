@@ -13,8 +13,8 @@ from sqlalchemy import select
 from app.database import get_db
 from app.models import User, Invitation, InvitationStatus, UserRole, ClubSetting
 from app.auth import require_admin, create_invitation_token, hash_password
-from app.email_service import sende_email
-from app.crypto_utils import verschluesseln
+from app.email_service import send_email
+from app.crypto_utils import encrypt
 from app.blog_publisher import load_wordpress_configuration, WordPressPublisher, BlogPublishError
 from app.cloud_storage import load_nextcloud_configuration, NextcloudProvider, CloudStorageError
 from app.i18n import AVAILABLE_LANGUAGES, t_for
@@ -125,7 +125,7 @@ async def user_invite(
     </body></html>
     """
 
-    email_gesendet = await sende_email(email, betreff, html, db=db)
+    email_gesendet = await send_email(email, betreff, html, db=db)
 
     # In development mode: return the link in the URL
     if settings.is_development and not email_gesendet:
@@ -285,7 +285,7 @@ async def einstellungen_speichern(
             # and stored.
             if not value:
                 continue
-            value = verschluesseln(value)
+            value = encrypt(value)
 
         if entry:
             entry.value = value
@@ -442,7 +442,7 @@ async def integrations_wordpress_speichern(request: Request, db: AsyncSession = 
     await _upsert_club_setting(db, "wordpress_username", username, "WordPress username for blog drafts")
     if app_password:
         await _upsert_club_setting(
-            db, "wordpress_app_password", verschluesseln(app_password), "WordPress Application Password (encrypted)",
+            db, "wordpress_app_password", encrypt(app_password), "WordPress Application Password (encrypted)",
         )
 
     await db.commit()
@@ -505,7 +505,7 @@ async def integrations_nextcloud_speichern(request: Request, db: AsyncSession = 
     await _upsert_club_setting(db, "nextcloud_username", username, "Nextcloud username for cloud storage")
     if app_password:
         await _upsert_club_setting(
-            db, "nextcloud_app_password", verschluesseln(app_password), "Nextcloud Application Password (encrypted)",
+            db, "nextcloud_app_password", encrypt(app_password), "Nextcloud Application Password (encrypted)",
         )
 
     await db.commit()

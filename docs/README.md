@@ -32,7 +32,7 @@ Architecture Decisions for details):
 1. Models in `app/models.py`, enum values **always uppercase** (see the
    lesson learned from several bugs around this)
 2. Migration in `migrations/versions/`, revision name under 32 characters
-3. Router with `dependencies=[Depends(require_modul("<name>"))]` -- both
+3. Router with `dependencies=[Depends(require_module("<name>"))]` -- both
    the web UI and the REST API from the start (API-first rule)
 4. Entry in `app/module_flags.py` (`MODULE_DEFAULTS`) -- default `True`
    unless the module opens a new public/unauthenticated attack surface

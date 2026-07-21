@@ -19,23 +19,23 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-def _abgeleiteter_schluessel() -> bytes:
+def _derived_key() -> bytes:
     """Derives a Fernet-valid 32-byte key from SECRET_KEY."""
     digest = hashlib.sha256(settings.secret_key.encode("utf-8")).digest()
     return base64.urlsafe_b64encode(digest)
 
 
-_fernet = Fernet(_abgeleiteter_schluessel())
+_fernet = Fernet(_derived_key())
 
 
-def verschluesseln(klartext: str) -> str:
+def encrypt(plaintext: str) -> str:
     """Encrypts a string for storage in the database."""
-    if not klartext:
-        return klartext
-    return _fernet.encrypt(klartext.encode("utf-8")).decode("utf-8")
+    if not plaintext:
+        return plaintext
+    return _fernet.encrypt(plaintext.encode("utf-8")).decode("utf-8")
 
 
-def entschluesseln(wert: Optional[str]) -> Optional[str]:
+def decrypt(value: Optional[str]) -> Optional[str]:
     """
     Decrypts a previously encrypted string.
 
@@ -44,10 +44,10 @@ def entschluesseln(wert: Optional[str]) -> Optional[str]:
     case the value is returned unchanged (as plaintext) instead of
     raising an error.
     """
-    if not wert:
-        return wert
+    if not value:
+        return value
     try:
-        return _fernet.decrypt(wert.encode("utf-8")).decode("utf-8")
+        return _fernet.decrypt(value.encode("utf-8")).decode("utf-8")
     except (InvalidToken, ValueError):
         logger.warning("Could not decrypt value -- treating it as plaintext (legacy data?).")
-        return wert
+        return value

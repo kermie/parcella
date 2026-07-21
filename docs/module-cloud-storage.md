@@ -85,7 +85,7 @@ user is admin/board; the three mutating routes
 (`POST /parcels/{id}/cloud-folder`,
 `POST /parcels/{id}/cloud-folder/upload`,
 `GET /parcels/{id}/cloud-folder/download`) are additionally gated with
-`Depends(require_modul("cloud_storage"))`, returning 404 if the module
+`Depends(require_module("cloud_storage"))`, returning 404 if the module
 is disabled.
 
 Credentials are configured on **Admin -> Integrations**, alongside the

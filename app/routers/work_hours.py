@@ -27,12 +27,12 @@ from app.branding import load_branding
 from app.l10n import load_current_region, format_number
 from app.session_attendee_sheet import render_session_attendee_sheet_pdf, AttendeeRow
 
-from app.module_flags import require_modul
+from app.module_flags import require_module
 
 router = APIRouter(
     prefix="/work-hours",
     tags=["work-hours"],
-    dependencies=[Depends(require_modul("work_hours"))],
+    dependencies=[Depends(require_module("work_hours"))],
 )
 from app.templating import templates
 

@@ -12,10 +12,10 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Ticket, TicketMessage, TicketStatus, MessageDirection, User
 from app.api_auth import get_current_api_user, require_write_access
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.ticket_utils import find_members_by_email
 from app.ticket_mailer import send_ticket_reply
-from app.email_service import sende_email
+from app.email_service import send_email
 from app.schemas import (
     TicketCreate, TicketOut, TicketDetailOut, TicketStatusUpdate,
     TicketAssignmentUpdate, TicketMemberUpdate, TicketSpamUpdate,
@@ -25,7 +25,7 @@ from app.schemas import (
 router = APIRouter(
     prefix="/api/v1/tickets",
     tags=["API: Tickets"],
-    dependencies=[Depends(require_modul("tickets"))],
+    dependencies=[Depends(require_module("tickets"))],
 )
 
 
@@ -168,7 +168,7 @@ async def assignment_update(
             f"<p><strong>{ticket.subject}</strong></p>"
             f"<p>Bitte melden Sie sich im Gartenmanager an, um es zu bearbeiten.</p></body></html>"
         )
-        await sende_email(assignee.email, subject, html, db=db)
+        await send_email(assignee.email, subject, html, db=db)
     else:
         ticket.assigned_to_id = None
         ticket.status = TicketStatus.ACTIVE

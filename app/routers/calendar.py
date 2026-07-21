@@ -34,7 +34,7 @@ from app.models import (
     CouncilPresence, CouncilAbsence, User,
 )
 from app.auth import require_user, require_admin
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.i18n import t_for
 from app.birthdays import upcoming_birthdays, all_birthdays_for_calendar, ROUND_BIRTHDAY_INTERVAL
 from app.ics_utils import (
@@ -47,7 +47,7 @@ from app.templating import templates
 router = APIRouter(
     prefix="/calendar",
     tags=["calendar"],
-    dependencies=[Depends(require_modul("calendar"))],
+    dependencies=[Depends(require_module("calendar"))],
 )
 
 

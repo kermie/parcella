@@ -21,13 +21,13 @@ from app.models import (
     AccidentInsuranceAdditionalPerson, Parcel, ParcelStatus, MemberParcel, Member,
 )
 from app.auth import require_user
-from app.module_flags import require_modul
+from app.module_flags import require_module
 from app.insurance_utils import household_grouping, calculate_insurance_cost
 
 router = APIRouter(
     prefix="/insurance",
     tags=["insurance"],
-    dependencies=[Depends(require_modul("insurance"))],
+    dependencies=[Depends(require_module("insurance"))],
 )
 from app.templating import templates
 

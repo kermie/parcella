@@ -21,14 +21,14 @@ from app.models import (
 )
 from app.auth import require_user, require_admin, serializer
 from app.i18n import t_for
-from app.module_flags import require_modul
-from app.email_service import sende_email
+from app.module_flags import require_module
+from app.email_service import send_email
 from app.config import settings
 
 router = APIRouter(
     prefix="/purchase-requests",
     tags=["purchase-requests"],
-    dependencies=[Depends(require_modul("purchase_requests"))],
+    dependencies=[Depends(require_module("purchase_requests"))],
 )
 from app.templating import templates
 
@@ -155,7 +155,7 @@ async def purchase_request_create(
            text-decoration: none; border-radius: 4px;">Angaben bestätigen</a></p>
         </body></html>
         """
-        await sende_email(purchase_request.requester_email, betreff, html, db=db)
+        await send_email(purchase_request.requester_email, betreff, html, db=db)
 
     await db.commit()
     return RedirectResponse(f"/purchase-requests/{purchase_request.id}", status_code=302)
