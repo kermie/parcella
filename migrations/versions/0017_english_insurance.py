@@ -1,4 +1,4 @@
-"""Versicherungsmodul auf Englisch umstellen (PropertyInsurance/AccidentInsurance)
+"""Convert the insurance module to English (PropertyInsurance/AccidentInsurance)
 
 Revision ID: 0017_english_insurance
 Revises: 0016_english_metering
@@ -16,7 +16,7 @@ depends_on = None
 
 def upgrade() -> None:
     # -----------------------------------------------------------------
-    # 1. Tabellen umbenennen
+    # 1. Rename tables
     # -----------------------------------------------------------------
     op.rename_table("sachversicherung_pakete", "property_insurance_packages")
     op.rename_table("versicherungs_konfiguration", "insurance_configuration")
@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.rename_table("unfallversicherung_zusatzpersonen", "accident_insurance_additional_persons")
 
     # -----------------------------------------------------------------
-    # 2. Spalten in property_insurance_packages umbenennen
+    # 2. Rename columns in property_insurance_packages
     # -----------------------------------------------------------------
     op.alter_column("property_insurance_packages", "jahr", new_column_name="year")
     op.alter_column("property_insurance_packages", "bezeichnung", new_column_name="name")
@@ -32,16 +32,16 @@ def upgrade() -> None:
     op.alter_column("property_insurance_packages", "reihenfolge", new_column_name="sort_order")
 
     # -----------------------------------------------------------------
-    # 3. Spalten in insurance_configuration umbenennen
+    # 3. Rename columns in insurance_configuration
     # -----------------------------------------------------------------
     op.alter_column("insurance_configuration", "jahr", new_column_name="year")
     op.alter_column("insurance_configuration", "unfall_grundbetrag_eur", new_column_name="accident_base_amount_eur")
     op.alter_column("insurance_configuration", "unfall_zusatzbetrag_eur", new_column_name="accident_additional_amount_eur")
 
     # -----------------------------------------------------------------
-    # 4. Spalten in parcel_insurance umbenennen
-    #    (parzelle_id -> parcel_id: FK-Spaltenumbenennung, die beim
-    #    Kernmodul-Umbau bewusst zurückgestellt wurde, siehe 0014)
+    # 4. Rename columns in parcel_insurance
+    #    (parzelle_id -> parcel_id: an FK column rename that was
+    #    deliberately deferred during the core-module rename, see 0014)
     # -----------------------------------------------------------------
     op.alter_column("parcel_insurance", "parzelle_id", new_column_name="parcel_id")
     op.alter_column("parcel_insurance", "jahr", new_column_name="year")
@@ -53,8 +53,8 @@ def upgrade() -> None:
     op.create_unique_constraint("uq_parcel_insurance_year", "parcel_insurance", ["parcel_id", "year"])
 
     # -----------------------------------------------------------------
-    # 5. Spalten in accident_insurance_additional_persons umbenennen
-    #    (mitglied_id -> member_id, ebenfalls zurueckgestellte FK-Spalte)
+    # 5. Rename columns in accident_insurance_additional_persons
+    #    (mitglied_id -> member_id, another deferred FK column)
     # -----------------------------------------------------------------
     op.alter_column(
         "accident_insurance_additional_persons", "parzelle_versicherung_id",

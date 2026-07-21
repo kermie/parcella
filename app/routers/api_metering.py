@@ -1,7 +1,7 @@
 """
-API-Router-Fabrik für das Zählerwesen (Wasser & Strom) – analog zur
-HTML-Router-Fabrik in app/routers/zaehlerwesen.py. Eine Codebasis für
-beide Medien, zweimal instanziiert (siehe main.py).
+API router factory for metering (water & electricity) -- analogous to
+the HTML router factory in app/routers/metering.py. One codebase for
+both media, instantiated twice (see main.py).
 """
 from datetime import date
 from decimal import Decimal, InvalidOperation

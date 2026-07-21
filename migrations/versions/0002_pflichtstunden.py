@@ -1,4 +1,4 @@
-"""Pflichtstunden-System: Konfiguration, Vereinsrollen, Patenschaften, Arbeitseinsätze
+"""Required-work-hours system: configuration, club roles, sponsorships, work sessions
 
 Revision ID: 0002_pflichtstunden
 Revises: 0001_initial
@@ -15,7 +15,7 @@ depends_on: Union[str, None] = None
 
 
 def upgrade() -> None:
-    # Pflichtstunden-Konfiguration
+    # Required-work-hours configuration
     op.create_table(
         "pflichtstunden_konfiguration",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -30,7 +30,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_pflichtstunden_konfiguration_jahr", "pflichtstunden_konfiguration", ["jahr"], unique=True)
 
-    # Vereinsrollen
+    # Club roles
     op.create_table(
         "vereinsrollen",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
 
-    # Mitglied → Vereinsrolle (jahresbasiert)
+    # Member -> Club role (year-based)
     op.create_table(
         "mitglied_vereinsrolle",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -61,7 +61,7 @@ def upgrade() -> None:
     op.create_index("ix_mitglied_vereinsrolle_mitglied_id", "mitglied_vereinsrolle", ["mitglied_id"])
     op.create_index("ix_mitglied_vereinsrolle_vereinsrolle_id", "mitglied_vereinsrolle", ["vereinsrolle_id"])
 
-    # Patenschaften
+    # Sponsorships
     op.create_table(
         "patenschaften",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -77,7 +77,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_patenschaften_mitglied_id", "patenschaften", ["mitglied_id"])
 
-    # Arbeitseinsätze
+    # Work sessions
     op.create_table(
         "arbeitseinsaetze",
         sa.Column("id", sa.String(36), primary_key=True),
@@ -96,7 +96,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_arbeitseinsaetze_datum", "arbeitseinsaetze", ["datum"])
 
-    # Einsatz-Teilnahmen
+    # Session participations
     op.create_table(
         "einsatz_teilnahmen",
         sa.Column("id", sa.String(36), primary_key=True),

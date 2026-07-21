@@ -1,40 +1,38 @@
 """
-Sanitisiert HTML aus eingehenden Ticket-E-Mails, damit es sicher im
-Browser gerendert werden kann.
+Sanitizes HTML from incoming ticket emails so it can be rendered safely
+in the browser.
 
-WARUM DAS WICHTIG IST: Der Inhalt kommt von einem beliebigen externen
-Absender an die Ticket-Postfach-Adresse -- jeder kann dorthin eine E-Mail
-schicken. Das ist ein klassischer Fall für gespeichertes XSS, wenn der
-HTML-Inhalt ungefiltert gerendert würde (z.B. <script>, <img onerror=...>,
-javascript:-Links, verstecktes Tracking). Nichts aus dieser Quelle wird
-jemals ungefiltert mit "|safe" ausgegeben.
+WHY THIS MATTERS: the content comes from any arbitrary external sender
+to the ticket mailbox address -- anyone can send an email there. That's
+a classic stored-XSS setup if the HTML content were rendered unfiltered
+(e.g. <script>, <img onerror=...>, javascript: links, hidden tracking).
+Nothing from this source is ever output unfiltered with "|safe".
 
-Zwei Sicherheitsebenen:
-1. Beim Einlesen der E-Mail (app/ticket_mailer.py) wird HIER bereits
-   bereinigt, bevor irgendetwas in der Datenbank landet.
-2. Der Jinja-Filter `sanitize_html` (siehe app/templating.py) bereinigt
-   zusätzlich beim Rendern erneut -- günstig und harmlos bei bereits
-   sauberem HTML, aber ein zweites Sicherheitsnetz, falls durch einen
-   zukünftigen Code-Pfad ungeprüfter Inhalt in ein Template gelangen
-   sollte.
+Two layers of defense:
+1. When the email is ingested (app/ticket_mailer.py), it's already
+   sanitized HERE before anything lands in the database.
+2. The Jinja filter `sanitize_html` (see app/templating.py) sanitizes
+   again on render -- cheap and harmless on already-clean HTML, but a
+   second safety net in case some future code path lets unchecked
+   content reach a template.
 """
 import re
 
 import bleach
 
-# <script>/<style> müssen VOLLSTÄNDIG entfernt werden (Tag UND Inhalt) --
-# bleach.clean() entfernt bei nicht erlaubten Tags nur die Tags selbst und
-# behält den Text dazwischen (richtig für z.B. ein gestripptes <div>, aber
-# falsch für <script>/<style>, deren Inhalt kein für Menschen lesbarer
-# Text ist). Deshalb hier vorab per Regex komplett entfernen.
+# <script>/<style> must be removed COMPLETELY (tag AND content) --
+# bleach.clean() only strips disallowed tags themselves and keeps the
+# text between them (correct for e.g. a stripped <div>, but wrong for
+# <script>/<style>, whose content isn't human-readable text). So these
+# are removed upfront via regex instead.
 _SCRIPT_STYLE_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
 
-# Bewusst KEINE Bilder erlaubt: verhindert sowohl Tracking-Pixel (Absender
-# erfährt sonst, wann/ob die Nachricht geöffnet wurde) als auch den
-# klassischen <img onerror=...>-Trick als zusätzliche Angriffsfläche.
-# Bewusst KEIN class/style-Attribut erlaubt: verhindert CSS-basierte
-# Tricks (z.B. unsichtbarer Text, nachgeahmte UI-Elemente) und macht die
-# Darstellung konsistent mit dem Rest der Seite.
+# Deliberately NO images allowed: prevents both tracking pixels (the
+# sender would otherwise learn when/whether the message was opened) and
+# the classic <img onerror=...> trick as extra attack surface.
+# Deliberately NO class/style attribute allowed: prevents CSS-based
+# tricks (e.g. invisible text, spoofed UI elements) and keeps rendering
+# consistent with the rest of the page.
 ALLOWED_TAGS = [
     "p", "br", "b", "i", "u", "strong", "em", "a",
     "ul", "ol", "li", "blockquote", "span", "div",
@@ -49,8 +47,8 @@ ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
 
 
 def sanitize_email_html(html: str) -> str:
-    """Bereinigt HTML aus einer eingehenden Ticket-E-Mail für sicheres
-    Rendern. Leerer/None-Input ergibt leeren String."""
+    """Sanitizes HTML from an incoming ticket email for safe rendering.
+    Empty/None input yields an empty string."""
     if not html:
         return ""
 
@@ -65,9 +63,9 @@ def sanitize_email_html(html: str) -> str:
         strip_comments=True,
     )
 
-    # Externe Links in neuem Tab öffnen, ohne dass das Ziel über
-    # window.opener auf die Ticketübersicht zugreifen kann -- der Inhalt
-    # stammt von einem nicht vertrauenswürdigen Absender.
+    # Open external links in a new tab without letting the target reach
+    # the ticket list via window.opener -- the content comes from an
+    # untrusted sender.
     cleaned = re.sub(
         r'<a\s+href="([^"]*)"([^>]*)>',
         r'<a href="\1" target="_blank" rel="noopener noreferrer"\2>',

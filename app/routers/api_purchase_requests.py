@@ -1,5 +1,5 @@
 """
-API-Router: Purchase Requests – Vier-Augen-Prinzip für Vereinsausgaben.
+API router: Purchase Requests -- four-eyes principle for club expenses.
 """
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -125,7 +125,7 @@ async def purchase_request_approve(
         raise HTTPException(status_code=404, detail="Purchase request not found")
 
     if pr.status != PurchaseRequestStatus.OPEN:
-        raise HTTPException(status_code=409, detail=f"Einkaufswunsch ist bereits {pr.status.value}")
+        raise HTTPException(status_code=409, detail=f"Purchase request is already {pr.status.value}")
 
     if user.id in (pr.requested_by_id, pr.created_by_id):
         raise HTTPException(
@@ -163,7 +163,7 @@ async def purchase_request_reject(
         raise HTTPException(status_code=404, detail="Purchase request not found")
 
     if pr.status != PurchaseRequestStatus.OPEN:
-        raise HTTPException(status_code=409, detail=f"Einkaufswunsch ist bereits {pr.status.value}")
+        raise HTTPException(status_code=409, detail=f"Purchase request is already {pr.status.value}")
 
     pr.status = PurchaseRequestStatus.REJECTED
     pr.rejection_reason = daten.rejection_reason

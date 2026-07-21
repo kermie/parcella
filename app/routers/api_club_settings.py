@@ -1,5 +1,5 @@
 """
-API-Router: Vereinseinstellungen (Stammdaten des Vereins, Flächenangaben etc.).
+API router: club settings (club master data, area sizes, etc.).
 """
 from typing import List
 

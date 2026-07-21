@@ -1,5 +1,5 @@
 """
-API-Router: Mitglieder – vollständiges CRUD über REST.
+API router: Members -- full CRUD via REST.
 """
 from typing import List, Optional
 
@@ -167,7 +167,7 @@ async def mitglied_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Telefonnummern (Unterressource)
+# Phone numbers (sub-resource)
 # ---------------------------------------------------------------------------
 
 @router.post(
@@ -214,7 +214,7 @@ async def telefon_entfernen(
 
 
 # ---------------------------------------------------------------------------
-# E-Mail-Adressen (Unterressource)
+# Email addresses (sub-resource)
 # ---------------------------------------------------------------------------
 
 @router.post(

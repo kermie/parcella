@@ -1,8 +1,7 @@
 """
-Tests für das Work-Hours-Modul (Pflichtstunden). Schwerpunkt auf der
-Geschäftslogik mit höherem Regressionsrisiko: Gruppen-Befreiung bei
-PER_PARCEL (any() statt all() – siehe Architektur-Entscheidungen) und
-die Jahresauswertung.
+Tests for the Work Hours module. Focus on the business logic with
+higher regression risk: group exemption under PER_PARCEL (any() instead
+of all() -- see Architecture Decisions) and the annual evaluation.
 """
 from tests.conftest import login, auth_header
 
@@ -127,9 +126,10 @@ async def test_task_lifecycle(client, admin_user):
 
 async def test_befreiung_gilt_fuer_ganze_parcel_bei_per_parcel(client, admin_user):
     """
-    Wichtigster Regressionstest für die 'any() statt all()'-Entscheidung:
-    Ist EIN Pächter einer Parcel als Vorstand befreit, muss die GANZE
-    Parcel als befreit gelten – auch der andere (nicht befreite) Pächter.
+    Most important regression test for the 'any() instead of all()'
+    decision: if ONE tenant of a parcel is exempt as a board member, the
+    WHOLE parcel must count as exempt -- including the other
+    (non-exempt) tenant.
     """
     token = await login(client, "admin@example.com")
     headers = auth_header(token)

@@ -1,4 +1,4 @@
-"""Tests für Login/Authentifizierung."""
+"""Tests for login/authentication."""
 from tests.conftest import login, auth_header
 
 

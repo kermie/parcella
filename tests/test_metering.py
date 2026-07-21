@@ -1,7 +1,6 @@
 """
-Tests für das Zählerwesen (Wasser & Strom). Schwerpunkt: die
-Monotonie-Prüfung (Zählerstand darf nicht sinken) und die
-Verbrauchsberechnung.
+Tests for metering (water & electricity). Focus: the monotonicity
+check (a reading may not decrease) and consumption calculation.
 """
 from tests.conftest import login, auth_header
 
@@ -34,8 +33,8 @@ async def test_metering_point_anlegen_und_ablesung(client, admin_user):
 
 async def test_zaehlerstand_darf_nicht_sinken(client, admin_user):
     """
-    Kernregel der Plausibilitätsprüfung: ein neuer Zählerstand muss
-    mindestens so hoch sein wie der vorherige derselben Wasseruhr.
+    Core rule of the plausibility check: a new reading must be at
+    least as high as the previous one of the same water meter.
     """
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -53,7 +52,7 @@ async def test_zaehlerstand_darf_nicht_sinken(client, admin_user):
     )
     assert r1.status_code == 201
 
-    # Ein niedrigerer Stand im Folgejahr muss abgelehnt werden
+    # A lower reading in the following year must be rejected
     r2 = await client.post(
         f"/api/v1/water/metering-points/{metering_point['id']}/readings",
         json={"year": 2026, "date": "2026-10-01", "reading": "30.0"},
@@ -61,7 +60,7 @@ async def test_zaehlerstand_darf_nicht_sinken(client, admin_user):
     )
     assert r2.status_code == 422
 
-    # Ein höherer Stand ist völlig in Ordnung
+    # A higher reading is perfectly fine
     r3 = await client.post(
         f"/api/v1/water/metering-points/{metering_point['id']}/readings",
         json={"year": 2026, "date": "2026-10-01", "reading": "75.0"},
@@ -71,7 +70,7 @@ async def test_zaehlerstand_darf_nicht_sinken(client, admin_user):
 
 
 async def test_verbrauchsberechnung(client, admin_user):
-    """Verbrauch = aktueller Stand minus letzter Stand (oder Anfangsstand)."""
+    """Consumption = current reading minus last reading (or initial reading)."""
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
 
@@ -89,11 +88,11 @@ async def test_verbrauchsberechnung(client, admin_user):
 
     evaluation = (await client.get("/api/v1/water/evaluation/2026", headers=headers)).json()
     zeile = next(z for z in evaluation if z["metering_point_id"] == metering_point["id"])
-    assert float(zeile["consumption"]) == 50.0  # 150 - Anfangsstand 100
+    assert float(zeile["consumption"]) == 50.0  # 150 - initial reading 100
 
 
 async def test_strom_und_wasser_getrennt(client, admin_user):
-    """Wasser- und Strom-MeteringPointe müssen unabhängige, getrennte Listen sein."""
+    """Water and electricity MeteringPoints must be independent, separate lists."""
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
 

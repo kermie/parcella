@@ -1,4 +1,4 @@
-"""Tests für das Versicherungsmodul (insurance)."""
+"""Tests for the insurance module."""
 from tests.conftest import login, auth_header
 
 

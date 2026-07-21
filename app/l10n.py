@@ -1,30 +1,29 @@
 """
-Lokalisierung (l10n): Zahlen-, Währungs- und Adressformate pro Verein.
+Localization (l10n): number, currency, and address formats per club.
 
-Architekturentscheidung: bewusst GETRENNT von app/i18n.py (Sprache der
-Oberfläche). Sprache und regionale Formatierungskonventionen sind zwei
-unabhängige Dinge -- z.B. sagt "Englisch als Oberflächensprache" nichts
-darüber aus, ob Zahlen als "1,234.50" oder "1.234,50" dargestellt werden
-sollen, oder ob mit £, € oder zł gerechnet wird. Ein Verein wählt daher
-zusätzlich zur Sprache (ClubSetting "language") eine Region (ClubSetting
-"region", z.B. "de_DE") und eine Währung (ClubSetting "currency", z.B.
-"EUR") -- beide unabhängig voneinander und unabhängig von der Sprache.
+Architecture decision: deliberately SEPARATE from app/i18n.py (UI
+language). Language and regional formatting conventions are two
+independent things -- e.g. "English as the UI language" says nothing
+about whether numbers are shown as "1,234.50" or "1.234,50", or
+whether amounts are in £, €, or zł. A club therefore picks a region
+(ClubSetting "region", e.g. "de_DE") and a currency (ClubSetting
+"currency", e.g. "EUR") independently of its language (ClubSetting
+"language") and of each other.
 
-Zahlen- und Währungsformatierung nutzt die Bibliothek Babel, statt
-eigene Regex-/String-Hacks zu bauen (z.B. das vorherige
-".replace(',', '.')" im Dashboard-Template war genau so ein Hack, der
-nur für Deutsch stimmte). Babel kennt pro Locale die korrekten
-Tausender-/Dezimaltrennzeichen UND die korrekte Position des
-Währungssymbols (z.B. "€ 1.234,50" in den Niederlanden vs.
-"1.234,50 €" in Deutschland vs. "£1,234.50" in Großbritannien).
+Number and currency formatting uses the Babel library instead of
+hand-rolled regex/string hacks (the previous ".replace(',', '.')" in
+the dashboard template was exactly that kind of hack, and only correct
+for German). Babel knows the correct thousands/decimal separators AND
+the correct currency-symbol position per locale (e.g. "€ 1.234,50" in
+the Netherlands vs. "1.234,50 €" in Germany vs. "£1,234.50" in the UK).
 
-Adressformat ist komplexer als Zahlen (unterschiedliche Feld-Reihenfolge,
-nicht nur unterschiedliche Trennzeichen) und wird deshalb bewusst NICHT
-über eine externe Bibliothek gelöst (z.B. Google libaddressinput wäre
-für den Umfang dieses Projekts überdimensioniert), sondern über eine
-einfache Vorlage pro Region (siehe ADDRESS_FORMATS unten). Für die
-aktuell unterstützten 7 Länder reicht eine einzige Unterscheidung:
-Postleitzahl vor dem Ort (kontinentaleuropäisch) vs. danach (UK).
+Address format is more complex than numbers (different field order,
+not just different separators) and is therefore deliberately NOT
+handled via an external library (e.g. Google libaddressinput would be
+overkill for this project's scope), but via a simple template per
+region (see ADDRESS_FORMATS below). For the 7 currently supported
+countries, a single distinction suffices: postal code before the city
+(continental Europe) vs. after (UK).
 """
 import logging
 from typing import Optional
@@ -42,10 +41,10 @@ logger = logging.getLogger(__name__)
 DEFAULT_REGION = "de_DE"
 DEFAULT_CURRENCY = "EUR"
 
-# Region-Auswahl fuer /admin/settings. Namen bewusst als Landesname auf
-# Englisch gehalten (wie bei den Waehrungscodes), um nicht zusaetzlich
-# 7 weitere Uebersetzungsschluessel je Sprache zu benoetigen -- Laender-
-# und Waehrungscodes sind allgemein verstaendlich genug.
+# Region choices for /admin/settings. Names deliberately kept as the
+# English country name (same as the currency codes), to avoid needing
+# 7 more translation keys per language -- country and currency codes
+# are generally understandable enough on their own.
 AVAILABLE_REGIONS = {
     "de_DE": "Germany",
     "en_GB": "United Kingdom",
@@ -56,9 +55,9 @@ AVAILABLE_REGIONS = {
     "sk_SK": "Slovakia",
 }
 
-# Waehrungsauswahl. Bewusst nicht 1:1 an AVAILABLE_REGIONS gekoppelt --
-# z.B. koennte ein franzoesischsprachiger Verein in der Schweiz CHF
-# nutzen. Beide Einstellungen bleiben unabhaengig waehlbar.
+# Currency choices. Deliberately not coupled 1:1 to AVAILABLE_REGIONS --
+# e.g. a French-speaking club in Switzerland might use CHF. Both
+# settings stay independently selectable.
 AVAILABLE_CURRENCIES = {
     "EUR": "Euro (\u20ac)",
     "GBP": "British Pound (\u00a3)",
@@ -66,9 +65,9 @@ AVAILABLE_CURRENCIES = {
     "CZK": "Czech Koruna (K\u010d)",
 }
 
-# {street} und {postal_code} und {city} -- Reihenfolge pro Region.
-# Kontinentaleuropaeisch: PLZ vor Ort, zweite Zeile.
-# UK: Ort vor Postcode, Postcode auf eigener letzter Zeile.
+# {street} and {postal_code} and {city} -- order per region.
+# Continental Europe: postal code before city, second line.
+# UK: city before postcode, postcode on its own last line.
 ADDRESS_FORMATS = {
     "de_DE": "{street}\n{postal_code} {city}",
     "fr_FR": "{street}\n{postal_code} {city}",
@@ -81,7 +80,7 @@ ADDRESS_FORMATS = {
 
 
 async def load_current_region(db: AsyncSession) -> str:
-    """Liest die aktuell eingestellte Region aus ClubSetting (Default: Germany)."""
+    """Reads the currently configured region from ClubSetting (default: Germany)."""
     result = await db.execute(select(ClubSetting).where(ClubSetting.key == "region"))
     entry = result.scalar_one_or_none()
     if entry and entry.value in AVAILABLE_REGIONS:
@@ -90,7 +89,7 @@ async def load_current_region(db: AsyncSession) -> str:
 
 
 async def load_current_currency(db: AsyncSession) -> str:
-    """Liest die aktuell eingestellte Waehrung aus ClubSetting (Default: EUR)."""
+    """Reads the currently configured currency from ClubSetting (default: EUR)."""
     result = await db.execute(select(ClubSetting).where(ClubSetting.key == "currency"))
     entry = result.scalar_one_or_none()
     if entry and entry.value in AVAILABLE_CURRENCIES:
@@ -99,33 +98,33 @@ async def load_current_currency(db: AsyncSession) -> str:
 
 
 def format_money(amount, region: str, currency: str) -> str:
-    """Formatiert einen Geldbetrag passend zu Region und Waehrung (via Babel)."""
+    """Formats a money amount to match the region and currency (via Babel)."""
     try:
         return format_currency(amount, currency, locale=region)
     except Exception:
-        logger.warning(f"format_money fehlgeschlagen fuer region={region} currency={currency}")
+        logger.warning(f"format_money failed for region={region} currency={currency}")
         return f"{amount} {currency}"
 
 
 def format_number(value, region: str, decimals: int = 0) -> str:
-    """Formatiert eine Zahl (Tausender-/Dezimaltrennzeichen) passend zur Region."""
+    """Formats a number (thousands/decimal separators) to match the region."""
     try:
         return format_decimal(value, locale=region, format=f"#,##0.{'0' * decimals}" if decimals else "#,##0")
     except Exception:
-        logger.warning(f"format_number fehlgeschlagen fuer region={region}")
+        logger.warning(f"format_number failed for region={region}")
         return str(value)
 
 
 def format_address(street: str, postal_code: str, city: str, region: str) -> str:
-    """Formatiert eine Adresse (Feld-Reihenfolge) passend zur Region."""
+    """Formats an address (field order) to match the region."""
     template = ADDRESS_FORMATS.get(region, ADDRESS_FORMATS[DEFAULT_REGION])
     return template.format(street=street or "", postal_code=postal_code or "", city=city or "")
 
 
 def format_address_lines(street: str, postal_code: str, city: str, region: str) -> list:
-    """Wie format_address, aber als Liste von Zeilen, wobei komplett leere
-    Zeilen (z.B. wenn weder PLZ noch Ort gesetzt sind) uebersprungen werden.
-    Fuer die HTML-Darstellung mit <br> zwischen den Zeilen gedacht."""
+    """Like format_address, but as a list of lines, with fully empty
+    lines (e.g. when neither postal code nor city is set) skipped.
+    Intended for HTML rendering with <br> between the lines."""
     raw = format_address(street, postal_code, city, region)
     return [line.strip() for line in raw.split("\n") if line.strip()]
 
@@ -138,9 +137,9 @@ def _get_state(request: Optional[Request]):
 
 @pass_context
 def jinja_money(context, amount, currency: Optional[str] = None) -> str:
-    """Als Jinja-Filter registriert: {{ amount|money }}. Nutzt automatisch
-    request.state.region/currency des laufenden Requests, sofern kein
-    abweichender currency-Parameter uebergeben wird."""
+    """Registered as a Jinja filter: {{ amount|money }}. Automatically
+    uses request.state.region/currency of the current request unless a
+    differing currency parameter is passed."""
     request = context.get("request")
     region, default_currency = _get_state(request)
     return format_money(amount, region, currency or default_currency)
@@ -148,7 +147,7 @@ def jinja_money(context, amount, currency: Optional[str] = None) -> str:
 
 @pass_context
 def jinja_number(context, value, decimals: int = 0) -> str:
-    """Als Jinja-Filter registriert: {{ value|number }} oder {{ value|number(2) }}."""
+    """Registered as a Jinja filter: {{ value|number }} or {{ value|number(2) }}."""
     request = context.get("request")
     region, _ = _get_state(request)
     return format_number(value, region, decimals)
@@ -156,7 +155,7 @@ def jinja_number(context, value, decimals: int = 0) -> str:
 
 @pass_context
 def jinja_address(context, street: str, postal_code: str, city: str) -> str:
-    """Als Jinja-Global registriert: {{ address(street, postal_code, city) }}."""
+    """Registered as a Jinja global: {{ address(street, postal_code, city) }}."""
     request = context.get("request")
     region, _ = _get_state(request)
     return format_address(street, postal_code, city, region)
@@ -164,8 +163,8 @@ def jinja_address(context, street: str, postal_code: str, city: str) -> str:
 
 @pass_context
 def jinja_address_lines(context, street: str, postal_code: str, city: str) -> list:
-    """Als Jinja-Global registriert: {{ address_lines(street, postal_code, city) }}
-    -- Liste von Zeilen (leere Zeilen bereits entfernt), z.B. fuer
+    """Registered as a Jinja global: {{ address_lines(street, postal_code, city) }}
+    -- a list of lines (empty lines already removed), e.g. for
     {{ address_lines(...)|join('<br>')|safe }}."""
     request = context.get("request")
     region, _ = _get_state(request)
@@ -174,10 +173,10 @@ def jinja_address_lines(context, street: str, postal_code: str, city: str) -> li
 
 @pass_context
 def jinja_currency_symbol(context) -> str:
-    """Als Jinja-Global registriert: {{ currency_symbol() }} -- fuer
-    Eingabefeld-Hinweise (z.B. input-group-text neben einem <input>),
-    wo nur das Symbol der aktuell eingestellten Waehrung gebraucht wird,
-    nicht ein vollstaendig formatierter Betrag."""
+    """Registered as a Jinja global: {{ currency_symbol() }} -- for input
+    field hints (e.g. an input-group-text next to an <input>), where
+    only the symbol of the currently configured currency is needed, not
+    a fully formatted amount."""
     request = context.get("request")
     region, currency = _get_state(request)
     try:

@@ -1,10 +1,10 @@
 """
-Hilfsfunktionen zur Protokollierung von Feldänderungen (Audit-Log).
+Helper functions for logging field changes (audit log).
 
-Verwendung:
+Usage:
     tracker = ChangeTracker(parcel, "Parcel", ["area_sqm"])
     parcel.area_sqm = new_value
-    await tracker.commit(db, user_id)  # schreibt alle erkannten Änderungen
+    await tracker.commit(db, user_id)  # writes all detected changes
 """
 from typing import Any, Optional
 
@@ -12,7 +12,7 @@ from app.models import ChangeHistory
 
 
 def _to_string(value: Any) -> Optional[str]:
-    """Wandelt einen beliebigen Feldwert in eine vergleichbare/speicherbare Zeichenkette um."""
+    """Converts an arbitrary field value into a comparable/storable string."""
     if value is None:
         return None
     if hasattr(value, "value"):  # Enum
@@ -22,8 +22,8 @@ def _to_string(value: Any) -> Optional[str]:
 
 class ChangeTracker:
     """
-    Erfasst den Zustand eines Objekts vor Änderungen und ermittelt
-    beim Commit, welche Felder sich geändert haben.
+    Captures an object's state before changes and determines, at
+    commit time, which fields actually changed.
     """
 
     def __init__(self, obj, entity_type: str, fields: list[str]):

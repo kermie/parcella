@@ -1,6 +1,6 @@
 """
-Hilfsfunktionen für das Ticketsystem: automatischer Member-Abgleich
-per Absender-E-Mail-Adresse.
+Helper functions for the ticket system: automatic member matching by
+sender email address.
 """
 from typing import List
 
@@ -12,11 +12,11 @@ from app.models import Member, MemberEmail
 
 async def find_members_by_email(db: AsyncSession, email: str) -> List[Member]:
     """
-    Sucht Mitglieder, deren hinterlegte E-Mail-Adresse mit der übergebenen
-    übereinstimmt (case-insensitive). Gibt eine Liste zurück, da dieselbe
-    Adresse mehreren Mitgliedern gehören kann (z.B. Ehepaare) – in diesem
-    Fall trifft die Automatik bewusst KEINE Entscheidung, sondern überlässt
-    die Auswahl der Oberfläche (analog zur Unfallversicherung-Logik).
+    Finds members whose email address on file matches the one given
+    (case-insensitive). Returns a list, since the same address can
+    belong to multiple members (e.g. married couples) -- in that case
+    the automation deliberately makes NO decision, leaving the choice
+    to the UI (analogous to the accident-insurance logic).
     """
     result = await db.execute(
         select(Member)

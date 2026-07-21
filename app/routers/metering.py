@@ -1,13 +1,13 @@
 """
-Generisches Zählerwesen-Modul: deckt Wasser- UND Stromzähler über
-dieselbe Codebasis ab. Ein MeteringPoint hat ein "medium" (WASSER/STROM);
-die komplette Logik (Verbrauchsberechnung, Plausibilitätsprüfung,
-Ablesung, Auswertung) ist medium-unabhängig identisch.
+Generic metering module: covers water AND electricity meters via the
+same codebase. A MeteringPoint has a "medium" (WATER/ELECTRICITY); the
+entire logic (consumption calculation, plausibility checking, readings,
+evaluation) is identical regardless of medium.
 
-erstelle_metering_router() ist eine Fabrikfunktion: sie erzeugt einen
-vollständig konfigurierten Router für EIN Medium. main.py instanziiert
-sie zweimal (für /wasser und /strom) – so bleibt die Logik an einer
-einzigen Stelle gepflegt, statt für jedes Medium dupliziert zu werden.
+erstelle_metering_router() is a factory function: it produces a fully
+configured router for ONE medium. main.py instantiates it twice (for
+/water and /electricity) -- so the logic stays maintained in a single
+place instead of being duplicated per medium.
 """
 import csv
 import io
@@ -60,22 +60,22 @@ def erstelle_metering_router(
     dezimalstellen: int,
 ) -> APIRouter:
     """
-    Erzeugt einen vollständigen Router für ein Zähler-Medium.
+    Produces a complete router for a metering medium.
 
     Args:
-        medium: MeteringMedium.WATER oder MeteringMedium.ELECTRICITY
-        url_prefix: z.B. "/water" oder "/electricity"
-        modul_name: Schlüssel für das Modul-Flag, z.B. "water"/"electricity"
-        medium_label_key: Übersetzungsschlüssel für den Anzeigenamen, z.B.
-            "metering.medium.water"/"metering.medium.electricity" – ein
-            Schlüssel statt eines fertigen Strings, weil der Router einmal
-            beim Start instanziiert wird, die Anzeigesprache sich aber pro
-            Request ändern kann (siehe app/i18n.py). Für die (bewusst
-            weiterhin deutsche) CSV-Auswertung wird trotzdem ein fixer
-            deutscher Text verwendet, siehe medium_label_de weiter unten.
-        unit: z.B. "m³"/"kWh"
-        icon: Bootstrap-Icon-Klasse, z.B. "bi-droplet"/"bi-lightning-charge"
-        dezimalstellen: Anzahl Nachkommastellen bei Anzeige/Eingabe
+        medium: MeteringMedium.WATER or MeteringMedium.ELECTRICITY
+        url_prefix: e.g. "/water" or "/electricity"
+        modul_name: key for the module flag, e.g. "water"/"electricity"
+        medium_label_key: translation key for the display name, e.g.
+            "metering.medium.water"/"metering.medium.electricity" -- a
+            key instead of a ready-made string, because the router is
+            instantiated once at startup, but the display language can
+            change per request (see app/i18n.py). The (deliberately
+            still German) CSV export nonetheless uses a fixed German
+            text, see medium_label_de further below.
+        unit: e.g. "m³"/"kWh"
+        icon: Bootstrap icon class, e.g. "bi-droplet"/"bi-lightning-charge"
+        dezimalstellen: number of decimal places for display/input
     """
     router = APIRouter(
         prefix=url_prefix,
@@ -83,10 +83,9 @@ def erstelle_metering_router(
         dependencies=[Depends(require_modul(modul_name))],
     )
 
-    # Deutscher Anzeigename, ausschließlich für die (weiterhin deutsche)
-    # CSV-Auswertung – siehe medium_label_key oben für die Erklärung, warum
-    # der übersetzte Anzeigename NICHT hier, sondern erst pro Request
-    # aufgelöst wird.
+    # German display name, exclusively for the (still German) CSV
+    # export -- see medium_label_key above for why the translated
+    # display name is NOT resolved here, but per request instead.
     medium_label_de = translate(medium_label_key, DEFAULT_LANGUAGE)
 
     def medium_label(request: Request) -> str:
@@ -126,7 +125,7 @@ def erstelle_metering_router(
         return result.scalars().all()
 
     # -----------------------------------------------------------------
-    # Übersicht
+    # Overview
     # -----------------------------------------------------------------
 
     @router.get("/", response_class=HTMLResponse)
@@ -182,7 +181,7 @@ def erstelle_metering_router(
         })
 
     # -----------------------------------------------------------------
-    # MeteringPointe: Liste, Anlegen, Detail, Bearbeiten, Löschen
+    # MeteringPoints: list, create, detail, edit, delete
     # -----------------------------------------------------------------
 
     @router.get("/metering-points", response_class=HTMLResponse)
@@ -336,7 +335,7 @@ def erstelle_metering_router(
         return RedirectResponse(f"{url_prefix}/metering-points", status_code=302)
 
     # -----------------------------------------------------------------
-    # Zähler tauschen
+    # Swap meter
     # -----------------------------------------------------------------
 
     @router.post("/metering-points/{metering_point_id}/meter/exchange")
@@ -373,7 +372,7 @@ def erstelle_metering_router(
         return RedirectResponse(f"{url_prefix}/metering-points/{metering_point_id}", status_code=302)
 
     # -----------------------------------------------------------------
-    # Zählerstände: Anlegen, Löschen
+    # Meter readings: create, delete
     # -----------------------------------------------------------------
 
     @router.post("/metering-points/{metering_point_id}/readings/new")
@@ -447,7 +446,7 @@ def erstelle_metering_router(
         return RedirectResponse(f"{url_prefix}/metering-points", status_code=302)
 
     # -----------------------------------------------------------------
-    # Ablesung (mobile-freundliche Sammel-Erfassung)
+    # Readings (mobile-friendly bulk entry)
     # -----------------------------------------------------------------
 
     @router.get("/readings", response_class=HTMLResponse)
@@ -499,7 +498,7 @@ def erstelle_metering_router(
         })
 
     # -----------------------------------------------------------------
-    # Auswertung
+    # Evaluation
     # -----------------------------------------------------------------
 
     @router.get("/evaluation", response_class=HTMLResponse)

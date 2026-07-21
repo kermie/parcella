@@ -1,4 +1,4 @@
-"""Patenschaft: mitglied_id optional (nullable)
+"""Sponsorship: mitglied_id made optional (nullable)
 
 Revision ID: 0004_patenschaft_optional
 Revises: 0003_erw_vorstand
@@ -20,7 +20,7 @@ def upgrade() -> None:
         existing_type=sa.String(36),
         nullable=True,
     )
-    # Foreign Key auf SET NULL ändern
+    # Change the foreign key to SET NULL
     op.drop_constraint("patenschaften_mitglied_id_fkey", "patenschaften", type_="foreignkey")
     op.create_foreign_key(
         "patenschaften_mitglied_id_fkey",

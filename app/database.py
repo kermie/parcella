@@ -6,9 +6,9 @@ engine = create_async_engine(
     settings.database_url,
     echo=settings.is_development,
     pool_pre_ping=True,
-    pool_recycle=1800,  # Verbindungen nach 30 Min. proaktiv erneuern,
-                        # verhindert "MissingGreenlet"-Fehler bei
-                        # lange ungenutzten/stale Verbindungen
+    pool_recycle=1800,  # proactively refresh connections after 30 min,
+                        # prevents "MissingGreenlet" errors on long-idle/
+                        # stale connections
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -31,7 +31,7 @@ async def get_db():
 
 
 async def init_db():
-    """Erstellt alle Tabellen (nur für Entwicklung; in Produktion: Alembic)."""
+    """Creates all tables (development only; Alembic handles production)."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -40,11 +40,11 @@ from sqlalchemy import and_ as _and_
 
 def active_member_filter():
     """
-    Standardfilter für aktive Mitglieder:
-    - nicht soft-deleted (deleted_at IS NULL)
-    - Mitgliedschaft nicht abgelaufen (member_until IS NULL oder in der Zukunft)
+    Default filter for active members:
+    - not soft-deleted (deleted_at IS NULL)
+    - membership not expired (member_until IS NULL or in the future)
 
-    Verwendung: .where(active_member_filter())
+    Usage: .where(active_member_filter())
     """
     from app.models import Member
     return _and_(

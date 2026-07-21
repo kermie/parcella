@@ -1,4 +1,4 @@
-"""Tests für Mitglieder, Parzellen und ihre m:n-Zuordnung."""
+"""Tests for members, parcels, and their m:n assignment."""
 from tests.conftest import login, auth_header
 
 
@@ -30,7 +30,7 @@ async def test_parcel_anlegen_doppelte_plot_number_abgelehnt(client, admin_user)
     response = await client.post(
         "/api/v1/parcels", json={"plot_number": "g001"}, headers=auth_header(token)
     )
-    assert response.status_code == 409  # Groß-/Kleinschreibung wird normalisiert (G001 == g001)
+    assert response.status_code == 409  # case is normalized (G001 == g001)
 
 
 async def test_mitglied_parzelle_zuordnung_und_doppelgarten(client, admin_user):

@@ -1,11 +1,11 @@
 """
-E-Mail-Versand via SMTP (aiosmtplib).
+Email sending via SMTP (aiosmtplib).
 
-Die SMTP-Konfiguration kommt primär aus der Datenbank (ClubSettings,
-editierbar unter /admin/einstellungen). Fehlt dort ein Wert (z.B. bei einer
-frischen Installation, bevor jemand die Oberfläche genutzt hat), wird auf
-die .env-Datei zurückgegriffen – so funktioniert der Versand auch ganz ohne
-Admin-Interaktion, wenn die Umgebungsvariablen gesetzt sind.
+The SMTP configuration primarily comes from the database (ClubSettings,
+editable under /admin/settings). If a value is missing there (e.g. on a
+fresh install, before anyone has used the UI), it falls back to the
+.env file -- so sending still works without any admin interaction, as
+long as the environment variables are set.
 """
 import logging
 from email.mime.text import MIMEText
@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 async def lade_smtp_konfiguration(db: AsyncSession) -> dict:
     """
-    Lädt die SMTP-Konfiguration: Datenbank-Werte haben Vorrang, fehlende
-    Werte werden aus der .env-Datei (app.config.settings) ergänzt.
+    Loads the SMTP configuration: database values take precedence,
+    missing values are filled in from the .env file (app.config.settings).
     """
     result = await db.execute(
         select(ClubSetting).where(
@@ -66,11 +66,11 @@ async def sende_email(
     db: Optional[AsyncSession] = None,
 ) -> bool:
     """
-    Sendet eine E-Mail. Gibt True bei Erfolg zurück.
+    Sends an email. Returns True on success.
 
-    Wenn `db` übergeben wird, kommt die SMTP-Konfiguration aus der
-    Datenbank (mit .env-Fallback). Ohne `db` wird ausschließlich die
-    .env-Konfiguration genutzt (Abwärtskompatibilität).
+    If `db` is passed, the SMTP configuration comes from the database
+    (with .env fallback). Without `db`, only the .env configuration is
+    used (backwards compatibility).
     """
     if db is not None:
         konfig = await lade_smtp_konfiguration(db)
@@ -85,8 +85,8 @@ async def sende_email(
         }
 
     if not konfig["host"] or not konfig["user"]:
-        logger.warning("SMTP nicht konfiguriert – E-Mail wird nicht gesendet.")
-        logger.info(f"[DEV] An: {empfaenger} | Betreff: {betreff}")
+        logger.warning("SMTP not configured -- email will not be sent.")
+        logger.info(f"[DEV] To: {empfaenger} | Subject: {betreff}")
         return False
 
     msg = MIMEMultipart("alternative")
@@ -107,10 +107,10 @@ async def sende_email(
             password=konfig["password"],
             start_tls=konfig["tls"],
         )
-        logger.info(f"E-Mail gesendet an {empfaenger}")
+        logger.info(f"Email sent to {empfaenger}")
         return True
     except Exception as e:
-        logger.error(f"E-Mail-Fehler an {empfaenger}: {e}")
+        logger.error(f"Email error sending to {empfaenger}: {e}")
         return False
 
 

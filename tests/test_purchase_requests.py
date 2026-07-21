@@ -1,8 +1,8 @@
 """
-Tests für das Purchase-Requests-Modul (Einkaufswünsche). Schwerpunkt: das
-Vier-Augen-Prinzip selbst – genau die Kontrolle, die dieses Modul überhaupt
-existieren lässt. Ein Regressionsfehler hier wäre besonders schwerwiegend
-(Sicherheitslücke, kein reiner Komfortbug).
+Tests for the Purchase Requests module. Focus: the four-eyes principle
+itself -- exactly the control this module exists for in the first
+place. A regression here would be especially serious (a security hole,
+not a mere comfort bug).
 """
 from tests.conftest import login, auth_header
 
@@ -25,18 +25,18 @@ async def test_zwei_unterschiedliche_freigaben_fuehren_zu_genehmigt(
         f"/api/v1/purchase-requests/{pr['id']}/approve", headers=auth_header(token_v1)
     )
     assert r1.status_code == 200
-    assert r1.json()["status"] == "OPEN"  # erst 1 von 2
+    assert r1.json()["status"] == "OPEN"  # only 1 of 2 so far
 
     token_v2 = await login(client, "vorstand2@example.com")
     r2 = await client.post(
         f"/api/v1/purchase-requests/{pr['id']}/approve", headers=auth_header(token_v2)
     )
     assert r2.status_code == 200
-    assert r2.json()["status"] == "APPROVED"  # jetzt 2 von 2
+    assert r2.json()["status"] == "APPROVED"  # now 2 of 2
 
 
 async def test_antragsteller_darf_nicht_selbst_freigeben(client, admin_user, board_user):
-    """Kernschutz des Vier-Augen-Prinzips: wer beantragt, darf nicht mitgenehmigen."""
+    """Core protection of the four-eyes principle: whoever requests may not also approve."""
     token = await login(client, "vorstand@example.com")
     headers = auth_header(token)
 
@@ -46,7 +46,7 @@ async def test_antragsteller_darf_nicht_selbst_freigeben(client, admin_user, boa
         headers=headers,
     )).json()
 
-    # Der Antragsteller selbst versucht freizugeben – muss abgelehnt werden
+    # The requester themselves tries to approve -- must be rejected
     response = await client.post(f"/api/v1/purchase-requests/{pr['id']}/approve", headers=headers)
     assert response.status_code == 403
 
@@ -54,7 +54,7 @@ async def test_antragsteller_darf_nicht_selbst_freigeben(client, admin_user, boa
 async def test_gleiche_person_kann_nicht_doppelt_freigeben(
     client, admin_user, board_user, second_board_user
 ):
-    """Zwei Freigaben müssen von ZWEI UNTERSCHIEDLICHEN Personen kommen."""
+    """Two approvals must come from TWO DIFFERENT people."""
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
 
@@ -67,19 +67,19 @@ async def test_gleiche_person_kann_nicht_doppelt_freigeben(
     token_v1 = await login(client, "vorstand@example.com")
     await client.post(f"/api/v1/purchase-requests/{pr['id']}/approve", headers=auth_header(token_v1))
 
-    # Dieselbe Person versucht ein zweites Mal freizugeben
+    # The same person tries to approve a second time
     zweiter_versuch = await client.post(
         f"/api/v1/purchase-requests/{pr['id']}/approve", headers=auth_header(token_v1)
     )
     assert zweiter_versuch.status_code == 409
 
-    # Status muss weiterhin OPEN sein, nicht fälschlich APPROVED
+    # Status must still be OPEN, not incorrectly APPROVED
     aktuell = (await client.get(f"/api/v1/purchase-requests/{pr['id']}", headers=headers)).json()
     assert aktuell["status"] == "OPEN"
 
 
 async def test_ablehnung_durch_eine_person_genuegt(client, admin_user, board_user):
-    """Veto-Prinzip: eine einzelne Ablehnung stoppt den Antrag sofort."""
+    """Veto principle: a single rejection stops the request immediately."""
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
 
@@ -101,7 +101,7 @@ async def test_ablehnung_durch_eine_person_genuegt(client, admin_user, board_use
 
 
 async def test_normale_mitglieder_koennen_nicht_freigeben(client, admin_user):
-    """Nur Vorstand/Admin dürfen freigeben – einfache Mitglieder nicht."""
+    """Only board/admin may approve -- regular members may not."""
     from app.models import User, UserRole
     from app.auth import hash_password
     from app.database import AsyncSessionLocal

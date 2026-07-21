@@ -1,10 +1,10 @@
 """
-Purchase-Requests-Router (Web-Oberfläche): Antrag stellen, Freigeben,
-Ablehnen, Deep-Link-Bestätigung durch externe Antragsteller.
+Purchase Requests router (web UI): submit a request, approve, reject,
+deep-link confirmation by external requesters.
 
-Vier-Augen-Prinzip: zwei unterschiedliche Vorstandsmitglieder müssen
-zustimmen, bevor ein PurchaseRequest als genehmigt gilt. Der Antragsteller
-selbst darf keine der beiden Freigaben geben.
+Four-eyes principle: two different board members must agree before a
+PurchaseRequest counts as approved. The requester themselves may not
+give either of the two approvals.
 """
 from datetime import datetime, timezone
 from typing import Optional
@@ -50,7 +50,7 @@ async def _load_with_details(db: AsyncSession, request_id: str) -> Optional[Purc
 
 
 # ---------------------------------------------------------------------------
-# Übersicht
+# Overview
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
@@ -76,7 +76,7 @@ async def purchase_requests_overview(
         query = query.where(PurchaseRequest.status == PurchaseRequestStatus.APPROVED)
     elif filter == "abgelehnt":
         query = query.where(PurchaseRequest.status == PurchaseRequestStatus.REJECTED)
-    # "alle": kein Filter
+    # "alle": no filter
 
     result = await db.execute(query)
     purchase_requests = result.scalars().all()
@@ -89,7 +89,7 @@ async def purchase_requests_overview(
 
 
 # ---------------------------------------------------------------------------
-# Anlegen
+# Create
 # ---------------------------------------------------------------------------
 
 @router.get("/new", response_class=HTMLResponse)
@@ -187,7 +187,7 @@ async def purchase_request_detail(request_id: str, request: Request, db: AsyncSe
 
 
 # ---------------------------------------------------------------------------
-# Freigeben / Ablehnen (nur Vorstand/Admin)
+# Approve / Reject (board/admin only)
 # ---------------------------------------------------------------------------
 
 @router.post("/{request_id}/approve")
@@ -212,7 +212,7 @@ async def purchase_request_approve(request_id: str, request: Request, db: AsyncS
     db.add(PurchaseRequestApproval(purchase_request_id=request_id, user_id=user.id))
     await db.flush()
 
-    neue_anzahl = len(pr.approvals) + 1  # +1 da noch nicht neu geladen
+    neue_anzahl = len(pr.approvals) + 1  # +1 since not yet reloaded
     if neue_anzahl >= _REQUIRED_APPROVALS:
         pr.status = PurchaseRequestStatus.APPROVED
         pr.approved_at = datetime.now(timezone.utc)
@@ -246,7 +246,7 @@ async def purchase_request_reject(
 
 
 # ---------------------------------------------------------------------------
-# Deep-Link-Bestätigung durch externe Antragsteller (KEIN Login nötig)
+# Deep-link confirmation by external requesters (NO login needed)
 # ---------------------------------------------------------------------------
 
 @router.get("/confirm/{token}", response_class=HTMLResponse)

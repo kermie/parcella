@@ -1,5 +1,5 @@
 """
-Authentifizierung: Passwort-Hashing, Sessions, Einladungstoken.
+Authentication: password hashing, sessions, invitation tokens.
 """
 import secrets
 import bcrypt
@@ -28,10 +28,10 @@ def verify_password(password: str, hashed: str) -> bool:
 
 
 def create_invitation_token(email: str) -> str:
-    # secrets.token_urlsafe sorgt dafür, dass zwei Einladungen an dieselbe
-    # Adresse innerhalb derselben Sekunde garantiert unterschiedliche Tokens
-    # bekommen (itsdangerous' eigener Zeitstempel hat nur Sekunden-Genauigkeit
-    # und wäre bei reinem email+Zeitstempel sonst deterministisch identisch).
+    # secrets.token_urlsafe guarantees two invitations to the same address
+    # within the same second get different tokens (itsdangerous' own
+    # timestamp only has second precision, so a plain email+timestamp
+    # would otherwise be deterministically identical).
     nonce = secrets.token_urlsafe(8)
     return serializer.dumps(f"{email}:{nonce}", salt="einladung")
 
@@ -40,7 +40,7 @@ def verify_invitation_token(token: str, max_age: int = INVITATION_VALID_DAYS * 8
     try:
         payload = serializer.loads(token, salt="einladung", max_age=max_age)
         email, _, _nonce = payload.rpartition(":")
-        return email or payload  # Rückwärtskompatibel mit älteren Tokens ohne Nonce
+        return email or payload  # backwards-compatible with older tokens without a nonce
     except (BadSignature, SignatureExpired):
         return None
 

@@ -1,6 +1,6 @@
 """
-Versicherungsmodul-Router (insurance): Konfiguration (Pakete, Beträge),
-Parzellen-Verwaltung, Auswertung.
+Insurance module router: configuration (packages, amounts), parcel
+management, evaluation.
 """
 import csv
 import io
@@ -72,10 +72,11 @@ async def _get_or_create_pi(db: AsyncSession, parcel_id: str, year: int) -> Parc
         pi = ParcelInsurance(parcel_id=parcel_id, year=year)
         db.add(pi)
         await db.commit()
-        # Frisch angelegte Zeile mit eager-geladenen Beziehungen neu laden.
-        # Ohne das würde ein späterer Zugriff auf pi.property_package/
-        # pi.additional_persons einen synchronen Lazy-Load auslösen, der mit
-        # dem asynchronen Datenbanktreiber zu "MissingGreenlet" führt.
+        # Reload the freshly created row with eagerly-loaded
+        # relationships. Without this, a later access to
+        # pi.property_package/pi.additional_persons would trigger a
+        # synchronous lazy load, which raises "MissingGreenlet" with
+        # the async database driver.
         result = await db.execute(
             select(ParcelInsurance)
             .options(
@@ -89,7 +90,7 @@ async def _get_or_create_pi(db: AsyncSession, parcel_id: str, year: int) -> Parc
 
 
 # ---------------------------------------------------------------------------
-# Übersicht
+# Overview
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
@@ -140,7 +141,7 @@ async def insurance_overview(
 
 
 # ---------------------------------------------------------------------------
-# Konfiguration: Unfallbeträge + Sachversicherungs-Pakete
+# Configuration: accident amounts + property insurance packages
 # ---------------------------------------------------------------------------
 
 @router.get("/configuration", response_class=HTMLResponse)
@@ -259,7 +260,7 @@ async def package_delete(
 
 
 # ---------------------------------------------------------------------------
-# Parzellen: Liste, Detail/Bearbeiten
+# Parcels: list, detail/edit
 # ---------------------------------------------------------------------------
 
 @router.get("/parcels", response_class=HTMLResponse)
@@ -358,7 +359,7 @@ async def insurance_save(
 
     pi.has_accident_insurance = has_accident_insurance
 
-    # Zusatzpersonen komplett neu setzen (einfacher als Diff, Datenmenge ist klein)
+    # Fully replace additional persons (simpler than diffing, data volume is small)
     for ap in list(pi.additional_persons):
         await db.delete(ap)
     await db.flush()
@@ -374,7 +375,7 @@ async def insurance_save(
 
 
 # ---------------------------------------------------------------------------
-# Auswertung
+# Evaluation
 # ---------------------------------------------------------------------------
 
 @router.get("/evaluation", response_class=HTMLResponse)

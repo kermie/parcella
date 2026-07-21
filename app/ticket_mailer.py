@@ -1,22 +1,22 @@
 """
-Ticket-Postfach-Integration (Etappe 2): IMAP-Abruf eingehender E-Mails und
-SMTP-Versand ausgehender Antworten – über DASSELBE Postfach, das auch für
-allgemeine System-E-Mails (Einladungen) genutzt wird. Es gibt bewusst nur
-EINEN Satz SMTP-Zugangsdaten (siehe app/email_service.py); hier kommen nur
-die zusätzlichen IMAP-Felder dazu, die zum Empfangen nötig sind.
+Ticket mailbox integration (stage 2): IMAP fetch of incoming emails and
+SMTP send of outgoing replies -- via the SAME mailbox also used for
+general system emails (invitations). There's deliberately only ONE set
+of SMTP credentials (see app/email_service.py); this file just adds the
+extra IMAP fields needed for receiving.
 
-Design-Entscheidungen (siehe auch docs/module-tickets.md):
-- Betriebsdaten (letzte verarbeitete UID, Fehler) leben in der bestehenden
-  `vereinseinstellungen`-Tabelle statt einer eigenen Tabelle – konsistent
-  mit dem Rest des Projekts, keine weitere Migration nötig.
-- IMAP-Abruf läuft synchron (Python-Bordmittel `imaplib`/`email`), aber in
-  einem Thread-Executor (`asyncio.to_thread`), damit der Event-Loop nicht
-  blockiert.
-- Threading: eingehende Antworten werden über die Header `In-Reply-To`/
-  `References` einem bestehenden Ticket zugeordnet (Vergleich mit den
-  gespeicherten `message_id`-Werten vorheriger Nachrichten). Schlägt das
-  fehl, wird ersatzweise nach Absender-Adresse + ähnlichem Betreff in
-  offenen Tickets gesucht. Ohne Treffer entsteht ein neues Ticket.
+Design decisions (see also docs/module-tickets.md):
+- Operational data (last processed UID, errors) lives in the existing
+  `club_settings` table instead of its own table -- consistent with
+  the rest of the project, no extra migration needed.
+- IMAP fetching runs synchronously (Python's built-in `imaplib`/`email`),
+  but in a thread executor (`asyncio.to_thread`) so it doesn't block the
+  event loop.
+- Threading: incoming replies are matched to an existing ticket via the
+  `In-Reply-To`/`References` headers (compared against the stored
+  `message_id` values of previous messages). If that fails, it falls
+  back to searching open tickets by sender address + similar subject.
+  With no match, a new ticket is created.
 """
 import asyncio
 import email
@@ -41,7 +41,7 @@ from app.html_sanitizer import sanitize_email_html
 
 logger = logging.getLogger(__name__)
 
-# Betriebsdaten-Schlüssel in der vereinseinstellungen-Tabelle
+# Operational data keys in the club_settings table
 _KEY_LAST_UID = "ticket_imap_letzte_uid"
 _KEY_LAST_FETCH = "ticket_imap_letzter_abruf"
 _KEY_LAST_ERROR = "ticket_imap_letzter_fehler"
@@ -64,10 +64,11 @@ async def _write_setting(db: AsyncSession, key: str, value: Optional[str]) -> No
 
 async def load_inbox_configuration(db: AsyncSession) -> Dict[str, Any]:
     """
-    Lädt die Postfach-Konfiguration: SMTP-Zugangsdaten kommen aus der
-    bereits bestehenden allgemeinen E-Mail-Konfiguration (dasselbe Postfach
-    wie für Einladungen) – nur IMAP-Host/-Port/-SSL sind ticketspezifisch,
-    da die allgemeine Konfiguration nur zum Senden gedacht ist.
+    Loads the mailbox configuration: SMTP credentials come from the
+    already-existing general email configuration (the same mailbox
+    used for invitations) -- only IMAP host/port/SSL are ticket-
+    specific, since the general configuration is only meant for
+    sending.
     """
     smtp_config = await lade_smtp_konfiguration(db)
 
@@ -86,7 +87,7 @@ async def load_inbox_configuration(db: AsyncSession) -> Dict[str, Any]:
     return {
         "imap_host": stored.get("imap_host", ""),
         "imap_port": int(stored.get("imap_port") or 993),
-        "imap_user": smtp_config["user"],       # dasselbe Postfach wie SMTP
+        "imap_user": smtp_config["user"],       # same mailbox as SMTP
         "imap_password": smtp_config["password"],
         "imap_ssl": _bool(stored.get("imap_ssl"), True),
         "smtp_host": smtp_config["host"],
@@ -104,14 +105,14 @@ def is_inbox_configured(config: Dict[str, Any]) -> bool:
 
 def _safe_decode(payload: bytes, charset: Optional[str]) -> str:
     """
-    Dekodiert Bytes mit dem angegebenen Zeichensatz, fällt aber sicher auf
-    UTF-8 zurück, wenn der Zeichensatz Python unbekannt ist.
+    Decodes bytes using the given charset, but safely falls back to
+    UTF-8 if the charset is unknown to Python.
 
-    Manche Mailserver/-clients deklarieren nicht-standardkonforme
-    Zeichensatznamen wie "unknown-8bit" – das führt zu einem LookupError,
-    noch bevor überhaupt ein einziges Byte dekodiert wird. errors="replace"
-    allein hilft hier NICHT, da es nur fehlerhafte Bytes bei einem
-    BEKANNTEN Zeichensatz abfängt, nicht einen unbekannten Namen selbst.
+    Some mail servers/clients declare non-standard charset names like
+    "unknown-8bit" -- that raises a LookupError before even a single
+    byte is decoded. errors="replace" alone does NOT help here, since
+    it only catches malformed bytes within a KNOWN charset, not an
+    unknown charset name itself.
     """
     try:
         return payload.decode(charset or "utf-8", errors="replace")
@@ -133,7 +134,7 @@ def _decode_header(value: Optional[str]) -> str:
 
 
 def _extract_text(msg) -> str:
-    """Bevorzugt text/plain, fällt auf grob bereinigtes text/html zurück."""
+    """Prefers text/plain, falls back to roughly-stripped text/html."""
     if msg.is_multipart():
         for part in msg.walk():
             if part.get_content_type() == "text/plain" and not part.get("Content-Disposition"):
@@ -145,8 +146,8 @@ def _extract_text(msg) -> str:
                 payload = part.get_payload(decode=True)
                 if payload:
                     html = _safe_decode(payload, part.get_content_charset())
-                    # <script>/<style>-Inhalt zuerst komplett entfernen (nicht nur
-                    # die Tags) -- sonst landet z.B. CSS-Code sichtbar im Fallback-Text.
+                    # Remove <script>/<style> content entirely first (not just
+                    # the tags) -- otherwise e.g. CSS code ends up visible in the fallback text.
                     html = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", html, flags=re.IGNORECASE | re.DOTALL)
                     return re.sub(r"<[^>]+>", "", html).strip()
         return ""
@@ -156,21 +157,21 @@ def _extract_text(msg) -> str:
             return ""
         text = _safe_decode(payload, msg.get_content_charset())
         if msg.get_content_type() == "text/html":
-            # Einzelteilige (nicht-multipart) HTML-Mail -- gleiche
-            # Tag-Bereinigung wie im multipart-Fall oben, sonst landet
-            # rohes Markup im reinen Text-Fallback (z.B. CSV-Export,
-            # Suchindex, oder als letzter Ausweg falls content_html mal
-            # leer sein sollte).
+            # Single-part (non-multipart) HTML mail -- same tag
+            # stripping as in the multipart case above, otherwise raw
+            # markup ends up in the plain-text fallback (e.g. CSV
+            # export, search index, or as a last resort if content_html
+            # is ever empty).
             text = re.sub(r"<(script|style)[^>]*>.*?</\1>", "", text, flags=re.IGNORECASE | re.DOTALL)
             text = re.sub(r"<[^>]+>", "", text).strip()
         return text
 
 
 def _extract_html(msg) -> Optional[str]:
-    """Gibt den rohen (noch NICHT bereinigten) text/html-Teil einer E-Mail
-    zurück, falls vorhanden -- sonst None. Aufrufer ist dafür verantwortlich,
-    das Ergebnis über sanitize_email_html() zu bereinigen, BEVOR es
-    gespeichert oder gerendert wird (siehe app/html_sanitizer.py)."""
+    """Returns an email's raw (NOT YET sanitized) text/html part, if
+    any -- otherwise None. The caller is responsible for sanitizing the
+    result via sanitize_email_html() BEFORE it's stored or rendered
+    (see app/html_sanitizer.py)."""
     if msg.is_multipart():
         for part in msg.walk():
             if part.get_content_type() == "text/html" and not part.get("Content-Disposition"):
@@ -188,10 +189,11 @@ def _extract_html(msg) -> Optional[str]:
 
 def _fetch_highest_uid_sync(config: Dict[str, Any]) -> int:
     """
-    Ermittelt nur die höchste aktuell vorhandene UID, OHNE eine einzige
-    Nachricht abzurufen. Wird für die Erstsynchronisierung genutzt (siehe
-    process_incoming_mails) – verhindert, dass beim allerersten Abruf
-    Tausende bestehende Alt-Mails auf einmal als Tickets importiert werden.
+    Determines only the highest currently existing UID, WITHOUT
+    fetching a single message. Used for the initial sync (see
+    process_incoming_mails) -- prevents thousands of existing old
+    emails from being imported as tickets all at once on the very
+    first fetch.
     """
     if config["imap_ssl"]:
         connection = imaplib.IMAP4_SSL(config["imap_host"], config["imap_port"])
@@ -219,8 +221,8 @@ def _fetch_highest_uid_sync(config: Dict[str, Any]) -> int:
 
 def _fetch_new_mails_sync(config: Dict[str, Any], last_uid: Optional[int]) -> List[Dict[str, Any]]:
     """
-    Synchrone IMAP-Abfrage (läuft in einem Thread-Executor). Gibt eine Liste
-    geparster Nachrichten zurück, jeweils mit uid, message_id, in_reply_to,
+    Synchronous IMAP query (runs in a thread executor). Returns a list
+    of parsed messages, each with uid, message_id, in_reply_to,
     references, from_email, from_name, subject, text.
     """
     results: List[Dict[str, Any]] = []
@@ -280,13 +282,13 @@ def _fetch_new_mails_sync(config: Dict[str, Any], last_uid: Optional[int]) -> Li
 
 
 def _normalize_subject(subject: str) -> str:
-    """Entfernt Antwort-/Weiterleitungs-Präfixe für den Fallback-Betreffvergleich."""
+    """Strips reply/forward prefixes for the fallback subject comparison."""
     return re.sub(r"^(re|aw|fwd?)\s*:\s*", "", subject.strip(), flags=re.IGNORECASE).strip().lower()
 
 
 async def _find_matching_ticket(db: AsyncSession, mail: Dict[str, Any]) -> Optional[Ticket]:
-    """Sucht ein bestehendes Ticket für eine eingehende Antwort."""
-    # 1. Über Message-ID-Threading (In-Reply-To oder References)
+    """Looks up an existing ticket for an incoming reply."""
+    # 1. Via message-ID threading (In-Reply-To or References)
     candidate_ids = []
     if mail["in_reply_to"]:
         candidate_ids.append(mail["in_reply_to"])
@@ -304,7 +306,7 @@ async def _find_matching_ticket(db: AsyncSession, mail: Dict[str, Any]) -> Optio
             if ticket:
                 return ticket
 
-    # 2. Fallback: gleicher Absender + ähnlicher Betreff, nicht geschlossen
+    # 2. Fallback: same sender + similar subject, not closed
     normalized = _normalize_subject(mail["subject"])
     result = await db.execute(
         select(Ticket).where(
@@ -321,9 +323,9 @@ async def _find_matching_ticket(db: AsyncSession, mail: Dict[str, Any]) -> Optio
 
 async def process_incoming_mails(db: AsyncSession) -> int:
     """
-    Ruft neue E-Mails ab und verarbeitet sie zu Tickets/Nachrichten.
-    Gibt die Anzahl neu verarbeiteter Mails zurück. Fehler werden abgefangen
-    und in der Datenbank vermerkt, statt den Hintergrundjob abstürzen zu lassen.
+    Fetches new emails and processes them into tickets/messages.
+    Returns the number of newly processed emails. Errors are caught and
+    recorded in the database instead of crashing the background job.
     """
     config = await load_inbox_configuration(db)
     if not is_inbox_configured(config):
@@ -334,14 +336,15 @@ async def process_incoming_mails(db: AsyncSession) -> int:
     last_uid = int(last_uid_str) if last_uid_str else None
 
     if first_run:
-        # Beim allerersten Abruf werden bestehende E-Mails NICHT importiert –
-        # nur die aktuell höchste UID wird als Startpunkt gemerkt. Sonst
-        # würde ein Postfach mit tausenden Alt-Mails auf einen Schlag komplett
-        # (und sehr langsam, ggf. mit Verbindungsabbruch) importiert werden.
+        # On the very first fetch, existing emails are NOT imported --
+        # only the current highest UID is remembered as the starting
+        # point. Otherwise a mailbox with thousands of old emails would
+        # get imported all at once (very slowly, possibly with a
+        # dropped connection).
         try:
             highest_uid = await asyncio.to_thread(_fetch_highest_uid_sync, config)
         except Exception as e:
-            logger.error(f"IMAP-Erstsynchronisierung fehlgeschlagen: {e}")
+            logger.error(f"IMAP initial sync failed: {e}")
             await _write_setting(db, _KEY_LAST_ERROR, str(e))
             await db.commit()
             return 0
@@ -351,15 +354,15 @@ async def process_incoming_mails(db: AsyncSession) -> int:
         await _write_setting(db, _KEY_LAST_ERROR, None)
         await db.commit()
         logger.info(
-            f"Ticket-Postfach: Erstsynchronisierung abgeschlossen (UID {highest_uid}). "
-            f"Bestehende E-Mails wurden übersprungen, ab jetzt werden nur neue E-Mails verarbeitet."
+            f"Ticket mailbox: initial sync complete (UID {highest_uid}). "
+            f"Existing emails were skipped, only new emails will be processed from now on."
         )
         return 0
 
     try:
         mails = await asyncio.to_thread(_fetch_new_mails_sync, config, last_uid)
     except Exception as e:
-        logger.error(f"IMAP-Abruf fehlgeschlagen: {e}")
+        logger.error(f"IMAP fetch failed: {e}")
         await _write_setting(db, _KEY_LAST_ERROR, str(e))
         await db.commit()
         return 0
@@ -371,21 +374,21 @@ async def process_incoming_mails(db: AsyncSession) -> int:
         highest_uid = max(highest_uid, mail["uid"])
 
         if not mail["from_email"]:
-            continue  # unbrauchbare Nachricht (keine Absenderadresse geparst)
+            continue  # unusable message (no sender address parsed)
 
         ticket = await _find_matching_ticket(db, mail)
 
         if ticket:
-            # Geschlossenes, zurückgestelltes oder auf Antwort wartendes
-            # Ticket bei neuer Antwort automatisch wieder aktivieren --
-            # eine Antwort des Absenders beendet jede Form von "wir warten".
+            # Automatically reactivate a closed, postponed, or
+            # waiting-for-reply ticket on a new reply -- a reply from
+            # the sender ends any form of "we're waiting".
             if ticket.status in (TicketStatus.CLOSED, TicketStatus.POSTPONED, TicketStatus.WAITING):
                 ticket.status = TicketStatus.ASSIGNED if ticket.assigned_to_id else TicketStatus.ACTIVE
                 ticket.closed_at = None
                 ticket.postponed_until = None
         else:
-            # Spam-Prüfung nur für neue Tickets, nicht für Antworten auf
-            # bestehende – spart unnötige (ggf. kostenpflichtige) externe Aufrufe.
+            # Spam check only for new tickets, not for replies to
+            # existing ones -- avoids unnecessary (possibly paid) external calls.
             spam_result = await pruefe_auf_spam(mail["from_email"], mail["subject"], mail["text"], db)
 
             matches = await find_members_by_email(db, mail["from_email"])
@@ -423,14 +426,14 @@ async def process_incoming_mails(db: AsyncSession) -> int:
 
 async def send_ticket_reply(ticket: Ticket, content: str, db: AsyncSession) -> Optional[str]:
     """
-    Sendet eine Antwort auf ein Ticket per E-Mail an den Absender, über das
-    konfigurierte Ticket-Postfach. Gibt die generierte Message-ID zurück
-    (zum Speichern auf der TicketMessage, für künftiges Threading), oder
-    None, falls das Postfach nicht konfiguriert ist oder der Versand fehlschlug.
+    Sends a reply to a ticket by email to the sender, via the
+    configured ticket mailbox. Returns the generated message ID (to
+    store on the TicketMessage, for future threading), or None if the
+    mailbox isn't configured or sending failed.
     """
     config = await load_inbox_configuration(db)
     if not is_inbox_configured(config):
-        logger.warning("Ticket-Postfach nicht konfiguriert – Antwort wird nicht per E-Mail versendet.")
+        logger.warning("Ticket mailbox not configured -- reply will not be sent by email.")
         return None
 
     last_incoming = next(
@@ -464,12 +467,12 @@ async def send_ticket_reply(ticket: Ticket, content: str, db: AsyncSession) -> O
         )
         return new_message_id
     except Exception as e:
-        logger.error(f"Ticket-Antwort konnte nicht gesendet werden: {e}")
+        logger.error(f"Ticket reply could not be sent: {e}")
         return None
 
 
 async def inbox_status(db: AsyncSession) -> Dict[str, Optional[str]]:
-    """Betriebsstatus für die Anzeige in der Oberfläche (letzter Abruf, letzter Fehler)."""
+    """Operational status for display in the UI (last fetch, last error)."""
     return {
         "letzter_abruf": await _read_setting(db, _KEY_LAST_FETCH),
         "letzter_fehler": await _read_setting(db, _KEY_LAST_ERROR),

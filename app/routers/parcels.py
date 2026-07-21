@@ -99,7 +99,7 @@ async def parzelle_erstellen(
 ):
     await require_user(request, db)
 
-    # Doppelte Gartennummer prüfen
+    # Check for a duplicate plot number
     existing = await db.execute(
         select(Parcel).where(Parcel.plot_number == plot_number.strip().upper())
     )
@@ -146,18 +146,18 @@ async def parzelle_detail(
     if not parcel:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.parcel_not_found"))
 
-    # Alle Mitglieder für Zuordnung
+    # All members, for assignment
     mitglieder_result = await db.execute(
         select(Member)
         .where(active_member_filter())
         .order_by(Member.last_name, Member.first_name)
     )
     alle_mitglieder = mitglieder_result.scalars().all()
-    # Kompakte Liste für das durchsuchbare Auswahlfeld im Template
-    # (JSON-serialisierbar, statt in Jinja mit map/zip zu jonglieren)
+    # Compact list for the searchable select field in the template
+    # (JSON-serializable, instead of juggling map/zip in Jinja)
     alle_mitglieder_json = [{"id": m.id, "name": m.full_name} for m in alle_mitglieder]
 
-    # Änderungshistorie der Feldwerte
+    # Change history of field values
     aenderungen_result = await db.execute(
         select(ChangeHistory)
         .options(selectinload(ChangeHistory.changed_by))
@@ -274,10 +274,9 @@ async def parzelle_endgueltig_loeschen(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Löscht eine Parcel unwiderruflich aus der Datenbank – anders als der
-    Status "Gelöscht" (Soft-Delete), der die Historie erhält. Gedacht für
-    versehentlich angelegte Test-/Demo-Datensätze, nicht für den
-    Normalbetrieb.
+    Irrevocably deletes a parcel from the database -- unlike the
+    "Deleted" status (soft-delete), which preserves history. Intended
+    for accidentally created test/demo records, not for normal operation.
     """
     await require_user(request, db)
 
@@ -319,9 +318,9 @@ async def mitglied_zuordnen(
 
     if zuordnung:
         if zuordnung.assigned_until is None:
-            # Bereits aktiv zugeordnet, nichts zu tun
+            # Already actively assigned, nothing to do
             return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
-        # Frühere (beendete) Zuordnung reaktivieren statt Duplikat anzulegen
+        # Reactivate a former (ended) assignment instead of creating a duplicate
         zuordnung.assigned_until = None
         zuordnung.assigned_from = date.fromisoformat(assigned_from) if assigned_from else date.today()
     else:
@@ -403,9 +402,9 @@ async def mitglied_entfernen(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Beendet eine Pächter-Zuordnung (setzt assigned_until), löscht sie aber
-    NICHT aus der Datenbank – so bleibt die Historie erhalten (wer war
-    von wann bis wann Pächter dieser Parcel).
+    Ends a tenant assignment (sets assigned_until), but does NOT delete
+    it from the database -- so the history stays intact (who was a
+    tenant of this parcel, from when to when).
     """
     await require_user(request, db)
     result = await db.execute(
@@ -430,14 +429,14 @@ async def fruehere_zuordnung_loeschen(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Löscht einen historischen (bereits beendeten) Pächter-Eintrag
-    vollständig aus der Datenbank -- anders als /remove oben, das nur
-    assigned_until setzt und die Historie bewusst erhält. Für echte
-    Datenpflege (Tippfehler bei der Zuordnung, versehentliche
-    Doppelzuordnung o.ä.), nicht für den normalen "Pächterwechsel".
-    Admin/Board only. Nur für bereits beendete Zuordnungen (assigned_until
-    gesetzt) -- eine aktive Zuordnung muss zuerst über /remove beendet
-    werden, damit dieser Endpunkt nicht als Umgehung dafür dient.
+    Fully deletes a historical (already-ended) tenant entry from the
+    database -- unlike /remove above, which only sets assigned_until
+    and deliberately preserves history. For genuine data cleanup (a
+    typo in the assignment, an accidental duplicate assignment, etc.),
+    not for a normal "tenant change." Admin/board only. Only for
+    already-ended assignments (assigned_until set) -- an active
+    assignment must first be ended via /remove, so this endpoint can't
+    be used as a bypass for that.
     """
     await require_admin(request, db)
     result = await db.execute(

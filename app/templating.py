@@ -1,11 +1,11 @@
 """
-Gemeinsam genutzte Jinja2Templates-Instanz.
+Shared Jinja2Templates instance.
 
-Vorher hatte jeder Router seine eigene Jinja2Templates(...)-Instanz mit
-jeweils eigenem Environment – das hätte bedeutet, die `t`-Übersetzungsfunktion
-(siehe app/i18n.py) in jedem einzelnen Router separat registrieren zu
-müssen. Stattdessen: EIN Environment, hier zentral konfiguriert, von allen
-Routern importiert.
+Previously every router had its own Jinja2Templates(...) instance with
+its own environment -- which would have meant registering the `t`
+translation function (see app/i18n.py) separately in every single
+router. Instead: ONE environment, configured centrally here, imported
+by every router.
 """
 from fastapi.templating import Jinja2Templates
 
@@ -20,8 +20,7 @@ templates.env.globals["address_lines"] = jinja_address_lines
 templates.env.globals["currency_symbol"] = jinja_currency_symbol
 templates.env.filters["money"] = jinja_money
 templates.env.filters["number"] = jinja_number
-# Zweite Bereinigungs-Ebene beim Rendern (siehe app/html_sanitizer.py) --
-# günstig und harmlos bei bereits sauberem HTML, aber ein Sicherheitsnetz,
-# falls durch einen künftigen Code-Pfad ungeprüfter Inhalt in ein Template
-# gelangen sollte.
+# Second sanitization layer at render time (see app/html_sanitizer.py) --
+# cheap and harmless on already-clean HTML, but a safety net in case
+# some future code path lets unchecked content reach a template.
 templates.env.filters["sanitize_html"] = sanitize_email_html

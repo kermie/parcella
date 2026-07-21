@@ -1,4 +1,4 @@
-"""Befreiungsgrund: ERWEITERTER_VORSTAND hinzufügen
+"""Exemption reason: add ERWEITERTER_VORSTAND (extended board)
 
 Revision ID: 0003_befreiungsgrund_erweiterter_vorstand
 Revises: 0002_pflichtstunden

@@ -1,7 +1,7 @@
 """
-Hilfsfunktionen für das Metering-Modul (Wasser + Strom): Verbrauchsberechnung
-und Plausibilitätsprüfung. Medium-agnostisch – funktioniert identisch für
-Wasseruhren wie für Stromzähler.
+Helper functions for the metering module (water + electricity):
+consumption calculation and plausibility checking. Medium-agnostic --
+works identically for water meters and electricity meters.
 """
 from datetime import date
 from typing import Optional, List
@@ -11,15 +11,15 @@ from app.models import Meter, MeterReading
 
 
 def sorted_readings(meter: Meter) -> List[MeterReading]:
-    """Ablesungen eines Zählers, chronologisch nach Jahr sortiert."""
+    """A meter's readings, sorted chronologically by year."""
     return sorted(meter.readings, key=lambda z: z.year)
 
 
 def reading_before_year(meter: Meter, year: int, exclude_id: Optional[str] = None) -> Decimal:
     """
-    Ermittelt den relevanten Vorwert für die Verbrauchsberechnung eines
-    bestimmten Jahres: die letzte Ablesung VOR diesem Jahr, oder falls
-    keine existiert, den Anfangsstand des Zählers.
+    Determines the relevant prior reading for calculating a given
+    year's consumption: the last reading BEFORE that year, or the
+    meter's initial reading if none exists.
     """
     fruehere = [
         z for z in sorted_readings(meter)
@@ -31,7 +31,7 @@ def reading_before_year(meter: Meter, year: int, exclude_id: Optional[str] = Non
 
 
 def reading_after_year(meter: Meter, year: int, exclude_id: Optional[str] = None) -> Optional[Decimal]:
-    """Die nächste vorhandene Ablesung NACH einem Jahr, falls vorhanden (für Editier-Plausibilität)."""
+    """The next existing reading AFTER a year, if any (for edit-time plausibility checks)."""
     spaetere = [
         z for z in sorted_readings(meter)
         if z.year > year and z.id != exclude_id
@@ -43,9 +43,9 @@ def reading_after_year(meter: Meter, year: int, exclude_id: Optional[str] = None
 
 def calculate_consumption(meter: Meter, year: int) -> Optional[Decimal]:
     """
-    Verbrauch eines Zählers in einem bestimmten Jahr = Ablesung dieses
-    Jahres minus letzte Ablesung davor (oder Anfangsstand). Gibt None
-    zurück, wenn für dieses Jahr keine Ablesung vorliegt.
+    A meter's consumption in a given year = that year's reading minus
+    the last reading before it (or the initial reading). Returns None
+    if no reading exists for that year.
     """
     aktuelle = next((z for z in meter.readings if z.year == year), None)
     if not aktuelle:
@@ -58,15 +58,15 @@ def check_monotonicity(
     meter: Meter, year: int, neuer_stand: Decimal, exclude_id: Optional[str] = None
 ) -> Optional[tuple]:
     """
-    Plausibilitätsprüfung: der Zählerstand eines Zählers darf über die
-    Zeit nicht sinken. Gibt bei einem Fehlschlag ein Tupel
-    (Übersetzungsschlüssel, Formatierungsparameter) zurück, sonst None.
+    Plausibility check: a meter's reading may not decrease over time.
+    On failure, returns a tuple (translation key, formatting
+    parameters); otherwise None.
 
-    Ein Tupel statt einer fertig formatierten deutschen Zeichenkette,
-    damit sowohl die (weiterhin deutsche) REST-API als auch die
-    (übersetzbare) Web-Oberfläche denselben Prüfcode nutzen können –
-    siehe format_monotonicity_error_de() für die API-Seite und
-    app.i18n.translate() für die Web-Seite.
+    A tuple instead of a ready-formatted German string, so that both
+    the REST API (whose error text stays German -- see
+    format_monotonicity_error_de() below) and the (translatable) web
+    UI can share the same check code -- see app.i18n.translate() for
+    the web-UI side.
     """
     vorwert = reading_before_year(meter, year, exclude_id=exclude_id)
     if neuer_stand < vorwert:
@@ -92,18 +92,21 @@ _MONOTONICITY_MESSAGES_DE = {
 
 
 def format_monotonicity_error_de(key: str, params: dict) -> str:
-    """Formatiert das Ergebnis von check_monotonicity() auf Deutsch – für
-    die REST-API, die (wie der Rest der API-Oberfläche) nicht übersetzt wird."""
+    """Formats the result of check_monotonicity() in German -- for the
+    REST API, which (like the rest of the API surface) is not
+    translated. See _MONOTONICITY_MESSAGES_DE above: this is a
+    deliberate scope decision (API error text stays German for now),
+    not an oversight -- flagged for a future i18n decision, not
+    changed as part of a code-comment cleanup."""
     return _MONOTONICITY_MESSAGES_DE[key].format(**params)
 
 
 def total_consumption_for_type(metering_points: List, year: int) -> Decimal:
     """
-    Summiert den Verbrauch aller aktiven Zähler einer Liste von
-    MeteringPoints für ein bestimmtes Jahr. MeteringPoints/Zähler ohne
-    Ablesung für dieses Jahr tragen 0 bei (statt die Summe zu verfälschen
-    oder einen Fehler zu werfen) – die Auswertungsseite weist Lücken
-    separat aus.
+    Sums the consumption of all active meters across a list of
+    MeteringPoints for a given year. MeteringPoints/meters with no
+    reading for that year contribute 0 (instead of skewing the sum or
+    raising an error) -- the evaluation page reports gaps separately.
     """
     gesamt = Decimal("0")
     for metering_point in metering_points:
@@ -114,8 +117,8 @@ def total_consumption_for_type(metering_points: List, year: int) -> Decimal:
     return gesamt
 
 
-# Rundung: wie viele Nachkommastellen werden pro Medium angezeigt/erfasst?
-# Wasser wird mit einer Nachkommastelle abgelesen (m³), Strom als Ganzzahl (kWh).
+# Rounding: how many decimal places are shown/recorded per medium?
+# Water is read to one decimal place (m³), electricity as a whole number (kWh).
 DECIMAL_PLACES_PER_MEDIUM = {
     "WATER": 1,
     "ELECTRICITY": 0,
@@ -123,7 +126,7 @@ DECIMAL_PLACES_PER_MEDIUM = {
 
 
 def round_for_medium(value: Decimal, medium: str) -> Decimal:
-    """Rundet einen Wert auf die für das Medium übliche Nachkommastellen-Anzahl."""
+    """Rounds a value to the number of decimal places customary for the medium."""
     stellen = DECIMAL_PLACES_PER_MEDIUM.get(medium, 1)
     quant = Decimal("1") if stellen == 0 else Decimal("1." + "0" * stellen)
     return value.quantize(quant)

@@ -1,5 +1,5 @@
 """
-Mitglieder-Router: Liste, Anlegen, Bearbeiten, CSV-Import/Export.
+Members router: list, create, edit, CSV import/export.
 """
 import csv
 import io
@@ -57,20 +57,19 @@ async def mitglieder_liste(
     )
 
     if auch_inaktive:
-        # Alle nicht-gelöschten Mitglieder (inkl. abgelaufene Mitgliedschaften)
+        # All non-deleted members (including expired memberships)
         query = query.where(Member.deleted_at.is_(None))
     else:
         query = query.where(active_member_filter())
 
     if suche:
-        # Sucht nach Vor-/Nachname ODER Parzellennummer. Bei der
-        # Parzellensuche: standardmäßig nur aktuelle Zuordnungen (wer
-        # JETZT dort wohnt); mit "auch_inaktive" zusätzlich auch bereits
-        # beendete Zuordnungen (wer FRÜHER dort gewohnt hat) -- dieselbe
-        # Kippschalter-Logik wie bei aktiven/inaktiven Mitgliedern, nur
-        # auf die Pächter-Historie der Parzelle übertragen.
-        # "Ort" wurde bewusst entfernt, da die Suche danach in der Praxis
-        # nicht genutzt wurde.
+        # Searches by first/last name OR parcel number. For the parcel
+        # search: by default only current assignments (who lives there
+        # NOW); with "auch_inaktive" also already-ended assignments (who
+        # used to live there) -- the same toggle logic as for active/
+        # inactive members, just applied to the parcel's tenant history.
+        # "City" was deliberately removed, since searching by it wasn't
+        # used in practice.
         parzellen_bedingung = Parcel.plot_number.ilike(f"%{suche}%")
         if not auch_inaktive:
             parzellen_bedingung = and_(
@@ -226,7 +225,7 @@ async def mitglied_detail(
     if not member:
         raise HTTPException(status_code=404, detail=t_for(request, "members.errors.member_not_found"))
 
-    # Alle aktiven Parzellen für Zuordnung
+    # All active parcels, for assignment
     parzellen_result = await db.execute(
         select(Parcel).order_by(Parcel.plot_number)
     )
@@ -314,11 +313,11 @@ async def mitglied_loeschen(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    """Soft-delete: setzt deleted_at, entfernt das Member aus Listen/Suche.
-    Bereits erfasste Parzellenzuordnungen, Tickets, Arbeitseinsätze usw.
-    bleiben unverändert -- kein FK-Cascade, da kein echtes DELETE.
-    Admin/Board only (gleiche Berechtigungsstufe wie require_admin
-    anderswo im Projekt, siehe app/auth.py)."""
+    """Soft-delete: sets deleted_at, removes the member from lists/search.
+    Already-recorded parcel assignments, tickets, work sessions etc.
+    remain unchanged -- no FK cascade, since there's no real DELETE.
+    Admin/board only (same permission level as require_admin elsewhere
+    in the project, see app/auth.py)."""
     await require_admin(request, db)
     member = await _get_member_mit_details(db, member_id)
 
@@ -336,7 +335,7 @@ async def mitglied_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Telefon / E-Mail-Verwaltung
+# Phone / Email management
 # ---------------------------------------------------------------------------
 
 @router.post("/{member_id}/phone/add")
@@ -424,7 +423,7 @@ async def email_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# CSV-Export
+# CSV export
 # ---------------------------------------------------------------------------
 
 @router.get("/export/csv")
@@ -476,7 +475,7 @@ async def mitglieder_export_csv(request: Request, db: AsyncSession = Depends(get
 
 
 # ---------------------------------------------------------------------------
-# CSV-Import
+# CSV import
 # ---------------------------------------------------------------------------
 
 @router.post("/import/csv")
@@ -491,20 +490,20 @@ async def mitglieder_import_csv(
     try:
         text = inhalt.decode("utf-8-sig")  # BOM-safe (Excel)
     except UnicodeDecodeError:
-        text = inhalt.decode("latin-1")    # Fallback für ältere Windows-Exporte
+        text = inhalt.decode("latin-1")    # Fallback for older Windows exports
 
-    # Trennzeichen automatisch erkennen (Semikolon oder Komma) – viele
-    # Tabellenprogramme speichern CSVs je nach Spracheinstellung
-    # unterschiedlich, auch wenn die Datei ursprünglich mit Semikolon
-    # exportiert wurde.
+    # Auto-detect the delimiter (semicolon or comma) -- many
+    # spreadsheet programs save CSVs differently depending on the
+    # language setting, even if the file was originally exported with
+    # a semicolon.
     try:
         delimiter = csv.Sniffer().sniff(text[:2048], delimiters=";,").delimiter
     except csv.Error:
         delimiter = ";"
 
     reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
-    # Spaltennamen von führenden/nachgestellten Leerzeichen befreien,
-    # falls die Tabellenkalkulation beim Speichern welche eingefügt hat.
+    # Strip leading/trailing whitespace from column names, in case the
+    # spreadsheet program inserted some on save.
     if reader.fieldnames:
         reader.fieldnames = [f.strip() if f else f for f in reader.fieldnames]
 
@@ -529,7 +528,7 @@ async def mitglieder_import_csv(
             fehler.append(f"Zeile {zeilennr}: Vor- oder Nachname fehlt – übersprungen.")
             continue
 
-        # Duplikat-Erkennung: gleicher Vor- + Nachname + Geburtsdatum
+        # Duplicate detection: same first + last name + date of birth
         date_of_birth = parse_datum(zeile.get("Geburtsdatum") or "")
         existing_query = select(Member).where(
             Member.first_name == first_name,
@@ -560,7 +559,7 @@ async def mitglieder_import_csv(
         )
 
         if existing:
-            # Vorhandenes Member aktualisieren
+            # Update the existing member
             for k, v in felder.items():
                 setattr(existing, k, v)
             member = existing
@@ -568,10 +567,10 @@ async def mitglieder_import_csv(
         else:
             member = Member(**felder)
             db.add(member)
-            await db.flush()  # ID generieren für Untereinträge
+            await db.flush()  # generate ID for sub-entries
             erstellt += 1
 
-        # E-Mail-Adressen (Semikolon-getrennt in einer Zelle)
+        # Email addresses (semicolon-separated in one cell)
         emails_str = (zeile.get("E-Mail-Adressen") or "").strip()
         if emails_str and not existing:
             for i, adresse in enumerate(emails_str.split(";")):
@@ -583,7 +582,7 @@ async def mitglieder_import_csv(
                         is_primary=(i == 0),
                     ))
 
-        # Telefonnummern (Semikolon-getrennt in einer Zelle)
+        # Phone numbers (semicolon-separated in one cell)
         telefone_str = (zeile.get("Telefonnummern") or "").strip()
         if telefone_str and not existing:
             for i, nummer in enumerate(telefone_str.split(";")):
@@ -600,7 +599,7 @@ async def mitglieder_import_csv(
     meldung = t_for(request, "members.list.csv_import_summary", created=erstellt, updated=aktualisiert)
     if fehler:
         meldung += t_for(request, "members.list.csv_import_errors_suffix", count=len(fehler))
-        # Erste paar Fehlerdetails anzeigen, damit man die Ursache sofort sieht
+        # Show the first few error details so the cause is visible right away
         meldung += " – " + " | ".join(fehler[:3])
         if len(fehler) > 3:
             meldung += t_for(request, "members.list.csv_import_more_errors", count=len(fehler) - 3)

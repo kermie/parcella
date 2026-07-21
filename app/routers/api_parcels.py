@@ -1,5 +1,5 @@
 """
-API-Router: Parzellen – vollständiges CRUD über REST, inkl. Member-Zuordnung.
+API router: Parcels -- full CRUD via REST, including member assignment.
 """
 from typing import List, Optional
 

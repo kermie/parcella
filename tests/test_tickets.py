@@ -1,9 +1,8 @@
 """
-Tests für das Ticketsystem. Beschränkt auf Logik, die ohne echten
-Mailserver testbar ist – der tatsächliche IMAP-Abruf/SMTP-Versand
-(app/ticket_mailer.py) erfordert einen echten Mailserver und wird hier
-bewusst NICHT automatisiert getestet (siehe docs/testing.md für die
-Begründung dieser Grenze).
+Tests for the ticket system. Limited to logic that's testable without
+a real mail server -- actual IMAP fetch/SMTP send (app/ticket_mailer.py)
+requires a real mail server and is deliberately NOT automated-tested
+here (see docs/testing.md for the reasoning behind this boundary).
 """
 from tests.conftest import login, auth_header
 

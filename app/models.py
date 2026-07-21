@@ -1,10 +1,10 @@
 """
-Datenbankmodelle für die Gartenverein-Verwaltung.
+Database models for the allotment garden association management app.
 
-Designprinzipien:
-- Alle Tabellen haben UUID als Primärschlüssel (produktionsreif, kein Rate-Guessing)
-- Soft-Delete wo sinnvoll (deleted_at statt echtem Löschen)
-- Audit-Felder (created_at, updated_at) überall
+Design principles:
+- All tables use UUID as primary key (production-ready, no rate-guessing)
+- Soft-delete where sensible (deleted_at instead of a real delete)
+- Audit fields (created_at, updated_at) everywhere
 """
 
 import uuid
@@ -23,7 +23,7 @@ from app.database import Base
 
 
 # ---------------------------------------------------------------------------
-# Hilfsfunktionen
+# Helper functions
 # ---------------------------------------------------------------------------
 
 def new_uuid() -> str:
@@ -54,7 +54,7 @@ class InvitationStatus(str, enum.Enum):
 
 
 # ---------------------------------------------------------------------------
-# Systembenutzer (Anwendungsnutzer, nicht Vereinsmitglieder)
+# System users (app users, not club members)
 # ---------------------------------------------------------------------------
 
 class User(Base):
@@ -76,7 +76,7 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    # Beziehungen
+    # Relationships
     invitations: Mapped[List["Invitation"]] = relationship("Invitation", back_populates="invited_by")
 
     def __repr__(self) -> str:
@@ -107,7 +107,7 @@ class Invitation(Base):
 
 
 # ---------------------------------------------------------------------------
-# Vereinsmitglieder (Members)
+# Club members
 # ---------------------------------------------------------------------------
 
 class Member(Base):
@@ -115,27 +115,27 @@ class Member(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
 
-    # Persönliche Daten
+    # Personal data
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     date_of_birth: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
-    # Adresse
+    # Address
     street: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     postal_code: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    # Bankdaten
+    # Bank details
     iban: Mapped[Optional[str]] = mapped_column(String(34), nullable=True)
 
-    # Mitgliedschaft
+    # Membership
     member_since: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     member_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
-    # Kommunikation
+    # Communication
     email_notifications: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    # Notizen (intern)
+    # Notes (internal)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Audit
@@ -147,7 +147,7 @@ class Member(Base):
     )
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    # Beziehungen
+    # Relationships
     phone_numbers: Mapped[List["MemberPhone"]] = relationship(
         "MemberPhone", back_populates="member", cascade="all, delete-orphan"
     )
@@ -173,7 +173,7 @@ class Member(Base):
 
 
 class MemberPhone(Base):
-    """Mehrere Telefonnummern pro Member."""
+    """Multiple phone numbers per member."""
     __tablename__ = "member_phones"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
@@ -181,14 +181,14 @@ class MemberPhone(Base):
         String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
     number: Mapped[str] = mapped_column(String(50), nullable=False)
-    label: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # z.B. "Mobil", "Festnetz"
+    label: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # e.g. "Mobile", "Landline"
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     member: Mapped["Member"] = relationship("Member", back_populates="phone_numbers")
 
 
 class MemberEmail(Base):
-    """Mehrere E-Mail-Adressen pro Member."""
+    """Multiple email addresses per member."""
     __tablename__ = "member_emails"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
@@ -196,14 +196,14 @@ class MemberEmail(Base):
         String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
     )
     address: Mapped[str] = mapped_column(String(255), nullable=False)
-    label: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # z.B. "Privat", "Arbeit"
+    label: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # e.g. "Personal", "Work"
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     member: Mapped["Member"] = relationship("Member", back_populates="email_addresses")
 
 
 # ---------------------------------------------------------------------------
-# Parzellen (Parcels)
+# Parcels
 # ---------------------------------------------------------------------------
 
 class Parcel(Base):
@@ -211,10 +211,10 @@ class Parcel(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
 
-    # Gartennummer (z.B. "G093", "G26/27")
+    # Plot number (e.g. "G093", "G26/27")
     plot_number: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
 
-    # Fläche
+    # Area
     area_sqm: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
 
     # Status
@@ -222,10 +222,10 @@ class Parcel(Base):
         SAEnum(ParcelStatus), default=ParcelStatus.ACTIVE, nullable=False
     )
 
-    # Kündigung (wer hat wann gekündigt)
+    # Termination (who terminated and when)
     termination_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Notizen
+    # Notes
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Audit
@@ -236,7 +236,7 @@ class Parcel(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    # Beziehungen
+    # Relationships
     member_assignments: Mapped[List["MemberParcel"]] = relationship(
         "MemberParcel", back_populates="parcel"
     )
@@ -253,14 +253,14 @@ class Parcel(Base):
 
 
 # ---------------------------------------------------------------------------
-# Zuordnungstabelle Member <-> Parcel (m:n mit Metadaten)
+# Assignment table Member <-> Parcel (m:n with metadata)
 # ---------------------------------------------------------------------------
 
 class MemberParcel(Base):
     """
-    Verbindet Mitglieder mit Parzellen.
-    Ermöglicht Doppelgärten (ein Member, mehrere Parzellen)
-    sowie Gemeinschaftsgärten (mehrere Mitglieder, eine Parcel).
+    Connects members with parcels.
+    Enables double gardens (one member, multiple parcels)
+    as well as community gardens (multiple members, one parcel).
     """
     __tablename__ = "member_parcels"
 
@@ -272,7 +272,7 @@ class MemberParcel(Base):
         String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
-    # Zeitraum der Zuordnung
+    # Assignment period
     assigned_from: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     assigned_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
@@ -344,13 +344,13 @@ class ParcelCloudFolder(Base):
 
 
 # ---------------------------------------------------------------------------
-# Vereinseinstellungen (Key-Value für Flexibilität)
+# Club settings (key-value for flexibility)
 # ---------------------------------------------------------------------------
 
 class ClubSetting(Base):
     """
-    Flexible Einstellungstabelle für Vereins-Stammdaten.
-    Ermöglicht spätere Erweiterung ohne Schemaänderung.
+    Flexible settings table for club master data.
+    Enables later extension without a schema change.
     """
     __tablename__ = "club_settings"
 
@@ -361,25 +361,25 @@ class ClubSetting(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    # Bekannte Schlüssel (zur Dokumentation):
+    # Known keys (for documentation):
     # verein_name, verein_strasse, verein_plz, verein_ort
     # flaeche_gesamt_qm, flaeche_a_qm, flaeche_b_qm, flaeche_c_qm
     # vereinsnummer, registergericht
 
 
 # ---------------------------------------------------------------------------
-# Pflichtstunden-Konfiguration (jahresbasiert)
+# Work hours configuration (year-based)
 # ---------------------------------------------------------------------------
 
 class WorkHoursMode(str, enum.Enum):
-    PER_PARCEL = "PER_PARCEL"    # Stunden gelten pro Parcel (Standard)
-    PER_MEMBER = "PER_MEMBER"    # Stunden gelten pro Member
+    PER_PARCEL = "PER_PARCEL"    # Hours apply per parcel (default)
+    PER_MEMBER = "PER_MEMBER"    # Hours apply per member
 
 
 class WorkHoursConfiguration(Base):
     """
-    Jährliche Konfiguration der Pflichtstunden.
-    Historisiert – alte Werte bleiben erhalten für Auswertungen vergangener Jahre.
+    Annual configuration of the required work hours.
+    Historized -- old values are kept for evaluating past years.
     """
     __tablename__ = "work_hours_configuration"
 
@@ -403,7 +403,7 @@ class WorkHoursConfiguration(Base):
 
 
 # ---------------------------------------------------------------------------
-# Club-Rollen (erweiterter Vorstand etc.)
+# Club roles (extended board, etc.)
 # ---------------------------------------------------------------------------
 
 class ExemptionReason(str, enum.Enum):
@@ -416,9 +416,9 @@ class ExemptionReason(str, enum.Enum):
 
 class ClubRole(Base):
     """
-    Rollen im Verein (Vorstand, erweiterter Vorstand, Beisitzer etc.).
-    Getrennt vom App-Benutzersystem (UserRole) – hier geht es um
-    Vereinsämter, nicht um Zugriffsrechte.
+    Roles within the club (board, extended board, assessor, etc.).
+    Separate from the app's user system (UserRole) -- this is about
+    club offices, not access permissions.
     """
     __tablename__ = "club_roles"
 
@@ -443,9 +443,9 @@ class ClubRole(Base):
 
 class MemberClubRole(Base):
     """
-    Zuordnung Member → ClubRole für ein bestimmtes Jahr.
-    Die Befreiung gilt immer für das gesamte Kalenderjahr (auch wenn die
-    Rolle unterjährig niedergelegt wird).
+    Assignment of Member -> ClubRole for a given year.
+    The exemption always applies to the entire calendar year (even if
+    the role is relinquished partway through the year).
     """
     __tablename__ = "member_club_roles"
 
@@ -473,13 +473,13 @@ class MemberClubRole(Base):
 
 
 # ---------------------------------------------------------------------------
-# Patenschaften (Sponsorships)
+# Sponsorships
 # ---------------------------------------------------------------------------
 
 class Sponsorship(Base):
     """
-    Ein Member übernimmt die Patenschaft für einen Bereich (z.B. Hecke,
-    Spielplatz). Die Patenschaft gilt pauschal als Pflichtstunden-Erfüllung.
+    A member takes on sponsorship of an area (e.g. hedge, playground).
+    The sponsorship counts as a flat fulfillment of required work hours.
     """
     __tablename__ = "sponsorships"
 
@@ -491,10 +491,10 @@ class Sponsorship(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     credited_hours: Mapped[float] = mapped_column(
         Numeric(5, 1), nullable=False,
-        comment="Pauschale Stunden die pro Jahr angerechnet werden"
+        comment="Flat hours credited per year"
     )
     valid_from: Mapped[date] = mapped_column(Date, nullable=False)
-    valid_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = läuft noch")
+    valid_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = still ongoing")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -509,23 +509,23 @@ class Sponsorship(Base):
 
 
 # ---------------------------------------------------------------------------
-# Arbeitseinsätze (Work Sessions)
+# Work Sessions
 # ---------------------------------------------------------------------------
 
 class SessionType(str, enum.Enum):
-    STANDARD = "STANDARD"    # Geplanter Termin, Anmeldung möglich
-    SPECIAL = "SPECIAL"      # Spontan/ungeplant (Gartenbank streichen etc.)
+    STANDARD = "STANDARD"    # Scheduled date, signup possible
+    SPECIAL = "SPECIAL"      # Spontaneous/unplanned (painting a garden bench, etc.)
 
 
 class ParticipationStatus(str, enum.Enum):
-    REGISTERED = "REGISTERED"    # Hat sich angemeldet
-    ATTENDED = "ATTENDED"        # War da, Stunden werden angerechnet
-    NO_SHOW = "NO_SHOW"          # Angemeldet aber nicht erschienen
+    REGISTERED = "REGISTERED"    # Signed up
+    ATTENDED = "ATTENDED"        # Showed up, hours get credited
+    NO_SHOW = "NO_SHOW"          # Signed up but didn't show
 
 
 class WorkSession(Base):
     """
-    Geplanter oder spontaner Arbeitseinsatz im Verein.
+    A scheduled or spontaneous work session in the club.
     """
     __tablename__ = "work_sessions"
 
@@ -541,7 +541,7 @@ class WorkSession(Base):
     max_participants: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     hours_per_participant: Mapped[Optional[float]] = mapped_column(
         Numeric(4, 1), nullable=True,
-        comment="Standardwert; kann pro Teilnahme überschrieben werden"
+        comment="Default value; can be overridden per participation"
     )
     created_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
@@ -571,7 +571,7 @@ class WorkSession(Base):
 
 class SessionParticipation(Base):
     """
-    Teilnahme eines Mitglieds an einem Arbeitseinsatz.
+    A member's participation in a work session.
     """
     __tablename__ = "session_participations"
 
@@ -587,7 +587,7 @@ class SessionParticipation(Base):
     )
     hours_completed: Mapped[Optional[float]] = mapped_column(
         Numeric(4, 1), nullable=True,
-        comment="Überschreibt hours_per_participant des Einsatzes wenn gesetzt"
+        comment="Overrides the session's hours_per_participant when set"
     )
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -660,14 +660,14 @@ class WorkTask(Base):
 
 
 # ---------------------------------------------------------------------------
-# Änderungshistorie (generisches Audit-Log für Feldänderungen)
+# Change history (generic audit log for field changes)
 # ---------------------------------------------------------------------------
 
 class ChangeHistory(Base):
     """
-    Generisches Audit-Log: protokolliert Feldänderungen an beliebigen
-    Entitäten (z.B. Parcel.area_sqm). Ermöglicht Nachvollziehbarkeit
-    ohne für jede Tabelle eine eigene Historie-Tabelle zu brauchen.
+    Generic audit log: logs field changes on arbitrary entities (e.g.
+    Parcel.area_sqm). Enables traceability without needing a separate
+    history table for every table.
     """
     __tablename__ = "change_history"
 
@@ -692,12 +692,12 @@ class ChangeHistory(Base):
 
 
 # ---------------------------------------------------------------------------
-# Zählerwesen: generisches Modul für Wasser- UND Stromzähler
+# Metering: generic module for water AND electricity meters
 #
-# Ein Zaehlpunkt hat ein "medium" (WASSER oder STROM) und einen "typ"
-# (Hauptzähler, Parcel, Vereinsanschluss). Die Verbrauchslogik ist für
-# beide Medien identisch – nur Einheit, Anzeige-Rundung und Icon
-# unterscheiden sich (siehe app/routers/zaehlerwesen.py).
+# A MeteringPoint has a "medium" (WATER or ELECTRICITY) and a "type"
+# (main meter, parcel, club connection). The consumption logic is
+# identical for both media -- only unit, display rounding, and icon
+# differ (see app/routers/metering.py).
 # ---------------------------------------------------------------------------
 
 class MeteringMedium(str, enum.Enum):
@@ -706,19 +706,19 @@ class MeteringMedium(str, enum.Enum):
 
 
 class MeteringPointType(str, enum.Enum):
-    MAIN_METER = "MAIN_METER"  # Übergabepunkt vom öffentlichen Versorger
-    PARCEL = "PARCEL"          # Anschluss an einer Parcel
-    CLUB = "CLUB"              # Vereinseigene Anschlussstelle (Vereinsheim, Waschplatz etc.)
+    MAIN_METER = "MAIN_METER"  # Handover point from the public utility
+    PARCEL = "PARCEL"          # Connection at a parcel
+    CLUB = "CLUB"              # Club-owned connection point (clubhouse, wash area, etc.)
 
 
 class MeteringPoint(Base):
     """
-    Ein Zählpunkt für ein Medium (Wasser oder Strom). Entweder an eine
-    Parcel gekoppelt, eine vereinseigene Anschlussstelle, oder der
-    Hauptzähler der Gesamtversorgung vom öffentlichen Versorger.
+    A metering point for a medium (water or electricity). Either
+    coupled to a parcel, a club-owned connection point, or the main
+    meter for the overall supply from the public utility.
 
-    Eine Parcel kann sowohl einen Wasser- als auch einen Strom-MeteringPoint
-    haben (zwei Zeilen, unterschieden über "medium").
+    A parcel can have both a water and an electricity MeteringPoint
+    (two rows, distinguished via "medium").
     """
     __tablename__ = "metering_points"
 
@@ -729,7 +729,7 @@ class MeteringPoint(Base):
     parcel_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("parcels.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    # Für MAIN_METER/CLUB-Zählpunkte (keine Parcel): freier Name.
+    # For MAIN_METER/CLUB metering points (no parcel): free-form name.
     label: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -753,8 +753,8 @@ class MeteringPoint(Base):
 
     @property
     def current_meter(self) -> Optional["Meter"]:
-        aktive = [z for z in self.meters if z.is_active]
-        return aktive[0] if aktive else None
+        active = [z for z in self.meters if z.is_active]
+        return active[0] if active else None
 
     def __repr__(self) -> str:
         return f"<MeteringPoint {self.medium.value}:{self.display_name}>"
@@ -762,10 +762,10 @@ class MeteringPoint(Base):
 
 class Meter(Base):
     """
-    Der physische Zähler (Wasseruhr oder Stromzähler) an einem MeteringPoint.
-    Beim Tausch wird der alte Zähler deaktiviert (removed_at gesetzt)
-    und ein neuer mit neuer Nummer angelegt – die Historie bleibt
-    vollständig erhalten.
+    The physical meter (water meter or electricity meter) on a
+    MeteringPoint. When swapped, the old meter is deactivated
+    (removed_at set) and a new one with a new number is created -- the
+    history stays fully intact.
     """
     __tablename__ = "meters"
 
@@ -777,10 +777,10 @@ class Meter(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     calibrated_until: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True,
-        comment="Jahr, bis zu dem die Eichung gültig ist (Wasser i.d.R. +6, Strom i.d.R. +8 Jahre)"
+        comment="Year until which calibration is valid (water typically +6, electricity typically +8 years)"
     )
     installed_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    removed_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = noch verbaut")
+    removed_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True, comment="NULL = still installed")
     initial_reading: Mapped[float] = mapped_column(Numeric(12, 1), default=0, nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -801,7 +801,7 @@ class Meter(Base):
 
 class MeterReading(Base):
     """
-    Eine jährliche Ablesung eines Zählers (Wasser oder Strom).
+    An annual reading of a meter (water or electricity).
     """
     __tablename__ = "meter_readings"
 
@@ -828,15 +828,14 @@ class MeterReading(Base):
     )
 
 # ---------------------------------------------------------------------------
-# Versicherungsmodul: Sach- und Unfallversicherung pro Parcel
+# Insurance module: property and accident insurance per parcel
 # ---------------------------------------------------------------------------
 
 class PropertyInsurancePackage(Base):
     """
-    Ein wählbares Sachversicherungs-Paket (property insurance) für ein
-    bestimmtes Jahr (z.B. "Paket 1" = 40 €, "Paket 2" = 60 € usw.). Anzahl
-    und Beträge der Pakete sind frei konfigurierbar und können sich
-    jährlich ändern.
+    A selectable property insurance package for a given year (e.g.
+    "Package 1" = 40 €, "Package 2" = 60 € etc.). The number and
+    amounts of packages are freely configurable and can change yearly.
     """
     __tablename__ = "property_insurance_packages"
 
@@ -855,10 +854,10 @@ class PropertyInsurancePackage(Base):
 
 class InsuranceConfiguration(Base):
     """
-    Jährliche Konfiguration der Unfallversicherungs-Beträge (accident
-    insurance). Sachversicherung (property insurance) wird separat über
-    PropertyInsurancePackage konfiguriert (mehrere Pakete pro Jahr),
-    Unfallversicherung hat pro Jahr genau einen Grund- und Zusatzbetrag.
+    Annual configuration of the accident insurance amounts. Property
+    insurance is configured separately via PropertyInsurancePackage
+    (several packages per year); accident insurance has exactly one
+    base and additional amount per year.
     """
     __tablename__ = "insurance_configuration"
 
@@ -866,11 +865,11 @@ class InsuranceConfiguration(Base):
     year: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True)
     accident_base_amount_eur: Mapped[float] = mapped_column(
         Numeric(8, 2), nullable=False,
-        comment="Deckt alle Mitglieder im selben Haushalt (gleiche Adresse) ab"
+        comment="Covers all members in the same household (same address)"
     )
     accident_additional_amount_eur: Mapped[float] = mapped_column(
         Numeric(8, 2), nullable=False,
-        comment="Pro zusätzlich mitversicherter Person außerhalb des Haushalts"
+        comment="Per additional co-insured person outside the household"
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -885,11 +884,10 @@ class InsuranceConfiguration(Base):
 
 class ParcelInsurance(Base):
     """
-    Versicherungsstatus einer Parcel für ein bestimmtes Jahr:
-    Sachversicherung/property insurance (optional, mit gewähltem Paket)
-    und Unfallversicherung/accident insurance (optional, Grundbetrag
-    deckt den automatisch erkannten Haushalt ab -- siehe
-    household_grouping() in app/insurance_utils.py).
+    A parcel's insurance status for a given year: property insurance
+    (optional, with a chosen package) and accident insurance (optional,
+    the base amount covers the automatically detected household --
+    see household_grouping() in app/insurance_utils.py).
     """
     __tablename__ = "parcel_insurance"
 
@@ -929,10 +927,10 @@ class ParcelInsurance(Base):
 
 class AccidentInsuranceAdditionalPerson(Base):
     """
-    Ein Member, das zusätzlich zum automatisch erkannten Haushalt gegen
-    Aufpreis in die Unfallversicherung (accident insurance) der Parcel
-    aufgenommen wurde (z.B. ein Bewohner, der nicht am selben Wohnort
-    lebt wie die übrigen Bewohner der Parcel).
+    A member added to a parcel's accident insurance for an extra fee,
+    in addition to the automatically detected household (e.g. a
+    resident who doesn't live at the same address as the parcel's
+    other residents).
     """
     __tablename__ = "accident_insurance_additional_persons"
 
@@ -958,29 +956,29 @@ class AccidentInsuranceAdditionalPerson(Base):
 
 
 # ---------------------------------------------------------------------------
-# Ticketsystem
+# Ticket system
 # ---------------------------------------------------------------------------
 
 class TicketStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
     ASSIGNED = "ASSIGNED"
-    WAITING = "WAITING"        # wartet auf Antwort des Absenders
-    POSTPONED = "POSTPONED"    # zurückgestellt bis postponed_until
+    WAITING = "WAITING"        # waiting for the sender's reply
+    POSTPONED = "POSTPONED"    # postponed until postponed_until
     CLOSED = "CLOSED"
-    DELETED = "DELETED"        # Soft-Delete, wie bei Member.deleted_at
+    DELETED = "DELETED"        # soft-delete, like Member.deleted_at
 
 
 class MessageDirection(str, enum.Enum):
-    INCOMING = "INCOMING"   # Vom Absender/Kunden (später per E-Mail, Etappe 1: manuell)
-    OUTGOING = "OUTGOING"   # Antwort eines Benutzers (später als E-Mail versendet, Etappe 2)
-    INTERNAL = "INTERNAL"   # Interne Notiz, nie an den Absender gesendet
+    INCOMING = "INCOMING"   # From the sender/customer (later by email, stage 1: manual)
+    OUTGOING = "OUTGOING"   # A user's reply (later sent as email, stage 2)
+    INTERNAL = "INTERNAL"   # Internal note, never sent to the sender
 
 
 class Ticket(Base):
     """
-    Ein Support-Ticket = ein Anliegen eines Absenders. In Etappe 2 werden
-    Tickets automatisch aus eingehenden E-Mails erzeugt; in Etappe 1 können
-    sie manuell angelegt werden, um das Grundgerüst zu testen.
+    A support ticket = one concern from a sender. In stage 2, tickets
+    are created automatically from incoming emails; in stage 1 they can
+    be created manually to test the basic scaffolding.
     """
     __tablename__ = "tickets"
 
@@ -995,21 +993,21 @@ class Ticket(Base):
     )
     postponed_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
-    # Automatischer Abgleich per Absender-E-Mail; überschreibbar/manuell korrigierbar,
-    # falls die Adresse mehreren Mitgliedern gehört oder unbekannt ist.
+    # Automatic matching via sender email; overridable/manually
+    # correctable if the address belongs to multiple members or is unknown.
     member_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("members.id", ondelete="SET NULL"), nullable=True, index=True
     )
     sender_email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     sender_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    # Vorbereitung für Etappe 3 (Spam-Schnittstelle): Felder existieren bereits,
-    # damit später keine weitere Migration nötig ist. Die eigentliche Prüfung
-    # ist in Etappe 1 ein No-Op (siehe app/spam_filter.py).
+    # Preparation for stage 3 (spam interface): fields already exist so
+    # no further migration is needed later. The actual check is a no-op
+    # in stage 1 (see app/spam_filter.py).
     spam_suspected: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     spam_score: Mapped[Optional[float]] = mapped_column(Numeric(5, 2), nullable=True)
     spam_reasoning: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, comment="Nachvollziehbare Begründung, warum als Spam eingestuft (Transparenz)"
+        Text, nullable=True, comment="Traceable reasoning for why it was flagged as spam (transparency)"
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -1029,12 +1027,13 @@ class Ticket(Base):
 
     @property
     def is_due(self) -> bool:
-        """True, wenn ein zurückgestelltes Ticket sein Datum erreicht hat und
-        wieder als aktiv behandelt werden soll. Der eigentliche Statuswechsel
-        (POSTPONED -> ACTIVE/ASSIGNED) passiert lazy beim nächsten Laden der
-        Ticketliste (siehe _reaktiviere_faellige_tickets in app/routers/tickets.py),
-        nicht über einen Hintergrundjob -- diese Property ist nur die reine
-        Berechnung, falls sie anderswo (z.B. Badge-Anzeige) gebraucht wird.
+        """True if a postponed ticket has reached its date and should be
+        treated as active again. The actual status change (POSTPONED ->
+        ACTIVE/ASSIGNED) happens lazily on the next load of the ticket
+        list (see _reaktiviere_faellige_tickets in
+        app/routers/tickets.py), not via a background job -- this
+        property is just the pure calculation, in case it's needed
+        elsewhere (e.g. a badge display).
         """
         if self.status != TicketStatus.POSTPONED:
             return False
@@ -1045,7 +1044,7 @@ class Ticket(Base):
 
 
 class TicketMessage(Base):
-    """Eine einzelne Nachricht innerhalb eines Ticket-Verlaufs."""
+    """A single message within a ticket's history."""
     __tablename__ = "ticket_messages"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
@@ -1054,18 +1053,18 @@ class TicketMessage(Base):
     )
     direction: Mapped[MessageDirection] = mapped_column(SAEnum(MessageDirection), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    # Nur für INCOMING-Nachrichten gesetzt, deren E-Mail einen text/html-Teil
-    # hatte -- bereits bereinigt (siehe app/html_sanitizer.py) BEVOR es hier
-    # gespeichert wird, damit es sicher mit {{ ... | safe }} gerendert werden
-    # kann. `content` bleibt daneben immer die reine Textversion (Suche,
-    # Benachrichtigungen, Fallback-Anzeige, falls kein HTML-Teil vorhanden war).
+    # Only set for INCOMING messages whose email had a text/html part --
+    # already sanitized (see app/html_sanitizer.py) BEFORE it's stored
+    # here, so it can be safely rendered with {{ ... | safe }}.
+    # `content` always remains the plain-text version alongside it
+    # (search, notifications, fallback display if no HTML part existed).
     content_html: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     authored_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    # Für E-Mail-Threading (Etappe 2): Message-ID dieser Nachricht bzw. der
-    # Message-ID, auf die sie antwortet. Ermöglicht, eingehende Antworten
-    # dem richtigen Ticket zuzuordnen, statt nur nach Betreff zu raten.
+    # For email threading (stage 2): this message's Message-ID, or the
+    # Message-ID it's replying to. Enables matching incoming replies to
+    # the right ticket instead of just guessing from the subject.
     message_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     in_reply_to: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -1080,7 +1079,7 @@ class TicketMessage(Base):
 
 
 # ---------------------------------------------------------------------------
-# Einkaufswünsche (Vier-Augen-Prinzip für Vereinsausgaben)
+# Purchase Requests (four-eyes principle for club expenses)
 # ---------------------------------------------------------------------------
 
 class PurchaseRequestStatus(str, enum.Enum):
@@ -1091,9 +1090,9 @@ class PurchaseRequestStatus(str, enum.Enum):
 
 class PurchaseRequest(Base):
     """
-    Ein Antrag auf eine Vereinsausgabe. Muss von zwei unterschiedlichen
-    Vorstandsmitgliedern freigegeben werden, bevor eingekauft werden darf –
-    der Antragsteller selbst zählt dabei nicht als Freigeber (Vier-Augen-Prinzip).
+    A request for a club expense. Must be approved by two different
+    board members before the purchase may proceed -- the requester
+    themselves doesn't count as an approver (four-eyes principle).
     """
     __tablename__ = "purchase_requests"
 
@@ -1107,9 +1106,9 @@ class PurchaseRequest(Base):
         SAEnum(PurchaseRequestStatus), default=PurchaseRequestStatus.OPEN, nullable=False, index=True
     )
 
-    # Antragsteller: entweder ein Systembenutzer (requested_by_id) ODER eine
-    # externe Person ohne Login (requester_name/-email), z.B. wenn der
-    # Vorstand stellvertretend für jemanden einen Antrag anlegt.
+    # Requester: either a system user (requested_by_id) OR an external
+    # person without a login (requester_name/-email), e.g. when the
+    # board creates a request on someone else's behalf.
     requested_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -1120,7 +1119,7 @@ class PurchaseRequest(Base):
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
-    # Deep-Link-Bestätigung durch den (externen) Antragsteller
+    # Deep-link confirmation by the (external) requester
     confirmation_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
     confirmed_by_requester: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     confirmed_by_requester_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -1161,7 +1160,7 @@ class PurchaseRequest(Base):
 
 
 class PurchaseRequestApproval(Base):
-    """Eine einzelne Freigabe eines Vorstandsmitglieds für einen PurchaseRequest."""
+    """A single approval by a board member for a PurchaseRequest."""
     __tablename__ = "purchase_request_approvals"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)

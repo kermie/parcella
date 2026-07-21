@@ -1,15 +1,22 @@
-"""Initiales Schema (Baseline)
+"""Initial schema (baseline)
 
 Revision ID: 0001_initial
 Revises:
 Create Date: 2026-07-01 00:00:00
 
-Diese Migration bildet das Schema ab, das bereits über Base.metadata.create_all()
-in bestehenden Installationen existiert. Sie wird mit `alembic stamp head`
-als bereits angewendet markiert, OHNE die Tabellen neu zu erstellen.
+This migration reflects the schema that already exists in existing
+installations via Base.metadata.create_all(). It is marked as already
+applied with `alembic stamp head`, WITHOUT recreating the tables.
 
-Für neue Installationen (leere Datenbank) führt `alembic upgrade head` die
-CREATE-Statements unten tatsächlich aus.
+For new installations (empty database), `alembic upgrade head` actually
+runs the CREATE statements below.
+
+Note: the table/column names and enum values below (e.g. "benutzer",
+"rolle", "VORSTAND") are historical and were later renamed to English
+by subsequent migrations (see docs/architecture-decisions.md, "module
+to English" entries) -- left as-is here since editing an already-applied
+migration's SQL would break `alembic stamp head` and fresh installs
+replaying this history.
 """
 from typing import Sequence, Union
 

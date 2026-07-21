@@ -1,10 +1,10 @@
 """
-Ticketsystem-Router (Web-Oberfläche): Übersicht, Anlegen, Detail,
-Zuweisen, Status ändern, Nachrichten/Notizen.
+Ticket system router (web UI): overview, create, detail, assign,
+status changes, messages/notes.
 
-Etappe 1: manuelle Ticketverwaltung, noch kein E-Mail-Abruf (kommt in
-Etappe 2). Zuweisungs-Benachrichtigung per E-Mail funktioniert bereits,
-da die allgemeine SMTP-Infrastruktur (app/email_service.py) wiederverwendet wird.
+Stage 1: manual ticket management, no email fetching yet (that comes
+in stage 2). Assignment notification by email already works, since the
+general SMTP infrastructure (app/email_service.py) is reused.
 """
 from datetime import date, datetime, timezone
 from typing import Optional
@@ -51,11 +51,11 @@ async def _load_ticket_with_details(db: AsyncSession, ticket_id: str) -> Optiona
 
 async def _reaktiviere_faellige_tickets(db: AsyncSession) -> int:
     """
-    Setzt zurückgestellte Tickets, deren postponed_until erreicht ist,
-    tatsächlich auf ACTIVE/ASSIGNED zurück (nicht nur rein berechnet über
-    is_due) -- kein Hintergrundjob, sondern lazy beim nächsten Laden der
-    Ticketliste ausgeführt, da es keine Scheduler-Infrastruktur gibt.
-    Gibt die Anzahl der reaktivierten Tickets zurück.
+    Actually resets postponed tickets whose postponed_until has been
+    reached back to ACTIVE/ASSIGNED (not just computed on the fly via
+    is_due) -- not a background job, but executed lazily on the next
+    load of the ticket list, since there's no scheduler infrastructure.
+    Returns the number of reactivated tickets.
     """
     result = await db.execute(
         select(Ticket).where(
@@ -73,7 +73,7 @@ async def _reaktiviere_faellige_tickets(db: AsyncSession) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Übersicht
+# Overview
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
@@ -93,11 +93,12 @@ async def tickets_overview(
         .order_by(Ticket.created_at.desc())
     )
 
-    # "Aktiv" und "Mir" zeigen bewusst NUR operativ offene Tickets (ACTIVE/
-    # ASSIGNED/WAITING) -- POSTPONED-Tickets sind bis zu ihrem Datum absichtlich
-    # unsichtbar (siehe _reaktiviere_faellige_tickets oben, das sie danach
-    # automatisch wieder hier auftauchen lässt). DELETED taucht nirgends
-    # außer in keiner Ansicht auf (Soft-Delete, kein Papierkorb gebaut).
+    # "Active" and "Mine" deliberately show ONLY operationally open
+    # tickets (ACTIVE/ASSIGNED/WAITING) -- POSTPONED tickets are
+    # intentionally invisible until their date (see
+    # _reaktiviere_faellige_tickets above, which makes them reappear
+    # here automatically afterward). DELETED never appears in any view
+    # (soft-delete, no trash view built).
     offene_status = [TicketStatus.ACTIVE, TicketStatus.ASSIGNED, TicketStatus.WAITING]
 
     if filter == "aktiv":
@@ -144,7 +145,7 @@ async def tickets_overview(
     )
     spam_count = len(spam_count_result.scalars().all())
 
-    # Für die "Zuweisen"-Auswahl in der Massenbearbeitung
+    # For the "assign" selector in bulk editing
     users_result = await db.execute(select(User).where(User.is_active == True).order_by(User.name))
     alle_benutzer = users_result.scalars().all()
 
@@ -160,7 +161,7 @@ async def tickets_overview(
 
 
 # ---------------------------------------------------------------------------
-# Anlegen
+# Create
 # ---------------------------------------------------------------------------
 
 @router.get("/new", response_class=HTMLResponse)
@@ -203,11 +204,11 @@ async def ticket_create(
 
 
 # ---------------------------------------------------------------------------
-# Massenbearbeitung (Mehrfachauswahl in der Übersicht)
+# Bulk editing (multi-select in the overview)
 # ---------------------------------------------------------------------------
-# WICHTIG: müssen vor den generischen "/{ticket_id}/..."-Routen registriert
-# sein, sonst würde z.B. POST /bulk/status von "/{ticket_id}/status" mit
-# ticket_id="bulk" abgefangen werden.
+# IMPORTANT: these must be registered before the generic
+# "/{ticket_id}/..." routes, otherwise e.g. POST /bulk/status would be
+# caught by "/{ticket_id}/status" with ticket_id="bulk".
 
 @router.post("/bulk/status")
 async def tickets_bulk_status(
@@ -266,8 +267,8 @@ async def tickets_bulk_assign(
     await db.commit()
 
     if assignee:
-        # Eine einzelne Sammel-E-Mail statt einer pro Ticket, um das
-        # Postfach des Zugewiesenen nicht zu fluten.
+        # A single combined email instead of one per ticket, to avoid
+        # flooding the assignee's inbox.
         subject = f"{len(tickets)} Ticket(s) im Gartenmanager zugewiesen"
         items = "".join(f"<li>{t.subject}</li>" for t in tickets)
         html = f"""
@@ -299,8 +300,8 @@ async def ticket_detail(
     if not ticket:
         raise HTTPException(status_code=404, detail=t_for(request, "errors.ticket_not_found"))
 
-    # Mögliche Member-Kandidaten (falls Absender-Adresse mehreren gehört
-    # oder noch keinem zugeordnet ist)
+    # Possible member candidates (if the sender address belongs to
+    # multiple members, or isn't assigned to one yet)
     candidates = await find_members_by_email(db, ticket.sender_email)
 
     user_result = await db.execute(select(User).where(User.is_active == True).order_by(User.name))
@@ -315,7 +316,7 @@ async def ticket_detail(
 
 
 # ---------------------------------------------------------------------------
-# Zuweisen
+# Assign
 # ---------------------------------------------------------------------------
 
 @router.post("/{ticket_id}/assign")
@@ -344,7 +345,7 @@ async def ticket_assign(
         await tracker.commit(db, current_user.id)
         await db.commit()
 
-        # Benachrichtigung per E-Mail (nutzt bestehende Vereins-SMTP-Konfiguration)
+        # Notification by email (uses the existing club SMTP configuration)
         subject = f"Ticket zugewiesen: {ticket.subject}"
         html = f"""
         <html><body>
@@ -365,15 +366,15 @@ async def ticket_assign(
 
 
 # ---------------------------------------------------------------------------
-# Status ändern
+# Change status
 # ---------------------------------------------------------------------------
 
 def _wende_status_an(ticket: Ticket, neuer_status: TicketStatus, postponed_until_str: str, request: Request) -> None:
     """
-    Setzt den neuen Status auf einem Ticket inkl. Nebenwirkungen
-    (postponed_until, closed_at, assigned_to_id) -- geteilte Logik für
-    Einzelticket- und Massen-Statusänderung, damit beide garantiert
-    dieselben Regeln anwenden.
+    Sets the new status on a ticket including side effects
+    (postponed_until, closed_at, assigned_to_id) -- shared logic for
+    single-ticket and bulk status changes, so both are guaranteed to
+    apply the same rules.
     """
     ticket.status = neuer_status
 
@@ -416,7 +417,7 @@ async def ticket_status_update(
 
 
 # ---------------------------------------------------------------------------
-# Member manuell zuordnen
+# Manually assign a member
 # ---------------------------------------------------------------------------
 
 @router.post("/{ticket_id}/member")
@@ -438,7 +439,7 @@ async def ticket_member_assign(
 
 
 # ---------------------------------------------------------------------------
-# Spam-Verdacht aufheben (falsch-positiv)
+# Clear spam suspicion (false positive)
 # ---------------------------------------------------------------------------
 
 @router.post("/{ticket_id}/not-spam")
@@ -459,7 +460,7 @@ async def ticket_mark_not_spam(
 
 
 # ---------------------------------------------------------------------------
-# Nachricht / interne Notiz hinzufügen
+# Add message / internal note
 # ---------------------------------------------------------------------------
 
 @router.post("/{ticket_id}/message")
@@ -494,7 +495,7 @@ async def message_add(
 
 
 # ---------------------------------------------------------------------------
-# Ticket-Postfach: manueller Abruf (zusätzlich zum Hintergrund-Polling)
+# Ticket mailbox: manual fetch (in addition to background polling)
 # ---------------------------------------------------------------------------
 
 @router.post("/inbox/fetch-now")

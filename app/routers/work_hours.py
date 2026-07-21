@@ -1,5 +1,5 @@
 """
-Pflichtstunden-Router: Arbeitseinsätze, Sponsorshipen, ClubRolen, Konfiguration.
+Work hours router: work sessions, sponsorships, club roles, configuration.
 """
 import csv
 import io
@@ -38,7 +38,7 @@ from app.templating import templates
 
 
 # ---------------------------------------------------------------------------
-# Hilfsfunktionen
+# Helper functions
 # ---------------------------------------------------------------------------
 
 async def _get_config_for_year(db: AsyncSession, year: int) -> Optional[WorkHoursConfiguration]:
@@ -51,9 +51,9 @@ async def _get_config_for_year(db: AsyncSession, year: int) -> Optional[WorkHour
 async def _calculate_hours_for_member(
     db: AsyncSession, member_id: str, year: int
 ) -> dict:
-    """Berechnet den Pflichtstunden-Stand eines Mitglieds für ein Jahr."""
+    """Calculates a member's required-work-hours standing for a year."""
 
-    # Einsatz-Teilnahmen (nur ERSCHIENEN zählen)
+    # Session participations (only ATTENDED counts)
     einsatz_stunden = await db.scalar(
         select(func.coalesce(func.sum(SessionParticipation.hours_completed), 0))
         .join(WorkSession)
@@ -64,7 +64,7 @@ async def _calculate_hours_for_member(
         )
     ) or 0
 
-    # Sponsorship (aktiv im gesuchten Jahr)
+    # Sponsorship (active in the queried year)
     patenschaft_stunden = await db.scalar(
         select(func.coalesce(func.sum(Sponsorship.credited_hours), 0))
         .where(
@@ -82,7 +82,7 @@ async def _calculate_hours_for_member(
 
 
 async def _is_exempt(db: AsyncSession, member_id: str, year: int) -> bool:
-    """Prüft ob ein Member für ein Jahr von Pflichtstunden befreit ist."""
+    """Checks whether a member is exempt from required work hours for a year."""
     result = await db.execute(
         select(MemberClubRole)
         .join(ClubRole, MemberClubRole.club_role_id == ClubRole.id)
@@ -96,7 +96,7 @@ async def _is_exempt(db: AsyncSession, member_id: str, year: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Dashboard / Übersicht
+# Dashboard / Overview
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
@@ -112,13 +112,13 @@ async def pflichtstunden_uebersicht(
 
     config = await _get_config_for_year(db, year)
 
-    # Alle verfügbaren Jahre für Dropdown
+    # All available years, for the dropdown
     jahre_result = await db.execute(
         select(WorkHoursConfiguration.year).order_by(WorkHoursConfiguration.year.desc())
     )
     verfuegbare_jahre = [r[0] for r in jahre_result.all()]
 
-    # Einsätze des Jahres
+    # Sessions of the year
     einsaetze_result = await db.execute(
         select(WorkSession)
         .options(selectinload(WorkSession.participations))
@@ -143,7 +143,7 @@ async def pflichtstunden_uebersicht(
 
 
 # ---------------------------------------------------------------------------
-# Pflichtstunden-Konfiguration
+# Work hours configuration
 # ---------------------------------------------------------------------------
 
 @router.get("/configuration", response_class=HTMLResponse)
@@ -213,7 +213,7 @@ async def konfiguration_aktualisieren(
     if not configuration:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.configuration_not_found"))
 
-    # Falls das Jahr geändert wird: prüfen ob es mit einem anderen Eintrag kollidiert
+    # If the year is being changed: check for a collision with another entry
     if year != configuration.year:
         kollision = await _get_config_for_year(db, year)
         if kollision and kollision.id != configuration_id:
@@ -284,7 +284,7 @@ async def konfiguration_erstellen(
 
 
 # ---------------------------------------------------------------------------
-# Arbeitseinsätze
+# Work Sessions
 # ---------------------------------------------------------------------------
 
 @router.get("/sessions/new", response_class=HTMLResponse)
@@ -430,7 +430,7 @@ async def einsatz_detail(
     if not session:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.session_not_found"))
 
-    # Alle aktiven Mitglieder für Anmelde-Dropdown
+    # All active members, for the signup dropdown
     mitglieder_result = await db.execute(
         select(Member)
         .where(active_member_filter())
@@ -558,7 +558,7 @@ async def teilnehmer_hinzufuegen(
 ):
     await require_user(request, db)
 
-    # Bereits eingetragen?
+    # Already registered?
     existing = await db.execute(
         select(SessionParticipation).where(
             SessionParticipation.session_id == session_id,
@@ -625,7 +625,7 @@ async def teilnahme_entfernen(
 
 
 # ---------------------------------------------------------------------------
-# ClubRolen
+# Club Roles
 # ---------------------------------------------------------------------------
 
 @router.get("/club-roles", response_class=HTMLResponse)
@@ -892,7 +892,7 @@ async def vereinsrolle_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Sponsorshipen
+# Sponsorships
 # ---------------------------------------------------------------------------
 
 @router.get("/sponsorships", response_class=HTMLResponse)
@@ -918,20 +918,19 @@ async def patenschaften_seite(
     result = await db.execute(query)
     patenschaften = result.scalars().all()
 
-    # Nach Bereich gruppieren, damit mehrere Mitglieder pro Bereich
-    # gemeinsam dargestellt werden
+    # Group by area, so multiple members per area are shown together
     bereiche_gruppiert = {}
     for p in patenschaften:
         bereiche_gruppiert.setdefault(p.area, []).append(p)
 
-    # Alle bekannten Bereichsnamen (für Autovervollständigung, auch aus
-    # vergangenen Jahren, damit Tippfehler beim Wiederverwenden vermieden werden)
+    # All known area names (for autocomplete, including past years, to
+    # avoid typos when reusing one)
     alle_bereiche_result = await db.execute(
         select(Sponsorship.area).distinct().order_by(Sponsorship.area)
     )
     alle_bereiche = [r[0] for r in alle_bereiche_result.all()]
 
-    # Aktuelle Pflichtstunden-Konfiguration für Vorbefüllung
+    # Current work-hours configuration, for pre-filling
     config = await _get_config_for_year(db, year)
 
     mitglieder_result = await db.execute(
@@ -1071,7 +1070,7 @@ async def patenschaft_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Auswertung: Jahresstand pro Member/Parcel
+# Evaluation: annual standing per member/parcel
 # ---------------------------------------------------------------------------
 
 @router.get("/evaluation", response_class=HTMLResponse)
@@ -1108,7 +1107,7 @@ async def auswertung(
     zeilen = []
 
     if config.mode == WorkHoursMode.PER_PARCEL:
-        # Pro Parcel auswerten – alle aktiven Parzellen mit Pächtern
+        # Evaluate per parcel -- all active parcels with tenants
         parzellen_result = await db.execute(
             select(Parcel)
             .options(
@@ -1126,9 +1125,9 @@ async def auswertung(
                 and (z.member.member_until is None or z.member.member_until >= date.today())
             ]
             if not paechter:
-                continue  # Unbesetzte oder nur inaktive Pächter überspringen
+                continue  # skip vacant parcels or those with only inactive tenants
 
-            # Stunden aller Pächter summieren
+            # Sum hours across all tenants
             gesamt_stunden = 0.0
             paechter_details = []
             for m in paechter:
@@ -1145,11 +1144,10 @@ async def auswertung(
             offen = max(0.0, pflicht - gesamt_stunden)
             schuldbetrag = offen * float(config.rate_per_hour_eur)
 
-            # Befreit wenn MINDESTENS EIN Pächter befreit (any(), nicht all() –
-            # siehe docs/architektur-entscheidungen.md). Bewusst NICHT
-            # "alle_befreit" genannt, das hatte schon einmal zu einer
-            # falsch herum kopierten all()-Logik im CSV-Export und in der
-            # API geführt.
+            # Exempt if AT LEAST ONE tenant is exempt (any(), not all() --
+            # see docs/architecture-decisions.md). Deliberately NOT called
+            # "alle_befreit" ("all_exempt") -- that name once led to an
+            # inverted all()-copy bug in the CSV export and the API.
             ist_befreit = any(p["befreit"] for p in paechter_details)
 
             zeilen.append({
@@ -1161,11 +1159,11 @@ async def auswertung(
                 "schuldbetrag": schuldbetrag if not ist_befreit else 0.0,
                 "erfuellt": ist_befreit or gesamt_stunden >= pflicht,
                 "alle_befreit": ist_befreit,
-                "befreit": ist_befreit,  # einheitlicher Key für Template
+                "befreit": ist_befreit,  # unified key for the template
             })
 
     else:
-        # PRO_MITGLIED: jedes Member mit Parcel einzeln auswerten
+        # PER_MEMBER: evaluate each member with a parcel individually
         mitglieder_result = await db.execute(
             select(Member)
             .options(selectinload(Member.parcel_assignments))
@@ -1249,9 +1247,9 @@ async def auswertung_export_csv(
             gesamt = 0.0
             einsatz_h = 0.0
             paten_h = 0.0
-            # Vier-Augen-freundliche Regel: EIN befreiter Pächter genügt, um
-            # die gesamte Parcel zu befreien (any(), nicht all() – siehe
-            # docs/architektur-entscheidungen.md).
+            # Same rule as the evaluation page: ONE exempt tenant is enough
+            # to exempt the whole parcel (any(), not all() -- see
+            # docs/architecture-decisions.md).
             ist_befreit = False
             namen = []
             for m in paechter:

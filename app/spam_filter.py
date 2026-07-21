@@ -1,17 +1,18 @@
 """
-Spam-Filter für das Ticketsystem (Etappe 3).
+Spam filter for the ticket system (stage 3).
 
-Zwei Ebenen, kombiniert:
-1. Eingebaute Heuristiken (Domain-/Schlüsselwort-Sperrliste, Link-Anzahl) –
-   funktionieren sofort, ohne externen Dienst, konfigurierbar unter
-   /admin/einstellungen.
-2. Optionale externe API (z.B. Akismet, ein selbst gehosteter Filter) –
-   nur aktiv, wenn eine URL konfiguriert ist. Schlägt der externe Aufruf
-   fehl, wird stillschweigend auf die Heuristiken zurückgefallen; ein
-   Ausfall des externen Diensts darf niemals die Ticketerstellung blockieren.
+Two layers, combined:
+1. Built-in heuristics (domain/keyword blocklist, link count) -- work
+   immediately, no external service, configurable under
+   /admin/settings.
+2. Optional external API (e.g. Akismet, a self-hosted filter) -- only
+   active when a URL is configured. If the external call fails, it
+   silently falls back to the heuristics; an outage of the external
+   service must never block ticket creation.
 
-Der finale Score ist das Maximum aus Heuristik- und externem Score.
-Ist der Score >= Schwellenwert, gilt die Nachricht als Spam-Verdacht.
+The final score is the maximum of the heuristic and external scores.
+If the score is >= the threshold, the message is flagged as suspected
+spam.
 """
 import logging
 import re
@@ -71,7 +72,7 @@ def _heuristik_score(
     absender_email: str, betreff: str, inhalt: str,
     domain_blocklist: List[str], keyword_blocklist: List[str],
 ) -> Tuple[float, List[str]]:
-    """Berechnet einen Score 0.0–1.0 aus einfachen, nachvollziehbaren Regeln."""
+    """Computes a 0.0-1.0 score from simple, traceable rules."""
     score = 0.0
     gruende: List[str] = []
 
@@ -98,11 +99,11 @@ async def _externe_pruefung(
     konfig: dict, absender_email: str, betreff: str, inhalt: str
 ) -> Optional[float]:
     """
-    Ruft einen optionalen externen Spam-Prüfdienst auf. Erwartet eine JSON-
-    Antwort der Form {"spam_score": 0.0-1.0} – so kann jeder Dienst
-    angebunden werden, der diesen einfachen Vertrag über einen kleinen
-    Adapter (z.B. eine kleine Cloud-Function) erfüllt. Gibt None zurück,
-    wenn keine externe API konfiguriert ist oder der Aufruf fehlschlägt.
+    Calls an optional external spam-check service. Expects a JSON
+    response of the form {"spam_score": 0.0-1.0} -- so any service can
+    be hooked up that fulfills this simple contract via a small adapter
+    (e.g. a small cloud function). Returns None if no external API is
+    configured or the call fails.
     """
     if not konfig["api_url"]:
         return None
@@ -120,7 +121,7 @@ async def _externe_pruefung(
             score = float(daten.get("spam_score", 0.0))
             return max(0.0, min(score, 1.0))
     except Exception as e:
-        logger.warning(f"Externe Spam-Pruefung fehlgeschlagen, nutze nur Heuristiken: {e}")
+        logger.warning(f"External spam check failed, falling back to heuristics only: {e}")
         return None
 
 
@@ -128,9 +129,9 @@ async def pruefe_auf_spam(
     absender_email: str, betreff: str, inhalt: str, db: AsyncSession
 ) -> SpamPruefungsErgebnis:
     """
-    Prüft eine eingehende Nachricht auf Spam-Verdacht. Kombiniert
-    eingebaute Heuristiken mit einer optionalen externen API (Maximum
-    beider Scores). Ein Ausfall der externen API blockiert die Prüfung nie.
+    Checks an incoming message for suspected spam. Combines built-in
+    heuristics with an optional external API (maximum of both scores).
+    An outage of the external API never blocks the check.
     """
     konfig = await _lade_konfiguration(db)
 

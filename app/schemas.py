@@ -1,9 +1,9 @@
 """
-Pydantic-Schemas für die REST-API.
+Pydantic schemas for the REST API.
 
-Trennung von DB-Modellen (app/models.py) und API-Schemas ist bewusst:
-so können wir API-Verträge stabil halten, auch wenn sich interne
-Modelle ändern, und unterschiedliche Felder für Erstellung/Antwort haben.
+The separation from DB models (app/models.py) is deliberate: it lets
+us keep API contracts stable even as internal models change, and have
+different fields for creation vs. response.
 """
 from datetime import date, datetime
 from typing import Optional, List
@@ -39,7 +39,7 @@ class UserOut(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Telefon / E-Mail (Unterobjekte von Member)
+# Phone / Email (sub-objects of Member)
 # ---------------------------------------------------------------------------
 
 class PhoneBase(BaseModel):
@@ -98,7 +98,7 @@ class MemberCreate(MemberBase):
 
 
 class MemberUpdate(BaseModel):
-    """Alle Felder optional – für PATCH-artige Teilupdates via PUT."""
+    """All fields optional -- for PATCH-style partial updates via PUT."""
     first_name: Optional[str] = Field(None, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
     date_of_birth: Optional[date] = None
@@ -113,7 +113,7 @@ class MemberUpdate(BaseModel):
 
 
 class MemberAssignmentBrief(BaseModel):
-    """Kompakte Parcel-Info innerhalb einer Member-Antwort."""
+    """Compact parcel info nested inside a member response."""
     model_config = ConfigDict(from_attributes=True)
     parcel_id: str
     plot_number: str
@@ -130,7 +130,7 @@ class MemberOut(MemberBase):
 
 
 class MemberDetailOut(MemberOut):
-    """Erweiterte Ansicht inkl. zugeordneter Parzellen, für GET /members/{id}."""
+    """Extended view including assigned parcels, for GET /members/{id}."""
     parcels: List[MemberAssignmentBrief] = []
 
 
@@ -177,7 +177,7 @@ class ParcelDetailOut(ParcelOut):
 
 
 # ---------------------------------------------------------------------------
-# Member-Parcel-Zuordnung
+# Member-Parcel assignment
 # ---------------------------------------------------------------------------
 
 class AssignmentCreate(BaseModel):
@@ -212,7 +212,7 @@ class ClubSettingUpdate(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Generische Listenantwort (Pagination-ready)
+# Generic list response (pagination-ready)
 # ---------------------------------------------------------------------------
 
 class PaginierteAntwort(BaseModel):
@@ -222,14 +222,14 @@ class PaginierteAntwort(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Work Hours (Pflichtstunden)
+# Work Hours
 # ---------------------------------------------------------------------------
 
 class WorkHoursConfigurationBase(BaseModel):
     year: int
     hours_required: Decimal
     rate_per_hour_eur: Decimal
-    mode: str = Field("PER_PARCEL", description="PER_PARCEL oder PER_MEMBER")
+    mode: str = Field("PER_PARCEL", description="PER_PARCEL or PER_MEMBER")
     note: Optional[str] = None
 
 
@@ -281,7 +281,7 @@ class MemberClubRoleOut(BaseModel):
 class WorkSessionBase(BaseModel):
     title: str
     description: Optional[str] = None
-    type: str = Field("STANDARD", description="STANDARD oder SPECIAL")
+    type: str = Field("STANDARD", description="STANDARD or SPECIAL")
     date: date
     time_from: Optional[str] = None
     time_until: Optional[str] = None
@@ -311,7 +311,7 @@ class WorkSessionOut(WorkSessionBase):
 
 class SessionParticipationCreate(BaseModel):
     member_id: str
-    status: str = Field("ATTENDED", description="REGISTERED, ATTENDED oder NO_SHOW")
+    status: str = Field("ATTENDED", description="REGISTERED, ATTENDED or NO_SHOW")
     hours_completed: Optional[Decimal] = None
     note: Optional[str] = None
 
@@ -387,7 +387,7 @@ class TaskOut(TaskBase):
 
 
 class EvaluationRowOut(BaseModel):
-    """Eine Zeile der Work-Hours-Jahresauswertung."""
+    """One row of the work-hours annual evaluation."""
     label: str
     hours_required: Decimal
     hours_completed: Decimal
@@ -398,18 +398,18 @@ class EvaluationRowOut(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Metering (Wasser & Strom) – medium-agnostische Schemas
+# Metering (water & electricity) -- medium-agnostic schemas
 # ---------------------------------------------------------------------------
 
 class MeteringPointBase(BaseModel):
-    type: str = Field(..., description="MAIN_METER, PARCEL oder CLUB")
+    type: str = Field(..., description="MAIN_METER, PARCEL or CLUB")
     parcel_id: Optional[str] = None
     label: Optional[str] = None
     notes: Optional[str] = None
 
 
 class MeteringPointCreate(MeteringPointBase):
-    # Erster Meter wird direkt mit angelegt
+    # First meter is created directly alongside it
     number: str
     calibrated_until: Optional[int] = None
     installed_at: Optional[date] = None
@@ -469,7 +469,7 @@ class MeterReadingOut(BaseModel):
 
 
 class ConsumptionRowOut(BaseModel):
-    """Eine Zeile der Verbrauchsauswertung (MeteringPoint + berechneter Verbrauch)."""
+    """One row of the consumption evaluation (MeteringPoint + calculated consumption)."""
     metering_point_id: str
     label: str
     meter_number: Optional[str] = None
@@ -477,7 +477,7 @@ class ConsumptionRowOut(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Versicherungen
+# Insurance
 # ---------------------------------------------------------------------------
 
 class PropertyInsurancePackageBase(BaseModel):
@@ -536,7 +536,7 @@ class ParcelInsuranceCostOut(ParcelInsuranceOut):
 
 
 # ---------------------------------------------------------------------------
-# Ticketsystem
+# Ticket system
 # ---------------------------------------------------------------------------
 
 class TicketMessageCreate(BaseModel):
@@ -558,16 +558,16 @@ class TicketCreate(BaseModel):
     subject: str
     sender_email: EmailStr
     sender_name: Optional[str] = None
-    message: str = Field(..., description="Erste Nachricht des Tickets (wird als INCOMING gespeichert)")
+    message: str = Field(..., description="First message of the ticket (stored as INCOMING)")
 
 
 class TicketStatusUpdate(BaseModel):
-    status: str = Field(..., description="ACTIVE, ASSIGNED, WAITING, POSTPONED, CLOSED oder DELETED")
+    status: str = Field(..., description="ACTIVE, ASSIGNED, WAITING, POSTPONED, CLOSED or DELETED")
     postponed_until: Optional[date] = None
 
 
 class TicketAssignmentUpdate(BaseModel):
-    assigned_to_id: Optional[str] = Field(None, description="Leer/None = Zuweisung aufheben")
+    assigned_to_id: Optional[str] = Field(None, description="Empty/None = clear assignment")
 
 
 class TicketMemberUpdate(BaseModel):
@@ -575,7 +575,7 @@ class TicketMemberUpdate(BaseModel):
 
 
 class TicketSpamUpdate(BaseModel):
-    spam_suspected: bool = Field(..., description="false zum Aufheben eines Spam-Verdachts (falsch-positiv)")
+    spam_suspected: bool = Field(..., description="false to clear a spam suspicion (false positive)")
 
 
 class TicketOut(BaseModel):
@@ -601,7 +601,7 @@ class TicketDetailOut(TicketOut):
 
 
 # ---------------------------------------------------------------------------
-# Einkaufswünsche
+# Purchase Requests
 # ---------------------------------------------------------------------------
 
 class PurchaseRequestCreate(BaseModel):
@@ -609,8 +609,8 @@ class PurchaseRequestCreate(BaseModel):
     justification: str
     link: Optional[str] = None
     estimated_cost_eur: Optional[Decimal] = None
-    requester_name: Optional[str] = Field(None, description="Nur wenn für eine externe Person angelegt")
-    requester_email: Optional[EmailStr] = Field(None, description="Nur wenn für eine externe Person angelegt")
+    requester_name: Optional[str] = Field(None, description="Only when created for an external person")
+    requester_email: Optional[EmailStr] = Field(None, description="Only when created for an external person")
 
 
 class PurchaseRequestRejectRequest(BaseModel):

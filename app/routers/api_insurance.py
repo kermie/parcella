@@ -1,6 +1,6 @@
 """
-API-Router: Insurance – Sachversicherungs-Pakete (property insurance
-packages), Konfiguration, Parcel-Versicherungsstatus, Auswertung.
+API router: Insurance -- property insurance packages, configuration,
+parcel insurance status, evaluation.
 """
 from typing import List, Optional
 
@@ -31,7 +31,7 @@ router = APIRouter(
 
 
 # ---------------------------------------------------------------------------
-# Sachversicherungs-Pakete (property insurance packages)
+# Property insurance packages
 # ---------------------------------------------------------------------------
 
 @router.get("/packages", response_model=List[PropertyInsurancePackageOut], summary="List packages")
@@ -97,7 +97,7 @@ async def package_delete(
 
 
 # ---------------------------------------------------------------------------
-# Konfiguration (Unfallversicherungs-Beträge / accident insurance amounts)
+# Configuration (accident insurance amounts)
 # ---------------------------------------------------------------------------
 
 @router.get(
@@ -145,7 +145,7 @@ async def configuration_set(
 
 
 # ---------------------------------------------------------------------------
-# Parcel-Versicherungsstatus
+# Parcel insurance status
 # ---------------------------------------------------------------------------
 
 async def _load_pi(db: AsyncSession, parcel_id: str, year: int) -> Optional[ParcelInsurance]:
@@ -162,11 +162,11 @@ async def _load_pi(db: AsyncSession, parcel_id: str, year: int) -> Optional[Parc
 
 def _to_cost_schema(pi: ParcelInsurance, config: Optional[InsuranceConfiguration]) -> ParcelInsuranceCostOut:
     cost = calculate_insurance_cost(pi, config)
-    # Erst das Basis-Schema (nur echte ORM-Spalten) validieren, dann die
-    # berechneten Felder ergänzen – model_validate(pi) direkt auf das
-    # Zielschema würde fehlschlagen, da property_cost_eur/accident_cost_eur/
-    # total_cost_eur keine echten Attribute auf pi sind, sondern erst
-    # berechnet werden müssen.
+    # Validate the base schema first (only real ORM columns), then add
+    # the calculated fields -- calling model_validate(pi) directly on
+    # the target schema would fail, since property_cost_eur/
+    # accident_cost_eur/total_cost_eur aren't real attributes on pi,
+    # they have to be calculated first.
     base = ParcelInsuranceOut.model_validate(pi)
     return ParcelInsuranceCostOut(
         **base.model_dump(),
@@ -201,7 +201,7 @@ async def insurance_get(
 @router.put(
     "/parcels/{parcel_id}/{year}", response_model=ParcelInsuranceCostOut,
     summary="Set insurance status (upsert)",
-    description="Legt den Status an, falls er nicht existiert, und ersetzt die Liste der Zusatzpersonen komplett.",
+    description="Creates the status if it doesn't exist yet, and completely replaces the list of additional persons.",
 )
 async def insurance_set(
     parcel_id: str,
@@ -219,11 +219,12 @@ async def insurance_set(
         pi = ParcelInsurance(parcel_id=parcel_id, year=year)
         db.add(pi)
         await db.commit()
-        # Frisch angelegte Zeile mit eager-geladenen Beziehungen neu laden –
-        # sonst löst der Zugriff auf pi.additional_persons weiter unten
-        # einen synchronen Lazy-Load aus, der mit dem asynchronen
-        # Datenbanktreiber zu "MissingGreenlet" führt (siehe
-        # docs/module-tickets.md für das gleiche Muster im Ticketsystem).
+        # Reload the freshly created row with eagerly-loaded
+        # relationships -- otherwise a later access to
+        # pi.additional_persons below triggers a synchronous lazy load,
+        # which raises "MissingGreenlet" with the async database driver
+        # (see docs/module-tickets.md for the same pattern in the
+        # ticket system).
         pi = await _load_pi(db, parcel_id, year)
 
     pi.has_property_insurance = daten.has_property_insurance
@@ -240,13 +241,13 @@ async def insurance_set(
 
     await db.commit()
 
-    # Wichtig: pi.property_package wurde ggf. schon VOR dem Setzen von
-    # property_package_id geladen (z.B. beim Neuanlegen weiter oben, als der
-    # Wert noch None war). Ein erneutes Abfragen über _load_pi würde wegen
-    # SQLAlchemys Identity Map dasselbe (bereits als "geladen" markierte,
-    # aber inzwischen veraltete) Objekt zurückgeben, OHNE die Beziehung neu
-    # zu holen – da expire_on_commit=False gesetzt ist. db.refresh()
-    # erzwingt das gezielte Neuladen genau dieser Beziehungen.
+    # Important: pi.property_package may already have been loaded
+    # BEFORE property_package_id was set (e.g. during creation above,
+    # when the value was still None). Querying again via _load_pi would,
+    # because of SQLAlchemy's identity map, return the same (already
+    # "loaded", but now stale) object WITHOUT re-fetching the
+    # relationship -- since expire_on_commit=False is set. db.refresh()
+    # forces exactly these relationships to be reloaded.
     await db.refresh(pi, attribute_names=["property_package", "additional_persons"])
 
     config_result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
@@ -255,7 +256,7 @@ async def insurance_set(
 
 
 # ---------------------------------------------------------------------------
-# Auswertung
+# Evaluation
 # ---------------------------------------------------------------------------
 
 @router.get(

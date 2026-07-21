@@ -1,5 +1,5 @@
 """
-API-Router: Statistiken für das Dashboard.
+API router: statistics for the dashboard.
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +40,7 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db)):
         )
     )
 
-    # Parcels nach Status
+    # Parcels by status
     parcels_total = await db.scalar(
         select(func.count()).select_from(Parcel).where(
             Parcel.status != ParcelStatus.DELETED
@@ -57,7 +57,7 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db)):
         )
     )
 
-    # Unbesetzte Parcels (aktiv, aber kein Member zugeordnet)
+    # Vacant parcels (active, but no member assigned)
     besetzte_ids = select(MemberParcel.parcel_id).distinct()
     parcels_vacant = await db.scalar(
         select(func.count()).select_from(Parcel).where(
@@ -66,7 +66,7 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db)):
         )
     )
 
-    # Flächen
+    # Areas
     area_total = await db.scalar(
         select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(
             Parcel.status == ParcelStatus.ACTIVE

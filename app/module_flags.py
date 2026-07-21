@@ -1,21 +1,21 @@
 """
-Modul-Flags: Ein-/Ausblenden optionaler Funktionsbereiche.
+Module flags: showing/hiding optional feature areas.
 
-Konzept:
-- Jedes optionale Modul hat einen Schlüssel "modul_<name>" in der
-  ClubSettings-Tabelle (z.B. "modul_work_hours").
-- Fehlt der Schlüssel (z.B. bei bestehenden Installationen ohne
-  explizite Einstellung), gilt der Default in MODULE_DEFAULTS
-  (bewusst True, damit bestehende Nutzer nichts verlieren).
-- Die Flags werden einmal pro Request in einer Middleware geladen
-  und unter request.state.module_flags abgelegt – Templates und
-  Router-Dependencies lesen von dort, ohne erneut die DB zu fragen.
+Concept:
+- Every optional module has a key "modul_<name>" in the ClubSettings
+  table (e.g. "modul_work_hours").
+- If the key is missing (e.g. on existing installations without an
+  explicit setting), the default in MODULE_DEFAULTS applies
+  (deliberately True, so existing users don't lose anything).
+- The flags are loaded once per request in a middleware and stored
+  under request.state.module_flags -- templates and router
+  dependencies read from there without querying the DB again.
 
-Neues Modul hinzufügen:
-1. Eintrag in MODULE_DEFAULTS mit sprechendem Namen und Default-Wert.
-2. Eintrag in MODULE_FELDER (admin.py) für die Einstellungsseite.
-3. Router mit `dependencies=[Depends(require_modul("<name>"))]` schützen.
-4. Navigation in base.html mit `{% if request.state.module_flags.<name> %}` umschließen.
+Adding a new module:
+1. Entry in MODULE_DEFAULTS with a descriptive name and default value.
+2. Entry in MODULE_FELDER (admin.py) for the settings page.
+3. Guard the router with `dependencies=[Depends(require_modul("<name>"))]`.
+4. Wrap the nav entry in base.html with `{% if request.state.module_flags.<name> %}`.
 """
 from typing import Dict
 
@@ -25,8 +25,8 @@ from sqlalchemy import select
 
 from app.models import ClubSetting
 
-# Default-Zustand pro Modul, falls kein expliziter Wert in der DB steht.
-# Bewusst True für bestehende Module, damit ein Update nichts "kaputt macht".
+# Default state per module, if no explicit value is set in the DB.
+# Deliberately True for existing modules, so an update doesn't "break" anything.
 MODULE_DEFAULTS: Dict[str, bool] = {
     "work_hours": True,
     "water": True,
@@ -59,7 +59,7 @@ def _wert_zu_bool(value: str) -> bool:
 
 
 async def lade_modul_flags(db: AsyncSession) -> Dict[str, bool]:
-    """Lädt alle Modul-Flags aus der Datenbank, ergänzt um Defaults."""
+    """Loads all module flags from the database, filled in with defaults."""
     result = await db.execute(
         select(ClubSetting).where(ClubSetting.key.like("modul_%"))
     )
@@ -75,9 +75,9 @@ async def lade_modul_flags(db: AsyncSession) -> Dict[str, bool]:
 
 def require_modul(modul_name: str):
     """
-    Dependency-Factory für Router: sperrt alle Endpunkte eines Routers,
-    falls das Modul deaktiviert ist. Liest aus request.state.module_flags
-    (von der Middleware gesetzt), fragt NICHT erneut die Datenbank.
+    Dependency factory for routers: locks every endpoint of a router if
+    the module is disabled. Reads from request.state.module_flags (set
+    by the middleware), does NOT query the database again.
     """
 
     async def checker(request: Request):

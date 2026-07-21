@@ -1,6 +1,6 @@
 """
-Hilfsfunktionen für das Versicherungsmodul (insurance): Kostenberechnung
-und Haushalts-Erkennung (gleiche Adresse = automatisch mitversichert).
+Helper functions for the insurance module: cost calculation and
+household detection (same address = automatically co-insured).
 """
 from decimal import Decimal
 from typing import List, Optional
@@ -9,7 +9,7 @@ from app.models import Member, MemberParcel, ParcelInsurance, InsuranceConfigura
 
 
 def _normalized_address(member: Member) -> tuple:
-    """Normalisierte Adresse für den Haushaltsvergleich (whitespace/case-tolerant)."""
+    """Normalized address for household comparison (whitespace/case-tolerant)."""
     return (
         (member.street or "").strip().lower(),
         (member.postal_code or "").strip().lower(),
@@ -19,38 +19,37 @@ def _normalized_address(member: Member) -> tuple:
 
 def household_grouping(assignments: List[MemberParcel]) -> dict:
     """
-    Teilt die aktuellen Bewohner einer Parcel in "im Haushalt" (teilen
-    sich eine Adresse) und "außerhalb" (abweichende oder fehlende
-    Adresse) auf.
+    Splits a parcel's current residents into "in the household" (share
+    an address) and "external" (differing or missing address).
 
-    Bewusst OHNE Anker auf eine einzelne "Hauptperson" -- das Konzept
-    von Haupt-/Mitpächter wurde entfernt (siehe Migration
-    0022_remove_tenant_role): das Vereinsboard behandelt alle Bewohner
-    einer Parcel gleichermaßen haftbar, unabhängig davon, wer zuerst
-    unterschrieben hat. Stattdessen werden die Bewohner untereinander
-    nach Adresse gruppiert; die GRÖSSTE Gruppe mit übereinstimmender
-    Adresse gilt als der automatisch mitversicherte Haushalt, alle
-    anderen (abweichende Adresse oder Einzelperson ohne Match) als
-    "außerhalb" (optional gegen Aufpreis versicherbar).
+    Deliberately WITHOUT anchoring on a single "primary person" -- the
+    main-tenant/co-tenant concept was removed (see migration
+    0022_remove_tenant_role): the board treats every resident of a
+    parcel as equally liable, regardless of who signed first. Instead,
+    residents are grouped among themselves by address; the LARGEST
+    group sharing an address is treated as the automatically
+    co-insured household, and everyone else (differing address, or a
+    single person with no match) as "external" (optionally insurable
+    for an extra fee).
 
-    Rückgabe: {"household": [Member, ...], "external": [Member, ...]}
-    Eine leere Adresse (alle Felder leer) zählt NICHT als Übereinstimmung,
-    um Falsch-Zuordnungen bei fehlenden Adressdaten zu vermeiden -- auch
-    wenn mehrere Bewohner zufällig alle eine leere Adresse haben, bilden
-    sie deshalb KEINE gemeinsame Haushalts-Gruppe.
+    Returns: {"household": [Member, ...], "external": [Member, ...]}
+    An empty address (all fields empty) does NOT count as a match, to
+    avoid false groupings from missing address data -- even if several
+    residents happen to all have an empty address, they therefore do
+    NOT form a shared household group.
     """
     current = [a.member for a in assignments if a.assigned_until is None]
     if not current:
         return {"household": [], "external": []}
 
-    # Einzelne Bewohner-Sonderfall: bei genau einer Person gibt es
-    # niemanden zum Vergleichen -- diese Person zählt trivial als
-    # Haushalt, unabhängig davon, ob eine Adresse hinterlegt ist.
+    # Single-resident special case: with exactly one person there's
+    # nobody to compare against -- that person trivially counts as the
+    # household, regardless of whether an address is on file.
     if len(current) == 1:
         return {"household": current, "external": []}
 
-    # Nach normalisierter Adresse gruppieren; leere Adressen bleiben
-    # explizit ungruppiert (jede für sich).
+    # Group by normalized address; empty addresses explicitly stay
+    # ungrouped (each on its own).
     groups: dict = {}
     unmatched: list = []
     for m in current:
@@ -60,10 +59,10 @@ def household_grouping(assignments: List[MemberParcel]) -> dict:
             continue
         groups.setdefault(addr, []).append(m)
 
-    # Größte Adress-Gruppe (mit mindestens einer Person) ist der
-    # Haushalt. Bei Gleichstand: die zuerst gefundene (stabile
-    # Query-Reihenfolge), es gibt keine fachliche Grundlage, eine
-    # bestimmte Gruppe zu bevorzugen.
+    # The largest address group (with at least one person) is the
+    # household. In case of a tie: the first one found (stable query
+    # order) -- there's no substantive basis for preferring one group
+    # over another.
     if groups:
         household = max(groups.values(), key=len)
     else:
@@ -79,8 +78,8 @@ def calculate_insurance_cost(
     pi: ParcelInsurance, configuration: Optional[InsuranceConfiguration]
 ) -> dict:
     """
-    Berechnet die Versicherungskosten einer Parcel für ein Jahr.
-    Gibt ein Dict mit property_cost, accident_cost, total zurück.
+    Calculates a parcel's insurance cost for a year.
+    Returns a dict with property_cost, accident_cost, total.
     """
     property_cost = Decimal("0")
     if pi.has_property_insurance and pi.property_package:

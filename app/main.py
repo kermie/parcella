@@ -1,5 +1,5 @@
 """
-Gartenverein-Verwaltung – Hauptanwendung.
+Allotment garden association management -- main application.
 """
 from contextlib import asynccontextmanager
 from datetime import date
@@ -25,10 +25,10 @@ from app.i18n import load_translations, load_current_language
 from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
 
-# Wird beim Modul-Import geladen (nicht erst im Lifespan-Startup-Event),
-# da ASGI-Test-Clients (z.B. httpx mit ASGITransport) Lifespan-Events
-# nicht zwingend auslösen. load_translations() ist eine reine, schnelle
-# Dateilese-Operation ohne DB-Zugriff – unproblematisch beim Import.
+# Loaded at module import time (not only in the lifespan startup
+# event), since ASGI test clients (e.g. httpx with ASGITransport) don't
+# necessarily trigger lifespan events. load_translations() is a pure,
+# fast file-read operation with no DB access -- unproblematic at import.
 load_translations()
 from app.templating import templates
 from app.ticket_mailer import process_incoming_mails
@@ -46,26 +46,25 @@ logger = logging.getLogger(__name__)
 
 async def _ticket_inbox_polling_loop():
     """
-    Fragt alle 2 Minuten das konfigurierte Ticket-Postfach nach neuen
-    E-Mails ab. Läuft dauerhaft im Hintergrund; Fehler werden abgefangen,
-    damit die Schleife nicht durch einen einzelnen fehlgeschlagenen
-    Abruf beendet wird.
+    Polls the configured ticket mailbox for new emails every 2 minutes.
+    Runs permanently in the background; errors are caught so a single
+    failed poll doesn't end the loop.
     """
     while True:
         try:
             async with AsyncSessionLocal() as db:
                 anzahl = await process_incoming_mails(db)
                 if anzahl:
-                    logger.info(f"Ticket-Postfach: {anzahl} neue E-Mail(s) verarbeitet.")
+                    logger.info(f"Ticket mailbox: {anzahl} new email(s) processed.")
         except Exception as e:
-            logger.error(f"Ticket-Postfach-Polling fehlgeschlagen: {e}")
+            logger.error(f"Ticket mailbox polling failed: {e}")
 
-        await asyncio.sleep(120)  # 2 Minuten
+        await asyncio.sleep(120)  # 2 minutes
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: ersten Admin anlegen falls die Benutzertabelle leer ist."""
+    """Startup: create the first admin if the users table is empty."""
     async with AsyncSessionLocal() as db:
         user_count = await db.scalar(select(func.count()).select_from(User))
         if not user_count:
@@ -78,8 +77,8 @@ async def lifespan(app: FastAPI):
             db.add(erster_admin)
             await db.commit()
             logger.warning(
-                "Erster Admin-Benutzer angelegt: admin@gartenverein.local / admin1234 "
-                "– BITTE SOFORT PASSWORT ÄNDERN!"
+                "First admin user created: admin@gartenverein.local / admin1234 "
+                "-- PLEASE CHANGE THE PASSWORD IMMEDIATELY!"
             )
 
     polling_task = asyncio.create_task(_ticket_inbox_polling_loop())
@@ -104,17 +103,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Statische Dateien
+# Static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
 @app.middleware("http")
 async def modul_flags_middleware(request: Request, call_next):
     """
-    Lädt einmal pro Request die Modul-Flags (z.B. ob Pflichtstunden aktiv
-    ist) und legt sie unter request.state.module_flags ab. Templates und
-    Router-Dependencies (require_modul) lesen von dort, ohne die DB
-    erneut abzufragen.
+    Loads the module flags once per request (e.g. whether work hours is
+    active) and stores them under request.state.module_flags. Templates
+    and router dependencies (require_modul) read from there without
+    querying the DB again.
     """
     async with AsyncSessionLocal() as db:
         request.state.module_flags = await lade_modul_flags(db)
@@ -125,10 +124,10 @@ async def modul_flags_middleware(request: Request, call_next):
 @app.middleware("http")
 async def sprache_middleware(request: Request, call_next):
     """
-    Lädt einmal pro Request die aktuell eingestellte Sprache (siehe
-    app/i18n.py) und legt sie unter request.state.language ab. Templates
-    (über die Jinja-Funktion `t`) und Router (über t_for(request, ...))
-    lesen von dort.
+    Loads the currently configured language once per request (see
+    app/i18n.py) and stores it under request.state.language. Templates
+    (via the Jinja function `t`) and routers (via t_for(request, ...))
+    read from there.
     """
     async with AsyncSessionLocal() as db:
         request.state.language = await load_current_language(db)
@@ -139,11 +138,12 @@ async def sprache_middleware(request: Request, call_next):
 @app.middleware("http")
 async def l10n_middleware(request: Request, call_next):
     """
-    Lädt einmal pro Request Region und Währung (siehe app/l10n.py) und
-    legt sie unter request.state.region / request.state.currency ab.
-    Bewusst getrennt von der Sprache (sprache_middleware oben) -- Region/
-    Währung sind unabhängige Einstellungen, siehe app/l10n.py-Docstring.
-    Templates nutzen die Filter/Funktion `money`, `number`, `address`.
+    Loads region and currency once per request (see app/l10n.py) and
+    stores them under request.state.region / request.state.currency.
+    Deliberately separate from language (sprache_middleware above) --
+    region/currency are independent settings, see the app/l10n.py
+    module docstring. Templates use the `money`, `number`, `address`
+    filters/function.
     """
     async with AsyncSessionLocal() as db:
         request.state.region = await load_current_region(db)
@@ -165,7 +165,7 @@ async def branding_middleware(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# Router registrieren – Web-UI (Jinja2)
+# Register routers -- Web UI (Jinja2)
 app.include_router(auth.router)
 app.include_router(members.router)
 app.include_router(parcels.router)
@@ -178,8 +178,8 @@ app.include_router(calendar_router.router)
 app.include_router(announcements_router.router)
 app.include_router(inventory_router.router)
 
-# Zählerwesen: EINE Codebasis (app/routers/metering.py), zweimal
-# instanziiert für Wasser und Strom – siehe erstelle_metering_router().
+# Metering: ONE codebase (app/routers/metering.py), instantiated twice
+# for water and electricity -- see erstelle_metering_router().
 water_router = erstelle_metering_router(
     medium=MeteringMedium.WATER, url_prefix="/water", modul_name="water",
     medium_label_key="metering.medium.water", unit="m³", icon="bi-droplet", dezimalstellen=1,
@@ -191,7 +191,7 @@ electricity_router = erstelle_metering_router(
 app.include_router(water_router)
 app.include_router(electricity_router)
 
-# Router registrieren – REST-API (JSON, JWT-Auth)
+# Register routers -- REST API (JSON, JWT auth)
 app.include_router(api_auth.router)
 app.include_router(api_members.router)
 app.include_router(api_parcels.router)
@@ -221,7 +221,7 @@ async def startseite(request: Request):
         members_total = await db.scalar(
             select(func.count()).where(active_member_filter())
         )
-        members_active = members_total  # gesamt zählt bereits nur aktive
+        members_active = members_total  # total already counts only active members
         parcels_active = await db.scalar(
             select(func.count()).select_from(Parcel).where(
                 Parcel.status == ParcelStatus.ACTIVE
@@ -252,18 +252,18 @@ async def startseite(request: Request):
         )
         recent_members = neueste_result.scalars().all()
 
-        # Für die Dashboard-Kachel "Offene Einkaufswünsche" -- nur relevant,
-        # wenn das Modul aktiv ist (siehe request.state.module_flags im
-        # Template), aber die Abfrage kostet nichts, wenn leer/deaktiviert.
+        # For the dashboard tile "Open purchase requests" -- only relevant
+        # when the module is active (see request.state.module_flags in
+        # the template), but the query costs nothing when empty/disabled.
         purchase_requests_open_count = await db.scalar(
             select(func.count()).select_from(PurchaseRequest).where(
                 PurchaseRequest.status == PurchaseRequestStatus.OPEN
             )
         )
 
-        # Für die Dashboard-Kachel "Tickets" -- "offen" zählt hier genau wie
-        # der "Active"-Filter auf /tickets/ (ACTIVE/ASSIGNED/WAITING, siehe
-        # app/routers/tickets.py), NICHT postponed/closed/deleted.
+        # For the dashboard tile "Tickets" -- "open" here counts exactly
+        # like the "Active" filter on /tickets/ (ACTIVE/ASSIGNED/WAITING,
+        # see app/routers/tickets.py), NOT postponed/closed/deleted.
         tickets_open_count = await db.scalar(
             select(func.count()).select_from(Ticket).where(
                 Ticket.status.in_([TicketStatus.ACTIVE, TicketStatus.ASSIGNED, TicketStatus.WAITING])
@@ -275,9 +275,9 @@ async def startseite(request: Request):
             )
         )
 
-    # Dashboard-Kachel "Birthdays this week" -- unabhängig vom Calendar-
-    # Modul-Flag, da Geburtstage hier nur informativ angezeigt werden
-    # (kein Link/keine Abhängigkeit von den Calendar-Routen).
+    # Dashboard tile "Birthdays this week" -- independent of the Calendar
+    # module flag, since birthdays are shown here purely for information
+    # (no link/dependency on the calendar routes).
     birthdays_this_week = await upcoming_birthdays(db, within_days=7)
 
     stats = {
@@ -309,17 +309,16 @@ async def startseite(request: Request):
 async def forbidden_handler(request: Request, exc):
     async with AsyncSessionLocal() as db:
         user = await get_current_user(request, db)
-    # exc.detail trägt oft eine konkrete, hilfreiche Begründung (z.B. "Der
-    # Antragsteller darf seinen eigenen Einkaufswunsch nicht mitfreigeben").
-    # Bisher wurde das hier immer verworfen und nur "Keine Berechtigung"
-    # angezeigt – das machte etliche an anderer Stelle sorgfältig formulierte
-    # (und übersetzte) Fehlermeldungen faktisch unsichtbar. Jetzt: konkrete
-    # Meldung anzeigen, falls vorhanden. Wichtig: FastAPI füllt "detail"
-    # automatisch mit der generischen englischen HTTP-Statustext-Phrase
-    # ("Forbidden"), wenn beim Auslösen kein eigener Text übergeben wurde –
-    # genau diesen Fall müssen wir erkennen und stattdessen weiter den
-    # deutschen Standardtext zeigen, statt versehentlich Englisch durchsickern
-    # zu lassen.
+    # exc.detail often carries a specific, helpful reason (e.g. "the
+    # requester may not also approve their own purchase request"). This
+    # used to be discarded entirely in favor of a generic "Keine
+    # Berechtigung" -- which made a number of carefully worded (and
+    # translated) error messages elsewhere effectively invisible. Now:
+    # show the specific message if present. Important: FastAPI
+    # auto-fills "detail" with the generic English HTTP status phrase
+    # ("Forbidden") when no custom text was given at raise time -- we
+    # need to detect exactly that case and keep showing the German
+    # fallback text instead, rather than accidentally leaking English.
     detail = getattr(exc, "detail", None)
     meldung = detail if detail and detail != "Forbidden" else "Keine Berechtigung"
     return templates.TemplateResponse(

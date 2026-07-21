@@ -1,6 +1,6 @@
 """
-API-Router: Pflichtstunden – Konfiguration, ClubRolen, Arbeitseinsätze,
-Sponsorshipen, Auswertung.
+API router: Work Hours -- configuration, club roles, work sessions,
+sponsorships, evaluation.
 """
 from datetime import date
 from decimal import Decimal
@@ -40,7 +40,7 @@ router = APIRouter(
 
 
 # ---------------------------------------------------------------------------
-# Konfiguration
+# Configuration
 # ---------------------------------------------------------------------------
 
 @router.get("/configuration", response_model=List[WorkHoursConfigurationOut], summary="List configurations")
@@ -106,7 +106,7 @@ async def konfiguration_setzen(
 
 
 # ---------------------------------------------------------------------------
-# ClubRolen
+# Club Roles
 # ---------------------------------------------------------------------------
 
 @router.get("/club-roles", response_model=List[ClubRoleOut], summary="List club roles")
@@ -230,7 +230,7 @@ async def zuordnung_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Arbeitseinsätze
+# Work Sessions
 # ---------------------------------------------------------------------------
 
 @router.get("/sessions", response_model=List[WorkSessionOut], summary="List work sessions")
@@ -324,7 +324,7 @@ async def einsatz_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Teilnahmen (Unterressource von Einsätzen)
+# Participations (sub-resource of sessions)
 # ---------------------------------------------------------------------------
 
 @router.get(
@@ -424,7 +424,7 @@ async def teilnahme_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Sponsorshipen
+# Sponsorships
 # ---------------------------------------------------------------------------
 
 @router.get("/sponsorships", response_model=List[SponsorshipOut], summary="List sponsorships")
@@ -446,7 +446,7 @@ async def patenschaften_auflisten(
 @router.post(
     "/sponsorships", response_model=SponsorshipOut, status_code=status.HTTP_201_CREATED,
     summary="Create sponsorship",
-    description="member_id ist optional – eine Sponsorship kann angelegt werden, bevor sie vergeben ist.",
+    description="member_id is optional -- a sponsorship can be created before it's assigned to anyone.",
 )
 async def patenschaft_erstellen(
     daten: SponsorshipCreate,
@@ -497,7 +497,7 @@ async def patenschaft_loeschen(
 
 
 # ---------------------------------------------------------------------------
-# Auswertung
+# Evaluation
 # ---------------------------------------------------------------------------
 
 @router.get(
@@ -537,9 +537,9 @@ async def auswertung_abrufen(
             if not paechter:
                 continue
             gesamt = Decimal("0")
-            # Vier-Augen-freundliche Regel: EIN befreiter Pächter genügt, um
-            # die gesamte Parcel zu befreien (any(), nicht all() – siehe
-            # docs/architektur-entscheidungen.md).
+            # Same rule as the web UI: ONE exempt tenant is enough to
+            # exempt the whole parcel (any(), not all() -- see
+            # docs/architecture-decisions.md).
             ist_befreit = False
             for m in paechter:
                 stand = await _calculate_hours_for_member(db, m.id, year)

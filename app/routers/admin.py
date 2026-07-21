@@ -66,7 +66,7 @@ async def user_invite(
 
     email = email.strip().lower()
 
-    # Bereits registriert?
+    # Already registered?
     existing = await db.execute(select(User).where(User.email == email))
     if existing.scalar_one_or_none():
         return RedirectResponse(
@@ -74,11 +74,11 @@ async def user_invite(
             status_code=302,
         )
 
-    # Bereits eine ausstehende Einladung für diese Adresse? Dann die alte
-    # ungültig machen, statt eine zweite parallel bestehen zu lassen (sonst
-    # kollidiert der neue Token in seltenen Fällen mit dem alten, wenn beide
-    # innerhalb derselben Sekunde erzeugt werden, und der Insert schlägt mit
-    # einem harten Datenbankfehler fehl statt einer verständlichen Meldung).
+    # Already a pending invitation for this address? Then invalidate the
+    # old one instead of letting a second one exist in parallel
+    # (otherwise the new token can, in rare cases, collide with the old
+    # one if both are generated within the same second, and the insert
+    # fails with a hard database error instead of an understandable message).
     pending = await db.execute(
         select(Invitation).where(
             Invitation.email == email,
@@ -104,7 +104,7 @@ async def user_invite(
     db.add(invitation)
     await db.commit()
 
-    # Link zusammenbauen
+    # Assemble the link
     base_url = str(request.base_url).rstrip("/")
     einladungslink = f"{base_url}/auth/invitation/{token}"
 
@@ -127,7 +127,7 @@ async def user_invite(
 
     email_gesendet = await sende_email(email, betreff, html, db=db)
 
-    # Im Entwicklungsmodus: Link in der URL zurückgeben
+    # In development mode: return the link in the URL
     if settings.is_development and not email_gesendet:
         return RedirectResponse(
             f"/admin/?info=Einladungslink+%28Dev%29%3A+{einladungslink}", status_code=302
@@ -192,9 +192,9 @@ SETTINGS_FIELDS = [
     ("spam_api_key", "admin.settings.fields.spam_api_key"),
 ]
 
-# Optionale Funktionsbereiche, die sich pro Verein ein-/ausschalten lassen.
-# Schlüssel folgen der Konvention "modul_<n>" (siehe app/module_flags.py).
-# Name/Beschreibung werden über Übersetzungsschlüssel aufgelöst (siehe unten).
+# Optional feature areas that each club can toggle on/off.
+# Keys follow the convention "modul_<name>" (see app/module_flags.py).
+# Name/description are resolved via translation keys (see below).
 MODULE_FELDER = [
     ("modul_work_hours", "admin.settings.modules.work_hours_name", "admin.settings.modules.work_hours_desc"),
     ("modul_water", "admin.settings.modules.water_name", "admin.settings.modules.water_desc"),
@@ -246,8 +246,8 @@ async def einstellungen_speichern(
     await require_admin(request, db)
     form = await request.form()
 
-    # Logo: hochladen, entfernen, oder unverändert lassen (kein Feld in
-    # SETTINGS_FIELDS, da UploadFile eine Datei statt einem Textwert ist).
+    # Logo: upload, remove, or leave unchanged (not a field in
+    # SETTINGS_FIELDS, since UploadFile is a file rather than a text value).
     logo_error = None
     remove_logo = form.get("remove_logo", "") == "true"
     logo_upload = form.get("logo")
@@ -279,10 +279,10 @@ async def einstellungen_speichern(
         entry = result.scalar_one_or_none()
 
         if key.endswith("_password") or key.endswith("_api_key"):
-            # Leeres Feld = "unverändert lassen" (wie im Platzhaltertext
-            # versprochen), damit man nicht bei jedem Speichern das
-            # Passwort neu eintippen muss. Nur ein NEUER Wert wird
-            # verschlüsselt gespeichert.
+            # Empty field = "leave unchanged" (as promised by the
+            # placeholder text), so the password doesn't need to be
+            # retyped on every save. Only a NEW value gets encrypted
+            # and stored.
             if not value:
                 continue
             value = verschluesseln(value)
@@ -315,9 +315,9 @@ async def einstellungen_speichern(
                 description=description,
             ))
 
-    # Sprache: eigenes Feld (Dropdown, kein Freitext) – gegen die Liste
-    # bekannter Sprachen validiert, damit kein ungültiger Code landen kann,
-    # für den es keine Übersetzungsdatei gibt.
+    # Language: its own field (dropdown, no free text) -- validated
+    # against the list of known languages, so no invalid code can end
+    # up stored for which there's no translation file.
     language_value = form.get("language", "").strip()
     if language_value in AVAILABLE_LANGUAGES:
         result = await db.execute(select(ClubSetting).where(ClubSetting.key == "language"))
@@ -325,11 +325,11 @@ async def einstellungen_speichern(
         if entry:
             entry.value = language_value
         else:
-            db.add(ClubSetting(key="language", value=language_value, description="Sprache der Oberfläche"))
+            db.add(ClubSetting(key="language", value=language_value, description="UI language"))
 
-    # Region und Währung: bewusst getrennt von der Sprache (siehe
-    # app/l10n.py) -- eigene Felder, ebenfalls gegen bekannte Werte
-    # validiert.
+    # Region and currency: deliberately separate from language (see
+    # app/l10n.py) -- their own fields, also validated against known
+    # values.
     region_value = form.get("region", "").strip()
     if region_value in AVAILABLE_REGIONS:
         result = await db.execute(select(ClubSetting).where(ClubSetting.key == "region"))
@@ -337,7 +337,7 @@ async def einstellungen_speichern(
         if entry:
             entry.value = region_value
         else:
-            db.add(ClubSetting(key="region", value=region_value, description="Region (Zahlen-/Adressformat)"))
+            db.add(ClubSetting(key="region", value=region_value, description="Region (number/address format)"))
 
     currency_value = form.get("currency", "").strip()
     if currency_value in AVAILABLE_CURRENCIES:
@@ -346,7 +346,7 @@ async def einstellungen_speichern(
         if entry:
             entry.value = currency_value
         else:
-            db.add(ClubSetting(key="currency", value=currency_value, description="Währung"))
+            db.add(ClubSetting(key="currency", value=currency_value, description="Currency"))
 
     await db.commit()
     if logo_error:
