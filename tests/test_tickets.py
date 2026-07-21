@@ -7,7 +7,7 @@ here (see docs/testing.md for the reasoning behind this boundary).
 from tests.conftest import login, auth_header
 
 
-async def test_ticket_anlegen_und_automatischer_mitglied_abgleich(client, admin_user):
+async def test_ticket_create_and_automatic_member_matching(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
 

@@ -23,7 +23,7 @@ async def test_configuration_upsert(client, admin_user):
     assert response.json()["hours_required"] == "5.00" or float(response.json()["hours_required"]) == 5.0
 
 
-async def test_session_und_participation(client, admin_user):
+async def test_session_and_participation(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
 
@@ -124,7 +124,7 @@ async def test_task_lifecycle(client, admin_user):
     assert delete_response.status_code == 204
 
 
-async def test_befreiung_gilt_fuer_ganze_parcel_bei_per_parcel(client, admin_user):
+async def test_exemption_applies_to_whole_parcel_under_per_parcel(client, admin_user):
     """
     Most important regression test for the 'any() instead of all()'
     decision: if ONE tenant of a parcel is exempt as a board member, the

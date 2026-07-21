@@ -49,7 +49,7 @@ async def _load_ticket_with_details(db: AsyncSession, ticket_id: str) -> Optiona
     return result.scalar_one_or_none()
 
 
-async def _reaktiviere_faellige_tickets(db: AsyncSession) -> int:
+async def _reactivate_due_tickets(db: AsyncSession) -> int:
     """
     Actually resets postponed tickets whose postponed_until has been
     reached back to ACTIVE/ASSIGNED (not just computed on the fly via
@@ -85,7 +85,7 @@ async def tickets_overview(
 ):
     user = await require_user(request, db)
 
-    reaktiviert_count = await _reaktiviere_faellige_tickets(db)
+    reaktiviert_count = await _reactivate_due_tickets(db)
 
     query = (
         select(Ticket)
@@ -96,7 +96,7 @@ async def tickets_overview(
     # "Active" and "Mine" deliberately show ONLY operationally open
     # tickets (ACTIVE/ASSIGNED/WAITING) -- POSTPONED tickets are
     # intentionally invisible until their date (see
-    # _reaktiviere_faellige_tickets above, which makes them reappear
+    # _reactivate_due_tickets above, which makes them reappear
     # here automatically afterward). DELETED never appears in any view
     # (soft-delete, no trash view built).
     offene_status = [TicketStatus.ACTIVE, TicketStatus.ASSIGNED, TicketStatus.WAITING]
@@ -227,7 +227,7 @@ async def tickets_bulk_status(
 
     for ticket in tickets:
         tracker = ChangeTracker(ticket, "Ticket", ["status", "postponed_until", "closed_at"])
-        _wende_status_an(ticket, neuer_status, postponed_until, request)
+        _apply_status(ticket, neuer_status, postponed_until, request)
         await tracker.commit(db, current_user.id)
 
     await db.commit()
@@ -295,7 +295,7 @@ async def ticket_detail(
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_user(request, db)
-    await _reaktiviere_faellige_tickets(db)
+    await _reactivate_due_tickets(db)
     ticket = await _load_ticket_with_details(db, ticket_id)
     if not ticket:
         raise HTTPException(status_code=404, detail=t_for(request, "errors.ticket_not_found"))
@@ -369,7 +369,7 @@ async def ticket_assign(
 # Change status
 # ---------------------------------------------------------------------------
 
-def _wende_status_an(ticket: Ticket, neuer_status: TicketStatus, postponed_until_str: str, request: Request) -> None:
+def _apply_status(ticket: Ticket, neuer_status: TicketStatus, postponed_until_str: str, request: Request) -> None:
     """
     Sets the new status on a ticket including side effects
     (postponed_until, closed_at, assigned_to_id) -- shared logic for
@@ -409,7 +409,7 @@ async def ticket_status_update(
 
     tracker = ChangeTracker(ticket, "Ticket", ["status", "postponed_until", "closed_at"])
 
-    _wende_status_an(ticket, TicketStatus(status_neu), postponed_until, request)
+    _apply_status(ticket, TicketStatus(status_neu), postponed_until, request)
 
     await tracker.commit(db, current_user.id)
     await db.commit()

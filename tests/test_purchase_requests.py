@@ -7,7 +7,7 @@ not a mere comfort bug).
 from tests.conftest import login, auth_header
 
 
-async def test_zwei_unterschiedliche_freigaben_fuehren_zu_genehmigt(
+async def test_two_different_approvals_lead_to_approved(
     client, admin_user, board_user, second_board_user
 ):
     token = await login(client, "admin@example.com")
@@ -35,7 +35,7 @@ async def test_zwei_unterschiedliche_freigaben_fuehren_zu_genehmigt(
     assert r2.json()["status"] == "APPROVED"  # now 2 of 2
 
 
-async def test_antragsteller_darf_nicht_selbst_freigeben(client, admin_user, board_user):
+async def test_requester_may_not_approve_own_request(client, admin_user, board_user):
     """Core protection of the four-eyes principle: whoever requests may not also approve."""
     token = await login(client, "vorstand@example.com")
     headers = auth_header(token)
@@ -51,7 +51,7 @@ async def test_antragsteller_darf_nicht_selbst_freigeben(client, admin_user, boa
     assert response.status_code == 403
 
 
-async def test_gleiche_person_kann_nicht_doppelt_freigeben(
+async def test_same_person_cannot_approve_twice(
     client, admin_user, board_user, second_board_user
 ):
     """Two approvals must come from TWO DIFFERENT people."""
@@ -78,7 +78,7 @@ async def test_gleiche_person_kann_nicht_doppelt_freigeben(
     assert aktuell["status"] == "OPEN"
 
 
-async def test_ablehnung_durch_eine_person_genuegt(client, admin_user, board_user):
+async def test_rejection_by_one_person_is_enough(client, admin_user, board_user):
     """Veto principle: a single rejection stops the request immediately."""
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -100,7 +100,7 @@ async def test_ablehnung_durch_eine_person_genuegt(client, admin_user, board_use
     assert r.json()["rejection_reason"] == "Nicht notwendig"
 
 
-async def test_normale_mitglieder_koennen_nicht_freigeben(client, admin_user):
+async def test_regular_members_cannot_approve(client, admin_user):
     """Only board/admin may approve -- regular members may not."""
     from app.models import User, UserRole
     from app.auth import hash_password

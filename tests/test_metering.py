@@ -5,7 +5,7 @@ check (a reading may not decrease) and consumption calculation.
 from tests.conftest import login, auth_header
 
 
-async def test_metering_point_anlegen_und_ablesung(client, admin_user):
+async def test_metering_point_create_and_reading(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
 
@@ -31,7 +31,7 @@ async def test_metering_point_anlegen_und_ablesung(client, admin_user):
     assert entry.status_code == 201
 
 
-async def test_zaehlerstand_darf_nicht_sinken(client, admin_user):
+async def test_reading_may_not_decrease(client, admin_user):
     """
     Core rule of the plausibility check: a new reading must be at
     least as high as the previous one of the same water meter.
@@ -69,7 +69,7 @@ async def test_zaehlerstand_darf_nicht_sinken(client, admin_user):
     assert r3.status_code == 201
 
 
-async def test_verbrauchsberechnung(client, admin_user):
+async def test_consumption_calculation(client, admin_user):
     """Consumption = current reading minus last reading (or initial reading)."""
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -91,7 +91,7 @@ async def test_verbrauchsberechnung(client, admin_user):
     assert float(zeile["consumption"]) == 50.0  # 150 - initial reading 100
 
 
-async def test_strom_und_wasser_getrennt(client, admin_user):
+async def test_electricity_and_water_separate(client, admin_user):
     """Water and electricity MeteringPoints must be independent, separate lists."""
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
