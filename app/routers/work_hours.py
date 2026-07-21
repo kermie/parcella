@@ -113,19 +113,19 @@ async def work_hours_overview(
     config = await _get_config_for_year(db, year)
 
     # All available years, for the dropdown
-    jahre_result = await db.execute(
+    years_result = await db.execute(
         select(WorkHoursConfiguration.year).order_by(WorkHoursConfiguration.year.desc())
     )
-    verfuegbare_jahre = [r[0] for r in jahre_result.all()]
+    available_years = [r[0] for r in years_result.all()]
 
     # Sessions of the year
-    einsaetze_result = await db.execute(
+    sessions_result = await db.execute(
         select(WorkSession)
         .options(selectinload(WorkSession.participations))
         .where(func.extract("year", WorkSession.date) == year)
         .order_by(WorkSession.date.desc())
     )
-    einsaetze = einsaetze_result.scalars().all()
+    sessions = sessions_result.scalars().all()
 
     return templates.TemplateResponse(
         "work_hours/overview.html",
@@ -134,8 +134,8 @@ async def work_hours_overview(
             "user": user,
             "year": year,
             "config": config,
-            "einsaetze": einsaetze,
-            "verfuegbare_jahre": verfuegbare_jahre,
+            "sessions": sessions,
+            "available_years": available_years,
             "SessionType": SessionType,
             "ParticipationStatus": ParticipationStatus,
         },
@@ -153,16 +153,16 @@ async def configuration_page(request: Request, db: AsyncSession = Depends(get_db
     result = await db.execute(
         select(WorkHoursConfiguration).order_by(WorkHoursConfiguration.year.desc())
     )
-    konfigurationen = result.scalars().all()
+    configurations = result.scalars().all()
 
     return templates.TemplateResponse(
         "work_hours/configuration.html",
         {
             "request": request,
             "user": user,
-            "konfigurationen": konfigurationen,
+            "configurations": configurations,
             "WorkHoursMode": WorkHoursMode,
-            "aktuelles_jahr": date.today().year,
+            "current_year": date.today().year,
         },
     )
 
@@ -431,13 +431,13 @@ async def session_detail(
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.session_not_found"))
 
     # All active members, for the signup dropdown
-    mitglieder_result = await db.execute(
+    members_result = await db.execute(
         select(Member)
         .where(active_member_filter())
         .order_by(Member.last_name, Member.first_name)
     )
-    alle_mitglieder = mitglieder_result.scalars().all()
-    bereits_eingetragen = {t.member_id for t in session.participations}
+    all_members = members_result.scalars().all()
+    already_registered = {t.member_id for t in session.participations}
 
     tasks_result = await db.execute(
         select(WorkTask)
@@ -453,8 +453,8 @@ async def session_detail(
             "request": request,
             "user": user,
             "session": session,
-            "alle_mitglieder": alle_mitglieder,
-            "bereits_eingetragen": bereits_eingetragen,
+            "all_members": all_members,
+            "already_registered": already_registered,
             "ParticipationStatus": ParticipationStatus,
             "SessionType": SessionType,
             "session_tasks": session_tasks,
@@ -639,12 +639,12 @@ async def club_roles_page(
     if not year:
         year = date.today().year
 
-    rollen_result = await db.execute(
+    roles_result = await db.execute(
         select(ClubRole).order_by(ClubRole.name)
     )
-    rollen = rollen_result.scalars().all()
+    roles = roles_result.scalars().all()
 
-    zuordnungen_result = await db.execute(
+    assignments_result = await db.execute(
         select(MemberClubRole)
         .options(
             selectinload(MemberClubRole.member),
@@ -653,26 +653,26 @@ async def club_roles_page(
         .where(MemberClubRole.year == year)
         .order_by(MemberClubRole.club_role_id)
     )
-    assignments = zuordnungen_result.scalars().all()
+    assignments = assignments_result.scalars().all()
 
-    mitglieder_result = await db.execute(
+    members_result = await db.execute(
         select(Member)
         .where(active_member_filter())
         .order_by(Member.last_name, Member.first_name)
     )
-    alle_mitglieder = mitglieder_result.scalars().all()
+    all_members = members_result.scalars().all()
 
     return templates.TemplateResponse(
         "work_hours/club-roles.html",
         {
             "request": request,
             "user": user,
-            "rollen": rollen,
+            "roles": roles,
             "assignments": assignments,
-            "alle_mitglieder": alle_mitglieder,
+            "all_members": all_members,
             "year": year,
             "ExemptionReason": ExemptionReason,
-            "aktuelles_jahr": date.today().year,
+            "current_year": date.today().year,
         },
     )
 
@@ -732,15 +732,15 @@ async def member_club_role_edit_page(
     if not assignment:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.assignment_not_found"))
 
-    mitglieder_result = await db.execute(
+    members_result = await db.execute(
         select(Member)
         .where(active_member_filter())
         .order_by(Member.last_name, Member.first_name)
     )
-    alle_mitglieder = mitglieder_result.scalars().all()
+    all_members = members_result.scalars().all()
 
-    rollen_result = await db.execute(select(ClubRole).order_by(ClubRole.name))
-    alle_rollen = rollen_result.scalars().all()
+    roles_result = await db.execute(select(ClubRole).order_by(ClubRole.name))
+    all_roles = roles_result.scalars().all()
 
     return templates.TemplateResponse(
         "work_hours/member_club_role_form.html",
@@ -748,8 +748,8 @@ async def member_club_role_edit_page(
             "request": request,
             "user": user,
             "assignment": assignment,
-            "alle_mitglieder": alle_mitglieder,
-            "alle_rollen": alle_rollen,
+            "all_members": all_members,
+            "all_roles": all_roles,
         },
     )
 
@@ -916,40 +916,40 @@ async def sponsorships_page(
         .order_by(Sponsorship.area)
     )
     result = await db.execute(query)
-    patenschaften = result.scalars().all()
+    sponsorships = result.scalars().all()
 
     # Group by area, so multiple members per area are shown together
-    bereiche_gruppiert = {}
-    for p in patenschaften:
-        bereiche_gruppiert.setdefault(p.area, []).append(p)
+    grouped_areas = {}
+    for p in sponsorships:
+        grouped_areas.setdefault(p.area, []).append(p)
 
     # All known area names (for autocomplete, including past years, to
     # avoid typos when reusing one)
     alle_bereiche_result = await db.execute(
         select(Sponsorship.area).distinct().order_by(Sponsorship.area)
     )
-    alle_bereiche = [r[0] for r in alle_bereiche_result.all()]
+    all_areas = [r[0] for r in alle_bereiche_result.all()]
 
     # Current work-hours configuration, for pre-filling
     config = await _get_config_for_year(db, year)
 
-    mitglieder_result = await db.execute(
+    members_result = await db.execute(
         select(Member)
         .where(active_member_filter())
         .order_by(Member.last_name, Member.first_name)
     )
-    alle_mitglieder = mitglieder_result.scalars().all()
+    all_members = members_result.scalars().all()
 
     return templates.TemplateResponse(
         "work_hours/sponsorships.html",
         {
             "request": request,
             "user": user,
-            "patenschaften": patenschaften,
-            "bereiche_gruppiert": bereiche_gruppiert,
-            "alle_bereiche": alle_bereiche,
+            "sponsorships": sponsorships,
+            "grouped_areas": grouped_areas,
+            "all_areas": all_areas,
             "config": config,
-            "alle_mitglieder": alle_mitglieder,
+            "all_members": all_members,
             "year": year,
         },
     )
@@ -998,17 +998,17 @@ async def sponsorship_edit_page(
     if not sponsorship:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.sponsorship_not_found"))
 
-    mitglieder_result = await db.execute(
+    members_result = await db.execute(
         select(Member)
         .where(active_member_filter())
         .order_by(Member.last_name, Member.first_name)
     )
-    alle_mitglieder = mitglieder_result.scalars().all()
+    all_members = members_result.scalars().all()
 
     alle_bereiche_result = await db.execute(
         select(Sponsorship.area).distinct().order_by(Sponsorship.area)
     )
-    alle_bereiche = [r[0] for r in alle_bereiche_result.all()]
+    all_areas = [r[0] for r in alle_bereiche_result.all()]
 
     return templates.TemplateResponse(
         "work_hours/sponsorship_form.html",
@@ -1016,8 +1016,8 @@ async def sponsorship_edit_page(
             "request": request,
             "user": user,
             "sponsorship": sponsorship,
-            "alle_mitglieder": alle_mitglieder,
-            "alle_bereiche": alle_bereiche,
+            "all_members": all_members,
+            "all_areas": all_areas,
         },
     )
 
@@ -1086,10 +1086,10 @@ async def evaluation(
 
     config = await _get_config_for_year(db, year)
 
-    jahre_result = await db.execute(
+    years_result = await db.execute(
         select(WorkHoursConfiguration.year).order_by(WorkHoursConfiguration.year.desc())
     )
-    verfuegbare_jahre = [r[0] for r in jahre_result.all()]
+    available_years = [r[0] for r in years_result.all()]
 
     if not config:
         return templates.TemplateResponse(
@@ -1099,16 +1099,16 @@ async def evaluation(
                 "user": user,
                 "year": year,
                 "config": None,
-                "zeilen": [],
-                "verfuegbare_jahre": verfuegbare_jahre,
+                "rows": [],
+                "available_years": available_years,
             },
         )
 
-    zeilen = []
+    rows = []
 
     if config.mode == WorkHoursMode.PER_PARCEL:
         # Evaluate per parcel -- all active parcels with tenants
-        parzellen_result = await db.execute(
+        parcels_result = await db.execute(
             select(Parcel)
             .options(
                 selectinload(Parcel.member_assignments).selectinload(MemberParcel.member)
@@ -1116,55 +1116,55 @@ async def evaluation(
             .where(Parcel.status == ParcelStatus.ACTIVE)
             .order_by(Parcel.plot_number)
         )
-        parcels = parzellen_result.scalars().all()
+        parcels = parcels_result.scalars().all()
 
-        for parzelle in parcels:
-            paechter = [
-                z.member for z in parzelle.member_assignments
+        for parcel in parcels:
+            tenants = [
+                z.member for z in parcel.member_assignments
                 if z.member.deleted_at is None
                 and (z.member.member_until is None or z.member.member_until >= date.today())
             ]
-            if not paechter:
+            if not tenants:
                 continue  # skip vacant parcels or those with only inactive tenants
 
             # Sum hours across all tenants
-            gesamt_stunden = 0.0
-            paechter_details = []
-            for m in paechter:
-                stand = await _calculate_hours_for_member(db, m.id, year)
-                befreit = await _is_exempt(db, m.id, year)
-                gesamt_stunden += stand["total"]
-                paechter_details.append({
+            total_hours = 0.0
+            tenant_details = []
+            for m in tenants:
+                hours = await _calculate_hours_for_member(db, m.id, year)
+                exempt = await _is_exempt(db, m.id, year)
+                total_hours += hours["total"]
+                tenant_details.append({
                     "member": m,
-                    "stand": stand,
-                    "befreit": befreit,
+                    "hours": hours,
+                    "exempt": exempt,
                 })
 
-            pflicht = float(config.hours_required)
-            offen = max(0.0, pflicht - gesamt_stunden)
-            schuldbetrag = offen * float(config.rate_per_hour_eur)
+            required = float(config.hours_required)
+            outstanding = max(0.0, required - total_hours)
+            amount_due = outstanding * float(config.rate_per_hour_eur)
 
             # Exempt if AT LEAST ONE tenant is exempt (any(), not all() --
             # see docs/architecture-decisions.md). Deliberately NOT called
-            # "alle_befreit" ("all_exempt") -- that name once led to an
-            # inverted all()-copy bug in the CSV export and the API.
-            ist_befreit = any(p["befreit"] for p in paechter_details)
+            # "all_exempt" -- that name once led to an inverted all()-copy
+            # bug in the CSV export and the API.
+            is_exempt = any(p["exempt"] for p in tenant_details)
 
-            zeilen.append({
-                "parzelle": parzelle,
-                "paechter_details": paechter_details,
-                "gesamt_stunden": gesamt_stunden,
-                "pflicht_stunden": pflicht,
-                "offen_stunden": offen if not ist_befreit else 0.0,
-                "schuldbetrag": schuldbetrag if not ist_befreit else 0.0,
-                "erfuellt": ist_befreit or gesamt_stunden >= pflicht,
-                "alle_befreit": ist_befreit,
-                "befreit": ist_befreit,  # unified key for the template
+            rows.append({
+                "parcel": parcel,
+                "tenant_details": tenant_details,
+                "total_hours": total_hours,
+                "required_hours": required,
+                "outstanding_hours": outstanding if not is_exempt else 0.0,
+                "amount_due": amount_due if not is_exempt else 0.0,
+                "fulfilled": is_exempt or total_hours >= required,
+                "all_exempt": is_exempt,
+                "exempt": is_exempt,  # unified key for the template
             })
 
     else:
         # PER_MEMBER: evaluate each member with a parcel individually
-        mitglieder_result = await db.execute(
+        members_result = await db.execute(
             select(Member)
             .options(selectinload(Member.parcel_assignments))
             .where(
@@ -1173,23 +1173,23 @@ async def evaluation(
             )
             .order_by(Member.last_name, Member.first_name)
         )
-        members = mitglieder_result.scalars().all()
+        members = members_result.scalars().all()
 
         for m in members:
-            stand = await _calculate_hours_for_member(db, m.id, year)
-            befreit = await _is_exempt(db, m.id, year)
-            pflicht = float(config.hours_required)
-            offen = max(0.0, pflicht - stand["total"])
-            schuldbetrag = offen * float(config.rate_per_hour_eur)
+            hours = await _calculate_hours_for_member(db, m.id, year)
+            exempt = await _is_exempt(db, m.id, year)
+            required = float(config.hours_required)
+            outstanding = max(0.0, required - hours["total"])
+            amount_due = outstanding * float(config.rate_per_hour_eur)
 
-            zeilen.append({
+            rows.append({
                 "member": m,
-                "stand": stand,
-                "befreit": befreit,
-                "pflicht_stunden": pflicht,
-                "offen_stunden": offen if not befreit else 0.0,
-                "schuldbetrag": schuldbetrag if not befreit else 0.0,
-                "erfuellt": befreit or stand["total"] >= pflicht,
+                "hours": hours,
+                "exempt": exempt,
+                "required_hours": required,
+                "outstanding_hours": outstanding if not exempt else 0.0,
+                "amount_due": amount_due if not exempt else 0.0,
+                "fulfilled": exempt or hours["total"] >= required,
             })
 
     return templates.TemplateResponse(
@@ -1199,8 +1199,8 @@ async def evaluation(
             "user": user,
             "year": year,
             "config": config,
-            "zeilen": zeilen,
-            "verfuegbare_jahre": verfuegbare_jahre,
+            "rows": rows,
+            "available_years": available_years,
             "WorkHoursMode": WorkHoursMode,
         },
     )

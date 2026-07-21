@@ -167,3 +167,103 @@ async def test_smoke_metering_pages_render_without_jinja_errors(client, admin_us
     assert r_detail3.status_code == 200
     assert "UndefinedError" not in r_detail3.text
     assert "WSM-2" in r_detail3.text
+
+
+async def test_smoke_work_hours_pages_render_without_jinja_errors(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    member = (await client.post(
+        "/api/v1/members", json={"first_name": "Wanda", "last_name": "Worker"}, headers=headers
+    )).json()
+    parcel = (await client.post("/api/v1/parcels", json={"plot_number": "ZZWH1"}, headers=headers)).json()
+    await client.post(
+        f"/api/v1/parcels/{parcel['id']}/assignments",
+        json={"member_id": member["id"], "parcel_id": parcel["id"]},
+        headers=headers,
+    )
+
+    response = await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    assert response.status_code in (302, 303)
+
+    r_config_new = await client.post(
+        "/work-hours/configuration/new",
+        data={"year": "2026", "hours_required": "5", "rate_per_hour_eur": "25", "mode": "PER_PARCEL"},
+    )
+    assert r_config_new.status_code in (302, 303)
+
+    r_config_page = await client.get("/work-hours/configuration")
+    assert r_config_page.status_code == 200
+    assert "UndefinedError" not in r_config_page.text
+
+    r_overview = await client.get("/work-hours/", params={"year": "2026"})
+    assert r_overview.status_code == 200
+    assert "UndefinedError" not in r_overview.text
+
+    r_session_new_page = await client.get("/work-hours/sessions/new")
+    assert r_session_new_page.status_code == 200
+    assert "UndefinedError" not in r_session_new_page.text
+
+    r_session_create = await client.post(
+        "/work-hours/sessions/new",
+        data={"title": "Spring Cleanup", "type": "STANDARD", "date": "2026-04-01"},
+    )
+    assert r_session_create.status_code in (302, 303)
+    session_id = r_session_create.headers["location"].rstrip("/").rsplit("/", 1)[-1]
+
+    r_session_detail = await client.get(f"/work-hours/sessions/{session_id}")
+    assert r_session_detail.status_code == 200
+    assert "UndefinedError" not in r_session_detail.text
+    assert "Wanda Worker" in r_session_detail.text
+
+    r_participant_add = await client.post(
+        f"/work-hours/sessions/{session_id}/participants/add",
+        data={"member_id": member["id"], "status": "ATTENDED", "hours_completed": "3"},
+    )
+    assert r_participant_add.status_code in (302, 303)
+
+    r_session_detail2 = await client.get(f"/work-hours/sessions/{session_id}")
+    assert r_session_detail2.status_code == 200
+    assert "UndefinedError" not in r_session_detail2.text
+
+    r_evaluation = await client.get("/work-hours/evaluation", params={"year": "2026"})
+    assert r_evaluation.status_code == 200
+    assert "UndefinedError" not in r_evaluation.text
+    assert "ZZWH1" in r_evaluation.text
+
+    r_evaluation_csv = await client.get("/work-hours/evaluation/csv", params={"year": "2026"})
+    assert r_evaluation_csv.status_code == 200
+
+    r_club_roles_page = await client.get("/work-hours/club-roles", params={"year": "2026"})
+    assert r_club_roles_page.status_code == 200
+    assert "UndefinedError" not in r_club_roles_page.text
+
+    r_role_create = await client.post(
+        "/work-hours/club-roles/new",
+        data={"name": "Board Chair", "hours_exempt": "true", "exemption_reason": "BOARD"},
+    )
+    assert r_role_create.status_code in (302, 303)
+
+    r_club_roles_page2 = await client.get("/work-hours/club-roles", params={"year": "2026"})
+    assert r_club_roles_page2.status_code == 200
+    assert "Board Chair" in r_club_roles_page2.text
+    assert "UndefinedError" not in r_club_roles_page2.text
+
+    r_sponsorships_page = await client.get("/work-hours/sponsorships", params={"year": "2026"})
+    assert r_sponsorships_page.status_code == 200
+    assert "UndefinedError" not in r_sponsorships_page.text
+
+    r_sponsorship_create = await client.post(
+        "/work-hours/sponsorships/new",
+        data={"member_id": member["id"], "area": "Playground", "credited_hours": "5", "valid_from": "2026-01-01"},
+    )
+    assert r_sponsorship_create.status_code in (302, 303)
+
+    r_sponsorships_page2 = await client.get("/work-hours/sponsorships", params={"year": "2026"})
+    assert r_sponsorships_page2.status_code == 200
+    assert "Playground" in r_sponsorships_page2.text
+    assert "UndefinedError" not in r_sponsorships_page2.text
+
+    r_tasks_page = await client.get("/work-hours/tasks")
+    assert r_tasks_page.status_code == 200
+    assert "UndefinedError" not in r_tasks_page.text

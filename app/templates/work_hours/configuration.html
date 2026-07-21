@@ -18,7 +18,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.configuration.year_label') }} <span class="text-danger">*</span></label>
                         <input type="number" name="year" class="form-control"
-                               value="{{ aktuelles_jahr }}" min="2000" max="2100" required>
+                               value="{{ current_year }}" min="2000" max="2100" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.configuration.hours_required_label') }} <span class="text-danger">*</span></label>
@@ -79,7 +79,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for k in konfigurationen %}
+                            {% for k in configurations %}
                             <tr>
                                 <td class="fw-bold">{{ k.year }}</td>
                                 <td>{{ k.hours_required | int }} h</td>

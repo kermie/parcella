@@ -20,7 +20,7 @@
                         <input type="text" name="area" class="form-control" list="bereiche-liste"
                                value="{{ sponsorship.area }}" required>
                         <datalist id="bereiche-liste">
-                            {% for b in alle_bereiche %}
+                            {% for b in all_areas %}
                             <option value="{{ b }}">
                             {% endfor %}
                         </datalist>
@@ -29,7 +29,7 @@
                         <label class="form-label fw-semibold">{{ t('work_hours.sponsorship_form.member_label') }}</label>
                         <select name="member_id" class="form-select">
                             <option value="">{{ t('work_hours.sponsorship_form.not_yet_assigned') }}</option>
-                            {% for m in alle_mitglieder %}
+                            {% for m in all_members %}
                             <option value="{{ m.id }}"
                                 {% if sponsorship.member and sponsorship.member.id == m.id %}selected{% endif %}>
                                 {{ m.full_name }}

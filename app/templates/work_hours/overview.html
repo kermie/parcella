@@ -6,7 +6,7 @@
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
         <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-            {% for j in verfuegbare_jahre %}
+            {% for j in available_years %}
             <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
@@ -82,7 +82,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for e in einsaetze %}
+                    {% for e in sessions %}
                     <tr>
                         <td class="fw-semibold">{{ e.date.strftime('%d.%m.%Y') }}</td>
                         <td>

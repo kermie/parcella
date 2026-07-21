@@ -20,7 +20,7 @@
                         <input type="text" name="area" class="form-control" list="bereiche-liste"
                                placeholder="{{ t('work_hours.sponsorships.area_placeholder') }}" required>
                         <datalist id="bereiche-liste">
-                            {% for b in alle_bereiche %}
+                            {% for b in all_areas %}
                             <option value="{{ b }}">
                             {% endfor %}
                         </datalist>
@@ -32,7 +32,7 @@
                         <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.member_label') }}</label>
                         <select name="member_id" class="form-select">
                             <option value="">{{ t('work_hours.sponsorships.not_yet_assigned') }}</option>
-                            {% for m in alle_mitglieder %}
+                            {% for m in all_members %}
                             <option value="{{ m.id }}">{{ m.full_name }}</option>
                             {% endfor %}
                         </select>
@@ -86,7 +86,7 @@
                 <span class="text-muted ms-1" style="font-size: 0.85rem;">{{ t('work_hours.sponsorships.in_year', year=year) }}</span>
             </div>
             <div class="card-body p-0">
-                {% if bereiche_gruppiert %}
+                {% if grouped_areas %}
                 <div class="table-responsive">
 <table class="table table-hover mb-0">
                         <thead>
@@ -99,19 +99,19 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for area, eintraege in bereiche_gruppiert.items() %}
-                            {% for p in eintraege %}
+                            {% for area, entries in grouped_areas.items() %}
+                            {% for p in entries %}
                             <tr>
                                 {% if loop.first %}
-                                <td rowspan="{{ eintraege | length }}" class="align-middle"
+                                <td rowspan="{{ entries | length }}" class="align-middle"
                                     style="border-right: 2px solid var(--gv-gruen-blass);">
                                     <div class="fw-semibold">{{ area }}</div>
                                     {% if p.description %}
                                     <div class="text-muted" style="font-size: 0.8rem;">{{ p.description }}</div>
                                     {% endif %}
-                                    {% if eintraege | length > 1 %}
+                                    {% if entries | length > 1 %}
                                     <span class="badge mt-1" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
-                                        {{ t('work_hours.sponsorships.people_count', count=eintraege|length) }}
+                                        {{ t('work_hours.sponsorships.people_count', count=entries|length) }}
                                     </span>
                                     {% endif %}
                                 </td>

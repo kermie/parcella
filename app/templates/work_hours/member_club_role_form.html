@@ -18,7 +18,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.member_label') }} <span class="text-danger">*</span></label>
                         <select name="member_id" class="form-select" required>
-                            {% for m in alle_mitglieder %}
+                            {% for m in all_members %}
                             <option value="{{ m.id }}" {% if m.id == assignment.member_id %}selected{% endif %}>
                                 {{ m.full_name }}
                             </option>
@@ -28,7 +28,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.role_label') }} <span class="text-danger">*</span></label>
                         <select name="club_role_id" class="form-select" required>
-                            {% for r in alle_rollen %}
+                            {% for r in all_roles %}
                             <option value="{{ r.id }}" {% if r.id == assignment.club_role_id %}selected{% endif %}>
                                 {{ r.name }}
                             </option>

@@ -158,8 +158,8 @@
                       class="d-flex gap-2 flex-wrap align-items-center">
                     <select name="member_id" class="form-select form-select-sm" style="max-width: 220px;" required>
                         <option value="">{{ t('work_hours.session_detail.select_member_placeholder') }}</option>
-                        {% for m in alle_mitglieder %}
-                        {% if m.id not in bereits_eingetragen %}
+                        {% for m in all_members %}
+                        {% if m.id not in already_registered %}
                         <option value="{{ m.id }}">{{ m.full_name }}</option>
                         {% endif %}
                         {% endfor %}
