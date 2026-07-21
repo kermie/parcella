@@ -38,7 +38,7 @@ from app.templating import templates
 templates.env.filters["fmt"] = lambda value, stellen: f"{float(value):.{stellen}f}"
 
 
-def _parse_number(value: str, dezimalstellen: int) -> Optional[Decimal]:
+def _parse_number(value: str, decimal_places: int) -> Optional[Decimal]:
     value = value.strip().replace(",", ".")
     if not value:
         return None
@@ -46,7 +46,7 @@ def _parse_number(value: str, dezimalstellen: int) -> Optional[Decimal]:
         zahl = Decimal(value)
     except InvalidOperation:
         return None
-    quant = Decimal("1") if dezimalstellen == 0 else Decimal("1." + "0" * dezimalstellen)
+    quant = Decimal("1") if decimal_places == 0 else Decimal("1." + "0" * decimal_places)
     return zahl.quantize(quant)
 
 
@@ -57,7 +57,7 @@ def create_metering_router(
     medium_label_key: str,
     unit: str,
     icon: str,
-    dezimalstellen: int,
+    decimal_places: int,
 ) -> APIRouter:
     """
     Produces a complete router for a metering medium.
@@ -75,7 +75,7 @@ def create_metering_router(
             text, see medium_label_de further below.
         unit: e.g. "m³"/"kWh"
         icon: Bootstrap icon class, e.g. "bi-droplet"/"bi-lightning-charge"
-        dezimalstellen: number of decimal places for display/input
+        decimal_places: number of decimal places for display/input
     """
     router = APIRouter(
         prefix=url_prefix,
@@ -96,7 +96,7 @@ def create_metering_router(
         "unit": unit,
         "icon": icon,
         "url_prefix": url_prefix,
-        "dezimalstellen": dezimalstellen,
+        "decimal_places": decimal_places,
     }
 
     def basis_context(request: Request) -> dict:
@@ -147,9 +147,9 @@ def create_metering_router(
         v_parzellen = total_consumption_for_type(parcels, year)
         v_verein = total_consumption_for_type(verein, year)
 
-        warnung = None
+        warning = None
         if v_haupt > 0 and (v_parzellen + v_verein) > v_haupt:
-            warnung = t_for(
+            warning = t_for(
                 request, "metering.errors.overall_plausibility_overview",
                 parcels=v_parzellen, club=v_verein, main=v_haupt, unit=unit, year=year,
             )
@@ -160,24 +160,24 @@ def create_metering_router(
             if z and not any(zs.year == year for zs in z.readings):
                 offene += 1
 
-        verfuegbare_jahre = sorted({
+        available_years = sorted({
             zs.year for a in alle for z in a.meters for zs in z.readings
         }, reverse=True)
-        if year not in verfuegbare_jahre:
-            verfuegbare_jahre.insert(0, year)
+        if year not in available_years:
+            available_years.insert(0, year)
 
         return templates.TemplateResponse("metering/overview.html", {
             **basis_context(request),
             "request": request, "user": user, "year": year,
-            "verfuegbare_jahre": verfuegbare_jahre,
-            "anzahl_hauptzaehler": len(haupt),
-            "anzahl_parzellen": len(parcels),
-            "anzahl_verein": len(verein),
-            "verbrauch_haupt": v_haupt,
-            "verbrauch_parzellen": v_parzellen,
-            "verbrauch_verein": v_verein,
-            "warnung": warnung,
-            "offene_ablesungen": offene,
+            "available_years": available_years,
+            "main_meter_count": len(haupt),
+            "parcel_count": len(parcels),
+            "club_count": len(verein),
+            "main_consumption": v_haupt,
+            "parcel_consumption": v_parzellen,
+            "club_consumption": v_verein,
+            "warning": warning,
+            "open_readings": offene,
         })
 
     # -----------------------------------------------------------------
@@ -211,12 +211,12 @@ def create_metering_router(
         result = await db.execute(
             select(Parcel).where(Parcel.status == ParcelStatus.ACTIVE).order_by(Parcel.plot_number)
         )
-        alle_parzellen = result.scalars().all()
+        all_parcels = result.scalars().all()
 
         return templates.TemplateResponse("metering/metering_point_form.html", {
             **basis_context(request),
             "request": request, "user": user,
-            "alle_parzellen": alle_parzellen, "heute": date.today().isoformat(),
+            "all_parcels": all_parcels, "today": date.today().isoformat(),
         })
 
     @router.post("/metering-points/new")
@@ -244,9 +244,9 @@ def create_metering_router(
         db.add(metering_point)
         await db.flush()
 
-        reading = _parse_number(initial_reading, dezimalstellen) or Decimal("0")
+        reading = _parse_number(initial_reading, decimal_places) or Decimal("0")
 
-        zaehler = Meter(
+        meter = Meter(
             metering_point_id=metering_point.id,
             number=number.strip(),
             is_active=True,
@@ -254,7 +254,7 @@ def create_metering_router(
             installed_at=date.fromisoformat(installed_at) if installed_at.strip() else None,
             initial_reading=reading,
         )
-        db.add(zaehler)
+        db.add(meter)
 
         await db.commit()
         return RedirectResponse(f"{url_prefix}/metering-points/{metering_point.id}", status_code=302)
@@ -277,12 +277,12 @@ def create_metering_router(
             reverse=True,
         )
 
-        staende_mit_verbrauch = []
+        readings_with_consumption = []
         if current_meter:
             for z in sorted(current_meter.readings, key=lambda z: z.year, reverse=True):
-                staende_mit_verbrauch.append({
+                readings_with_consumption.append({
                     "reading": z,
-                    "verbrauch": calculate_consumption(current_meter, z.year),
+                    "consumption": calculate_consumption(current_meter, z.year),
                 })
 
         return templates.TemplateResponse("metering/metering_point_detail.html", {
@@ -291,9 +291,9 @@ def create_metering_router(
             "metering_point": metering_point,
             "current_meter": current_meter,
             "former_meters": former_meters,
-            "staende_mit_verbrauch": staende_mit_verbrauch,
-            "heute": date.today().isoformat(),
-            "aktuelles_jahr": date.today().year,
+            "readings_with_consumption": readings_with_consumption,
+            "today": date.today().isoformat(),
+            "current_year": date.today().year,
             "MeteringPointType": MeteringPointType,
         })
 
@@ -365,7 +365,7 @@ def create_metering_router(
             is_active=True,
             calibrated_until=int(calibrated_until) if calibrated_until.strip() else None,
             installed_at=date.fromisoformat(installed_at),
-            initial_reading=_parse_number(initial_reading, dezimalstellen) or Decimal("0"),
+            initial_reading=_parse_number(initial_reading, decimal_places) or Decimal("0"),
         )
         db.add(neuer_zaehler)
         await db.commit()
@@ -391,21 +391,21 @@ def create_metering_router(
         if not metering_point:
             raise HTTPException(status_code=404)
 
-        zaehler = metering_point.current_meter
-        if not zaehler:
+        meter = metering_point.current_meter
+        if not meter:
             raise HTTPException(status_code=400, detail=t_for(request, "metering.errors.no_active_meter"))
 
-        neuer_stand = _parse_number(reading, dezimalstellen)
+        neuer_stand = _parse_number(reading, decimal_places)
         if neuer_stand is None:
             meldung = urllib.parse.quote(t_for(request, "metering.errors.invalid_reading"))
-            return RedirectResponse(f"{rueck_url}?fehler={meldung}", status_code=302)
+            return RedirectResponse(f"{rueck_url}?error={meldung}", status_code=302)
 
-        fehler_info = check_monotonicity(zaehler, year, neuer_stand)
+        fehler_info = check_monotonicity(meter, year, neuer_stand)
         if fehler_info:
-            fehler = t_for(request, fehler_info[0], **fehler_info[1])
-            return RedirectResponse(f"{rueck_url}?fehler={urllib.parse.quote(fehler)}", status_code=302)
+            error = t_for(request, fehler_info[0], **fehler_info[1])
+            return RedirectResponse(f"{rueck_url}?error={urllib.parse.quote(error)}", status_code=302)
 
-        existing = next((z for z in zaehler.readings if z.year == year), None)
+        existing = next((z for z in meter.readings if z.year == year), None)
         if existing:
             existing.reading = neuer_stand
             existing.date = date.fromisoformat(date_value)
@@ -413,7 +413,7 @@ def create_metering_router(
             existing.recorded_by_id = user.id
         else:
             db.add(MeterReading(
-                meter_id=zaehler.id,
+                meter_id=meter.id,
                 year=year,
                 date=date.fromisoformat(date_value),
                 reading=neuer_stand,
@@ -436,8 +436,8 @@ def create_metering_router(
         metering_point_id = None
         if reading_entry:
             zaehler_result = await db.execute(select(Meter).where(Meter.id == reading_entry.zaehler_id))
-            zaehler = zaehler_result.scalar_one_or_none()
-            metering_point_id = zaehler.metering_point_id if zaehler else None
+            meter = zaehler_result.scalar_one_or_none()
+            metering_point_id = meter.metering_point_id if meter else None
             await db.delete(reading_entry)
             await db.commit()
 
@@ -453,7 +453,7 @@ def create_metering_router(
     async def readings_list(
         request: Request,
         year: Optional[int] = None,
-        fehler: Optional[str] = None,
+        error: Optional[str] = None,
         db: AsyncSession = Depends(get_db),
     ):
         user = await require_user(request, db)
@@ -472,29 +472,29 @@ def create_metering_router(
                 aktuelle_ablesung = next((zs for zs in z.readings if zs.year == year), None)
                 zeilen.append({
                     "metering_point": a,
-                    "zaehler": z,
-                    "vorjahreswert": reading_before_year(
+                    "meter": z,
+                    "previous_year_value": reading_before_year(
                         z, year, exclude_id=aktuelle_ablesung.id if aktuelle_ablesung else None
                     ),
                     "entry": aktuelle_ablesung,
                 })
             return zeilen
 
-        hauptzaehler_zeilen = prepare_rows(MeteringPointType.MAIN_METER)
-        parzellen_zeilen = sorted(
+        main_meter_rows = prepare_rows(MeteringPointType.MAIN_METER)
+        parcel_rows = sorted(
             prepare_rows(MeteringPointType.PARCEL),
             key=lambda z: z["metering_point"].parcel.plot_number if z["metering_point"].parcel else ""
         )
-        verein_zeilen = prepare_rows(MeteringPointType.CLUB)
+        club_rows = prepare_rows(MeteringPointType.CLUB)
 
         return templates.TemplateResponse("metering/readings_list.html", {
             **basis_context(request),
             "request": request, "user": user, "year": year,
-            "hauptzaehler_zeilen": hauptzaehler_zeilen,
-            "parzellen_zeilen": parzellen_zeilen,
-            "verein_zeilen": verein_zeilen,
-            "fehler": fehler,
-            "heute": date.today().isoformat(),
+            "main_meter_rows": main_meter_rows,
+            "parcel_rows": parcel_rows,
+            "club_rows": club_rows,
+            "error": error,
+            "today": date.today().isoformat(),
         })
 
     # -----------------------------------------------------------------
@@ -518,45 +518,45 @@ def create_metering_router(
             zeilen = []
             for a in gefiltert:
                 z = a.current_meter
-                verbrauch = calculate_consumption(z, year) if z else None
-                zeilen.append({"metering_point": a, "zaehler": z, "verbrauch": verbrauch})
+                consumption = calculate_consumption(z, year) if z else None
+                zeilen.append({"metering_point": a, "meter": z, "consumption": consumption})
             return zeilen
 
-        hauptzaehler_zeilen = rows_for_type(MeteringPointType.MAIN_METER)
-        parzellen_zeilen = sorted(
+        main_meter_rows = rows_for_type(MeteringPointType.MAIN_METER)
+        parcel_rows = sorted(
             rows_for_type(MeteringPointType.PARCEL),
             key=lambda z: z["metering_point"].parcel.plot_number if z["metering_point"].parcel else ""
         )
-        verein_zeilen = rows_for_type(MeteringPointType.CLUB)
+        club_rows = rows_for_type(MeteringPointType.CLUB)
 
-        summe_haupt = sum((z["verbrauch"] for z in hauptzaehler_zeilen if z["verbrauch"] is not None), Decimal("0"))
-        summe_parzellen = sum((z["verbrauch"] for z in parzellen_zeilen if z["verbrauch"] is not None), Decimal("0"))
-        summe_verein = sum((z["verbrauch"] for z in verein_zeilen if z["verbrauch"] is not None), Decimal("0"))
+        main_total = sum((z["consumption"] for z in main_meter_rows if z["consumption"] is not None), Decimal("0"))
+        parcel_total = sum((z["consumption"] for z in parcel_rows if z["consumption"] is not None), Decimal("0"))
+        club_total = sum((z["consumption"] for z in club_rows if z["consumption"] is not None), Decimal("0"))
 
-        warnung = None
-        if summe_haupt > 0 and (summe_parzellen + summe_verein) > summe_haupt:
-            warnung = t_for(
+        warning = None
+        if main_total > 0 and (parcel_total + club_total) > main_total:
+            warning = t_for(
                 request, "metering.errors.overall_plausibility_evaluation",
-                total=summe_parzellen + summe_verein, main=summe_haupt, unit=unit,
+                total=parcel_total + club_total, main=main_total, unit=unit,
             )
 
-        verfuegbare_jahre = sorted({
+        available_years = sorted({
             zs.year for a in alle for z in a.meters for zs in z.readings
         }, reverse=True)
-        if year not in verfuegbare_jahre:
-            verfuegbare_jahre.insert(0, year)
+        if year not in available_years:
+            available_years.insert(0, year)
 
         return templates.TemplateResponse("metering/evaluation.html", {
             **basis_context(request),
             "request": request, "user": user, "year": year,
-            "verfuegbare_jahre": verfuegbare_jahre,
-            "hauptzaehler_zeilen": hauptzaehler_zeilen,
-            "parzellen_zeilen": parzellen_zeilen,
-            "verein_zeilen": verein_zeilen,
-            "summe_haupt": summe_haupt,
-            "summe_parzellen": summe_parzellen,
-            "summe_verein": summe_verein,
-            "warnung": warnung,
+            "available_years": available_years,
+            "main_meter_rows": main_meter_rows,
+            "parcel_rows": parcel_rows,
+            "club_rows": club_rows,
+            "main_total": main_total,
+            "parcel_total": parcel_total,
+            "club_total": club_total,
+            "warning": warning,
         })
 
     @router.get("/evaluation/csv")
@@ -586,13 +586,13 @@ def create_metering_router(
             if not z:
                 continue
             entry = next((zs for zs in z.readings if zs.year == year), None)
-            verbrauch = calculate_consumption(z, year)
+            consumption = calculate_consumption(z, year)
             writer.writerow([
                 typ_label.get(a.type, a.type.value),
                 a.display_name,
                 z.number,
-                f"{entry.reading:.{dezimalstellen}f}".replace(".", ",") if entry else "",
-                f"{verbrauch:.{dezimalstellen}f}".replace(".", ",") if verbrauch is not None else "",
+                f"{entry.reading:.{decimal_places}f}".replace(".", ",") if entry else "",
+                f"{consumption:.{decimal_places}f}".replace(".", ",") if consumption is not None else "",
             ])
 
         output.seek(0)

@@ -14,20 +14,20 @@
         <div class="card">
             <div class="card-header">
                 <i class="bi bi-person-badge me-2"></i>
-                {{ t('parcels_assignment_form.card_header', member=zuordnung.member.full_name, plot_number=parcel.plot_number) }}
+                {{ t('parcels_assignment_form.card_header', member=assignment.member.full_name, plot_number=parcel.plot_number) }}
             </div>
             <div class="card-body">
-                <form method="post" action="/parcels/{{ parcel.id }}/member/{{ zuordnung.id }}/edit">
+                <form method="post" action="/parcels/{{ parcel.id }}/member/{{ assignment.id }}/edit">
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">{{ t('parcels_assignment_form.label_tenant_since') }}</label>
                             <input type="date" name="assigned_from" class="form-control"
-                                   value="{{ zuordnung.assigned_from.isoformat() if zuordnung.assigned_from else '' }}">
+                                   value="{{ assignment.assigned_from.isoformat() if assignment.assigned_from else '' }}">
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">{{ t('parcels_assignment_form.label_tenant_until') }}</label>
                             <input type="date" name="assigned_until" class="form-control"
-                                   value="{{ zuordnung.assigned_until.isoformat() if zuordnung.assigned_until else '' }}">
+                                   value="{{ assignment.assigned_until.isoformat() if assignment.assigned_until else '' }}">
                             <div class="form-text">{{ t('parcels_assignment_form.tenant_until_help') }}</div>
                         </div>
                     </div>

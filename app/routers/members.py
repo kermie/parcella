@@ -41,8 +41,8 @@ async def _get_member_with_details(db: AsyncSession, member_id: str) -> Optional
 @router.get("/", response_class=HTMLResponse)
 async def members_list(
     request: Request,
-    suche: str = "",
-    auch_inaktive: bool = False,
+    search: str = "",
+    include_inactive: bool = False,
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_user(request, db)
@@ -56,22 +56,22 @@ async def members_list(
         .order_by(Member.last_name, Member.first_name)
     )
 
-    if auch_inaktive:
+    if include_inactive:
         # All non-deleted members (including expired memberships)
         query = query.where(Member.deleted_at.is_(None))
     else:
         query = query.where(active_member_filter())
 
-    if suche:
+    if search:
         # Searches by first/last name OR parcel number. For the parcel
         # search: by default only current assignments (who lives there
-        # NOW); with "auch_inaktive" also already-ended assignments (who
+        # NOW); with "include_inactive" also already-ended assignments (who
         # used to live there) -- the same toggle logic as for active/
         # inactive members, just applied to the parcel's tenant history.
         # "City" was deliberately removed, since searching by it wasn't
         # used in practice.
-        parzellen_bedingung = Parcel.plot_number.ilike(f"%{suche}%")
-        if not auch_inaktive:
+        parzellen_bedingung = Parcel.plot_number.ilike(f"%{search}%")
+        if not include_inactive:
             parzellen_bedingung = and_(
                 parzellen_bedingung, MemberParcel.assigned_until.is_(None)
             )
@@ -82,8 +82,8 @@ async def members_list(
         )
         query = query.where(
             or_(
-                Member.first_name.ilike(f"%{suche}%"),
-                Member.last_name.ilike(f"%{suche}%"),
+                Member.first_name.ilike(f"%{search}%"),
+                Member.last_name.ilike(f"%{search}%"),
                 Member.id.in_(parzellen_treffer),
             )
         )
@@ -97,8 +97,8 @@ async def members_list(
             "request": request,
             "user": user,
             "members": members,
-            "suche": suche,
-            "auch_inaktive": auch_inaktive,
+            "search": search,
+            "include_inactive": include_inactive,
         },
     )
 
@@ -229,7 +229,7 @@ async def member_detail(
     parzellen_result = await db.execute(
         select(Parcel).order_by(Parcel.plot_number)
     )
-    alle_parzellen = parzellen_result.scalars().all()
+    all_parcels = parzellen_result.scalars().all()
 
     return templates.TemplateResponse(
         "members/detail.html",
@@ -237,7 +237,7 @@ async def member_detail(
             "request": request,
             "user": user,
             "member": member,
-            "alle_parzellen": alle_parzellen,
+            "all_parcels": all_parcels,
         },
     )
 

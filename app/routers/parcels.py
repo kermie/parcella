@@ -44,7 +44,7 @@ async def _get_parcel_with_details(db: AsyncSession, parcel_id: str) -> Optional
 @router.get("/", response_class=HTMLResponse)
 async def parcels_list(
     request: Request,
-    suche: str = "",
+    search: str = "",
     status_filter: str = "",
     db: AsyncSession = Depends(get_db),
 ):
@@ -58,8 +58,8 @@ async def parcels_list(
         .order_by(Parcel.plot_number)
     )
 
-    if suche:
-        query = query.where(Parcel.plot_number.ilike(f"%{suche}%"))
+    if search:
+        query = query.where(Parcel.plot_number.ilike(f"%{search}%"))
 
     if status_filter and status_filter in [s.value for s in ParcelStatus]:
         query = query.where(Parcel.status == status_filter)
@@ -73,7 +73,7 @@ async def parcels_list(
             "request": request,
             "user": user,
             "parcels": parcels,
-            "suche": suche,
+            "search": search,
             "status_filter": status_filter,
             "ParcelStatus": ParcelStatus,
         },
@@ -111,7 +111,7 @@ async def parcel_create(
                 "request": request,
                 "user": user_result,
                 "parcel": None,
-                "fehler": t_for(request, "parcels.form.duplicate_plot_number_error", plot_number=plot_number),
+                "error": t_for(request, "parcels.form.duplicate_plot_number_error", plot_number=plot_number),
             },
             status_code=400,
         )
@@ -152,10 +152,10 @@ async def parcel_detail(
         .where(active_member_filter())
         .order_by(Member.last_name, Member.first_name)
     )
-    alle_mitglieder = mitglieder_result.scalars().all()
+    all_members = mitglieder_result.scalars().all()
     # Compact list for the searchable select field in the template
     # (JSON-serializable, instead of juggling map/zip in Jinja)
-    alle_mitglieder_json = [{"id": m.id, "name": m.full_name} for m in alle_mitglieder]
+    all_members_json = [{"id": m.id, "name": m.full_name} for m in all_members]
 
     # Change history of field values
     aenderungen_result = await db.execute(
@@ -194,8 +194,8 @@ async def parcel_detail(
             "request": request,
             "user": user,
             "parcel": parcel,
-            "alle_mitglieder": alle_mitglieder,
-            "alle_mitglieder_json": alle_mitglieder_json,
+            "all_members": all_members,
+            "all_members_json": all_members_json,
             "aenderungen": aenderungen,
             "ParcelStatus": ParcelStatus,
             "cloud_storage_enabled": cloud_storage_enabled,
@@ -314,22 +314,22 @@ async def member_assign(
             MemberParcel.member_id == member_id,
         )
     )
-    zuordnung = existing.scalar_one_or_none()
+    assignment = existing.scalar_one_or_none()
 
-    if zuordnung:
-        if zuordnung.assigned_until is None:
+    if assignment:
+        if assignment.assigned_until is None:
             # Already actively assigned, nothing to do
             return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
         # Reactivate a former (ended) assignment instead of creating a duplicate
-        zuordnung.assigned_until = None
-        zuordnung.assigned_from = date.fromisoformat(assigned_from) if assigned_from else date.today()
+        assignment.assigned_until = None
+        assignment.assigned_from = date.fromisoformat(assigned_from) if assigned_from else date.today()
     else:
-        zuordnung = MemberParcel(
+        assignment = MemberParcel(
             parcel_id=parcel_id,
             member_id=member_id,
             assigned_from=date.fromisoformat(assigned_from) if assigned_from else None,
         )
-        db.add(zuordnung)
+        db.add(assignment)
 
     await db.commit()
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
@@ -349,8 +349,8 @@ async def member_assignment_edit_page(
         .options(selectinload(MemberParcel.member))
         .where(MemberParcel.id == assignment_id, MemberParcel.parcel_id == parcel_id)
     )
-    zuordnung = result.scalar_one_or_none()
-    if not zuordnung:
+    assignment = result.scalar_one_or_none()
+    if not assignment:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.assignment_not_found"))
 
     parcel = await _get_parcel_with_details(db, parcel_id)
@@ -360,7 +360,7 @@ async def member_assignment_edit_page(
         {
             "request": request,
             "user": user,
-            "zuordnung": zuordnung,
+            "assignment": assignment,
             "parcel": parcel,
         },
     )
@@ -382,12 +382,12 @@ async def member_assignment_update(
             MemberParcel.id == assignment_id, MemberParcel.parcel_id == parcel_id
         )
     )
-    zuordnung = result.scalar_one_or_none()
-    if not zuordnung:
+    assignment = result.scalar_one_or_none()
+    if not assignment:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.assignment_not_found"))
 
-    zuordnung.assigned_from = date.fromisoformat(assigned_from) if assigned_from.strip() else None
-    zuordnung.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
+    assignment.assigned_from = date.fromisoformat(assigned_from) if assigned_from.strip() else None
+    assignment.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
 
     await db.commit()
     await deactivate_if_vacant(db, parcel_id)
@@ -413,9 +413,9 @@ async def member_remove(
             MemberParcel.parcel_id == parcel_id,
         )
     )
-    zuordnung = result.scalar_one_or_none()
-    if zuordnung and zuordnung.assigned_until is None:
-        zuordnung.assigned_until = date.today()
+    assignment = result.scalar_one_or_none()
+    if assignment and assignment.assigned_until is None:
+        assignment.assigned_until = date.today()
         await db.commit()
         await deactivate_if_vacant(db, parcel_id)
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
@@ -445,16 +445,16 @@ async def former_assignment_delete(
             MemberParcel.parcel_id == parcel_id,
         )
     )
-    zuordnung = result.scalar_one_or_none()
-    if not zuordnung:
+    assignment = result.scalar_one_or_none()
+    if not assignment:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.assignment_not_found"))
-    if zuordnung.assigned_until is None:
+    if assignment.assigned_until is None:
         raise HTTPException(
             status_code=400,
             detail=t_for(request, "parcels.detail.cannot_delete_active_assignment"),
         )
 
-    await db.delete(zuordnung)
+    await db.delete(assignment)
     await db.commit()
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 

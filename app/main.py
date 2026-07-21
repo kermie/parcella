@@ -182,11 +182,11 @@ app.include_router(inventory_router.router)
 # for water and electricity -- see create_metering_router().
 water_router = create_metering_router(
     medium=MeteringMedium.WATER, url_prefix="/water", modul_name="water",
-    medium_label_key="metering.medium.water", unit="m³", icon="bi-droplet", dezimalstellen=1,
+    medium_label_key="metering.medium.water", unit="m³", icon="bi-droplet", decimal_places=1,
 )
 electricity_router = create_metering_router(
     medium=MeteringMedium.ELECTRICITY, url_prefix="/electricity", modul_name="electricity",
-    medium_label_key="metering.medium.electricity", unit="kWh", icon="bi-lightning-charge", dezimalstellen=0,
+    medium_label_key="metering.medium.electricity", unit="kWh", icon="bi-lightning-charge", decimal_places=0,
 )
 app.include_router(water_router)
 app.include_router(electricity_router)
@@ -281,14 +281,14 @@ async def startseite(request: Request):
     birthdays_this_week = await upcoming_birthdays(db, within_days=7)
 
     stats = {
-        "mitglieder_gesamt": members_total or 0,
-        "mitglieder_aktiv": members_active or 0,
-        "parzellen_aktiv": parcels_active or 0,
-        "parzellen_gekuendigt": parcels_terminated or 0,
-        "parzellen_unbesetzt": parcels_vacant or 0,
-        "flaeche_gesamt_qm": float(area_total or 0),
-        "einkaufswuensche_offen": purchase_requests_open_count or 0,
-        "tickets_offen": tickets_open_count or 0,
+        "members_total": members_total or 0,
+        "members_active": members_active or 0,
+        "parcels_active": parcels_active or 0,
+        "parcels_terminated": parcels_terminated or 0,
+        "parcels_vacant": parcels_vacant or 0,
+        "area_total_sqm": float(area_total or 0),
+        "purchase_requests_open": purchase_requests_open_count or 0,
+        "tickets_open": tickets_open_count or 0,
         "tickets_spam": tickets_spam_count or 0,
     }
 
@@ -298,7 +298,7 @@ async def startseite(request: Request):
             "request": request,
             "user": user,
             "stats": stats,
-            "neueste_mitglieder": recent_members,
+            "recent_members": recent_members,
             "birthdays_this_week": birthdays_this_week,
             "today_date": date.today(),
         },

@@ -29,7 +29,7 @@
     <div class="card-body py-2">
         <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
             <i class="bi bi-search text-muted"></i>
-            <input type="text" name="suche" value="{{ suche }}" class="form-control form-control-sm border-0"
+            <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm border-0"
                    placeholder="{{ t('parcels.list.search_placeholder') }}" style="box-shadow: none; max-width: 200px;">
             <select name="status_filter" class="form-select form-select-sm" style="max-width: 160px;"
                     onchange="this.form.submit()">
@@ -39,7 +39,7 @@
                 <option value="DELETED" {% if status_filter == 'DELETED' %}selected{% endif %}>{{ t('parcels.status.deleted') }}</option>
             </select>
             <button type="submit" class="btn btn-sm btn-primary">{{ t('parcels.list.search_button') }}</button>
-            {% if suche or status_filter %}
+            {% if search or status_filter %}
             <a href="/parcels/" class="btn btn-sm btn-outline-secondary">{{ t('parcels.list.reset_button') }}</a>
             {% endif %}
         </form>

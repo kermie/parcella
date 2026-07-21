@@ -75,14 +75,14 @@
                     <dd class="col-sm-8">
                         {% if current_meter.calibrated_until %}
                         {{ current_meter.calibrated_until }}
-                        {% if current_meter.calibrated_until <= aktuelles_jahr %}
+                        {% if current_meter.calibrated_until <= current_year %}
                         <span class="badge ms-1" style="background: #fef3c7; color: #92400e;">{{ t('metering.point_detail.calibration_expired') }}</span>
                         {% endif %}
                         {% else %}–{% endif %}
                     </dd>
 
                     <dt class="col-sm-4 text-muted">{{ t('metering.point_detail.label_initial_reading') }}</dt>
-                    <dd class="col-sm-8">{{ current_meter.initial_reading | fmt(dezimalstellen) }} {{ unit }}</dd>
+                    <dd class="col-sm-8">{{ current_meter.initial_reading | fmt(decimal_places) }} {{ unit }}</dd>
                 </dl>
 
                 <hr>
@@ -98,12 +98,12 @@
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('metering.point_detail.exchange_old_removed_label') }}</label>
                                     <input type="date" name="removed_at" class="form-control form-control-sm"
-                                           value="{{ heute }}" required>
+                                           value="{{ today }}" required>
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('metering.point_detail.exchange_new_installed_label') }}</label>
                                     <input type="date" name="installed_at" class="form-control form-control-sm"
-                                           value="{{ heute }}" required>
+                                           value="{{ today }}" required>
                                 </div>
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('metering.point_detail.exchange_new_number_label') }} <span class="text-danger">*</span></label>
@@ -117,7 +117,7 @@
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('metering.point_detail.exchange_initial_reading_label') }}</label>
                                     <input type="text" name="initial_reading" class="form-control form-control-sm"
-                                           value="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}">
+                                           value="{% if decimal_places == 0 %}0{% else %}0,0{% endif %}">
                                 </div>
                                 <div class="col-sm-6 d-flex align-items-end">
                                     <button type="submit" class="btn btn-sm btn-warning w-100"
@@ -155,14 +155,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for eintrag in staende_mit_verbrauch %}
+                            {% for eintrag in readings_with_consumption %}
                             <tr>
                                 <td class="fw-semibold">{{ eintrag.reading.year }}</td>
                                 <td class="text-muted">{{ eintrag.reading.date.strftime('%d.%m.%Y') }}</td>
-                                <td>{{ eintrag.reading.reading | fmt(dezimalstellen) }}</td>
+                                <td>{{ eintrag.reading.reading | fmt(decimal_places) }}</td>
                                 <td>
-                                    {% if eintrag.verbrauch is not none %}
-                                    {{ eintrag.verbrauch | fmt(dezimalstellen) }}
+                                    {% if eintrag.consumption is not none %}
+                                    {{ eintrag.consumption | fmt(decimal_places) }}
                                     {% else %}–{% endif %}
                                 </td>
                                 <td class="text-muted" style="font-size: 0.85rem;">{{ eintrag.reading.note or '' }}</td>
@@ -191,16 +191,16 @@
                     <div>
                         <label class="form-label small mb-0">{{ t('metering.point_detail.label_year') }}</label>
                         <input type="number" name="year" class="form-control form-control-sm" style="width: 100px;"
-                               value="{{ aktuelles_jahr }}" required>
+                               value="{{ current_year }}" required>
                     </div>
                     <div>
                         <label class="form-label small mb-0">{{ t('metering.point_detail.label_date') }}</label>
-                        <input type="date" name="date" class="form-control form-control-sm" value="{{ heute }}" required>
+                        <input type="date" name="date" class="form-control form-control-sm" value="{{ today }}" required>
                     </div>
                     <div>
                         <label class="form-label small mb-0">{{ t('metering.point_detail.label_reading', unit=unit) }}</label>
                         <input type="text" name="reading" class="form-control form-control-sm" style="width: 130px;"
-                               placeholder="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}" required>
+                               placeholder="{% if decimal_places == 0 %}0{% else %}0,0{% endif %}" required>
                     </div>
                     <div>
                         <label class="form-label small mb-0">{{ t('metering.point_detail.label_note') }}</label>
@@ -239,7 +239,7 @@
                                 <td>{{ z.removed_at.strftime('%d.%m.%Y') if z.removed_at else '–' }}</td>
                                 <td>
                                     {% set letzte = z.readings | sort(attribute='year', reverse=true) | first %}
-                                    {% if letzte %}{{ letzte.reading | fmt(dezimalstellen) }} {{ unit }}{% else %}–{% endif %}
+                                    {% if letzte %}{{ letzte.reading | fmt(decimal_places) }} {{ unit }}{% else %}–{% endif %}
                                 </td>
                             </tr>
                             {% endfor %}

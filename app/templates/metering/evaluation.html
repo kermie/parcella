@@ -6,7 +6,7 @@
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
         <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-            {% for j in verfuegbare_jahre %}
+            {% for j in available_years %}
             <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
@@ -22,10 +22,10 @@
 
 {% block content %}
 
-{% if warnung %}
+{% if warning %}
 <div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    <div>{{ warnung }}</div>
+    <div>{{ warning }}</div>
 </div>
 {% endif %}
 
@@ -33,19 +33,19 @@
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('metering.evaluation.stat_main_meter') }}</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ summe_haupt | fmt(dezimalstellen) }} {{ unit }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-gruen);">{{ main_total | fmt(decimal_places) }} {{ unit }}</div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('metering.evaluation.stat_parcels_total') }}</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-braun);">{{ summe_parzellen | fmt(dezimalstellen) }} {{ unit }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: var(--gv-braun);">{{ parcel_total | fmt(decimal_places) }} {{ unit }}</div>
         </div>
     </div>
     <div class="col-sm-4">
         <div class="card text-center p-3">
             <div class="text-muted mb-1" style="font-size: 0.75rem; text-transform: uppercase;">{{ t('metering.evaluation.stat_club_total') }}</div>
-            <div style="font-size: 1.8rem; font-weight: 700; color: #1e40af;">{{ summe_verein | fmt(dezimalstellen) }} {{ unit }}</div>
+            <div style="font-size: 1.8rem; font-weight: 700; color: #1e40af;">{{ club_total | fmt(decimal_places) }} {{ unit }}</div>
         </div>
     </div>
 </div>
@@ -70,10 +70,10 @@
                             <a href="{{ url_prefix }}/metering-points/{{ z.metering_point.id }}" class="text-decoration-none"
                                style="color: var(--gv-gruen);">{{ z.metering_point.display_name }}</a>
                         </td>
-                        <td>{% if z.zaehler %}<code>{{ z.zaehler.number }}</code>{% else %}–{% endif %}</td>
+                        <td>{% if z.meter %}<code>{{ z.meter.number }}</code>{% else %}–{% endif %}</td>
                         <td>
-                            {% if z.verbrauch is not none %}
-                            {{ z.verbrauch | fmt(dezimalstellen) }}
+                            {% if z.consumption is not none %}
+                            {{ z.consumption | fmt(decimal_places) }}
                             {% else %}
                             <span class="text-muted">{{ t('metering.evaluation.no_reading') }}</span>
                             {% endif %}
@@ -89,8 +89,8 @@
 </div>
 {% endmacro %}
 
-{{ tabelle(hauptzaehler_zeilen, t('metering.evaluation.table_main_meter')) }}
-{{ tabelle(parzellen_zeilen, t('metering.evaluation.table_parcels')) }}
-{{ tabelle(verein_zeilen, t('metering.evaluation.table_club')) }}
+{{ tabelle(main_meter_rows, t('metering.evaluation.table_main_meter')) }}
+{{ tabelle(parcel_rows, t('metering.evaluation.table_parcels')) }}
+{{ tabelle(club_rows, t('metering.evaluation.table_club')) }}
 
 {% endblock %}

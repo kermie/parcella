@@ -32,24 +32,24 @@
     <div class="card-body py-2">
         <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
             <i class="bi bi-search text-muted"></i>
-            <input type="text" name="suche" value="{{ suche }}" class="form-control form-control-sm border-0"
+            <input type="text" name="search" value="{{ search }}" class="form-control form-control-sm border-0"
                    placeholder="{{ t('members.list.search_placeholder') }}" style="box-shadow: none; max-width: 260px;">
             <div class="form-check form-check-inline my-auto ms-1">
-                <input class="form-check-input" type="checkbox" name="auch_inaktive" id="auch-inaktive"
-                       value="true" {% if auch_inaktive %}checked{% endif %}
+                <input class="form-check-input" type="checkbox" name="include_inactive" id="include-inactive"
+                       value="true" {% if include_inactive %}checked{% endif %}
                        onchange="this.form.submit()">
-                <label class="form-check-label text-muted" for="auch-inaktive" style="font-size: 0.85rem;">
+                <label class="form-check-label text-muted" for="include-inactive" style="font-size: 0.85rem;">
                     {{ t('members.list.show_inactive') }}
                 </label>
             </div>
             <button type="submit" class="btn btn-sm btn-primary">{{ t('members.list.search_button') }}</button>
-            {% if suche or auch_inaktive %}
+            {% if search or include_inactive %}
             <a href="/members/" class="btn btn-sm btn-outline-secondary">{{ t('members.list.reset_button') }}</a>
             {% endif %}
         </form>
     </div>
 </div>
-{% if auch_inaktive %}
+{% if include_inactive %}
 <div class="alert alert-info d-flex gap-2 align-items-center mb-3" style="font-size: 0.875rem;">
     <i class="bi bi-info-circle-fill"></i>
     {{ t('members.list.inactive_notice') }}
@@ -114,9 +114,9 @@
                     {% else %}
                     <tr>
                         <td colspan="6" class="text-center py-5 text-muted">
-                            {% if suche %}
+                            {% if search %}
                             <i class="bi bi-search d-block mb-2" style="font-size: 1.5rem;"></i>
-                            {{ t('members.list.empty_search', query=suche) }}
+                            {{ t('members.list.empty_search', query=search) }}
                             {% else %}
                             <i class="bi bi-people d-block mb-2" style="font-size: 1.5rem;"></i>
                             {{ t('members.list.empty_none') }}<br>

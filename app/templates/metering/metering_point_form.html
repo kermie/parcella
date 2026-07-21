@@ -33,7 +33,7 @@
                         <label class="form-label fw-semibold">{{ t('metering.point_form.label_parcel') }} <span class="text-danger">*</span></label>
                         <select name="parcel_id" class="form-select">
                             <option value="">{{ t('metering.point_form.select_parcel_placeholder') }}</option>
-                            {% for p in alle_parzellen %}
+                            {% for p in all_parcels %}
                             <option value="{{ p.id }}">{{ p.plot_number }}</option>
                             {% endfor %}
                         </select>
@@ -69,13 +69,13 @@
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">{{ t('metering.point_form.label_installed_at') }}</label>
-                        <input type="date" name="installed_at" class="form-control" value="{{ heute }}">
+                        <input type="date" name="installed_at" class="form-control" value="{{ today }}">
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">{{ t('metering.point_form.label_initial_reading') }}</label>
                         <div class="input-group">
                             <input type="text" name="initial_reading" class="form-control"
-                                   value="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}">
+                                   value="{% if decimal_places == 0 %}0{% else %}0,0{% endif %}">
                             <span class="input-group-text">{{ unit }}</span>
                         </div>
                     </div>

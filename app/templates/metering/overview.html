@@ -6,7 +6,7 @@
 <div class="d-flex gap-2 align-items-center">
     <form method="get" class="d-flex gap-2">
         <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
-            {% for j in verfuegbare_jahre %}
+            {% for j in available_years %}
             <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
             {% endfor %}
         </select>
@@ -19,17 +19,17 @@
 
 {% block content %}
 
-{% if warnung %}
+{% if warning %}
 <div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    <div>{{ warnung }}</div>
+    <div>{{ warning }}</div>
 </div>
 {% endif %}
 
-{% if offene_ablesungen > 0 %}
+{% if open_readings > 0 %}
 <div class="alert alert-info d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-info-circle-fill"></i>
-    {{ t('metering.overview.open_readings_notice', count=offene_ablesungen, year=year) }}
+    {{ t('metering.overview.open_readings_notice', count=open_readings, year=year) }}
     <a href="{{ url_prefix }}/readings?year={{ year }}" class="alert-link ms-1">{{ t('metering.overview.record_now_link') }}</a>
 </div>
 {% endif %}
@@ -42,9 +42,9 @@
                     {{ t('metering.overview.stat_main_meter') }}
                 </div>
                 <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-gruen);">
-                    {{ verbrauch_haupt | fmt(dezimalstellen) }} {{ unit }}
+                    {{ main_consumption | fmt(decimal_places) }} {{ unit }}
                 </div>
-                <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_hauptzaehler }} {{ t('metering.overview.stat_main_meter_suffix') }}</div>
+                <div class="text-muted" style="font-size: 0.8rem;">{{ main_meter_count }} {{ t('metering.overview.stat_main_meter_suffix') }}</div>
             </div>
         </div>
     </div>
@@ -55,9 +55,9 @@
                     {{ t('metering.overview.stat_parcels') }}
                 </div>
                 <div style="font-size: 1.6rem; font-weight: 700; color: var(--gv-braun);">
-                    {{ verbrauch_parzellen | fmt(dezimalstellen) }} {{ unit }}
+                    {{ parcel_consumption | fmt(decimal_places) }} {{ unit }}
                 </div>
-                <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_parzellen }} {{ t('metering.overview.stat_parcels_suffix') }}</div>
+                <div class="text-muted" style="font-size: 0.8rem;">{{ parcel_count }} {{ t('metering.overview.stat_parcels_suffix') }}</div>
             </div>
         </div>
     </div>
@@ -68,9 +68,9 @@
                     {{ t('metering.overview.stat_club') }}
                 </div>
                 <div style="font-size: 1.6rem; font-weight: 700; color: #1e40af;">
-                    {{ verbrauch_verein | fmt(dezimalstellen) }} {{ unit }}
+                    {{ club_consumption | fmt(decimal_places) }} {{ unit }}
                 </div>
-                <div class="text-muted" style="font-size: 0.8rem;">{{ anzahl_verein }} {{ t('metering.overview.stat_club_suffix') }}</div>
+                <div class="text-muted" style="font-size: 0.8rem;">{{ club_count }} {{ t('metering.overview.stat_club_suffix') }}</div>
             </div>
         </div>
     </div>
@@ -80,9 +80,9 @@
                 <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">
                     {{ t('metering.overview.stat_difference') }}
                 </div>
-                {% set differenz = verbrauch_haupt - verbrauch_parzellen - verbrauch_verein %}
+                {% set differenz = main_consumption - parcel_consumption - club_consumption %}
                 <div style="font-size: 1.6rem; font-weight: 700; color: {% if differenz < 0 %}#991b1b{% else %}#065f46{% endif %};">
-                    {{ differenz | fmt(dezimalstellen) }} {{ unit }}
+                    {{ differenz | fmt(decimal_places) }} {{ unit }}
                 </div>
                 <div class="text-muted" style="font-size: 0.8rem;">{{ t('metering.overview.stat_difference_suffix') }}</div>
             </div>

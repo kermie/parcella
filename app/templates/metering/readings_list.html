@@ -33,25 +33,25 @@
 
 {% block content %}
 
-{% if fehler %}
+{% if error %}
 <div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    <div>{{ fehler }}</div>
+    <div>{{ error }}</div>
 </div>
 {% endif %}
 
-{% macro zeile(z, year, heute) %}
+{% macro zeile(z, year, today) %}
 <div class="entry-zeile d-flex flex-wrap align-items-center gap-2 py-2 px-3 border-bottom">
     <div style="min-width: 160px; flex: 1;">
         <div class="fw-semibold">{{ z.metering_point.display_name }}</div>
         <div class="text-muted" style="font-size: 0.78rem;">
-            <code>{{ z.zaehler.number }}</code> · {{ t('metering.readings_list.previous_year_label') }}: {{ z.vorjahreswert | fmt(dezimalstellen) }} {{ unit }}
+            <code>{{ z.meter.number }}</code> · {{ t('metering.readings_list.previous_year_label') }}: {{ z.previous_year_value | fmt(decimal_places) }} {{ unit }}
         </div>
     </div>
     {% if z.entry %}
     <div class="d-flex align-items-center gap-2">
         <span class="badge badge-aktiv" style="font-size: 0.9rem;">
-            {{ z.entry.reading | fmt(dezimalstellen) }} {{ unit }}
+            {{ z.entry.reading | fmt(decimal_places) }} {{ unit }}
         </span>
         <span class="text-muted" style="font-size: 0.8rem;">{{ t('metering.readings_list.recorded_label') }}</span>
     </div>
@@ -59,11 +59,11 @@
     <form method="post" action="{{ url_prefix }}/metering-points/{{ z.metering_point.id }}/readings/new"
           class="d-flex gap-2 align-items-center">
         <input type="hidden" name="year" value="{{ year }}">
-        <input type="hidden" name="date" value="{{ heute }}">
+        <input type="hidden" name="date" value="{{ today }}">
         <input type="hidden" name="rueck_url" value="{{ url_prefix }}/readings?year={{ year }}">
         <input type="text" name="reading" class="form-control"
-               placeholder="{% if dezimalstellen == 0 %}0{% else %}0,0{% endif %}"
-               inputmode="{% if dezimalstellen == 0 %}numeric{% else %}decimal{% endif %}" required>
+               placeholder="{% if decimal_places == 0 %}0{% else %}0,0{% endif %}"
+               inputmode="{% if decimal_places == 0 %}numeric{% else %}decimal{% endif %}" required>
         <button type="submit" class="btn btn-primary">
             <i class="bi bi-check-lg"></i>
         </button>
@@ -72,13 +72,13 @@
 </div>
 {% endmacro %}
 
-{% if hauptzaehler_zeilen %}
+{% if main_meter_rows %}
 <div class="card mb-3">
     <div class="card-header" style="background: #dbeafe; color: #1e40af;">
         <i class="bi {{ icon }} me-2"></i>{{ t('metering.readings_list.main_meter_header') }}
     </div>
     <div class="card-body p-0">
-        {% for z in hauptzaehler_zeilen %}{{ zeile(z, year, heute) }}{% endfor %}
+        {% for z in main_meter_rows %}{{ zeile(z, year, today) }}{% endfor %}
     </div>
 </div>
 {% endif %}
@@ -86,20 +86,20 @@
 <div class="card mb-3">
     <div class="card-header"><i class="bi bi-grid-3x3 me-2"></i>{{ t('metering.readings_list.parcels_header') }}</div>
     <div class="card-body p-0">
-        {% for z in parzellen_zeilen %}{{ zeile(z, year, heute) }}{% endfor %}
-        {% if not parzellen_zeilen %}
+        {% for z in parcel_rows %}{{ zeile(z, year, today) }}{% endfor %}
+        {% if not parcel_rows %}
         <div class="text-center text-muted py-3">{{ t('metering.readings_list.no_parcel_points') }}</div>
         {% endif %}
     </div>
 </div>
 
-{% if verein_zeilen %}
+{% if club_rows %}
 <div class="card mb-3">
     <div class="card-header" style="background: #f5ede8; color: var(--gv-braun);">
         <i class="bi bi-building me-2"></i>{{ t('metering.readings_list.club_header') }}
     </div>
     <div class="card-body p-0">
-        {% for z in verein_zeilen %}{{ zeile(z, year, heute) }}{% endfor %}
+        {% for z in club_rows %}{{ zeile(z, year, today) }}{% endfor %}
     </div>
 </div>
 {% endif %}

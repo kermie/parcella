@@ -146,7 +146,7 @@
         // (wird mit vielen Mitgliedern schnell unbenutzbar). Die
         // eigentlich übermittelte ID steckt im versteckten Feld
         // #assign-member-id -- das Textfeld ist reine Anzeige/Suche.
-        var alleMitglieder = {{ alle_mitglieder_json | tojson }};
+        var alleMitglieder = {{ all_members_json | tojson }};
         var searchInput = document.getElementById('assign-member-search');
         var hiddenId = document.getElementById('assign-member-id');
         var resultsBox = document.getElementById('assign-member-results');

@@ -174,7 +174,7 @@
                     <select name="parzelle_id" class="form-select form-select-sm" style="max-width: 180px;" required
                             onchange="document.getElementById('form-parzelle-zuordnen').action='/parcels/'+this.value+'/member/assign'">
                         <option value="">{{ t('members.detail.select_parcel_placeholder') }}</option>
-                        {% for p in alle_parzellen %}
+                        {% for p in all_parcels %}
                         <option value="{{ p.id }}">{{ p.plot_number }}</option>
                         {% endfor %}
                     </select>
