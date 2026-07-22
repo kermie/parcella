@@ -24,6 +24,7 @@ from app.module_flags import load_module_flags
 from app.i18n import load_translations, load_current_language
 from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
+from app.update_check import refresh_update_check_cache
 
 # Loaded at module import time (not only in the lifespan startup
 # event), since ASGI test clients (e.g. httpx with ASGITransport) don't
@@ -62,6 +63,24 @@ async def _ticket_inbox_polling_loop():
         await asyncio.sleep(120)  # 2 minutes
 
 
+async def _update_check_polling_loop():
+    """
+    Periodically checks GitHub releases for a newer Parcella version
+    than the one currently running, caching the result (see
+    app/update_check.py) so the admin dashboard can show it without an
+    outbound call on every page load. Skipped when disabled in
+    Admin -> Settings.
+    """
+    while True:
+        try:
+            async with AsyncSessionLocal() as db:
+                await refresh_update_check_cache(db)
+        except Exception as e:
+            logger.error(f"Update check failed: {e}")
+
+        await asyncio.sleep(6 * 60 * 60)  # 6 hours
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: create the first admin if the users table is empty."""
@@ -82,8 +101,10 @@ async def lifespan(app: FastAPI):
             )
 
     polling_task = asyncio.create_task(_ticket_inbox_polling_loop())
+    update_check_task = asyncio.create_task(_update_check_polling_loop())
     yield
     polling_task.cancel()
+    update_check_task.cancel()
 
 
 app = FastAPI(

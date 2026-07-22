@@ -22,6 +22,7 @@ from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
 from app.branding import save_logo_upload, remove_logo_file
 from app.config import settings
 from app.public_api_auth import get_or_create_public_api_token, regenerate_public_api_token
+from app.update_check import get_update_status, refresh_update_check_cache
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 from app.templating import templates
@@ -43,6 +44,8 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     )
     open_invitations = invitation_result.scalars().all()
 
+    update_status = await get_update_status(db)
+
     return templates.TemplateResponse(
         "admin/dashboard.html",
         {
@@ -51,8 +54,18 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
             "all_users": all_users,
             "open_invitations": open_invitations,
             "UserRole": UserRole,
+            "update_status": update_status,
         },
     )
+
+
+@router.post("/updates/check-now")
+async def update_check_now(request: Request, db: AsyncSession = Depends(get_db)):
+    """Manually triggers the same check the background loop runs every
+    6 hours (see app/update_check.py), for admins who don't want to wait."""
+    await require_admin(request, db)
+    await refresh_update_check_cache(db)
+    return RedirectResponse("/admin/", status_code=302)
 
 
 @router.post("/invite")
@@ -348,6 +361,19 @@ async def settings_save(
             entry.value = currency_value
         else:
             db.add(ClubSetting(key="currency", value=currency_value, description="Currency"))
+
+    # Update check: same "checkbox sends nothing when off" handling as
+    # the module toggles above (see app/update_check.py).
+    update_check_value = "true" if "update_check_enabled" in form else "false"
+    result = await db.execute(select(ClubSetting).where(ClubSetting.key == "update_check_enabled"))
+    entry = result.scalar_one_or_none()
+    if entry:
+        entry.value = update_check_value
+    else:
+        db.add(ClubSetting(
+            key="update_check_enabled", value=update_check_value,
+            description="Whether to periodically check GitHub for a newer Parcella release",
+        ))
 
     await db.commit()
     if logo_error:

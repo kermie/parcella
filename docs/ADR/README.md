@@ -39,3 +39,4 @@ in chronological order.
 33. [Cloud storage module (Nextcloud)](./0033-cloud-storage-module-nextcloud.md)
 34. [Task board: a separate module from WorkTask, admin/board only](./0034-task-board-a-separate-module-from-worktask-admin-board-only.md)
 35. [Invoice-address flag on member-parcel assignments](./0035-invoice-address-flag-on-member-parcel-assignments.md)
+36. [Admin update notice: GitHub releases, not an image registry](./0036-admin-update-notice-github-releases-not-image-registry.md)

@@ -110,6 +110,26 @@
         </div>
     </div>
 
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-arrow-repeat me-2"></i>{{ t('admin.settings.updates_header') }}</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3 p-3"
+                     style="background: #f8faf9; border-radius: 8px;">
+                    <div>
+                        <label class="fw-semibold d-block" for="update_check_enabled">{{ t('admin.settings.updates_toggle_label') }}</label>
+                        <div class="text-muted" style="font-size: 0.8rem;">{{ t('admin.settings.updates_toggle_hint') }}</div>
+                    </div>
+                    <div class="form-check form-switch mb-0 flex-shrink-0">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               name="update_check_enabled" id="update_check_enabled"
+                               {% if einstellungen.get('update_check_enabled', 'true') in ('true', '1', 'ja', 'an') %}checked{% endif %}>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header"><i class="bi bi-building me-2"></i>{{ t('admin.settings.club_data_header') }}</div>

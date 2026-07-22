@@ -101,6 +101,26 @@ async def test_smoke_dashboard_renders_without_jinja_errors(client, admin_user):
     assert "Dash Board" in r.text
 
 
+async def test_smoke_admin_pages_render_without_jinja_errors(client, admin_user):
+    """
+    Deliberately doesn't hit /admin/updates/check-now: that route makes
+    a real GitHub API call (see app/update_check.py), and tests here
+    follow the project convention of not depending on live external
+    calls in the test suite (see test_update_check.py). Rendering with
+    the default "nothing cached yet" update_status is covered here.
+    """
+    response = await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    assert response.status_code in (302, 303)
+
+    r_dashboard = await client.get("/admin/")
+    assert r_dashboard.status_code == 200
+    assert "UndefinedError" not in r_dashboard.text
+
+    r_settings = await client.get("/admin/settings")
+    assert r_settings.status_code == 200
+    assert "UndefinedError" not in r_settings.text
+
+
 async def test_smoke_metering_pages_render_without_jinja_errors(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)

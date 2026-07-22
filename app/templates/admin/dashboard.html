@@ -23,6 +23,45 @@
 
 <div class="row g-3">
 
+    {% if update_status.enabled %}
+    <div class="col-12">
+        {% if update_status.update_available %}
+        <div class="card border-0" style="background: #fef3c7;">
+            <div class="card-body">
+                <h5 class="mb-2"><i class="bi bi-cloud-arrow-down-fill me-2"></i>{{ t('admin.dashboard.update_available_heading', version=update_status.latest_version) }}</h5>
+                <p class="mb-2">{{ t('admin.dashboard.update_available_text', current=update_status.current_version, latest=update_status.latest_version) }}</p>
+                <pre class="mb-2 p-2" style="background: rgba(0,0,0,0.05); border-radius: 6px; font-size: 0.85rem;">cd {{ t('admin.dashboard.update_docker_folder_placeholder') }}
+docker compose pull
+docker compose up -d</pre>
+                <form method="post" action="/admin/updates/check-now" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i>{{ t('admin.dashboard.update_check_now_button') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="text-muted" style="font-size: 0.9rem;">
+                    <i class="bi bi-check-circle me-1"></i>
+                    {% if update_status.checked_at %}
+                    {{ t('admin.dashboard.update_up_to_date', version=update_status.current_version, checked_at=update_status.checked_at.strftime('%d.%m.%Y %H:%M')) }}
+                    {% else %}
+                    {{ t('admin.dashboard.update_not_checked_yet', version=update_status.current_version) }}
+                    {% endif %}
+                </div>
+                <form method="post" action="/admin/updates/check-now">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise me-1"></i>{{ t('admin.dashboard.update_check_now_button') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     <!-- Einladen -->
     <div class="col-lg-5">
         <div class="card">
