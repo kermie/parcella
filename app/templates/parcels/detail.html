@@ -79,6 +79,7 @@
                         <thead>
                             <tr>
                                 <th>{{ t('parcels.detail.col_member') }}</th>
+                                <th>{{ t('parcels.detail.col_invoice_address') }}</th>
                                 <th>{{ t('parcels.detail.col_since') }}</th>
                                 <th></th>
                             </tr>
@@ -91,6 +92,13 @@
                                        style="color: var(--gv-gruen);">
                                         {{ z.member.full_name }}
                                     </a>
+                                </td>
+                                <td>
+                                    {% if z.is_invoice_address %}
+                                    <span class="badge badge-aktiv">{{ t('parcels.detail.invoice_address') }}</span>
+                                    {% else %}
+                                    <span class="text-muted">–</span>
+                                    {% endif %}
                                 </td>
                                 <td class="text-muted">{{ z.assigned_from.strftime('%d.%m.%Y') if z.assigned_from else '–' }}</td>
                                 <td class="text-end">
@@ -111,7 +119,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="3" class="text-center text-muted py-3">
+                                <td colspan="4" class="text-center text-muted py-3">
                                     {{ t('parcels.detail.no_current_tenants') }}
                                 </td>
                             </tr>
@@ -132,6 +140,10 @@
                              style="z-index: 1000; max-height: 220px; overflow-y: auto; display: none; top: 100%;"></div>
                     </div>
                     <input type="date" name="assigned_from" class="form-control form-control-sm" style="max-width: 150px;" placeholder="Datum">
+                    <div class="form-check form-check-inline my-auto">
+                        <input class="form-check-input" type="checkbox" name="is_invoice_address" id="rechnungsadresse-check" checked>
+                        <label class="form-check-label small" for="rechnungsadresse-check">{{ t('parcels.detail.is_invoice_address_label') }}</label>
+                    </div>
                     <button type="submit" class="btn btn-sm btn-primary">
                         <i class="bi bi-plus-lg me-1"></i>{{ t('parcels.detail.assign_button') }}
                     </button>

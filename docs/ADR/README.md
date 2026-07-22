@@ -38,3 +38,4 @@ in chronological order.
 32. [Inventory module](./0032-inventory-module.md)
 33. [Cloud storage module (Nextcloud)](./0033-cloud-storage-module-nextcloud.md)
 34. [Task board: a separate module from WorkTask, admin/board only](./0034-task-board-a-separate-module-from-worktask-admin-board-only.md)
+35. [Invoice-address flag on member-parcel assignments](./0035-invoice-address-flag-on-member-parcel-assignments.md)

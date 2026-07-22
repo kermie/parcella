@@ -39,6 +39,7 @@ def _to_detail_schema(parcel: Parcel) -> ParcelDetailOut:
         ParcelAssignmentBrief(
             member_id=z.member.id,
             name=z.member.full_name,
+            is_invoice_address=z.is_invoice_address,
         )
         for z in parcel.member_assignments
     ]
@@ -208,6 +209,8 @@ async def member_assign(
     assignment = MemberParcel(
         parcel_id=parcel_id,
         member_id=data.member_id,
+        # A former tenant (assigned_until set) can never be the invoice address.
+        is_invoice_address=data.is_invoice_address if data.assigned_until is None else False,
         assigned_from=data.assigned_from,
         assigned_until=data.assigned_until,
     )

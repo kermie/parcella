@@ -18,6 +18,15 @@
             </div>
             <div class="card-body">
                 <form method="post" action="/parcels/{{ parcel.id }}/member/{{ assignment.id }}/edit">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_invoice_address"
+                                   id="rechnungsadresse-check" {% if assignment.is_invoice_address %}checked{% endif %}
+                                   {% if assignment.assigned_until %}disabled{% endif %}>
+                            <label class="form-check-label" for="rechnungsadresse-check">{{ t('parcels_assignment_form.is_invoice_address_label') }}</label>
+                            <div class="form-text">{{ t('parcels_assignment_form.is_invoice_address_help') }}</div>
+                        </div>
+                    </div>
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">{{ t('parcels_assignment_form.label_tenant_since') }}</label>
@@ -26,7 +35,7 @@
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">{{ t('parcels_assignment_form.label_tenant_until') }}</label>
-                            <input type="date" name="assigned_until" class="form-control"
+                            <input type="date" name="assigned_until" id="assigned-until-input" class="form-control"
                                    value="{{ assignment.assigned_until.isoformat() if assignment.assigned_until else '' }}">
                             <div class="form-text">{{ t('parcels_assignment_form.tenant_until_help') }}</div>
                         </div>
@@ -42,4 +51,22 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // A former tenant (assigned_until set) can never be the invoice
+    // address -- keep the checkbox in sync as the end date is edited,
+    // rather than silently discarding it on save.
+    var untilInput = document.getElementById('assigned-until-input');
+    var invoiceCheckbox = document.getElementById('rechnungsadresse-check');
+    untilInput.addEventListener('input', function () {
+        if (untilInput.value) {
+            invoiceCheckbox.checked = false;
+            invoiceCheckbox.disabled = true;
+        } else {
+            invoiceCheckbox.disabled = false;
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -100,7 +100,10 @@ async def test_signin_sheet_excludes_former_residents(client, admin_user):
         parcel = Parcel(plot_number="99")
         session.add_all([member, parcel])
         await session.flush()
-        session.add(MemberParcel(member_id=member.id, parcel_id=parcel.id, assigned_until=date.today()))
+        session.add(MemberParcel(
+            member_id=member.id, parcel_id=parcel.id,
+            assigned_until=date.today(), is_invoice_address=False,
+        ))
         await session.commit()
 
     response = await client.post("/members/signin-sheet", data={"headline": "Test"})

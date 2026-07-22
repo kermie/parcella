@@ -47,6 +47,7 @@ def _to_detail_schema(member: Member) -> MemberDetailOut:
         MemberAssignmentBrief(
             parcel_id=z.parcel.id,
             plot_number=z.parcel.plot_number,
+            is_invoice_address=z.is_invoice_address,
         )
         for z in member.parcel_assignments
     ]

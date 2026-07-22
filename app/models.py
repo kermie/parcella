@@ -12,7 +12,7 @@ from datetime import datetime, date
 from typing import Optional, List
 from sqlalchemy import (
     String, Integer, Boolean, Date, DateTime, Text, Numeric,
-    ForeignKey, Enum as SAEnum, UniqueConstraint, Index
+    ForeignKey, Enum as SAEnum, UniqueConstraint, Index, CheckConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -272,6 +272,9 @@ class MemberParcel(Base):
         String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
+    # Is this member's address used as the parcel's invoice address?
+    is_invoice_address: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
     # Assignment period
     assigned_from: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     assigned_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -285,6 +288,12 @@ class MemberParcel(Base):
 
     __table_args__ = (
         UniqueConstraint("member_id", "parcel_id", name="uq_member_parcel"),
+        # A former tenant (assigned_until set) can never be the invoice
+        # address -- annual invoices must not go to someone who's moved on.
+        CheckConstraint(
+            "NOT is_invoice_address OR assigned_until IS NULL",
+            name="ck_invoice_address_only_for_current_tenants",
+        ),
     )
 
 

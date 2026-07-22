@@ -25,6 +25,27 @@ Originally also had an `is_primary_tenant` role distinction; removed
 board holds every resident of a parcel jointly responsible, with no
 hierarchy between them.
 
+**`is_invoice_address` on `member_parcels`.** Residents of a parcel can
+have different snail-mail addresses (each address lives on `Member`
+itself -- there's no separate `Address` table); this flag marks which
+assigned member's address is used to send that parcel's invoices. Same
+shape as the removed `is_primary_tenant` (a plain boolean on the
+assignment row, defaulting to `True`, no "exactly one per parcel"
+constraint) but a different concern: it selects an address for postal
+mail, not a liability rank -- see
+[Architecture Decisions](./ADR/0035-invoice-address-flag-on-member-parcel-assignments.md).
+A former tenant can never hold this flag -- a CHECK constraint
+(`ck_invoice_address_only_for_current_tenants`, migration
+`0036_invoice_current_only`) enforces `NOT is_invoice_address OR
+assigned_until IS NULL`, and every code path that ends a tenancy clears
+the flag in the same write so invoices don't keep going to someone
+who's moved out.
+Households (e.g. a couple who should both appear on the invoice letter)
+are resolved at document-generation time by matching addresses among
+current residents, the same way `household_grouping()` in
+`app/insurance_utils.py` already does for insurance -- not by adding
+more flags to the assignment row.
+
 **Tenancy history instead of deletion.** When a tenancy ends,
 `assigned_until` is set instead of deleting the row. This keeps it
 traceable who held which parcel when -- important for questions that come

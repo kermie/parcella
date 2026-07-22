@@ -302,6 +302,7 @@ async def member_assign(
     parcel_id: str,
     request: Request,
     member_id: str = Form(...),
+    is_invoice_address: bool = Form(False),
     assigned_from: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -323,10 +324,12 @@ async def member_assign(
         # Reactivate a former (ended) assignment instead of creating a duplicate
         assignment.assigned_until = None
         assignment.assigned_from = date.fromisoformat(assigned_from) if assigned_from else date.today()
+        assignment.is_invoice_address = is_invoice_address
     else:
         assignment = MemberParcel(
             parcel_id=parcel_id,
             member_id=member_id,
+            is_invoice_address=is_invoice_address,
             assigned_from=date.fromisoformat(assigned_from) if assigned_from else None,
         )
         db.add(assignment)
@@ -371,6 +374,7 @@ async def member_assignment_update(
     parcel_id: str,
     assignment_id: str,
     request: Request,
+    is_invoice_address: bool = Form(False),
     assigned_from: str = Form(""),
     assigned_until: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -388,6 +392,8 @@ async def member_assignment_update(
 
     assignment.assigned_from = date.fromisoformat(assigned_from) if assigned_from.strip() else None
     assignment.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
+    # A former tenant (assigned_until set) can never be the invoice address.
+    assignment.is_invoice_address = is_invoice_address if assignment.assigned_until is None else False
 
     await db.commit()
     await deactivate_if_vacant(db, parcel_id)
@@ -416,6 +422,7 @@ async def member_remove(
     assignment = result.scalar_one_or_none()
     if assignment and assignment.assigned_until is None:
         assignment.assigned_until = date.today()
+        assignment.is_invoice_address = False
         await db.commit()
         await deactivate_if_vacant(db, parcel_id)
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
@@ -563,13 +570,13 @@ async def parcels_export_csv(request: Request, db: AsyncSession = Depends(get_db
     writer.writerow([
         "Gartennummer", "Fläche (qm)", "Status",
         "Kündigungsnotiz",
-        "Mitglieder", "Notizen"
+        "Mitglieder (Rechnungsadresse zuerst)", "Notizen"
     ])
 
     for p in parcels:
         mitglieder_str = "; ".join(
-            z.member.full_name
-            for z in sorted(p.member_assignments, key=lambda z: z.member.full_name)
+            f"{z.member.full_name}{'*' if z.is_invoice_address else ''}"
+            for z in sorted(p.member_assignments, key=lambda z: (not z.is_invoice_address, z.member.full_name))
         )
         writer.writerow([
             p.plot_number,
