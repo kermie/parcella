@@ -372,7 +372,7 @@
     "groups": {
       "page_title": "Skupiny",
       "heading": "Skupiny",
-      "intro": "Skupiny umožňují omezit přístup účtů Pokladníka a Pouze pro čtení více než výchozí nastavení -- práva čtení, zápisu nebo mazání pro jednotlivé moduly. Účty Správce a Výboru mají vždy plný přístup a skupinu nepotřebují.",
+      "intro": "Účty Správce mají plný přístup všude, včetně tohoto administračního panelu. Účty Výboru mají plný přístup ke čtení/zápisu/mazání ve všech modulech, ale ne k tomuto panelu. Účty Pokladníka a Pouze pro čtení mohou vždy zobrazit sekci Členové a parcely; skupiny jim udělují další práva čtení, zápisu nebo mazání pro jednotlivé moduly -- např. plnou kontrolu nad modulem Voda pro osobu za něj odpovědnou.",
       "create_header": "Vytvořit skupinu",
       "label_name": "Název",
       "label_description": "Popis",

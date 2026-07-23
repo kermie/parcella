@@ -351,7 +351,7 @@
         </a>
         {% endif %}
 
-        {% if user.role.value in ['admin', 'board'] %}
+        {% if user.role.value == 'admin' %}
         <div class="nav-group" data-group="administration">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
                     data-bs-target="#nav-group-administration">

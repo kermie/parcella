@@ -372,7 +372,7 @@
     "groups": {
       "page_title": "Groupes",
       "heading": "Groupes",
-      "intro": "Les groupes permettent de restreindre l'accès des comptes Trésorier et Lecture seule par rapport à l'accès par défaut -- droits de lecture, d'écriture ou de suppression par module. Les comptes Administrateur et Conseil d'administration ont toujours un accès complet et n'ont pas besoin de groupe.",
+      "intro": "Les comptes Administrateur ont un accès complet partout, y compris à ce panneau d'administration. Les comptes Conseil d'administration ont un accès complet en lecture/écriture/suppression à chaque module, mais pas à ce panneau. Les comptes Trésorier et Lecture seule peuvent toujours consulter Membres et parcelles ; les groupes leur accordent des droits supplémentaires de lecture, d'écriture ou de suppression sur des modules spécifiques -- par exemple un contrôle complet du module Eau pour la personne responsable.",
       "create_header": "Créer un groupe",
       "label_name": "Nom",
       "label_description": "Description",

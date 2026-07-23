@@ -3,7 +3,8 @@ Admin UI for managing groups and their per-module permissions (see
 app/permissions.py and app/models.py's Group/GroupMembership/
 GroupModulePermission). ADMIN/BOARD accounts don't need a group -- they
 already bypass this system entirely -- so membership assignment here
-only makes practical sense for TREASURER/READONLY users.
+only makes practical sense for TREASURER/READONLY users. This router is
+ADMIN-only (require_system_admin), not BOARD -- see app/auth.py.
 """
 import urllib.parse
 
@@ -15,7 +16,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import Group, GroupMembership, GroupModulePermission, User, UserRole
-from app.auth import require_admin
+from app.auth import require_system_admin
 from app.permissions import MODULES
 from app.i18n import t_for
 from app.templating import templates
@@ -37,7 +38,7 @@ async def _load_groups(db: AsyncSession):
 
 @router.get("/", response_class=HTMLResponse)
 async def groups_list(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await require_admin(request, db)
+    user = await require_system_admin(request, db)
 
     groups = await _load_groups(db)
 
@@ -70,7 +71,7 @@ async def group_create(
     description: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
 
     name = name.strip()
     description = description.strip() or None
@@ -109,7 +110,7 @@ async def group_update(
     description: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     form = await request.form()
 
     result = await db.execute(
@@ -164,7 +165,7 @@ async def group_delete(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
 
     result = await db.execute(select(Group).where(Group.id == group_id))
     group = result.scalar_one_or_none()
@@ -185,7 +186,7 @@ async def group_member_add(
     user_id: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
 
     group_result = await db.execute(select(Group).where(Group.id == group_id))
     if not group_result.scalar_one_or_none():
@@ -221,7 +222,7 @@ async def group_member_remove(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
 
     result = await db.execute(
         select(GroupMembership).where(

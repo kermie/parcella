@@ -372,7 +372,7 @@
     "groups": {
       "page_title": "Gruppen",
       "heading": "Gruppen",
-      "intro": "Mit Gruppen können Sie Kassierer- und Nur-Lesen-Konten enger fassen als den Standardzugriff -- Lese-, Schreib- oder Löschrechte für einzelne Module. Administrator- und Vorstandskonten haben immer vollen Zugriff und benötigen keine Gruppe.",
+      "intro": "Administrator-Konten haben überall vollen Zugriff, einschließlich dieses Administrationsbereichs. Vorstandskonten haben vollen Lese-/Schreib-/Löschzugriff auf jedes Modul, aber nicht auf diesen Bereich. Kassierer- und Nur-Lesen-Konten können immer Mitglieder & Parzellen einsehen; Gruppen gewähren ihnen zusätzliche Lese-, Schreib- oder Löschrechte für einzelne Module -- z. B. volle Kontrolle über Wasser für die zuständige Person.",
       "create_header": "Gruppe anlegen",
       "label_name": "Name",
       "label_description": "Beschreibung",

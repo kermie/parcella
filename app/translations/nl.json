@@ -372,7 +372,7 @@
     "groups": {
       "page_title": "Groepen",
       "heading": "Groepen",
-      "intro": "Met groepen kunt u de toegang van Penningmeester- en Alleen-lezen-accounts strakker instellen dan de standaardtoegang -- lees-, schrijf- of verwijderrechten per module. Beheerder- en Bestuursaccounts hebben altijd volledige toegang en hebben geen groep nodig.",
+      "intro": "Beheerderaccounts hebben overal volledige toegang, inclusief dit administratiepaneel. Bestuursaccounts hebben volledige lees-/schrijf-/verwijdertoegang tot elke module, maar niet tot dit paneel. Penningmeester- en Alleen-lezen-accounts kunnen altijd Leden en percelen bekijken; groepen geven hen extra lees-, schrijf- of verwijderrechten voor specifieke modules -- bijvoorbeeld volledige controle over Water voor wie daarvoor verantwoordelijk is.",
       "create_header": "Groep aanmaken",
       "label_name": "Naam",
       "label_description": "Omschrijving",

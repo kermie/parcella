@@ -42,3 +42,4 @@ in chronological order.
 36. [Admin update notice: GitHub releases, not an image registry](./0036-admin-update-notice-github-releases-not-image-registry.md)
 37. [Sample data generator: tracked removal, not guessed](./0037-sample-data-generator-tracked-not-guessed-removal.md)
 38. [Spam filter external API: tied to apilayer.com for now](./0038-spam-filter-external-api-tied-to-apilayer-for-now.md)
+39. [Admin panel is ADMIN-only; BOARD is full module access, not panel access](./0039-admin-panel-is-system-admin-only-board-is-full-module-access.md)

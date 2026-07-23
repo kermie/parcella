@@ -1,18 +1,19 @@
 """
 Group-based permission matrix. ADMIN and BOARD always bypass this
-entirely -- unchanged from their existing behavior (see app/auth.py's
-require_admin). This system exists to give TREASURER/READONLY users
-narrowly-scoped access, e.g. "handles work-hours sessions but
-shouldn't be able to edit the member list" -- something the app had no
-way to express before (READONLY previously had no actual restriction
-anywhere in the web UI).
+entirely and get full read/write/delete on every module (see
+app/auth.py's require_admin) -- the administration panel itself is a
+separate, narrower check (require_system_admin, ADMIN only). Everyone
+else (TREASURER/READONLY) starts from a small baseline -- read-only on
+members_parcels, nothing else -- and a group narrowly WIDENS that,
+e.g. "handles work-hours sessions but shouldn't be able to edit the
+member list." See ADR 0039.
 
 Deliberately does NOT cover: tasks, announcements, cloud_storage,
 public_signup_api, or the admin section itself. All of those are
 already admin/board-only (see app/module_flags.py's off-by-default
 modules and ADR 0034 for tasks) and stay that way regardless of group
-configuration -- this system only ever narrows what's currently open
-to "any logged-in user," it never widens access to something currently
+configuration -- this system only ever widens what a TREASURER/READONLY
+user can do beyond the baseline, it never touches anything currently
 locked to admin/board. Also out of scope for this pass: the REST API
 (app/api_auth.py) -- a separate JWT-based role system with its own
 require_write_access, untouched here. See ADR 0038.
@@ -46,12 +47,15 @@ async def get_user_permissions(db: AsyncSession, user: Optional[User]) -> Dict[s
     if user.role in (UserRole.ADMIN, UserRole.BOARD):
         return {module: dict(_FULL_PERMISSION) for module in MODULES}
 
+    permissions = {module: dict(_EMPTY_PERMISSION) for module in MODULES}
+    if "members_parcels" in permissions:
+        permissions["members_parcels"]["read"] = True  # baseline: everyone can look up who's who / which parcel
+
     result = await db.execute(
         select(GroupModulePermission)
         .join(GroupMembership, GroupMembership.group_id == GroupModulePermission.group_id)
         .where(GroupMembership.user_id == user.id)
     )
-    permissions = {module: dict(_EMPTY_PERMISSION) for module in MODULES}
     for row in result.scalars().all():
         if row.module not in permissions:
             continue  # a module removed from MODULES since this row was created

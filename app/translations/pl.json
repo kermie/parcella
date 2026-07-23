@@ -372,7 +372,7 @@
     "groups": {
       "page_title": "Grupy",
       "heading": "Grupy",
-      "intro": "Grupy pozwalają zawęzić dostęp kont Skarbnika i Tylko do odczytu bardziej niż domyślnie -- prawa odczytu, zapisu lub usuwania dla poszczególnych modułów. Konta Administratora i Zarządu zawsze mają pełny dostęp i nie potrzebują grupy.",
+      "intro": "Konta Administratora mają pełny dostęp wszędzie, w tym do tego panelu administracyjnego. Konta Zarządu mają pełny dostęp do odczytu/zapisu/usuwania w każdym module, ale nie do tego panelu. Konta Skarbnika i Tylko do odczytu zawsze mogą przeglądać sekcję Członkowie i działki; grupy przyznają im dodatkowe prawa odczytu, zapisu lub usuwania w poszczególnych modułach -- np. pełną kontrolę nad modułem Woda dla osoby za nią odpowiedzialnej.",
       "create_header": "Utwórz grupę",
       "label_name": "Nazwa",
       "label_description": "Opis",

@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from app.database import get_db
 from app.models import User, Invitation, InvitationStatus, UserRole, ClubSetting
-from app.auth import require_admin, create_invitation_token, hash_password
+from app.auth import require_system_admin, create_invitation_token, hash_password
 from app.email_service import send_email
 from app.crypto_utils import encrypt
 from app.blog_publisher import load_wordpress_configuration, WordPressPublisher, BlogPublishError
@@ -34,16 +34,19 @@ from app.templating import templates
 INVITATION_DAYS = 7
 
 
-async def _is_last_admin_capable(db: AsyncSession, user_id: str) -> bool:
-    """True if no other active ADMIN/BOARD user exists besides `user_id` --
-    i.e. removing admin-capable status from `user_id` would leave nobody
-    able to reach anything require_admin gates."""
+async def _is_last_admin(db: AsyncSession, user_id: str) -> bool:
+    """True if no other active ADMIN user exists besides `user_id`. Only
+    ADMIN reaches require_system_admin (the admin panel) -- BOARD has
+    full module access but not that -- so losing the last ADMIN, not
+    the last ADMIN-or-BOARD, is the actual lockout to prevent: with at
+    least one ADMIN left, they can always promote a new one via the
+    panel BOARD can't reach."""
     result = await db.execute(
         select(User.id)
         .where(
             User.id != user_id,
             User.is_active == True,  # noqa: E712
-            User.role.in_([UserRole.ADMIN, UserRole.BOARD]),
+            User.role == UserRole.ADMIN,
         )
         .limit(1)
     )
@@ -52,7 +55,7 @@ async def _is_last_admin_capable(db: AsyncSession, user_id: str) -> bool:
 
 @router.get("/", response_class=HTMLResponse)
 async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await require_admin(request, db)
+    user = await require_system_admin(request, db)
 
     user_result = await db.execute(select(User).order_by(User.name))
     all_users = user_result.scalars().all()
@@ -83,7 +86,7 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
 async def update_check_now(request: Request, db: AsyncSession = Depends(get_db)):
     """Manually triggers the same check the background loop runs every
     6 hours (see app/update_check.py), for admins who don't want to wait."""
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     await refresh_update_check_cache(db)
     return RedirectResponse("/admin/", status_code=302)
 
@@ -95,7 +98,7 @@ async def update_check_now(request: Request, db: AsyncSession = Depends(get_db))
 
 @router.get("/sample-data", response_class=HTMLResponse)
 async def sample_data_page(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await require_admin(request, db)
+    user = await require_system_admin(request, db)
 
     return templates.TemplateResponse("admin/sample_data.html", {
         "request": request,
@@ -109,7 +112,7 @@ async def sample_data_page(request: Request, db: AsyncSession = Depends(get_db))
 
 @router.post("/sample-data/add")
 async def sample_data_add(request: Request, db: AsyncSession = Depends(get_db)):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     try:
         await add_sample_data(db)
     except SampleDataBlockedError as e:
@@ -119,7 +122,7 @@ async def sample_data_add(request: Request, db: AsyncSession = Depends(get_db)):
 
 @router.post("/sample-data/remove")
 async def sample_data_remove(request: Request, db: AsyncSession = Depends(get_db)):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     await remove_sample_data(db)
     return RedirectResponse("/admin/sample-data?entfernt=1", status_code=302)
 
@@ -131,7 +134,7 @@ async def user_invite(
     role: str = Form("readonly"),
     db: AsyncSession = Depends(get_db),
 ):
-    admin = await require_admin(request, db)
+    admin = await require_system_admin(request, db)
 
     email = email.strip().lower()
 
@@ -214,7 +217,7 @@ async def user_deactivate(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    admin = await require_admin(request, db)
+    admin = await require_system_admin(request, db)
 
     if user_id == admin.id:
         return RedirectResponse(
@@ -227,8 +230,8 @@ async def user_deactivate(
     if target:
         if (
             target.is_active
-            and target.role in (UserRole.ADMIN, UserRole.BOARD)
-            and await _is_last_admin_capable(db, target.id)
+            and target.role == UserRole.ADMIN
+            and await _is_last_admin(db, target.id)
         ):
             return RedirectResponse(
                 f"/admin/?fehler={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
@@ -246,7 +249,7 @@ async def user_edit_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    admin = await require_admin(request, db)
+    admin = await require_system_admin(request, db)
 
     result = await db.execute(select(User).where(User.id == user_id))
     target = result.scalar_one_or_none()
@@ -268,7 +271,7 @@ async def user_edit(
     role: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
 
     result = await db.execute(select(User).where(User.id == user_id))
     target = result.scalar_one_or_none()
@@ -296,10 +299,10 @@ async def user_edit(
     new_role = UserRole(role)
 
     if (
-        target.role in (UserRole.ADMIN, UserRole.BOARD)
-        and new_role not in (UserRole.ADMIN, UserRole.BOARD)
+        target.role == UserRole.ADMIN
+        and new_role != UserRole.ADMIN
         and target.is_active
-        and await _is_last_admin_capable(db, target.id)
+        and await _is_last_admin(db, target.id)
     ):
         return RedirectResponse(
             f"/admin/users/{user_id}/edit?fehler={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
@@ -368,7 +371,7 @@ MODULE_FIELDS = [
 
 @router.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await require_admin(request, db)
+    user = await require_system_admin(request, db)
 
     result = await db.execute(select(ClubSetting))
     settings_map = {e.key: e.value for e in result.scalars().all()}
@@ -399,7 +402,7 @@ async def settings_save(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     form = await request.form()
 
     # Logo: upload, remove, or leave unchanged (not a field in
@@ -533,7 +536,7 @@ async def settings_save(
 
 @router.get("/integrations", response_class=HTMLResponse)
 async def integrations_seite(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await require_admin(request, db)
+    user = await require_system_admin(request, db)
     token = await get_or_create_public_api_token(db)
 
     result = await db.execute(select(ClubSetting).where(ClubSetting.key == "modul_public_signup_api"))
@@ -579,7 +582,7 @@ async def integrations_seite(request: Request, db: AsyncSession = Depends(get_db
 
 @router.post("/integrations/regenerate-token")
 async def integrations_token_neu(request: Request, db: AsyncSession = Depends(get_db)):
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     await regenerate_public_api_token(db)
     return RedirectResponse("/admin/integrations?erfolg=1", status_code=302)
 
@@ -600,7 +603,7 @@ async def integrations_wordpress_speichern(request: Request, db: AsyncSession = 
     convention as SMTP -- site URL and username are always overwritten
     with whatever's submitted (they're not secret, so there's no
     "leave unchanged" case worth supporting for them)."""
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     form = await request.form()
 
     site_url = (form.get("wordpress_site_url") or "").strip() or None
@@ -625,7 +628,7 @@ async def integrations_wordpress_testen(request: Request, db: AsyncSession = Dep
     already-saved configuration for any field left blank (same
     convention as saving). Doesn't persist anything; this is purely a
     connectivity check, usable before committing to save."""
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     form = await request.form()
 
     saved_config = await load_wordpress_configuration(db)
@@ -663,7 +666,7 @@ async def integrations_nextcloud_speichern(request: Request, db: AsyncSession = 
     convention as SMTP and WordPress -- base URL and username are
     always overwritten with whatever's submitted (they're not secret,
     so there's no "leave unchanged" case worth supporting for them)."""
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     form = await request.form()
 
     base_url = (form.get("nextcloud_base_url") or "").strip() or None
@@ -688,7 +691,7 @@ async def integrations_nextcloud_testen(request: Request, db: AsyncSession = Dep
     already-saved configuration for any field left blank (same
     convention as saving). Doesn't persist anything; this is purely a
     connectivity check, usable before committing to save."""
-    await require_admin(request, db)
+    await require_system_admin(request, db)
     form = await request.form()
 
     saved_config = await load_nextcloud_configuration(db)

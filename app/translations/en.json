@@ -372,7 +372,7 @@
     "groups": {
       "page_title": "Groups",
       "heading": "Groups",
-      "intro": "Groups let you give Treasurer and Read-only accounts narrower access than the default -- read, write, or delete rights on individual modules. Admin and Board accounts always have full access and don't need a group.",
+      "intro": "Administrator accounts have full access everywhere, including this administration panel. Board accounts have full read/write/delete access to every module, but not this panel. Treasurer and Read-only accounts can always view Members & Parcels; groups grant them additional read, write, or delete rights on specific modules -- e.g. full control over Water for whoever is responsible for it.",
       "create_header": "Create group",
       "label_name": "Name",
       "label_description": "Description",

@@ -84,8 +84,24 @@ async def require_user(request: Request, db: AsyncSession) -> User:
 
 
 async def require_admin(request: Request, db: AsyncSession) -> User:
+    """ADMIN or BOARD: full read/write/delete on every club module (see
+    app/permissions.py), but NOT the administration panel itself -- see
+    require_system_admin for that."""
     from app.models import UserRole
     user = await require_user(request, db)
     if user.role not in (UserRole.ADMIN, UserRole.BOARD):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Berechtigung")
+    return user
+
+
+async def require_system_admin(request: Request, db: AsyncSession) -> User:
+    """ADMIN only: the administration panel (users, groups, club
+    settings, integrations, sample data) -- these are the people who
+    administer the installation itself, not necessarily council
+    members. BOARD gets full access to every club module (require_admin
+    above) but not this."""
+    from app.models import UserRole
+    user = await require_user(request, db)
+    if user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Berechtigung")
     return user
