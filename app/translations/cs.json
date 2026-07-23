@@ -1623,6 +1623,26 @@
       "button": "Přijmout pozvánku",
       "validity": "Tento odkaz je platný po dobu {days} dní.",
       "fallback": "Pokud tlačítko nefunguje: {link}"
-    }
+    },
+    "purchase_request_confirm": {
+      "subject": "Potvrďte prosím: požadavek na nákup „{title}“",
+      "greeting": "Dobrý den, {name},",
+      "body": "{admin_name} za vás zadal(a) následující požadavek na nákup v {app_name}:",
+      "instruction": "Potvrďte prosím, že jsou tyto údaje správné:",
+      "button": "Potvrdit údaje"
+    },
+    "ticket_assigned_single": {
+      "subject": "Přiřazen tiket: {subject}",
+      "greeting": "Dobrý den, {name},",
+      "body": "Byl vám přiřazen tiket v {app_name}:",
+      "instruction": "Přihlaste se prosím do {app_name}, abyste jej mohli zpracovat."
+    },
+    "ticket_assigned_bulk": {
+      "subject": "Přiřazeno {count} tiket(ů) v {app_name}",
+      "greeting": "Dobrý den, {name},",
+      "body": "Bylo vám přiřazeno {count} tiket(ů) v {app_name}:",
+      "instruction": "Přihlaste se prosím do {app_name}, abyste je mohli zpracovat."
+    },
+    "announcement_test_banner": "Toto je testovací odeslání a nebylo doručeno žádnému členovi."
   }
 }

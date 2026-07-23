@@ -269,14 +269,14 @@ async def tickets_bulk_assign(
     if assignee:
         # A single combined email instead of one per ticket, to avoid
         # flooding the assignee's inbox.
-        subject = f"{len(tickets)} Ticket(s) im {settings.app_name} zugewiesen"
+        subject = t_for(request, "email.ticket_assigned_bulk.subject", count=len(tickets), app_name=settings.app_name)
         items = "".join(f"<li>{t.subject}</li>" for t in tickets)
         html = f"""
         <html><body>
-        <p>Hallo {assignee.name},</p>
-        <p>Ihnen wurden {len(tickets)} Ticket(s) im {settings.app_name} zugewiesen:</p>
+        <p>{t_for(request, "email.ticket_assigned_bulk.greeting", name=assignee.name)}</p>
+        <p>{t_for(request, "email.ticket_assigned_bulk.body", count=len(tickets), app_name=settings.app_name)}</p>
         <ul>{items}</ul>
-        <p>Bitte melden Sie sich im {settings.app_name} an, um sie zu bearbeiten.</p>
+        <p>{t_for(request, "email.ticket_assigned_bulk.instruction", app_name=settings.app_name)}</p>
         </body></html>
         """
         await send_email(assignee.email, subject, html, db=db)
@@ -346,13 +346,13 @@ async def ticket_assign(
         await db.commit()
 
         # Notification by email (uses the existing club SMTP configuration)
-        subject = f"Ticket zugewiesen: {ticket.subject}"
+        subject = t_for(request, "email.ticket_assigned_single.subject", subject=ticket.subject)
         html = f"""
         <html><body>
-        <p>Hallo {assignee.name},</p>
-        <p>Ihnen wurde ein Ticket im {settings.app_name} zugewiesen:</p>
+        <p>{t_for(request, "email.ticket_assigned_single.greeting", name=assignee.name)}</p>
+        <p>{t_for(request, "email.ticket_assigned_single.body", app_name=settings.app_name)}</p>
         <p><strong>{ticket.subject}</strong></p>
-        <p>Bitte melden Sie sich im {settings.app_name} an, um es zu bearbeiten.</p>
+        <p>{t_for(request, "email.ticket_assigned_single.instruction", app_name=settings.app_name)}</p>
         </body></html>
         """
         await send_email(assignee.email, subject, html, db=db)

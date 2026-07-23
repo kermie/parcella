@@ -1,5 +1,5 @@
 """
-API-Router: Ticketsystem – Tickets, Nachrichten, Zuweisung, Status.
+API router: Ticket system -- tickets, messages, assignment, status.
 """
 from datetime import date, datetime, timezone
 from typing import List, Optional
@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import get_db
 from app.models import Ticket, TicketMessage, TicketStatus, MessageDirection, User
 from app.api_auth import get_current_api_user, require_write_access
@@ -161,12 +162,12 @@ async def assignment_update(
         await db.commit()
         await db.refresh(ticket)
 
-        subject = f"Ticket zugewiesen: {ticket.subject}"
+        subject = f"Ticket assigned: {ticket.subject}"
         html = (
-            f"<html><body><p>Hallo {assignee.name},</p>"
-            f"<p>Ihnen wurde ein Ticket im Gartenmanager zugewiesen:</p>"
+            f"<html><body><p>Hello {assignee.name},</p>"
+            f"<p>A ticket has been assigned to you in {settings.app_name}:</p>"
             f"<p><strong>{ticket.subject}</strong></p>"
-            f"<p>Bitte melden Sie sich im Gartenmanager an, um es zu bearbeiten.</p></body></html>"
+            f"<p>Please log in to {settings.app_name} to process it.</p></body></html>"
         )
         await send_email(assignee.email, subject, html, db=db)
     else:

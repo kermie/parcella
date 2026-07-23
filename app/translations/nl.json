@@ -1623,6 +1623,26 @@
       "button": "Uitnodiging accepteren",
       "validity": "Deze link is {days} dagen geldig.",
       "fallback": "Als de knop niet werkt: {link}"
-    }
+    },
+    "purchase_request_confirm": {
+      "subject": "Gelieve te bevestigen: aankoopverzoek \"{title}\"",
+      "greeting": "Hallo {name},",
+      "body": "{admin_name} heeft namens u het volgende aankoopverzoek ingediend in {app_name}:",
+      "instruction": "Bevestig alstublieft dat deze gegevens correct zijn:",
+      "button": "Gegevens bevestigen"
+    },
+    "ticket_assigned_single": {
+      "subject": "Ticket toegewezen: {subject}",
+      "greeting": "Hallo {name},",
+      "body": "Er is een ticket aan u toegewezen in {app_name}:",
+      "instruction": "Log in op {app_name} om het te verwerken."
+    },
+    "ticket_assigned_bulk": {
+      "subject": "{count} ticket(s) toegewezen in {app_name}",
+      "greeting": "Hallo {name},",
+      "body": "Er zijn {count} ticket(s) aan u toegewezen in {app_name}:",
+      "instruction": "Log in op {app_name} om ze te verwerken."
+    },
+    "announcement_test_banner": "Dit is een testverzending en is naar geen enkel lid verstuurd."
   }
 }

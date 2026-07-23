@@ -1623,6 +1623,26 @@
       "button": "Zaakceptuj zaproszenie",
       "validity": "Ten link jest ważny przez {days} dni.",
       "fallback": "Jeśli przycisk nie działa: {link}"
-    }
+    },
+    "purchase_request_confirm": {
+      "subject": "Proszę potwierdzić: wniosek zakupowy „{title}”",
+      "greeting": "Witaj {name},",
+      "body": "{admin_name} złożył(a) w Twoim imieniu następujący wniosek zakupowy w {app_name}:",
+      "instruction": "Proszę potwierdzić, że te dane są poprawne:",
+      "button": "Potwierdź dane"
+    },
+    "ticket_assigned_single": {
+      "subject": "Zgłoszenie przypisane: {subject}",
+      "greeting": "Witaj {name},",
+      "body": "Przypisano Ci zgłoszenie w {app_name}:",
+      "instruction": "Zaloguj się do {app_name}, aby je obsłużyć."
+    },
+    "ticket_assigned_bulk": {
+      "subject": "Przypisano {count} zgłoszenie(a) w {app_name}",
+      "greeting": "Witaj {name},",
+      "body": "Przypisano Ci {count} zgłoszenie(a) w {app_name}:",
+      "instruction": "Zaloguj się do {app_name}, aby je obsłużyć."
+    },
+    "announcement_test_banner": "To jest wysyłka testowa i nie dotarła do żadnego członka."
   }
 }

@@ -1623,6 +1623,26 @@
       "button": "Einladung annehmen",
       "validity": "Dieser Link ist {days} Tage gültig.",
       "fallback": "Falls der Button nicht funktioniert: {link}"
-    }
+    },
+    "purchase_request_confirm": {
+      "subject": "Bitte bestätigen: Einkaufswunsch „{title}“",
+      "greeting": "Hallo {name},",
+      "body": "{admin_name} hat in Ihrem Namen folgenden Einkaufswunsch im {app_name} erfasst:",
+      "instruction": "Bitte bestätigen Sie, dass diese Angaben korrekt sind:",
+      "button": "Angaben bestätigen"
+    },
+    "ticket_assigned_single": {
+      "subject": "Ticket zugewiesen: {subject}",
+      "greeting": "Hallo {name},",
+      "body": "Ihnen wurde ein Ticket im {app_name} zugewiesen:",
+      "instruction": "Bitte melden Sie sich im {app_name} an, um es zu bearbeiten."
+    },
+    "ticket_assigned_bulk": {
+      "subject": "{count} Ticket(s) im {app_name} zugewiesen",
+      "greeting": "Hallo {name},",
+      "body": "Ihnen wurden {count} Ticket(s) im {app_name} zugewiesen:",
+      "instruction": "Bitte melden Sie sich im {app_name} an, um sie zu bearbeiten."
+    },
+    "announcement_test_banner": "Dies ist ein Testversand und ging an kein Mitglied heraus."
   }
 }

@@ -52,6 +52,7 @@ from app.models import (
 )
 from app.email_service import send_email
 from app.branding import load_branding
+from app.i18n import t_for
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +100,7 @@ async def _resolve_image_url(announcement: Announcement, base_url: str) -> Optio
 
 def build_announcement_email_html(
     announcement: Announcement, club_name: str, image_url: Optional[str], test_banner: bool = False,
+    banner_text: Optional[str] = None,
 ) -> str:
     """Wraps the announcement's canonical body_html (same content as
     the blog draft) in a minimal, branded email shell. test_banner adds
@@ -111,7 +113,7 @@ def build_announcement_email_html(
     )
     banner = (
         '<p style="background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 4px; '
-        'font-size: 0.85rem;">This is a test send and has not gone out to any members.</p>'
+        f'font-size: 0.85rem;">{banner_text}</p>'
         if test_banner else ""
     )
     return f"""
@@ -133,7 +135,10 @@ async def send_test_email(announcement: Announcement, db: AsyncSession, request,
     branding = await load_branding(db)
     base_url = str(request.base_url).rstrip("/")
     image_url = await _resolve_image_url(announcement, base_url)
-    html_body = build_announcement_email_html(announcement, branding["club_name"], image_url, test_banner=True)
+    banner_text = t_for(request, "email.announcement_test_banner")
+    html_body = build_announcement_email_html(
+        announcement, branding["club_name"], image_url, test_banner=True, banner_text=banner_text,
+    )
     return await send_email(address, f"[Test] {announcement.title}", html_body, db=db)
 
 

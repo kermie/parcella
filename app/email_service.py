@@ -112,17 +112,3 @@ async def send_email(
     except Exception as e:
         logger.error(f"Email error sending to {recipient}: {e}")
         return False
-
-
-async def send_invitation(email: str, invitation_link: str, invited_by: str, db: Optional[AsyncSession] = None) -> bool:
-    subject = f"Einladung zur {settings.app_name}"
-    html = f"""
-    <html><body>
-    <h2>Einladung</h2>
-    <p>Sie wurden von <strong>{invited_by}</strong> zur <strong>{settings.app_name}</strong> eingeladen.</p>
-    <p>Klicken Sie auf den folgenden Link, um Ihr Konto einzurichten:</p>
-    <p><a href="{invitation_link}">Einladung annehmen</a></p>
-    <p>Dieser Link ist 7 Tage gültig.</p>
-    </body></html>
-    """
-    return await send_email(email, subject, html, db=db)

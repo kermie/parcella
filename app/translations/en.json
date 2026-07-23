@@ -1623,6 +1623,26 @@
       "button": "Accept invitation",
       "validity": "This link is valid for {days} days.",
       "fallback": "If the button doesn't work: {link}"
-    }
+    },
+    "purchase_request_confirm": {
+      "subject": "Please confirm: purchase request \"{title}\"",
+      "greeting": "Hello {name},",
+      "body": "{admin_name} has submitted the following purchase request on your behalf in {app_name}:",
+      "instruction": "Please confirm that these details are correct:",
+      "button": "Confirm details"
+    },
+    "ticket_assigned_single": {
+      "subject": "Ticket assigned: {subject}",
+      "greeting": "Hello {name},",
+      "body": "A ticket has been assigned to you in {app_name}:",
+      "instruction": "Please log in to {app_name} to process it."
+    },
+    "ticket_assigned_bulk": {
+      "subject": "{count} ticket(s) assigned in {app_name}",
+      "greeting": "Hello {name},",
+      "body": "{count} ticket(s) have been assigned to you in {app_name}:",
+      "instruction": "Please log in to {app_name} to process them."
+    },
+    "announcement_test_banner": "This is a test send and has not gone out to any members."
   }
 }

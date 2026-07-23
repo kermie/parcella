@@ -145,15 +145,15 @@ async def purchase_request_create(
     if purchase_request.confirmation_token:
         base_url = str(request.base_url).rstrip("/")
         confirmation_link = f"{base_url}/purchase-requests/confirm/{purchase_request.confirmation_token}"
-        subject = f"Bitte bestätigen: Einkaufswunsch „{purchase_request.title}“"
+        subject = t_for(request, "email.purchase_request_confirm.subject", title=purchase_request.title)
         html = f"""
         <html><body style="font-family: sans-serif;">
-        <p>Hallo {purchase_request.requester_name or ''},</p>
-        <p>{user.name} hat in Ihrem Namen folgenden Einkaufswunsch im {settings.app_name} erfasst:</p>
+        <p>{t_for(request, "email.purchase_request_confirm.greeting", name=purchase_request.requester_name or '')}</p>
+        <p>{t_for(request, "email.purchase_request_confirm.body", admin_name=user.name, app_name=settings.app_name)}</p>
         <p><strong>{purchase_request.title}</strong><br>{purchase_request.justification}</p>
-        <p>Bitte bestätigen Sie, dass diese Angaben korrekt sind:</p>
+        <p>{t_for(request, "email.purchase_request_confirm.instruction")}</p>
         <p><a href="{confirmation_link}" style="background: #2d6a4f; color: white; padding: 10px 20px;
-           text-decoration: none; border-radius: 4px;">Angaben bestätigen</a></p>
+           text-decoration: none; border-radius: 4px;">{t_for(request, "email.purchase_request_confirm.button")}</a></p>
         </body></html>
         """
         await send_email(purchase_request.requester_email, subject, html, db=db)
