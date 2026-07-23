@@ -65,12 +65,26 @@
             <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('admin.users.edit.danger_zone_header') }}</div>
             <div class="card-body">
                 <p class="text-muted small">{{ t('admin.users.edit.remove_access_text') }}</p>
-                <form method="post" action="/admin/users/{{ target.id }}/deactivate">
+                <form method="post" action="/admin/users/{{ target.id }}/deactivate" class="d-inline">
                     <button type="submit" class="btn btn-outline-danger">
                         <i class="bi bi-{{ 'toggle-off' if target.is_active else 'toggle-on' }} me-1"></i>
                         {{ t('admin.dashboard.button_deactivate') if target.is_active else t('admin.dashboard.button_activate') }}
                     </button>
                 </form>
+
+                <hr>
+
+                {% if can_delete %}
+                <p class="text-muted small">{{ t('admin.users.edit.delete_text') }}</p>
+                <form method="post" action="/admin/users/{{ target.id }}/delete"
+                      onsubmit="return confirm('{{ t('admin.users.edit.delete_confirm') }}')">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>{{ t('admin.users.edit.button_delete') }}
+                    </button>
+                </form>
+                {% else %}
+                <p class="text-muted small mb-0">{{ t('admin.users.edit.delete_blocked_text') }}</p>
+                {% endif %}
             </div>
         </div>
     </div>

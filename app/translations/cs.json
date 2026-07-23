@@ -55,6 +55,8 @@
     "cannot_remove_last_admin": "Poslednímu zbývajícímu účtu Správce/Výboru nelze odebrat administrátorský přístup",
     "name_required": "Jméno je povinné",
     "user_updated": "Uživatel aktualizován",
+    "user_deleted": "Uživatel smazán",
+    "user_has_history_cannot_delete": "Tento uživatel má historii aktivit a nelze jej trvale smazat -- místo toho jej deaktivujte",
     "purchase_request_not_found": "Žádost o nákup nebyla nalezena",
     "requester_cannot_self_approve": "Žadatel nemůže schválit vlastní žádost o nákup (princip schvalování dvěma osobami).",
     "page_title": "Chyba {code}",
@@ -212,7 +214,11 @@
         "heading": "Upravit uživatele",
         "button_save": "Uložit změny",
         "danger_zone_header": "Nebezpečná zóna",
-        "remove_access_text": "Deaktivace okamžitě odebere tomuto uživateli přístup. Jeho jméno zůstane u všeho, co vytvořil nebo co mu bylo přiřazeno -- nic se nemaže."
+        "remove_access_text": "Deaktivace okamžitě odebere tomuto uživateli přístup. Jeho jméno zůstane u všeho, co vytvořil nebo co mu bylo přiřazeno -- nic se nemaže.",
+        "delete_text": "Trvalé smazání uživatele účet zcela odstraní. Možné pouze pokud k němu nikde v systému neexistuje žádná historie (žádné vytvořené záznamy, schválení, odečty atd.) -- jinak jej místo toho deaktivujte.",
+        "delete_confirm": "Trvale smazat tohoto uživatele? Tuto akci nelze vrátit zpět.",
+        "button_delete": "Trvale smazat",
+        "delete_blocked_text": "Tento uživatel má někde v systému historii aktivit (vytvořené záznamy, schválení, odečty měřidel atd.) a nelze jej trvale smazat. Místo toho jej deaktivujte."
       }
     },
     "settings": {

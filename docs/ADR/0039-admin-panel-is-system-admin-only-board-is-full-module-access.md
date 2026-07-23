@@ -56,6 +56,4 @@ groups-page intro text was corrected to describe this accurately in
 all seven languages.
 
 **Not addressed here:** hard-deleting a `User` row (vs. the existing
-deactivate toggle) -- a separate, still-open decision given how many
-foreign keys (20, across purchase-request approvals, council
-attendance, meter readings, etc.) point at `users.id`.
+deactivate toggle) -- see ADR 0040.

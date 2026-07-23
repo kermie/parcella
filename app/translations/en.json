@@ -55,6 +55,8 @@
     "cannot_remove_last_admin": "Cannot remove admin access from the last remaining Administrator/Board account",
     "name_required": "A name is required",
     "user_updated": "User updated",
+    "user_deleted": "User deleted",
+    "user_has_history_cannot_delete": "This user has activity history and can't be permanently deleted -- deactivate them instead",
     "purchase_request_not_found": "Purchase request not found",
     "requester_cannot_self_approve": "The requester may not approve their own purchase request (two-person approval principle).",
     "page_title": "Error {code}",
@@ -212,7 +214,11 @@
         "heading": "Edit user",
         "button_save": "Save changes",
         "danger_zone_header": "Danger zone",
-        "remove_access_text": "Deactivating removes this user's access immediately. Their name stays attached to anything they created or were assigned -- nothing is deleted."
+        "remove_access_text": "Deactivating removes this user's access immediately. Their name stays attached to anything they created or were assigned -- nothing is deleted.",
+        "delete_text": "Permanently deleting a user removes the account entirely. Only possible if they have no history anywhere in the system (no created records, approvals, readings, etc.) -- otherwise, deactivate instead.",
+        "delete_confirm": "Permanently delete this user? This cannot be undone.",
+        "button_delete": "Delete permanently",
+        "delete_blocked_text": "This user has activity history somewhere in the system (created records, approvals, meter readings, etc.) and can't be permanently deleted. Deactivate them instead."
       }
     },
     "settings": {

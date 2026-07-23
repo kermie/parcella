@@ -11,7 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database import get_db
-from app.models import User, Invitation, InvitationStatus, UserRole, ClubSetting
+from app.models import (
+    User, Invitation, InvitationStatus, UserRole, ClubSetting,
+    GroupMembership, ParcelCloudFolder, WorkSession, WorkTask, ChangeHistory,
+    MeterReading, Ticket, TicketMessage, PurchaseRequest, PurchaseRequestApproval,
+    CalendarEvent, CouncilPresence, CouncilAbsence, Announcement, InventoryItem,
+    ItemLoan, Task,
+)
 from app.auth import require_system_admin, create_invitation_token, hash_password
 from app.email_service import send_email
 from app.crypto_utils import encrypt
@@ -51,6 +57,45 @@ async def _is_last_admin(db: AsyncSession, user_id: str) -> bool:
         .limit(1)
     )
     return result.scalar_one_or_none() is None
+
+
+# Every FK-to-users.id in the schema (see ADR 0040/audit) -- a user can
+# only be permanently deleted if none of these reference them; anyone
+# with a real footprint has to be deactivated instead (ADR 0005).
+_USER_REFERENCE_CHECKS = [
+    (Invitation, Invitation.invited_by_id),
+    (GroupMembership, GroupMembership.user_id),
+    (ParcelCloudFolder, ParcelCloudFolder.set_by_user_id),
+    (WorkSession, WorkSession.created_by_id),
+    (WorkTask, WorkTask.created_by_id),
+    (ChangeHistory, ChangeHistory.changed_by_id),
+    (MeterReading, MeterReading.recorded_by_id),
+    (Ticket, Ticket.assigned_to_id),
+    (TicketMessage, TicketMessage.authored_by_id),
+    (PurchaseRequest, PurchaseRequest.requested_by_id),
+    (PurchaseRequest, PurchaseRequest.created_by_id),
+    (PurchaseRequest, PurchaseRequest.rejected_by_id),
+    (PurchaseRequestApproval, PurchaseRequestApproval.user_id),
+    (CalendarEvent, CalendarEvent.created_by_id),
+    (CouncilPresence, CouncilPresence.user_id),
+    (CouncilAbsence, CouncilAbsence.user_id),
+    (Announcement, Announcement.created_by_id),
+    (InventoryItem, InventoryItem.created_by_id),
+    (ItemLoan, ItemLoan.created_by_id),
+    (Task, Task.assigned_to_id),
+    (Task, Task.created_by_id),
+]
+
+
+async def _user_has_history(db: AsyncSession, user_id: str) -> bool:
+    """True if any row anywhere in the schema still references this
+    user -- see _USER_REFERENCE_CHECKS. A hard delete is only offered
+    when this is False."""
+    for model, column in _USER_REFERENCE_CHECKS:
+        result = await db.execute(select(model.id).where(column == user_id).limit(1))
+        if result.scalar_one_or_none() is not None:
+            return True
+    return False
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -256,9 +301,18 @@ async def user_edit_page(
     if not target:
         raise HTTPException(status_code=404, detail=t_for(request, "errors.user_not_found"))
 
+    can_delete = False
+    if target.id != admin.id:
+        is_last_admin_lock = (
+            target.role == UserRole.ADMIN
+            and target.is_active
+            and await _is_last_admin(db, target.id)
+        )
+        can_delete = not is_last_admin_lock and not await _user_has_history(db, target.id)
+
     return templates.TemplateResponse(
         "admin/user_edit.html",
-        {"request": request, "user": admin, "target": target, "UserRole": UserRole},
+        {"request": request, "user": admin, "target": target, "UserRole": UserRole, "can_delete": can_delete},
     )
 
 
@@ -316,6 +370,50 @@ async def user_edit(
 
     return RedirectResponse(
         f"/admin/?erfolg={urllib.parse.quote(t_for(request, 'errors.user_updated'))}",
+        status_code=302,
+    )
+
+
+@router.post("/users/{user_id}/delete")
+async def user_delete(
+    user_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await require_system_admin(request, db)
+
+    if user_id == admin.id:
+        return RedirectResponse(
+            f"/admin/?fehler={urllib.parse.quote(t_for(request, 'errors.own_account_cannot_deactivate'))}",
+            status_code=302,
+        )
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        return RedirectResponse("/admin/", status_code=302)
+
+    if (
+        target.role == UserRole.ADMIN
+        and target.is_active
+        and await _is_last_admin(db, target.id)
+    ):
+        return RedirectResponse(
+            f"/admin/?fehler={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
+            status_code=302,
+        )
+
+    if await _user_has_history(db, target.id):
+        return RedirectResponse(
+            f"/admin/users/{user_id}/edit?fehler={urllib.parse.quote(t_for(request, 'errors.user_has_history_cannot_delete'))}",
+            status_code=302,
+        )
+
+    await db.delete(target)
+    await db.commit()
+
+    return RedirectResponse(
+        f"/admin/?erfolg={urllib.parse.quote(t_for(request, 'errors.user_deleted'))}",
         status_code=302,
     )
 

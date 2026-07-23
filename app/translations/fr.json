@@ -55,6 +55,8 @@
     "cannot_remove_last_admin": "Impossible de retirer l'accès administrateur au dernier compte Administrateur/Conseil restant",
     "name_required": "Un nom est requis",
     "user_updated": "Utilisateur mis à jour",
+    "user_deleted": "Utilisateur supprimé",
+    "user_has_history_cannot_delete": "Cet utilisateur a un historique d'activité et ne peut pas être supprimé définitivement -- désactivez-le plutôt",
     "purchase_request_not_found": "Demande d'achat non trouvée",
     "requester_cannot_self_approve": "Le demandeur ne peut pas approuver sa propre demande d'achat (principe d'approbation à deux personnes).",
     "page_title": "Erreur {code}",
@@ -212,7 +214,11 @@
         "heading": "Modifier l'utilisateur",
         "button_save": "Enregistrer les modifications",
         "danger_zone_header": "Zone de danger",
-        "remove_access_text": "La désactivation retire immédiatement l'accès de cet utilisateur. Son nom reste associé à tout ce qu'il a créé ou ce qui lui a été assigné -- rien n'est supprimé."
+        "remove_access_text": "La désactivation retire immédiatement l'accès de cet utilisateur. Son nom reste associé à tout ce qu'il a créé ou ce qui lui a été assigné -- rien n'est supprimé.",
+        "delete_text": "La suppression définitive d'un utilisateur retire complètement le compte. Possible uniquement s'il n'a aucun historique nulle part dans le système (aucun enregistrement créé, approbation, relevé, etc.) -- sinon, désactivez-le plutôt.",
+        "delete_confirm": "Supprimer définitivement cet utilisateur ? Cette action est irréversible.",
+        "button_delete": "Supprimer définitivement",
+        "delete_blocked_text": "Cet utilisateur a un historique d'activité quelque part dans le système (enregistrements créés, approbations, relevés de compteurs, etc.) et ne peut pas être supprimé définitivement. Désactivez-le plutôt."
       }
     },
     "settings": {

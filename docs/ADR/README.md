@@ -43,3 +43,4 @@ in chronological order.
 37. [Sample data generator: tracked removal, not guessed](./0037-sample-data-generator-tracked-not-guessed-removal.md)
 38. [Spam filter external API: tied to apilayer.com for now](./0038-spam-filter-external-api-tied-to-apilayer-for-now.md)
 39. [Admin panel is ADMIN-only; BOARD is full module access, not panel access](./0039-admin-panel-is-system-admin-only-board-is-full-module-access.md)
+40. [Hard-deleting a user: only when they have zero footprint anywhere](./0040-user-hard-delete-only-when-zero-footprint.md)

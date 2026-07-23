@@ -55,6 +55,8 @@
     "cannot_remove_last_admin": "Nie można odebrać uprawnień administratora ostatniemu pozostałemu kontu Administratora/Zarządu",
     "name_required": "Imię i nazwisko jest wymagane",
     "user_updated": "Użytkownik zaktualizowany",
+    "user_deleted": "Użytkownik usunięty",
+    "user_has_history_cannot_delete": "Ten użytkownik ma historię aktywności i nie można go trwale usunąć -- zamiast tego dezaktywuj konto",
     "purchase_request_not_found": "Nie znaleziono wniosku zakupowego",
     "requester_cannot_self_approve": "Wnioskodawca nie może sam zatwierdzić własnego wniosku zakupowego (zasada dwóch osób).",
     "page_title": "Błąd {code}",
@@ -212,7 +214,11 @@
         "heading": "Edytuj użytkownika",
         "button_save": "Zapisz zmiany",
         "danger_zone_header": "Strefa zagrożenia",
-        "remove_access_text": "Dezaktywacja natychmiast odbiera temu użytkownikowi dostęp. Jego nazwa pozostaje przy wszystkim, co utworzył lub co mu przypisano -- nic nie jest usuwane."
+        "remove_access_text": "Dezaktywacja natychmiast odbiera temu użytkownikowi dostęp. Jego nazwa pozostaje przy wszystkim, co utworzył lub co mu przypisano -- nic nie jest usuwane.",
+        "delete_text": "Trwałe usunięcie użytkownika całkowicie usuwa konto. Możliwe tylko wtedy, gdy nie ma on żadnej historii w systemie (brak utworzonych rekordów, zatwierdzeń, odczytów itp.) -- w przeciwnym razie zdezaktywuj konto.",
+        "delete_confirm": "Trwale usunąć tego użytkownika? Tej operacji nie można cofnąć.",
+        "button_delete": "Usuń trwale",
+        "delete_blocked_text": "Ten użytkownik ma historię aktywności gdzieś w systemie (utworzone rekordy, zatwierdzenia, odczyty liczników itp.) i nie można go trwale usunąć. Zamiast tego dezaktywuj konto."
       }
     },
     "settings": {

@@ -55,6 +55,8 @@
     "cannot_remove_last_admin": "Der letzten verbleibenden Administrator-/Vorstandsperson kann der Admin-Zugriff nicht entzogen werden",
     "name_required": "Ein Name ist erforderlich",
     "user_updated": "Benutzer aktualisiert",
+    "user_deleted": "Benutzer gelöscht",
+    "user_has_history_cannot_delete": "Dieser Benutzer hat eine Aktivitätshistorie und kann nicht endgültig gelöscht werden -- deaktivieren Sie ihn stattdessen",
     "purchase_request_not_found": "Einkaufswunsch nicht gefunden",
     "requester_cannot_self_approve": "Der Antragsteller darf seinen eigenen Einkaufswunsch nicht mitfreigeben (Vier-Augen-Prinzip).",
     "page_title": "Fehler {code}",
@@ -212,7 +214,11 @@
         "heading": "Benutzer bearbeiten",
         "button_save": "Änderungen speichern",
         "danger_zone_header": "Gefahrenzone",
-        "remove_access_text": "Das Deaktivieren entzieht diesem Benutzer sofort den Zugriff. Sein Name bleibt an allem erhalten, was er erstellt hat oder ihm zugewiesen wurde -- nichts wird gelöscht."
+        "remove_access_text": "Das Deaktivieren entzieht diesem Benutzer sofort den Zugriff. Sein Name bleibt an allem erhalten, was er erstellt hat oder ihm zugewiesen wurde -- nichts wird gelöscht.",
+        "delete_text": "Das endgültige Löschen entfernt das Benutzerkonto vollständig. Nur möglich, wenn nirgendwo im System eine Historie zu dieser Person besteht (keine erstellten Datensätze, Genehmigungen, Ablesungen usw.) -- andernfalls stattdessen deaktivieren.",
+        "delete_confirm": "Diesen Benutzer endgültig löschen? Dies kann nicht rückgängig gemacht werden.",
+        "button_delete": "Endgültig löschen",
+        "delete_blocked_text": "Dieser Benutzer hat irgendwo im System eine Aktivitätshistorie (erstellte Datensätze, Genehmigungen, Zählerstände usw.) und kann nicht endgültig gelöscht werden. Deaktivieren Sie ihn stattdessen."
       }
     },
     "settings": {

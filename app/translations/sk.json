@@ -55,6 +55,8 @@
     "cannot_remove_last_admin": "Poslednému zostávajúcemu účtu Administrátora/Výboru nie je možné odobrať administrátorský prístup",
     "name_required": "Meno je povinné",
     "user_updated": "Používateľ aktualizovaný",
+    "user_deleted": "Používateľ vymazaný",
+    "user_has_history_cannot_delete": "Tento používateľ má históriu aktivít a nemožno ho trvale vymazať -- namiesto toho ho deaktivujte",
     "purchase_request_not_found": "Žiadosť o nákup nebola nájdená",
     "requester_cannot_self_approve": "Žiadateľ nemôže schváliť vlastnú žiadosť o nákup (princíp schvaľovania dvoma osobami).",
     "page_title": "Chyba {code}",
@@ -212,7 +214,11 @@
         "heading": "Upraviť používateľa",
         "button_save": "Uložiť zmeny",
         "danger_zone_header": "Nebezpečná zóna",
-        "remove_access_text": "Deaktivácia okamžite odoberie tomuto používateľovi prístup. Jeho meno zostane pri všetkom, čo vytvoril alebo čo mu bolo priradené -- nič sa nemaže."
+        "remove_access_text": "Deaktivácia okamžite odoberie tomuto používateľovi prístup. Jeho meno zostane pri všetkom, čo vytvoril alebo čo mu bolo priradené -- nič sa nemaže.",
+        "delete_text": "Trvalé vymazanie používateľa účet úplne odstráni. Možné iba vtedy, ak k nemu nikde v systéme neexistuje žiadna história (žiadne vytvorené záznamy, schválenia, odpočty atď.) -- inak ho radšej deaktivujte.",
+        "delete_confirm": "Trvale vymazať tohto používateľa? Túto akciu nemožno vrátiť späť.",
+        "button_delete": "Trvale vymazať",
+        "delete_blocked_text": "Tento používateľ má niekde v systéme históriu aktivít (vytvorené záznamy, schválenia, odpočty meračov atď.) a nemožno ho trvale vymazať. Namiesto toho ho deaktivujte."
       }
     },
     "settings": {

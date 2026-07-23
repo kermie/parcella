@@ -55,6 +55,8 @@
     "cannot_remove_last_admin": "Kan de laatst overgebleven Beheerder-/Bestuursaccount de beheerderstoegang niet ontnemen",
     "name_required": "Een naam is verplicht",
     "user_updated": "Gebruiker bijgewerkt",
+    "user_deleted": "Gebruiker verwijderd",
+    "user_has_history_cannot_delete": "Deze gebruiker heeft activiteitengeschiedenis en kan niet permanent worden verwijderd -- deactiveer in plaats daarvan",
     "purchase_request_not_found": "Aankoopaanvraag niet gevonden",
     "requester_cannot_self_approve": "De aanvrager mag zijn eigen aankoopaanvraag niet goedkeuren (twee-personen goedkeuringsprincipe).",
     "page_title": "Fout {code}",
@@ -212,7 +214,11 @@
         "heading": "Gebruiker bewerken",
         "button_save": "Wijzigingen opslaan",
         "danger_zone_header": "Gevarenzone",
-        "remove_access_text": "Deactiveren ontneemt deze gebruiker onmiddellijk toegang. Diens naam blijft verbonden aan alles wat hij/zij heeft aangemaakt of toegewezen kreeg -- er wordt niets verwijderd."
+        "remove_access_text": "Deactiveren ontneemt deze gebruiker onmiddellijk toegang. Diens naam blijft verbonden aan alles wat hij/zij heeft aangemaakt of toegewezen kreeg -- er wordt niets verwijderd.",
+        "delete_text": "Een gebruiker permanent verwijderen verwijdert het account volledig. Alleen mogelijk als er nergens in het systeem geschiedenis over deze persoon bestaat (geen aangemaakte records, goedkeuringen, standen, enz.) -- deactiveer anders in plaats daarvan.",
+        "delete_confirm": "Deze gebruiker permanent verwijderen? Dit kan niet ongedaan worden gemaakt.",
+        "button_delete": "Permanent verwijderen",
+        "delete_blocked_text": "Deze gebruiker heeft ergens in het systeem activiteitengeschiedenis (aangemaakte records, goedkeuringen, meterstanden, enz.) en kan niet permanent worden verwijderd. Deactiveer in plaats daarvan."
       }
     },
     "settings": {
