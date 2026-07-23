@@ -407,7 +407,7 @@
       "label_add_member": "Ajouter un utilisateur...",
       "button_remove_member": "Retirer",
       "button_add": "Ajouter",
-      "no_assignable_users": "Aucun compte Trésorier ou Lecture seule à assigner pour le moment -- les comptes Administrateur et Conseil d'administration n'ont pas besoin de groupe.",
+      "no_assignable_users": "Aucun utilisateur disponible à assigner pour le moment -- les comptes ayant déjà un rôle Administrateur ou Conseil d'administration n'ont pas besoin de groupe.",
       "no_assignable_users_link": "En inviter un",
       "all_assignable_users_already_members": "Tous les comptes Trésorier et Lecture seule sont déjà assignés à ce groupe.",
       "no_groups": "Aucun groupe pour le moment. Créez-en un pour commencer.",

@@ -407,7 +407,7 @@
       "label_add_member": "Přidat uživatele...",
       "button_remove_member": "Odebrat",
       "button_add": "Přidat",
-      "no_assignable_users": "Zatím nejsou žádné účty Pokladníka nebo Pouze pro čtení k přiřazení -- účty Správce a Výboru skupinu nepotřebují.",
+      "no_assignable_users": "Zatím nejsou k dispozici žádní uživatelé k přiřazení -- účty se stávající rolí Správce nebo Výboru skupinu nepotřebují.",
       "no_assignable_users_link": "Pozvat nyní",
       "all_assignable_users_already_members": "Všechny účty Pokladníka a Pouze pro čtení jsou do této skupiny již přiřazeny.",
       "no_groups": "Zatím žádné skupiny. Vytvořte první a začněte.",

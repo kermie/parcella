@@ -407,7 +407,7 @@
       "label_add_member": "Pridať používateľa...",
       "button_remove_member": "Odstrániť",
       "button_add": "Pridať",
-      "no_assignable_users": "Zatiaľ nie sú žiadne účty Pokladníka alebo Iba na čítanie na priradenie -- účty Administrátora a Výboru skupinu nepotrebujú.",
+      "no_assignable_users": "Zatiaľ nie sú k dispozícii žiadni používatelia na priradenie -- účty s existujúcou rolou Administrátora alebo Výboru skupinu nepotrebujú.",
       "no_assignable_users_link": "Pozvať teraz",
       "all_assignable_users_already_members": "Všetky účty Pokladníka a Iba na čítanie sú do tejto skupiny už priradené.",
       "no_groups": "Zatiaľ žiadne skupiny. Vytvorte prvú a začnite.",

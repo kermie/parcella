@@ -407,7 +407,7 @@
       "label_add_member": "Dodaj użytkownika...",
       "button_remove_member": "Usuń",
       "button_add": "Dodaj",
-      "no_assignable_users": "Nie ma jeszcze kont Skarbnika ani Tylko do odczytu do przypisania -- konta Administratora i Zarządu nie potrzebują grupy.",
+      "no_assignable_users": "Nie ma jeszcze użytkowników do przypisania -- konta z dotychczasową rolą Administratora lub Zarządu nie potrzebują grupy.",
       "no_assignable_users_link": "Zaproś teraz",
       "all_assignable_users_already_members": "Wszystkie konta Skarbnika i Tylko do odczytu są już przypisane do tej grupy.",
       "no_groups": "Brak grup. Utwórz pierwszą, aby zacząć.",
