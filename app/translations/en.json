@@ -388,6 +388,7 @@
       "button_add": "Add",
       "no_assignable_users": "No Treasurer or Read-only accounts to assign yet -- Admin and Board accounts don't need a group.",
       "no_assignable_users_link": "Invite one",
+      "all_assignable_users_already_members": "All Treasurer and Read-only accounts are already assigned to this group.",
       "no_groups": "No groups yet. Create one to get started.",
       "delete_confirm": "Delete this group? Users assigned to it will lose the access it granted.",
       "modules": {

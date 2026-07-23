@@ -388,6 +388,7 @@
       "button_add": "Dodaj",
       "no_assignable_users": "Nie ma jeszcze kont Skarbnika ani Tylko do odczytu do przypisania -- konta Administratora i Zarządu nie potrzebują grupy.",
       "no_assignable_users_link": "Zaproś teraz",
+      "all_assignable_users_already_members": "Wszystkie konta Skarbnika i Tylko do odczytu są już przypisane do tej grupy.",
       "no_groups": "Brak grup. Utwórz pierwszą, aby zacząć.",
       "delete_confirm": "Usunąć tę grupę? Przypisani użytkownicy stracą dostęp, który ona przyznawała.",
       "modules": {

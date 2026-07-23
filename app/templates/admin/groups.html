@@ -141,6 +141,8 @@
                 <i class="bi bi-person-plus me-1"></i>{{ t('admin.groups.button_add') }}
             </button>
         </form>
+        {% elif assignable_users %}
+        <p class="text-muted small mb-0">{{ t('admin.groups.all_assignable_users_already_members') }}</p>
         {% else %}
         <p class="text-muted small mb-0">
             {{ t('admin.groups.no_assignable_users') }}

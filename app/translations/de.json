@@ -388,6 +388,7 @@
       "button_add": "Hinzufügen",
       "no_assignable_users": "Noch keine Kassierer- oder Nur-Lesen-Konten zum Zuweisen -- Administrator- und Vorstandskonten benötigen keine Gruppe.",
       "no_assignable_users_link": "Jetzt einladen",
+      "all_assignable_users_already_members": "Alle Kassierer- und Nur-Lesen-Konten sind dieser Gruppe bereits zugewiesen.",
       "no_groups": "Noch keine Gruppen vorhanden. Legen Sie eine an, um zu beginnen.",
       "delete_confirm": "Diese Gruppe löschen? Zugewiesene Benutzer verlieren den dadurch gewährten Zugriff.",
       "modules": {
