@@ -96,13 +96,13 @@ docker compose up -d</pre>
             </div>
         </div>
 
-        <!-- Offene Einladungen -->
+        <!-- Pending invitations -->
         {% if open_invitations %}
         <div class="card mt-3">
             <div class="card-header"><i class="bi bi-clock-history me-2"></i>{{ t('admin.dashboard.pending_invitations_header') }}</div>
             <ul class="list-group list-group-flush">
                 {% for e in open_invitations %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
+                <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
                     <div>
                         <div>{{ e.email }}</div>
                         <small class="text-muted">
@@ -114,7 +114,20 @@ docker compose up -d</pre>
                             · {{ t('admin.dashboard.valid_until', date=e.expires_at.strftime('%d.%m.%Y')) }}
                         </small>
                     </div>
-                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('admin.dashboard.status_pending') }}</span>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('admin.dashboard.status_pending') }}</span>
+                        <form method="post" action="/admin/invitations/{{ e.id }}/resend" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="{{ t('admin.dashboard.button_resend_invitation') }}">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        </form>
+                        <form method="post" action="/admin/invitations/{{ e.id }}/delete" class="d-inline"
+                              onsubmit="return confirm('{{ t('admin.dashboard.delete_invitation_confirm') }}')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ t('admin.dashboard.button_delete_invitation') }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
                 </li>
                 {% endfor %}
             </ul>

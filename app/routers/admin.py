@@ -161,6 +161,33 @@ async def sample_data_remove(request: Request, db: AsyncSession = Depends(get_db
     return RedirectResponse("/admin/sample-data?removed=1", status_code=302)
 
 
+async def _send_invitation_email(request: Request, admin: User, invitation: Invitation, db: AsyncSession) -> bool:
+    """Sends (or re-sends) the invitation email for an existing Invitation
+    row. Returns whether an email was actually sent (see the dev-mode
+    fallback in user_invite/invitation_resend, which show the link
+    directly instead when SMTP isn't configured)."""
+    base_url = str(request.base_url).rstrip("/")
+    invitation_link = f"{base_url}/auth/invitation/{invitation.token}"
+
+    subject = f"Einladung zur {settings.app_name}"
+    html = f"""
+    <html><body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2>Einladung zur {settings.app_name}</h2>
+    <p>Sie wurden von <strong>{admin.name}</strong> eingeladen, der Verwaltungssoftware beizutreten.</p>
+    <p>Klicken Sie auf den folgenden Link, um Ihr Konto einzurichten:</p>
+    <p style="margin: 20px 0;">
+        <a href="{invitation_link}" style="background: #2d6a4f; color: white; padding: 10px 20px;
+           text-decoration: none; border-radius: 4px;">Einladung annehmen</a>
+    </p>
+    <p style="color: #666; font-size: 0.9em;">
+        Dieser Link ist {INVITATION_DAYS} Tage gültig.<br>
+        Falls der Button nicht funktioniert: {invitation_link}
+    </p>
+    </body></html>
+    """
+    return await send_email(invitation.email, subject, html, db=db)
+
+
 @router.post("/invite")
 async def user_invite(
     request: Request,
@@ -219,37 +246,82 @@ async def user_invite(
         db.add(InvitationGroupTarget(invitation_id=invitation.id, group_id=group_id))
     await db.commit()
 
-    # Assemble the link
-    base_url = str(request.base_url).rstrip("/")
-    einladungslink = f"{base_url}/auth/invitation/{token}"
-
-    betreff = f"Einladung zur {settings.app_name}"
-    html = f"""
-    <html><body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h2>Einladung zur {settings.app_name}</h2>
-    <p>Sie wurden von <strong>{admin.name}</strong> eingeladen, der Verwaltungssoftware beizutreten.</p>
-    <p>Klicken Sie auf den folgenden Link, um Ihr Konto einzurichten:</p>
-    <p style="margin: 20px 0;">
-        <a href="{einladungslink}" style="background: #2d6a4f; color: white; padding: 10px 20px;
-           text-decoration: none; border-radius: 4px;">Einladung annehmen</a>
-    </p>
-    <p style="color: #666; font-size: 0.9em;">
-        Dieser Link ist {INVITATION_DAYS} Tage gültig.<br>
-        Falls der Button nicht funktioniert: {einladungslink}
-    </p>
-    </body></html>
-    """
-
-    email_gesendet = await send_email(email, betreff, html, db=db)
+    email_sent = await _send_invitation_email(request, admin, invitation, db)
 
     # In development mode: return the link in the URL
-    if settings.is_development and not email_gesendet:
+    if settings.is_development and not email_sent:
+        base_url = str(request.base_url).rstrip("/")
+        invitation_link = f"{base_url}/auth/invitation/{token}"
         return RedirectResponse(
-            f"/admin/?info=Einladungslink+%28Dev%29%3A+{einladungslink}", status_code=302
+            f"/admin/?info=Invitation+link+%28Dev%29%3A+{invitation_link}", status_code=302
         )
 
     return RedirectResponse(
         f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.invitation_sent'))}",
+        status_code=302,
+    )
+
+
+@router.post("/invitations/{invitation_id}/resend")
+async def invitation_resend(
+    invitation_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Re-sends a pending invitation's email and extends its expiry --
+    reuses the existing token (never cryptographically re-checked, see
+    app/auth.py's verify_invitation_token; only Invitation.expires_at
+    is actually enforced in routers/auth.py), so the old link keeps
+    working rather than silently breaking once a new one is sent."""
+    admin = await require_system_admin(request, db)
+
+    result = await db.execute(
+        select(Invitation).where(
+            Invitation.id == invitation_id,
+            Invitation.status == InvitationStatus.PENDING,
+        )
+    )
+    invitation = result.scalar_one_or_none()
+    if not invitation:
+        return RedirectResponse(
+            f"/admin/?error={urllib.parse.quote(t_for(request, 'errors.invitation_not_found'))}",
+            status_code=302,
+        )
+
+    invitation.expires_at = datetime.now(timezone.utc) + timedelta(days=INVITATION_DAYS)
+    await db.commit()
+
+    email_sent = await _send_invitation_email(request, admin, invitation, db)
+
+    if settings.is_development and not email_sent:
+        base_url = str(request.base_url).rstrip("/")
+        invitation_link = f"{base_url}/auth/invitation/{invitation.token}"
+        return RedirectResponse(
+            f"/admin/?info=Invitation+link+%28Dev%29%3A+{invitation_link}", status_code=302
+        )
+
+    return RedirectResponse(
+        f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.invitation_resent'))}",
+        status_code=302,
+    )
+
+
+@router.post("/invitations/{invitation_id}/delete")
+async def invitation_delete(
+    invitation_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_system_admin(request, db)
+
+    result = await db.execute(select(Invitation).where(Invitation.id == invitation_id))
+    invitation = result.scalar_one_or_none()
+    if invitation:
+        await db.delete(invitation)
+        await db.commit()
+
+    return RedirectResponse(
+        f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.invitation_deleted'))}",
         status_code=302,
     )
 
