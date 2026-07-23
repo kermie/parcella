@@ -396,7 +396,6 @@
       "label_grants_system_admin": "Toegang tot het administratiepaneel",
       "badge_full_access": "Volledige toegang",
       "badge_system_admin": "Administratie",
-      "module_grid_redundant_text": "Volledige toegang dekt alle modules hieronder al -- de instellingen daaronder worden genegeerd zolang dit is aangevinkt.",
       "button_create": "Groep aanmaken",
       "col_module": "Module",
       "col_read": "Lezen",

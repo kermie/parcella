@@ -31,12 +31,12 @@
                         <label class="form-label fw-semibold">{{ t('admin.groups.label_description') }}</label>
                         <input type="text" name="description" class="form-control">
                     </div>
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" name="grants_full_access" id="create-grants-full-access">
+                    <div class="form-check mb-2 js-full-access-row">
+                        <input class="form-check-input js-grants-full-access" type="checkbox" name="grants_full_access" id="create-grants-full-access">
                         <label class="form-check-label" for="create-grants-full-access">{{ t('admin.groups.label_grants_full_access') }}</label>
                     </div>
                     <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" name="grants_system_admin" id="create-grants-system-admin">
+                        <input class="form-check-input js-grants-system-admin" type="checkbox" name="grants_system_admin" id="create-grants-system-admin">
                         <label class="form-check-label" for="create-grants-system-admin">{{ t('admin.groups.label_grants_system_admin') }}</label>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">
@@ -82,27 +82,23 @@
             </div>
 
             <div class="row g-3 mb-3">
-                <div class="col-md-6">
+                <div class="col-md-6 js-full-access-row">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="grants_full_access" id="grants-full-access-{{ group.id }}"
+                        <input class="form-check-input js-grants-full-access" type="checkbox" name="grants_full_access" id="grants-full-access-{{ group.id }}"
                                {% if group.grants_full_access %}checked{% endif %}>
                         <label class="form-check-label" for="grants-full-access-{{ group.id }}">{{ t('admin.groups.label_grants_full_access') }}</label>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="grants_system_admin" id="grants-system-admin-{{ group.id }}"
+                        <input class="form-check-input js-grants-system-admin" type="checkbox" name="grants_system_admin" id="grants-system-admin-{{ group.id }}"
                                {% if group.grants_system_admin %}checked{% endif %}>
                         <label class="form-check-label" for="grants-system-admin-{{ group.id }}">{{ t('admin.groups.label_grants_system_admin') }}</label>
                     </div>
                 </div>
             </div>
 
-            {% if group.grants_full_access or group.grants_system_admin %}
-            <p class="text-muted small">{{ t('admin.groups.module_grid_redundant_text') }}</p>
-            {% endif %}
-
-            <div class="table-responsive mb-3">
+            <div class="table-responsive mb-3 js-module-grid">
                 <table class="table table-sm align-middle mb-0">
                     <thead>
                         <tr>
@@ -190,5 +186,37 @@
 {% else %}
 <p class="text-muted">{{ t('admin.groups.no_groups') }}</p>
 {% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // "Can access the administration panel" already implies full module
+    // access in app/permissions.py's is_full_access_user, regardless of
+    // this group's own grants_full_access value -- so once it's checked,
+    // showing "Full access to every module" (and the per-module grid,
+    // which grants_full_access alone already makes redundant) as a
+    // separate choice is just confusing, not meaningful.
+    document.querySelectorAll('form').forEach(function (form) {
+        var sysAdmin = form.querySelector('.js-grants-system-admin');
+        var fullAccess = form.querySelector('.js-grants-full-access');
+        if (!sysAdmin || !fullAccess) return;
+        var fullAccessRow = form.querySelector('.js-full-access-row');
+        var grid = form.querySelector('.js-module-grid');
+
+        function sync() {
+            if (sysAdmin.checked) {
+                fullAccess.checked = true;
+                if (fullAccessRow) fullAccessRow.style.display = 'none';
+            } else if (fullAccessRow) {
+                fullAccessRow.style.display = '';
+            }
+            if (grid) grid.style.display = fullAccess.checked ? 'none' : '';
+        }
+
+        sysAdmin.addEventListener('change', sync);
+        fullAccess.addEventListener('change', sync);
+        sync();
+    });
+});
+</script>
 
 {% endblock %}

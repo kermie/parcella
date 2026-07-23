@@ -396,7 +396,6 @@
       "label_grants_system_admin": "Accès au panneau d'administration",
       "badge_full_access": "Accès complet",
       "badge_system_admin": "Administration",
-      "module_grid_redundant_text": "L'accès complet couvre déjà tous les modules ci-dessous -- les réglages en dessous sont ignorés tant que cette case est cochée.",
       "button_create": "Créer un groupe",
       "col_module": "Module",
       "col_read": "Lecture",

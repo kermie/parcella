@@ -396,7 +396,6 @@
       "label_grants_system_admin": "Prístup k administračnému panelu",
       "badge_full_access": "Plný prístup",
       "badge_system_admin": "Administrácia",
-      "module_grid_redundant_text": "Plný prístup už pokrýva všetky moduly nižšie -- nastavenia pod týmto poľom sa ignorujú, kým je zaškrtnuté.",
       "button_create": "Vytvoriť skupinu",
       "col_module": "Modul",
       "col_read": "Čítanie",

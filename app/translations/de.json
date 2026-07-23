@@ -396,7 +396,6 @@
       "label_grants_system_admin": "Zugriff auf den Administrationsbereich",
       "badge_full_access": "Voller Zugriff",
       "badge_system_admin": "Administration",
-      "module_grid_redundant_text": "Voller Zugriff deckt bereits alle Module unten ab -- die Einstellungen darunter werden ignoriert, solange dies aktiviert ist.",
       "button_create": "Gruppe anlegen",
       "col_module": "Modul",
       "col_read": "Lesen",

@@ -396,7 +396,6 @@
       "label_grants_system_admin": "Can access the administration panel",
       "badge_full_access": "Full access",
       "badge_system_admin": "Administration",
-      "module_grid_redundant_text": "Full access already covers every module below -- the settings underneath are ignored while this is checked.",
       "button_create": "Create group",
       "col_module": "Module",
       "col_read": "Read",
