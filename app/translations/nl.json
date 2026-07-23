@@ -52,6 +52,9 @@
     "email_already_registered": "E-mailadres al geregistreerd",
     "invitation_sent": "Uitnodiging verzonden",
     "own_account_cannot_deactivate": "Kan uw eigen account niet deactiveren",
+    "cannot_remove_last_admin": "Kan de laatst overgebleven Beheerder-/Bestuursaccount de beheerderstoegang niet ontnemen",
+    "name_required": "Een naam is verplicht",
+    "user_updated": "Gebruiker bijgewerkt",
     "purchase_request_not_found": "Aankoopaanvraag niet gevonden",
     "requester_cannot_self_approve": "De aanvrager mag zijn eigen aankoopaanvraag niet goedkeuren (twee-personen goedkeuringsprincipe).",
     "page_title": "Fout {code}",
@@ -200,7 +203,17 @@
       "status_inactive": "inactief",
       "button_deactivate": "Deactiveren",
       "button_activate": "Activeren",
+      "button_edit": "Bewerken",
       "self_label": "Ik"
+    },
+    "users": {
+      "edit": {
+        "page_title": "Gebruiker bewerken",
+        "heading": "Gebruiker bewerken",
+        "button_save": "Wijzigingen opslaan",
+        "danger_zone_header": "Gevarenzone",
+        "remove_access_text": "Deactiveren ontneemt deze gebruiker onmiddellijk toegang. Diens naam blijft verbonden aan alles wat hij/zij heeft aangemaakt of toegewezen kreeg -- er wordt niets verwijderd."
+      }
     },
     "settings": {
       "page_title": "Instellingen",

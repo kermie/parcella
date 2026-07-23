@@ -52,6 +52,9 @@
     "email_already_registered": "E-mail déjà enregistré",
     "invitation_sent": "Invitation envoyée",
     "own_account_cannot_deactivate": "Impossible de désactiver votre propre compte",
+    "cannot_remove_last_admin": "Impossible de retirer l'accès administrateur au dernier compte Administrateur/Conseil restant",
+    "name_required": "Un nom est requis",
+    "user_updated": "Utilisateur mis à jour",
     "purchase_request_not_found": "Demande d'achat non trouvée",
     "requester_cannot_self_approve": "Le demandeur ne peut pas approuver sa propre demande d'achat (principe d'approbation à deux personnes).",
     "page_title": "Erreur {code}",
@@ -200,7 +203,17 @@
       "status_inactive": "inactif",
       "button_deactivate": "Désactiver",
       "button_activate": "Activer",
+      "button_edit": "Modifier",
       "self_label": "Moi"
+    },
+    "users": {
+      "edit": {
+        "page_title": "Modifier l'utilisateur",
+        "heading": "Modifier l'utilisateur",
+        "button_save": "Enregistrer les modifications",
+        "danger_zone_header": "Zone de danger",
+        "remove_access_text": "La désactivation retire immédiatement l'accès de cet utilisateur. Son nom reste associé à tout ce qu'il a créé ou ce qui lui a été assigné -- rien n'est supprimé."
+      }
     },
     "settings": {
       "page_title": "Paramètres",

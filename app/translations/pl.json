@@ -52,6 +52,9 @@
     "email_already_registered": "Adres e-mail już zarejestrowany",
     "invitation_sent": "Zaproszenie wysłane",
     "own_account_cannot_deactivate": "Nie można dezaktywować własnego konta",
+    "cannot_remove_last_admin": "Nie można odebrać uprawnień administratora ostatniemu pozostałemu kontu Administratora/Zarządu",
+    "name_required": "Imię i nazwisko jest wymagane",
+    "user_updated": "Użytkownik zaktualizowany",
     "purchase_request_not_found": "Nie znaleziono wniosku zakupowego",
     "requester_cannot_self_approve": "Wnioskodawca nie może sam zatwierdzić własnego wniosku zakupowego (zasada dwóch osób).",
     "page_title": "Błąd {code}",
@@ -200,7 +203,17 @@
       "status_inactive": "nieaktywny",
       "button_deactivate": "Dezaktywuj",
       "button_activate": "Aktywuj",
+      "button_edit": "Edytuj",
       "self_label": "Ja"
+    },
+    "users": {
+      "edit": {
+        "page_title": "Edytuj użytkownika",
+        "heading": "Edytuj użytkownika",
+        "button_save": "Zapisz zmiany",
+        "danger_zone_header": "Strefa zagrożenia",
+        "remove_access_text": "Dezaktywacja natychmiast odbiera temu użytkownikowi dostęp. Jego nazwa pozostaje przy wszystkim, co utworzył lub co mu przypisano -- nic nie jest usuwane."
+      }
     },
     "settings": {
       "page_title": "Ustawienia",

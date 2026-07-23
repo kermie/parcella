@@ -142,6 +142,10 @@ docker compose up -d</pre>
                                 {% endif %}
                             </td>
                             <td class="text-end">
+                                <a href="/admin/users/{{ b.id }}/edit" class="btn btn-sm btn-outline-secondary"
+                                   title="{{ t('admin.dashboard.button_edit') }}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
                                 {% if b.id != user.id %}
                                 <form method="post" action="/admin/users/{{ b.id }}/deactivate" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-secondary"

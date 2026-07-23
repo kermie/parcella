@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin.users.edit.page_title') }}{% endblock %}
+{% block page_title %}{{ t('admin.users.edit.heading') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/admin/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.cancel') }}
+</a>
+{% endblock %}
+
+{% block content %}
+
+{% if request.query_params.get('fehler') %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3" style="max-width: 640px;">
+    <i class="bi bi-exclamation-circle-fill"></i> {{ request.query_params.get('fehler') }}
+</div>
+{% endif %}
+
+<form method="post" action="/admin/users/{{ target.id }}/edit">
+<div class="row g-3" style="max-width: 640px;">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-person me-2"></i>{{ t('admin.users.edit.heading') }}</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ t('admin.groups.label_name') }} <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" value="{{ target.name }}" required autofocus>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ t('admin.dashboard.label_email') }} <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" value="{{ target.email }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ t('admin.dashboard.label_role') }}</label>
+                        <select name="role" class="form-select">
+                            <option value="readonly" {% if target.role == UserRole.READONLY %}selected{% endif %}>{{ t('admin.dashboard.role_readonly') }}</option>
+                            <option value="treasurer" {% if target.role == UserRole.TREASURER %}selected{% endif %}>{{ t('admin.dashboard.role_treasurer') }}</option>
+                            <option value="board" {% if target.role == UserRole.BOARD %}selected{% endif %}>{{ t('admin.dashboard.role_board') }}</option>
+                            <option value="admin" {% if target.role == UserRole.ADMIN %}selected{% endif %}>{{ t('admin.dashboard.role_admin') }}</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="d-flex gap-2 justify-content-end">
+            <a href="/admin/" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>{{ t('admin.users.edit.button_save') }}
+            </button>
+        </div>
+    </div>
+
+</div>
+</form>
+
+{% if target.id != user.id %}
+<div class="row g-3 mt-2" style="max-width: 640px;">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('admin.users.edit.danger_zone_header') }}</div>
+            <div class="card-body">
+                <p class="text-muted small">{{ t('admin.users.edit.remove_access_text') }}</p>
+                <form method="post" action="/admin/users/{{ target.id }}/deactivate">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-{{ 'toggle-off' if target.is_active else 'toggle-on' }} me-1"></i>
+                        {{ t('admin.dashboard.button_deactivate') if target.is_active else t('admin.dashboard.button_activate') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -52,6 +52,9 @@
     "email_already_registered": "E-mail je již zaregistrován",
     "invitation_sent": "Pozvánka odeslána",
     "own_account_cannot_deactivate": "Nelze deaktivovat vlastní účet",
+    "cannot_remove_last_admin": "Poslednímu zbývajícímu účtu Správce/Výboru nelze odebrat administrátorský přístup",
+    "name_required": "Jméno je povinné",
+    "user_updated": "Uživatel aktualizován",
     "purchase_request_not_found": "Žádost o nákup nebyla nalezena",
     "requester_cannot_self_approve": "Žadatel nemůže schválit vlastní žádost o nákup (princip schvalování dvěma osobami).",
     "page_title": "Chyba {code}",
@@ -200,7 +203,17 @@
       "status_inactive": "neaktivní",
       "button_deactivate": "Deaktivovat",
       "button_activate": "Aktivovat",
+      "button_edit": "Upravit",
       "self_label": "Já"
+    },
+    "users": {
+      "edit": {
+        "page_title": "Upravit uživatele",
+        "heading": "Upravit uživatele",
+        "button_save": "Uložit změny",
+        "danger_zone_header": "Nebezpečná zóna",
+        "remove_access_text": "Deaktivace okamžitě odebere tomuto uživateli přístup. Jeho jméno zůstane u všeho, co vytvořil nebo co mu bylo přiřazeno -- nic se nemaže."
+      }
     },
     "settings": {
       "page_title": "Nastavení",

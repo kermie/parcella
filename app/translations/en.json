@@ -52,6 +52,9 @@
     "email_already_registered": "Email already registered",
     "invitation_sent": "Invitation sent",
     "own_account_cannot_deactivate": "Cannot deactivate your own account",
+    "cannot_remove_last_admin": "Cannot remove admin access from the last remaining Administrator/Board account",
+    "name_required": "A name is required",
+    "user_updated": "User updated",
     "purchase_request_not_found": "Purchase request not found",
     "requester_cannot_self_approve": "The requester may not approve their own purchase request (two-person approval principle).",
     "page_title": "Error {code}",
@@ -200,7 +203,17 @@
       "status_inactive": "inactive",
       "button_deactivate": "Deactivate",
       "button_activate": "Activate",
+      "button_edit": "Edit",
       "self_label": "Me"
+    },
+    "users": {
+      "edit": {
+        "page_title": "Edit user",
+        "heading": "Edit user",
+        "button_save": "Save changes",
+        "danger_zone_header": "Danger zone",
+        "remove_access_text": "Deactivating removes this user's access immediately. Their name stays attached to anything they created or were assigned -- nothing is deleted."
+      }
     },
     "settings": {
       "page_title": "Settings",

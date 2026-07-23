@@ -34,6 +34,22 @@ from app.templating import templates
 INVITATION_DAYS = 7
 
 
+async def _is_last_admin_capable(db: AsyncSession, user_id: str) -> bool:
+    """True if no other active ADMIN/BOARD user exists besides `user_id` --
+    i.e. removing admin-capable status from `user_id` would leave nobody
+    able to reach anything require_admin gates."""
+    result = await db.execute(
+        select(User.id)
+        .where(
+            User.id != user_id,
+            User.is_active == True,  # noqa: E712
+            User.role.in_([UserRole.ADMIN, UserRole.BOARD]),
+        )
+        .limit(1)
+    )
+    return result.scalar_one_or_none() is None
+
+
 @router.get("/", response_class=HTMLResponse)
 async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_admin(request, db)
@@ -209,10 +225,96 @@ async def user_deactivate(
     result = await db.execute(select(User).where(User.id == user_id))
     target = result.scalar_one_or_none()
     if target:
+        if (
+            target.is_active
+            and target.role in (UserRole.ADMIN, UserRole.BOARD)
+            and await _is_last_admin_capable(db, target.id)
+        ):
+            return RedirectResponse(
+                f"/admin/?fehler={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
+                status_code=302,
+            )
         target.is_active = not target.is_active
         await db.commit()
 
     return RedirectResponse("/admin/", status_code=302)
+
+
+@router.get("/users/{user_id}/edit", response_class=HTMLResponse)
+async def user_edit_page(
+    user_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    admin = await require_admin(request, db)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail=t_for(request, "errors.user_not_found"))
+
+    return templates.TemplateResponse(
+        "admin/user_edit.html",
+        {"request": request, "user": admin, "target": target, "UserRole": UserRole},
+    )
+
+
+@router.post("/users/{user_id}/edit")
+async def user_edit(
+    user_id: str,
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    role: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail=t_for(request, "errors.user_not_found"))
+
+    name = name.strip()
+    email = email.strip().lower()
+
+    if not name:
+        return RedirectResponse(
+            f"/admin/users/{user_id}/edit?fehler={urllib.parse.quote(t_for(request, 'errors.name_required'))}",
+            status_code=302,
+        )
+
+    existing = await db.execute(select(User).where(User.email == email, User.id != user_id))
+    if existing.scalar_one_or_none():
+        return RedirectResponse(
+            f"/admin/users/{user_id}/edit?fehler={urllib.parse.quote(t_for(request, 'errors.email_already_registered'))}",
+            status_code=302,
+        )
+
+    if role not in [r.value for r in UserRole]:
+        role = target.role.value
+    new_role = UserRole(role)
+
+    if (
+        target.role in (UserRole.ADMIN, UserRole.BOARD)
+        and new_role not in (UserRole.ADMIN, UserRole.BOARD)
+        and target.is_active
+        and await _is_last_admin_capable(db, target.id)
+    ):
+        return RedirectResponse(
+            f"/admin/users/{user_id}/edit?fehler={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
+            status_code=302,
+        )
+
+    target.name = name
+    target.email = email
+    target.role = new_role
+    await db.commit()
+
+    return RedirectResponse(
+        f"/admin/?erfolg={urllib.parse.quote(t_for(request, 'errors.user_updated'))}",
+        status_code=302,
+    )
 
 
 # ---------------------------------------------------------------------------
