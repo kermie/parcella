@@ -107,6 +107,90 @@ class Invitation(Base):
 
 
 # ---------------------------------------------------------------------------
+# Groups: a simple ACL layer governing what TREASURER/READONLY users can
+# read/write/delete per module. ADMIN/BOARD always bypass this entirely
+# (unchanged from their existing behavior) -- see app/permissions.py for
+# the module list and permission-check helpers, and ADR 0038 for why.
+# ---------------------------------------------------------------------------
+
+class Group(Base):
+    """
+    A named group of users (e.g. "Work Hours Coordinators"). A user can
+    belong to several groups at once (see GroupMembership); their
+    effective permission on a module is the most permissive value
+    across every group they're in (see app/permissions.py).
+    """
+    __tablename__ = "groups"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    permissions: Mapped[List["GroupModulePermission"]] = relationship(
+        "GroupModulePermission", back_populates="group", cascade="all, delete-orphan"
+    )
+    memberships: Mapped[List["GroupMembership"]] = relationship(
+        "GroupMembership", back_populates="group", cascade="all, delete-orphan"
+    )
+
+    def __repr__(self) -> str:
+        return f"<Group {self.name!r}>"
+
+
+class GroupMembership(Base):
+    """A user's membership in a group (m:n -- see Group docstring)."""
+    __tablename__ = "group_memberships"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    group_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("groups.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped["User"] = relationship("User")
+    group: Mapped["Group"] = relationship("Group", back_populates="memberships")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "group_id", name="uq_group_membership"),
+    )
+
+
+class GroupModulePermission(Base):
+    """
+    What a group can do in one module: read, write, delete -- each
+    independent (a group could in principle have delete without write,
+    though the admin UI doesn't offer that combination since it isn't
+    a meaningful real-world scenario). `module` is a key from
+    app/permissions.py's MODULES list, not a DB-enforced enum, so
+    adding a new governed module never needs a migration.
+    """
+    __tablename__ = "group_module_permissions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    group_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("groups.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    module: Mapped[str] = mapped_column(String(50), nullable=False)
+    can_read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    can_write: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    can_delete: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    group: Mapped["Group"] = relationship("Group", back_populates="permissions")
+
+    __table_args__ = (
+        UniqueConstraint("group_id", "module", name="uq_group_module_permission"),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Club members
 # ---------------------------------------------------------------------------
 

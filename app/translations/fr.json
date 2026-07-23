@@ -38,7 +38,8 @@
     "sample_data": "Données d'exemple",
     "announcements": "Annonces",
     "inventory": "Inventaire",
-    "tasks": "Tableau des tâches"
+    "tasks": "Tableau des tâches",
+    "groups": "Groupes"
   },
   "errors": {
     "ticket_not_found": "Ticket non trouvé",
@@ -54,7 +55,16 @@
     "purchase_request_not_found": "Demande d'achat non trouvée",
     "requester_cannot_self_approve": "Le demandeur ne peut pas approuver sa propre demande d'achat (principe d'approbation à deux personnes).",
     "page_title": "Erreur {code}",
-    "back_to_home": "Retour à l'accueil"
+    "back_to_home": "Retour à l'accueil",
+    "group_name_required": "Un nom de groupe est requis",
+    "group_name_taken": "Un groupe portant ce nom existe déjà",
+    "group_created": "Groupe créé",
+    "group_updated": "Groupe mis à jour",
+    "group_deleted": "Groupe supprimé",
+    "group_not_found": "Groupe introuvable",
+    "user_already_in_group": "Cet utilisateur est déjà membre de ce groupe",
+    "member_added": "Membre ajouté",
+    "member_removed": "Membre retiré"
   },
   "tickets": {
     "overview": {
@@ -345,6 +355,37 @@
       "fresh_install_hint": "Cette installation semble vierge -- aucune donnée de membre ou de parcelle pour l'instant.",
       "add_confirm": "Ajouter des données d'exemple dans tous les modules maintenant ?",
       "add_button": "Ajouter des données d'exemple"
+    },
+    "groups": {
+      "page_title": "Groupes",
+      "heading": "Groupes",
+      "intro": "Les groupes permettent de restreindre l'accès des comptes Trésorier et Lecture seule par rapport à l'accès par défaut -- droits de lecture, d'écriture ou de suppression par module. Les comptes Administrateur et Conseil d'administration ont toujours un accès complet et n'ont pas besoin de groupe.",
+      "create_header": "Créer un groupe",
+      "label_name": "Nom",
+      "label_description": "Description",
+      "button_create": "Créer un groupe",
+      "col_module": "Module",
+      "col_read": "Lecture",
+      "col_write": "Écriture",
+      "col_delete": "Suppression",
+      "button_save": "Enregistrer",
+      "members_header": "Membres",
+      "no_members": "Aucun membre pour le moment.",
+      "label_add_member": "Ajouter un membre...",
+      "button_add": "Ajouter",
+      "no_groups": "Aucun groupe pour le moment. Créez-en un pour commencer.",
+      "delete_confirm": "Supprimer ce groupe ? Les membres perdront l'accès qu'il leur accordait.",
+      "modules": {
+        "members_parcels": "Membres et parcelles",
+        "work_hours": "Sessions de travail",
+        "water": "Eau",
+        "electricity": "Électricité",
+        "insurance": "Assurance",
+        "tickets": "Tickets",
+        "purchase_requests": "Demandes d'achat",
+        "calendar": "Calendrier",
+        "inventory": "Inventaire"
+      }
     }
   },
   "members": {

@@ -361,6 +361,7 @@
             </button>
             <div class="collapse nav-group-body" id="nav-group-administration" data-bs-parent="#nav-accordion">
                 <a href="/admin/" class="{% if '/admin/' == request.url.path %}aktiv{% endif %}">{{ t('nav.users') }}</a>
+                <a href="/admin/groups/" class="{% if '/admin/groups' in request.url.path %}aktiv{% endif %}">{{ t('nav.groups') }}</a>
                 <a href="/admin/settings" class="{% if '/admin/settings' in request.url.path %}aktiv{% endif %}">{{ t('nav.settings') }}</a>
                 <a href="/admin/integrations" class="{% if '/admin/integrations' in request.url.path %}aktiv{% endif %}">{{ t('nav.integrations') }}</a>
                 <a href="/admin/sample-data" class="{% if '/admin/sample-data' in request.url.path %}aktiv{% endif %}">{{ t('nav.sample_data') }}</a>

@@ -38,7 +38,8 @@
     "sample_data": "Ukázková data",
     "announcements": "Oznámení",
     "inventory": "Inventář",
-    "tasks": "Nástěnka úkolů"
+    "tasks": "Nástěnka úkolů",
+    "groups": "Skupiny"
   },
   "errors": {
     "ticket_not_found": "Ticket nebyl nalezen",
@@ -54,7 +55,16 @@
     "purchase_request_not_found": "Žádost o nákup nebyla nalezena",
     "requester_cannot_self_approve": "Žadatel nemůže schválit vlastní žádost o nákup (princip schvalování dvěma osobami).",
     "page_title": "Chyba {code}",
-    "back_to_home": "Zpět na úvodní stránku"
+    "back_to_home": "Zpět na úvodní stránku",
+    "group_name_required": "Je vyžadován název skupiny",
+    "group_name_taken": "Skupina s tímto názvem již existuje",
+    "group_created": "Skupina vytvořena",
+    "group_updated": "Skupina aktualizována",
+    "group_deleted": "Skupina odstraněna",
+    "group_not_found": "Skupina nenalezena",
+    "user_already_in_group": "Tento uživatel je již členem této skupiny",
+    "member_added": "Člen přidán",
+    "member_removed": "Člen odebrán"
   },
   "tickets": {
     "overview": {
@@ -345,6 +355,37 @@
       "fresh_install_hint": "Tato instalace vypadá jako nová -- zatím žádná data o členech ani parcelách.",
       "add_confirm": "Přidat nyní ukázková data do všech modulů?",
       "add_button": "Přidat ukázková data"
+    },
+    "groups": {
+      "page_title": "Skupiny",
+      "heading": "Skupiny",
+      "intro": "Skupiny umožňují omezit přístup účtů Pokladníka a Pouze pro čtení více než výchozí nastavení -- práva čtení, zápisu nebo mazání pro jednotlivé moduly. Účty Správce a Výboru mají vždy plný přístup a skupinu nepotřebují.",
+      "create_header": "Vytvořit skupinu",
+      "label_name": "Název",
+      "label_description": "Popis",
+      "button_create": "Vytvořit skupinu",
+      "col_module": "Modul",
+      "col_read": "Čtení",
+      "col_write": "Zápis",
+      "col_delete": "Mazání",
+      "button_save": "Uložit",
+      "members_header": "Členové",
+      "no_members": "Zatím žádní členové.",
+      "label_add_member": "Přidat člena...",
+      "button_add": "Přidat",
+      "no_groups": "Zatím žádné skupiny. Vytvořte první a začněte.",
+      "delete_confirm": "Odstranit tuto skupinu? Členové ztratí přístup, který jim poskytovala.",
+      "modules": {
+        "members_parcels": "Členové a parcely",
+        "work_hours": "Pracovní sezení",
+        "water": "Voda",
+        "electricity": "Elektřina",
+        "insurance": "Pojištění",
+        "tickets": "Tikety",
+        "purchase_requests": "Žádosti o nákup",
+        "calendar": "Kalendář",
+        "inventory": "Inventář"
+      }
     }
   },
   "members": {

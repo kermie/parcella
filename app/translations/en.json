@@ -38,7 +38,8 @@
     "sample_data": "Sample data",
     "announcements": "Announcements",
     "inventory": "Inventory",
-    "tasks": "Task Board"
+    "tasks": "Task Board",
+    "groups": "Groups"
   },
   "errors": {
     "ticket_not_found": "Ticket not found",
@@ -54,7 +55,16 @@
     "purchase_request_not_found": "Purchase request not found",
     "requester_cannot_self_approve": "The requester may not approve their own purchase request (two-person approval principle).",
     "page_title": "Error {code}",
-    "back_to_home": "Back to Home"
+    "back_to_home": "Back to Home",
+    "group_name_required": "A group name is required",
+    "group_name_taken": "A group with this name already exists",
+    "group_created": "Group created",
+    "group_updated": "Group updated",
+    "group_deleted": "Group deleted",
+    "group_not_found": "Group not found",
+    "user_already_in_group": "This user is already a member of this group",
+    "member_added": "Member added",
+    "member_removed": "Member removed"
   },
   "tickets": {
     "overview": {
@@ -345,6 +355,37 @@
       "fresh_install_hint": "This installation looks fresh -- no member or parcel data yet.",
       "add_confirm": "Add sample data across every module now?",
       "add_button": "Add sample data"
+    },
+    "groups": {
+      "page_title": "Groups",
+      "heading": "Groups",
+      "intro": "Groups let you give Treasurer and Read-only accounts narrower access than the default -- read, write, or delete rights on individual modules. Admin and Board accounts always have full access and don't need a group.",
+      "create_header": "Create group",
+      "label_name": "Name",
+      "label_description": "Description",
+      "button_create": "Create group",
+      "col_module": "Module",
+      "col_read": "Read",
+      "col_write": "Write",
+      "col_delete": "Delete",
+      "button_save": "Save",
+      "members_header": "Members",
+      "no_members": "No members yet.",
+      "label_add_member": "Add member...",
+      "button_add": "Add",
+      "no_groups": "No groups yet. Create one to get started.",
+      "delete_confirm": "Delete this group? Members will lose the access it granted.",
+      "modules": {
+        "members_parcels": "Members & Parcels",
+        "work_hours": "Work Sessions",
+        "water": "Water",
+        "electricity": "Electricity",
+        "insurance": "Insurance",
+        "tickets": "Tickets",
+        "purchase_requests": "Purchase Requests",
+        "calendar": "Calendar",
+        "inventory": "Inventory"
+      }
     }
   },
   "members": {

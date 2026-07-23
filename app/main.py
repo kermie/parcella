@@ -25,6 +25,7 @@ from app.i18n import load_translations, load_current_language
 from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
 from app.update_check import refresh_update_check_cache
+from app.permissions import get_user_permissions
 
 # Loaded at module import time (not only in the lifespan startup
 # event), since ASGI test clients (e.g. httpx with ASGITransport) don't
@@ -33,7 +34,7 @@ from app.update_check import refresh_update_check_cache
 load_translations()
 from app.templating import templates
 from app.ticket_mailer import process_incoming_mails
-from app.routers import auth, members, parcels, admin as admin_router, work_hours, insurance, tickets, purchase_requests, calendar as calendar_router, announcements as announcements_router, inventory as inventory_router, tasks as tasks_router
+from app.routers import auth, members, parcels, admin as admin_router, admin_groups as admin_groups_router, work_hours, insurance, tickets, purchase_requests, calendar as calendar_router, announcements as announcements_router, inventory as inventory_router, tasks as tasks_router
 from app.routers.metering import create_metering_router
 from app.models import MeteringMedium
 from app.routers import api_auth, api_members, api_parcels, api_club_settings, api_stats
@@ -174,6 +175,22 @@ async def l10n_middleware(request: Request, call_next):
 
 
 @app.middleware("http")
+async def permissions_middleware(request: Request, call_next):
+    """
+    Loads the current user's effective per-module permissions once per
+    request and stores them under request.state.permissions (see
+    app/permissions.py). require_permission() and the `has_perm` Jinja
+    global both read from here instead of re-querying. Anonymous
+    requests get all-False permissions, same as get_user_permissions(None).
+    """
+    async with AsyncSessionLocal() as db:
+        user = await get_current_user(request, db)
+        request.state.permissions = await get_user_permissions(db, user)
+    response = await call_next(request)
+    return response
+
+
+@app.middleware("http")
 async def branding_middleware(request: Request, call_next):
     """Loads the club's display name and custom logo once per request
     (same pattern as module flags, language, and l10n above) and stores
@@ -191,6 +208,7 @@ app.include_router(auth.router)
 app.include_router(members.router)
 app.include_router(parcels.router)
 app.include_router(admin_router.router)
+app.include_router(admin_groups_router.router)
 app.include_router(work_hours.router)
 app.include_router(insurance.router)
 app.include_router(tickets.router)

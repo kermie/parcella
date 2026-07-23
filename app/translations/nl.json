@@ -38,7 +38,8 @@
     "sample_data": "Voorbeeldgegevens",
     "announcements": "Mededelingen",
     "inventory": "Inventaris",
-    "tasks": "Takenbord"
+    "tasks": "Takenbord",
+    "groups": "Groepen"
   },
   "errors": {
     "ticket_not_found": "Ticket niet gevonden",
@@ -54,7 +55,16 @@
     "purchase_request_not_found": "Aankoopaanvraag niet gevonden",
     "requester_cannot_self_approve": "De aanvrager mag zijn eigen aankoopaanvraag niet goedkeuren (twee-personen goedkeuringsprincipe).",
     "page_title": "Fout {code}",
-    "back_to_home": "Terug naar startpagina"
+    "back_to_home": "Terug naar startpagina",
+    "group_name_required": "Een groepsnaam is verplicht",
+    "group_name_taken": "Er bestaat al een groep met deze naam",
+    "group_created": "Groep aangemaakt",
+    "group_updated": "Groep bijgewerkt",
+    "group_deleted": "Groep verwijderd",
+    "group_not_found": "Groep niet gevonden",
+    "user_already_in_group": "Deze gebruiker is al lid van deze groep",
+    "member_added": "Lid toegevoegd",
+    "member_removed": "Lid verwijderd"
   },
   "tickets": {
     "overview": {
@@ -345,6 +355,37 @@
       "fresh_install_hint": "Deze installatie lijkt vers -- nog geen leden- of perceelgegevens aanwezig.",
       "add_confirm": "Nu voorbeeldgegevens toevoegen in alle modules?",
       "add_button": "Voorbeeldgegevens toevoegen"
+    },
+    "groups": {
+      "page_title": "Groepen",
+      "heading": "Groepen",
+      "intro": "Met groepen kunt u de toegang van Penningmeester- en Alleen-lezen-accounts strakker instellen dan de standaardtoegang -- lees-, schrijf- of verwijderrechten per module. Beheerder- en Bestuursaccounts hebben altijd volledige toegang en hebben geen groep nodig.",
+      "create_header": "Groep aanmaken",
+      "label_name": "Naam",
+      "label_description": "Omschrijving",
+      "button_create": "Groep aanmaken",
+      "col_module": "Module",
+      "col_read": "Lezen",
+      "col_write": "Schrijven",
+      "col_delete": "Verwijderen",
+      "button_save": "Opslaan",
+      "members_header": "Leden",
+      "no_members": "Nog geen leden.",
+      "label_add_member": "Lid toevoegen...",
+      "button_add": "Toevoegen",
+      "no_groups": "Nog geen groepen. Maak er een aan om te beginnen.",
+      "delete_confirm": "Deze groep verwijderen? Leden verliezen de toegang die deze groep verleende.",
+      "modules": {
+        "members_parcels": "Leden en percelen",
+        "work_hours": "Werksessies",
+        "water": "Water",
+        "electricity": "Elektriciteit",
+        "insurance": "Verzekering",
+        "tickets": "Tickets",
+        "purchase_requests": "Aankoopaanvragen",
+        "calendar": "Kalender",
+        "inventory": "Inventaris"
+      }
     }
   },
   "members": {

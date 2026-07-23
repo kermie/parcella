@@ -38,7 +38,8 @@
     "sample_data": "Dane przykładowe",
     "announcements": "Ogłoszenia",
     "inventory": "Inwentarz",
-    "tasks": "Tablica zadań"
+    "tasks": "Tablica zadań",
+    "groups": "Grupy"
   },
   "errors": {
     "ticket_not_found": "Nie znaleziono zgłoszenia",
@@ -54,7 +55,16 @@
     "purchase_request_not_found": "Nie znaleziono wniosku zakupowego",
     "requester_cannot_self_approve": "Wnioskodawca nie może sam zatwierdzić własnego wniosku zakupowego (zasada dwóch osób).",
     "page_title": "Błąd {code}",
-    "back_to_home": "Powrót do strony głównej"
+    "back_to_home": "Powrót do strony głównej",
+    "group_name_required": "Nazwa grupy jest wymagana",
+    "group_name_taken": "Grupa o tej nazwie już istnieje",
+    "group_created": "Grupa utworzona",
+    "group_updated": "Grupa zaktualizowana",
+    "group_deleted": "Grupa usunięta",
+    "group_not_found": "Nie znaleziono grupy",
+    "user_already_in_group": "Ten użytkownik jest już członkiem tej grupy",
+    "member_added": "Członek dodany",
+    "member_removed": "Członek usunięty"
   },
   "tickets": {
     "overview": {
@@ -345,6 +355,37 @@
       "fresh_install_hint": "Ta instalacja wygląda na nową -- nie ma jeszcze danych o członkach ani działkach.",
       "add_confirm": "Dodać teraz dane przykładowe we wszystkich modułach?",
       "add_button": "Dodaj dane przykładowe"
+    },
+    "groups": {
+      "page_title": "Grupy",
+      "heading": "Grupy",
+      "intro": "Grupy pozwalają zawęzić dostęp kont Skarbnika i Tylko do odczytu bardziej niż domyślnie -- prawa odczytu, zapisu lub usuwania dla poszczególnych modułów. Konta Administratora i Zarządu zawsze mają pełny dostęp i nie potrzebują grupy.",
+      "create_header": "Utwórz grupę",
+      "label_name": "Nazwa",
+      "label_description": "Opis",
+      "button_create": "Utwórz grupę",
+      "col_module": "Moduł",
+      "col_read": "Odczyt",
+      "col_write": "Zapis",
+      "col_delete": "Usuwanie",
+      "button_save": "Zapisz",
+      "members_header": "Członkowie",
+      "no_members": "Brak członków.",
+      "label_add_member": "Dodaj członka...",
+      "button_add": "Dodaj",
+      "no_groups": "Brak grup. Utwórz pierwszą, aby zacząć.",
+      "delete_confirm": "Usunąć tę grupę? Członkowie stracą dostęp, który ona przyznawała.",
+      "modules": {
+        "members_parcels": "Członkowie i działki",
+        "work_hours": "Prace społeczne",
+        "water": "Woda",
+        "electricity": "Prąd",
+        "insurance": "Ubezpieczenia",
+        "tickets": "Zgłoszenia",
+        "purchase_requests": "Wnioski zakupowe",
+        "calendar": "Kalendarz",
+        "inventory": "Inwentarz"
+      }
     }
   },
   "members": {

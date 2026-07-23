@@ -38,7 +38,8 @@
     "sample_data": "Beispieldaten",
     "announcements": "Mitteilungen",
     "inventory": "Inventar",
-    "tasks": "Aufgabenboard"
+    "tasks": "Aufgabenboard",
+    "groups": "Gruppen"
   },
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
@@ -54,7 +55,16 @@
     "purchase_request_not_found": "Einkaufswunsch nicht gefunden",
     "requester_cannot_self_approve": "Der Antragsteller darf seinen eigenen Einkaufswunsch nicht mitfreigeben (Vier-Augen-Prinzip).",
     "page_title": "Fehler {code}",
-    "back_to_home": "Zur Startseite"
+    "back_to_home": "Zur Startseite",
+    "group_name_required": "Ein Gruppenname ist erforderlich",
+    "group_name_taken": "Eine Gruppe mit diesem Namen existiert bereits",
+    "group_created": "Gruppe erstellt",
+    "group_updated": "Gruppe aktualisiert",
+    "group_deleted": "Gruppe gelöscht",
+    "group_not_found": "Gruppe nicht gefunden",
+    "user_already_in_group": "Dieser Benutzer ist bereits Mitglied dieser Gruppe",
+    "member_added": "Mitglied hinzugefügt",
+    "member_removed": "Mitglied entfernt"
   },
   "tickets": {
     "overview": {
@@ -345,6 +355,37 @@
       "fresh_install_hint": "Diese Installation wirkt frisch -- noch keine Mitglieder- oder Parzellendaten vorhanden.",
       "add_confirm": "Jetzt Beispieldaten in allen Modulen hinzufügen?",
       "add_button": "Beispieldaten hinzufügen"
+    },
+    "groups": {
+      "page_title": "Gruppen",
+      "heading": "Gruppen",
+      "intro": "Mit Gruppen können Sie Kassierer- und Nur-Lesen-Konten enger fassen als den Standardzugriff -- Lese-, Schreib- oder Löschrechte für einzelne Module. Administrator- und Vorstandskonten haben immer vollen Zugriff und benötigen keine Gruppe.",
+      "create_header": "Gruppe anlegen",
+      "label_name": "Name",
+      "label_description": "Beschreibung",
+      "button_create": "Gruppe anlegen",
+      "col_module": "Modul",
+      "col_read": "Lesen",
+      "col_write": "Schreiben",
+      "col_delete": "Löschen",
+      "button_save": "Speichern",
+      "members_header": "Mitglieder",
+      "no_members": "Noch keine Mitglieder.",
+      "label_add_member": "Mitglied hinzufügen...",
+      "button_add": "Hinzufügen",
+      "no_groups": "Noch keine Gruppen vorhanden. Legen Sie eine an, um zu beginnen.",
+      "delete_confirm": "Diese Gruppe löschen? Mitglieder verlieren den dadurch gewährten Zugriff.",
+      "modules": {
+        "members_parcels": "Mitglieder & Parzellen",
+        "work_hours": "Arbeitseinsätze",
+        "water": "Wasser",
+        "electricity": "Strom",
+        "insurance": "Versicherung",
+        "tickets": "Tickets",
+        "purchase_requests": "Einkaufswünsche",
+        "calendar": "Kalender",
+        "inventory": "Inventar"
+      }
     }
   },
   "members": {

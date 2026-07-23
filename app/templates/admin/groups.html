@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin.groups.page_title') }}{% endblock %}
+{% block page_title %}{{ t('admin.groups.heading') }}{% endblock %}
+
+{% block content %}
+
+{% if request.query_params.get('erfolg') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ request.query_params.get('erfolg') }}
+</div>
+{% endif %}
+{% if request.query_params.get('fehler') %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-circle-fill"></i> {{ request.query_params.get('fehler') }}
+</div>
+{% endif %}
+
+<p class="text-muted">{{ t('admin.groups.intro') }}</p>
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-folder-plus me-2"></i>{{ t('admin.groups.create_header') }}</div>
+            <div class="card-body">
+                <form method="post" action="/admin/groups/create">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('admin.groups.label_name') }}</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('admin.groups.label_description') }}</label>
+                        <input type="text" name="description" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-lg me-1"></i>{{ t('admin.groups.button_create') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for group in groups %}
+{% set permissions_by_module = {} %}
+{% for p in group.permissions %}{% set _ = permissions_by_module.update({p.module: p}) %}{% endfor %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-people-fill me-2"></i>{{ group.name }}</span>
+        <form method="post" action="/admin/groups/{{ group.id }}/delete" class="d-inline"
+              onsubmit="return confirm('{{ t('admin.groups.delete_confirm') }}')">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
+    </div>
+    <div class="card-body">
+        <form method="post" action="/admin/groups/{{ group.id }}/update">
+            <div class="row g-3 mb-3">
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold">{{ t('admin.groups.label_name') }}</label>
+                    <input type="text" name="name" class="form-control" value="{{ group.name }}" required>
+                </div>
+                <div class="col-md-7">
+                    <label class="form-label fw-semibold">{{ t('admin.groups.label_description') }}</label>
+                    <input type="text" name="description" class="form-control" value="{{ group.description or '' }}">
+                </div>
+            </div>
+
+            <div class="table-responsive mb-3">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>{{ t('admin.groups.col_module') }}</th>
+                            <th class="text-center">{{ t('admin.groups.col_read') }}</th>
+                            <th class="text-center">{{ t('admin.groups.col_write') }}</th>
+                            <th class="text-center">{{ t('admin.groups.col_delete') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for module in MODULES %}
+                        {% set perm = permissions_by_module.get(module) %}
+                        <tr>
+                            <td>{{ t('admin.groups.modules.' ~ module) }}</td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" name="read_{{ module }}"
+                                       {% if perm and perm.can_read %}checked{% endif %}>
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" name="write_{{ module }}"
+                                       {% if perm and perm.can_write %}checked{% endif %}>
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" class="form-check-input" name="delete_{{ module }}"
+                                       {% if perm and perm.can_delete %}checked{% endif %}>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>{{ t('admin.groups.button_save') }}
+            </button>
+        </form>
+
+        <hr>
+
+        <h6 class="fw-semibold mb-2">{{ t('admin.groups.members_header') }}</h6>
+        {% if group.memberships %}
+        <ul class="list-group list-group-flush mb-3">
+            {% for membership in group.memberships %}
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <div>
+                    {{ membership.user.name }}
+                    <small class="text-muted">({{ membership.user.email }})</small>
+                </div>
+                <form method="post" action="/admin/groups/{{ group.id }}/members/{{ membership.id }}/remove">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted">{{ t('admin.groups.no_members') }}</p>
+        {% endif %}
+
+        <form method="post" action="/admin/groups/{{ group.id }}/members/add" class="d-flex gap-2">
+            <select name="user_id" class="form-select" required>
+                <option value="" disabled selected>{{ t('admin.groups.label_add_member') }}</option>
+                {% set member_ids = group.memberships | map(attribute='user_id') | list %}
+                {% for candidate in assignable_users if candidate.id not in member_ids %}
+                <option value="{{ candidate.id }}">{{ candidate.name }} ({{ candidate.email }})</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-outline-primary text-nowrap">
+                <i class="bi bi-person-plus me-1"></i>{{ t('admin.groups.button_add') }}
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
+<p class="text-muted">{{ t('admin.groups.no_groups') }}</p>
+{% endfor %}
+
+{% endblock %}
