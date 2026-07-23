@@ -448,7 +448,7 @@ class MeteringPointDetailOut(MeteringPointOut):
 
 
 class MeterSwapRequest(BaseModel):
-    neue_nummer: str
+    new_number: str
     removed_at: date
     installed_at: date
     calibrated_until: Optional[int] = None

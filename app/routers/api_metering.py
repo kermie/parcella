@@ -159,11 +159,8 @@ def create_metering_api_router(
             old_meter.is_active = False
             old_meter.removed_at = daten.removed_at
 
-        # NOTE: MeterSwapRequest.neue_nummer is a public API schema field
-        # (app/schemas.py) -- left as-is, renaming it would be a breaking
-        # API change, out of scope for this internal-naming cleanup.
         new_meter = Meter(
-            metering_point_id=metering_point_id, number=daten.neue_nummer, is_active=True,
+            metering_point_id=metering_point_id, number=daten.new_number, is_active=True,
             calibrated_until=daten.calibrated_until, installed_at=daten.installed_at,
             initial_reading=daten.initial_reading,
         )
