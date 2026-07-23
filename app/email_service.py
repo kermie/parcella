@@ -10,6 +10,7 @@ long as the environment variables are set.
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 from typing import Optional
 
 import aiosmtplib
@@ -19,6 +20,7 @@ from sqlalchemy import select
 from app.config import settings
 from app.models import ClubSetting
 from app.crypto_utils import decrypt
+from app.branding import DEFAULT_CLUB_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +29,15 @@ async def load_smtp_configuration(db: AsyncSession) -> dict:
     """
     Loads the SMTP configuration: database values take precedence,
     missing values are filled in from the .env file (app.config.settings).
+    "from_name" is the club's display name (ClubSetting "verein_name",
+    same one shown in the sidebar -- see app/branding.py), used as the
+    From header's display name so recipients see the club's name
+    rather than the mailbox's local part (e.g. "info").
     """
     result = await db.execute(
         select(ClubSetting).where(
             ClubSetting.key.in_(
-                ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from", "smtp_tls"]
+                ["smtp_host", "smtp_port", "smtp_user", "smtp_password", "smtp_from", "smtp_tls", "verein_name"]
             )
         )
     )
@@ -54,6 +60,7 @@ async def load_smtp_configuration(db: AsyncSession) -> dict:
         "user": stored.get("smtp_user") or settings.smtp_user,
         "password": decrypt(stored.get("smtp_password")) or settings.smtp_password,
         "from": stored.get("smtp_from") or settings.smtp_from,
+        "from_name": stored.get("verein_name") or DEFAULT_CLUB_NAME,
         "tls": _bool(stored.get("smtp_tls")) if "smtp_tls" in stored else settings.smtp_tls,
     }
 
@@ -81,6 +88,7 @@ async def send_email(
             "user": settings.smtp_user,
             "password": settings.smtp_password,
             "from": settings.smtp_from,
+            "from_name": DEFAULT_CLUB_NAME,
             "tls": settings.smtp_tls,
         }
 
@@ -91,7 +99,7 @@ async def send_email(
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = config["from"]
+    msg["From"] = formataddr((config["from_name"], config["from"]), charset="utf-8")
     msg["To"] = recipient
 
     if text_body:
