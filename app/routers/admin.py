@@ -169,19 +169,19 @@ async def _send_invitation_email(request: Request, admin: User, invitation: Invi
     base_url = str(request.base_url).rstrip("/")
     invitation_link = f"{base_url}/auth/invitation/{invitation.token}"
 
-    subject = f"Einladung zur {settings.app_name}"
+    subject = t_for(request, "email.invitation.subject", app_name=settings.app_name)
     html = f"""
     <html><body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h2>Einladung zur {settings.app_name}</h2>
-    <p>Sie wurden von <strong>{admin.name}</strong> eingeladen, der Verwaltungssoftware beizutreten.</p>
-    <p>Klicken Sie auf den folgenden Link, um Ihr Konto einzurichten:</p>
+    <h2>{t_for(request, "email.invitation.heading", app_name=settings.app_name)}</h2>
+    <p>{t_for(request, "email.invitation.intro", admin_name=f"<strong>{admin.name}</strong>")}</p>
+    <p>{t_for(request, "email.invitation.instruction")}</p>
     <p style="margin: 20px 0;">
         <a href="{invitation_link}" style="background: #2d6a4f; color: white; padding: 10px 20px;
-           text-decoration: none; border-radius: 4px;">Einladung annehmen</a>
+           text-decoration: none; border-radius: 4px;">{t_for(request, "email.invitation.button")}</a>
     </p>
     <p style="color: #666; font-size: 0.9em;">
-        Dieser Link ist {INVITATION_DAYS} Tage gültig.<br>
-        Falls der Button nicht funktioniert: {invitation_link}
+        {t_for(request, "email.invitation.validity", days=INVITATION_DAYS)}<br>
+        {t_for(request, "email.invitation.fallback", link=invitation_link)}
     </p>
     </body></html>
     """

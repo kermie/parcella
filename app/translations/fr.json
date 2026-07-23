@@ -1613,5 +1613,16 @@
       "delete_confirm": "Supprimer cette tâche ? Cette action est irréversible.",
       "button_delete": "Supprimer la tâche"
     }
+  },
+  "email": {
+    "invitation": {
+      "subject": "Invitation à {app_name}",
+      "heading": "Invitation à {app_name}",
+      "intro": "Vous avez été invité(e) par {admin_name} à rejoindre le logiciel de gestion.",
+      "instruction": "Cliquez sur le lien suivant pour configurer votre compte :",
+      "button": "Accepter l'invitation",
+      "validity": "Ce lien est valable {days} jours.",
+      "fallback": "Si le bouton ne fonctionne pas : {link}"
+    }
   }
 }

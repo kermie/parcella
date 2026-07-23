@@ -1613,5 +1613,16 @@
       "delete_confirm": "Usunąć to zadanie? Tej operacji nie można cofnąć.",
       "button_delete": "Usuń zadanie"
     }
+  },
+  "email": {
+    "invitation": {
+      "subject": "Zaproszenie do {app_name}",
+      "heading": "Zaproszenie do {app_name}",
+      "intro": "Zostałeś zaproszony przez {admin_name} do dołączenia do oprogramowania zarządzającego.",
+      "instruction": "Kliknij poniższy link, aby skonfigurować swoje konto:",
+      "button": "Zaakceptuj zaproszenie",
+      "validity": "Ten link jest ważny przez {days} dni.",
+      "fallback": "Jeśli przycisk nie działa: {link}"
+    }
   }
 }

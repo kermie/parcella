@@ -1613,5 +1613,16 @@
       "delete_confirm": "Deze taak verwijderen? Dit kan niet ongedaan worden gemaakt.",
       "button_delete": "Taak verwijderen"
     }
+  },
+  "email": {
+    "invitation": {
+      "subject": "Uitnodiging voor {app_name}",
+      "heading": "Uitnodiging voor {app_name}",
+      "intro": "U bent door {admin_name} uitgenodigd om deel te nemen aan de beheersoftware.",
+      "instruction": "Klik op de volgende link om uw account in te stellen:",
+      "button": "Uitnodiging accepteren",
+      "validity": "Deze link is {days} dagen geldig.",
+      "fallback": "Als de knop niet werkt: {link}"
+    }
   }
 }

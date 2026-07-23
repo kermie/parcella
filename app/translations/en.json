@@ -1613,5 +1613,16 @@
       "delete_confirm": "Delete this task? This cannot be undone.",
       "button_delete": "Delete task"
     }
+  },
+  "email": {
+    "invitation": {
+      "subject": "Invitation to {app_name}",
+      "heading": "Invitation to {app_name}",
+      "intro": "You have been invited by {admin_name} to join the management software.",
+      "instruction": "Click the following link to set up your account:",
+      "button": "Accept invitation",
+      "validity": "This link is valid for {days} days.",
+      "fallback": "If the button doesn't work: {link}"
+    }
   }
 }

@@ -1613,5 +1613,16 @@
       "delete_confirm": "Diese Aufgabe löschen? Das kann nicht rückgängig gemacht werden.",
       "button_delete": "Aufgabe löschen"
     }
+  },
+  "email": {
+    "invitation": {
+      "subject": "Einladung zur {app_name}",
+      "heading": "Einladung zur {app_name}",
+      "intro": "Sie wurden von {admin_name} eingeladen, der Verwaltungssoftware beizutreten.",
+      "instruction": "Klicken Sie auf den folgenden Link, um Ihr Konto einzurichten:",
+      "button": "Einladung annehmen",
+      "validity": "Dieser Link ist {days} Tage gültig.",
+      "fallback": "Falls der Button nicht funktioniert: {link}"
+    }
   }
 }

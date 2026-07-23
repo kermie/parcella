@@ -1613,5 +1613,16 @@
       "delete_confirm": "Smazat tento úkol? Tuto akci nelze vrátit zpět.",
       "button_delete": "Smazat úkol"
     }
+  },
+  "email": {
+    "invitation": {
+      "subject": "Pozvánka do {app_name}",
+      "heading": "Pozvánka do {app_name}",
+      "intro": "Byli jste pozváni uživatelem {admin_name} k připojení ke správnímu softwaru.",
+      "instruction": "Kliknutím na následující odkaz nastavíte svůj účet:",
+      "button": "Přijmout pozvánku",
+      "validity": "Tento odkaz je platný po dobu {days} dní.",
+      "fallback": "Pokud tlačítko nefunguje: {link}"
+    }
   }
 }

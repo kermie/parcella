@@ -1613,5 +1613,16 @@
       "delete_confirm": "Odstrániť túto úlohu? Túto akciu nemožno vrátiť späť.",
       "button_delete": "Odstrániť úlohu"
     }
+  },
+  "email": {
+    "invitation": {
+      "subject": "Pozvánka do {app_name}",
+      "heading": "Pozvánka do {app_name}",
+      "intro": "Boli ste pozvaní používateľom {admin_name} na pripojenie k správnemu softvéru.",
+      "instruction": "Kliknutím na nasledujúci odkaz nastavíte svoje konto:",
+      "button": "Prijať pozvánku",
+      "validity": "Tento odkaz je platný {days} dní.",
+      "fallback": "Ak tlačidlo nefunguje: {link}"
+    }
   }
 }
