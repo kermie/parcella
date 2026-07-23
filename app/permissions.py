@@ -33,6 +33,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
+from app.i18n import t_for
+
 from app.models import Group, GroupModulePermission, GroupMembership, User, UserRole
 
 MODULES = [
@@ -155,7 +157,7 @@ async def require_permission(request: Request, db: AsyncSession, module: str, le
     if permissions is None:
         permissions = await get_user_permissions(db, user)
     if not has_permission(permissions, module, level):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Berechtigung")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=t_for(request, "errors.no_permission"))
     return user
 
 

@@ -61,6 +61,8 @@
     "requester_cannot_self_approve": "The requester may not approve their own purchase request (two-person approval principle).",
     "page_title": "Error {code}",
     "back_to_home": "Back to Home",
+    "no_permission": "You don't have permission to do this",
+    "page_not_found": "Page not found",
     "group_name_required": "A group name is required",
     "group_name_taken": "A group with this name already exists",
     "group_created": "Group created",

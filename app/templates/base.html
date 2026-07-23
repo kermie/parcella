@@ -219,20 +219,22 @@
             <i class="bi bi-speedometer2"></i> {{ t('nav.dashboard') }}
         </a>
 
+        {% if has_perm(request, 'members_parcels') %}
         <a href="/members/" class="nav-top-link {% if '/members' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-people"></i> {{ t('nav.members') }}
         </a>
         <a href="/parcels/" class="nav-top-link {% if '/parcels' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-grid-3x3"></i> {{ t('nav.parcels') }}
         </a>
+        {% endif %}
 
-        {% if request.state.module_flags.tickets %}
+        {% if request.state.module_flags.tickets and has_perm(request, 'tickets') %}
         <a href="/tickets/" class="nav-top-link {% if '/tickets' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-ticket-perforated"></i> {{ t('nav.tickets') }}
         </a>
         {% endif %}
 
-        {% if request.state.module_flags.purchase_requests %}
+        {% if request.state.module_flags.purchase_requests and has_perm(request, 'purchase_requests') %}
         <a href="/purchase-requests/" class="nav-top-link {% if '/purchase-requests' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-cart"></i> {{ t('nav.purchase_requests') }}
         </a>
@@ -240,7 +242,7 @@
 
         <div id="nav-accordion">
 
-        {% if request.state.module_flags.work_hours %}
+        {% if request.state.module_flags.work_hours and has_perm(request, 'work_hours') %}
         <div class="nav-group" data-group="work_hours">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
                     data-bs-target="#nav-group-work_hours">
@@ -265,7 +267,7 @@
         </div>
         {% endif %}
 
-        {% if request.state.module_flags.water %}
+        {% if request.state.module_flags.water and has_perm(request, 'water') %}
         <div class="nav-group" data-group="water">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
                     data-bs-target="#nav-group-water">
@@ -282,7 +284,7 @@
         </div>
         {% endif %}
 
-        {% if request.state.module_flags.electricity %}
+        {% if request.state.module_flags.electricity and has_perm(request, 'electricity') %}
         <div class="nav-group" data-group="electricity">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
                     data-bs-target="#nav-group-electricity">
@@ -299,7 +301,7 @@
         </div>
         {% endif %}
 
-        {% if request.state.module_flags.insurance %}
+        {% if request.state.module_flags.insurance and has_perm(request, 'insurance') %}
         <div class="nav-group" data-group="insurance">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
                     data-bs-target="#nav-group-insurance">
@@ -316,7 +318,7 @@
         </div>
         {% endif %}
 
-        {% if request.state.module_flags.calendar %}
+        {% if request.state.module_flags.calendar and has_perm(request, 'calendar') %}
         <div class="nav-group" data-group="calendar">
             <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
                     data-bs-target="#nav-group-calendar">
@@ -333,13 +335,13 @@
         </div>
         {% endif %}
 
-        {% if request.state.module_flags.announcements %}
+        {% if request.state.module_flags.announcements and is_full_access(request) %}
         <a href="/announcements/" class="nav-top-link {% if '/announcements' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-megaphone"></i> {{ t('nav.announcements') }}
         </a>
         {% endif %}
 
-        {% if request.state.module_flags.inventory %}
+        {% if request.state.module_flags.inventory and has_perm(request, 'inventory') %}
         <a href="/inventory/" class="nav-top-link {% if '/inventory' in request.url.path %}aktiv{% endif %}">
             <i class="bi bi-box-seam"></i> {{ t('nav.inventory') }}
         </a>

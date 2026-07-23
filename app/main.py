@@ -21,7 +21,7 @@ from app.models import Ticket, TicketStatus
 from app.birthdays import upcoming_birthdays
 from app.auth import hash_password, get_current_user
 from app.module_flags import load_module_flags
-from app.i18n import load_translations, load_current_language
+from app.i18n import load_translations, load_current_language, t_for
 from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
 from app.update_check import refresh_update_check_cache
@@ -356,16 +356,15 @@ async def forbidden_handler(request: Request, exc):
         user = await get_current_user(request, db)
     # exc.detail often carries a specific, helpful reason (e.g. "the
     # requester may not also approve their own purchase request"). This
-    # used to be discarded entirely in favor of a generic "Keine
-    # Berechtigung" -- which made a number of carefully worded (and
-    # translated) error messages elsewhere effectively invisible. Now:
-    # show the specific message if present. Important: FastAPI
-    # auto-fills "detail" with the generic English HTTP status phrase
-    # ("Forbidden") when no custom text was given at raise time -- we
-    # need to detect exactly that case and keep showing the German
-    # fallback text instead, rather than accidentally leaking English.
+    # used to be discarded entirely in favor of a generic fallback --
+    # which made a number of carefully worded (and translated) error
+    # messages elsewhere effectively invisible. Now: show the specific
+    # message if present. Important: FastAPI auto-fills "detail" with
+    # the generic English HTTP status phrase ("Forbidden") when no
+    # custom text was given at raise time -- detect exactly that case
+    # and fall back to the translated generic message instead.
     detail = getattr(exc, "detail", None)
-    meldung = detail if detail and detail != "Forbidden" else "Keine Berechtigung"
+    meldung = detail if detail and detail != "Forbidden" else t_for(request, "errors.no_permission")
     return templates.TemplateResponse(
         "fehler.html",
         {"request": request, "user": user, "code": 403, "meldung": meldung},
@@ -378,7 +377,7 @@ async def not_found_handler(request: Request, exc):
     async with AsyncSessionLocal() as db:
         user = await get_current_user(request, db)
     detail = getattr(exc, "detail", None)
-    meldung = detail if detail and detail != "Not Found" else "Seite nicht gefunden"
+    meldung = detail if detail and detail != "Not Found" else t_for(request, "errors.page_not_found")
     return templates.TemplateResponse(
         "fehler.html",
         {"request": request, "user": user, "code": 404, "meldung": meldung},

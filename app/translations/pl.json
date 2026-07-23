@@ -61,6 +61,8 @@
     "requester_cannot_self_approve": "Wnioskodawca nie może sam zatwierdzić własnego wniosku zakupowego (zasada dwóch osób).",
     "page_title": "Błąd {code}",
     "back_to_home": "Powrót do strony głównej",
+    "no_permission": "Nie masz uprawnień, aby to zrobić",
+    "page_not_found": "Strona nie znaleziona",
     "group_name_required": "Nazwa grupy jest wymagana",
     "group_name_taken": "Grupa o tej nazwie już istnieje",
     "group_created": "Grupa utworzona",

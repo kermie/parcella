@@ -61,6 +61,8 @@
     "requester_cannot_self_approve": "Žadatel nemůže schválit vlastní žádost o nákup (princip schvalování dvěma osobami).",
     "page_title": "Chyba {code}",
     "back_to_home": "Zpět na úvodní stránku",
+    "no_permission": "K tomu nemáte oprávnění",
+    "page_not_found": "Stránka nenalezena",
     "group_name_required": "Je vyžadován název skupiny",
     "group_name_taken": "Skupina s tímto názvem již existuje",
     "group_created": "Skupina vytvořena",

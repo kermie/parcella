@@ -95,7 +95,8 @@ async def require_admin(request: Request, db: AsyncSession) -> User:
     if is_full_access is None:
         is_full_access = await is_full_access_user(db, user)
     if not is_full_access:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Berechtigung")
+        from app.i18n import t_for
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=t_for(request, "errors.no_permission"))
     return user
 
 
@@ -112,5 +113,6 @@ async def require_system_admin(request: Request, db: AsyncSession) -> User:
     if is_system_admin is None:
         is_system_admin = await is_system_admin_user(db, user)
     if not is_system_admin:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Keine Berechtigung")
+        from app.i18n import t_for
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=t_for(request, "errors.no_permission"))
     return user

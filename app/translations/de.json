@@ -61,6 +61,8 @@
     "requester_cannot_self_approve": "Der Antragsteller darf seinen eigenen Einkaufswunsch nicht mitfreigeben (Vier-Augen-Prinzip).",
     "page_title": "Fehler {code}",
     "back_to_home": "Zur Startseite",
+    "no_permission": "Sie haben keine Berechtigung dafür",
+    "page_not_found": "Seite nicht gefunden",
     "group_name_required": "Ein Gruppenname ist erforderlich",
     "group_name_taken": "Eine Gruppe mit diesem Namen existiert bereits",
     "group_created": "Gruppe erstellt",

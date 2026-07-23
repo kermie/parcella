@@ -61,6 +61,8 @@
     "requester_cannot_self_approve": "Le demandeur ne peut pas approuver sa propre demande d'achat (principe d'approbation à deux personnes).",
     "page_title": "Erreur {code}",
     "back_to_home": "Retour à l'accueil",
+    "no_permission": "Vous n'avez pas la permission de faire cela",
+    "page_not_found": "Page introuvable",
     "group_name_required": "Un nom de groupe est requis",
     "group_name_taken": "Un groupe portant ce nom existe déjà",
     "group_created": "Groupe créé",

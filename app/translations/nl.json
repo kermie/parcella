@@ -61,6 +61,8 @@
     "requester_cannot_self_approve": "De aanvrager mag zijn eigen aankoopaanvraag niet goedkeuren (twee-personen goedkeuringsprincipe).",
     "page_title": "Fout {code}",
     "back_to_home": "Terug naar startpagina",
+    "no_permission": "U heeft hier geen toestemming voor",
+    "page_not_found": "Pagina niet gevonden",
     "group_name_required": "Een groepsnaam is verplicht",
     "group_name_taken": "Er bestaat al een groep met deze naam",
     "group_created": "Groep aangemaakt",
