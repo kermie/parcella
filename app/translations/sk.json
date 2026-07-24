@@ -1882,7 +1882,9 @@
       "col_total": "Spolu",
       "subtotal": "Medzisúčet",
       "preview_banner": "Náhľad — zatiaľ nedokončené ani neodoslané",
-      "account_holder": "Majiteľ účtu: {name}"
+      "account_holder": "Majiteľ účtu: {name}",
+      "page_label": "Strana",
+      "of_label": "z"
     }
   }
 }

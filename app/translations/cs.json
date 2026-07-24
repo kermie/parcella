@@ -1882,7 +1882,9 @@
       "col_total": "Celkem",
       "subtotal": "Mezisoučet",
       "preview_banner": "Náhled — zatím nedokončeno ani neodesláno",
-      "account_holder": "Majitel účtu: {name}"
+      "account_holder": "Majitel účtu: {name}",
+      "page_label": "Strana",
+      "of_label": "z"
     }
   }
 }

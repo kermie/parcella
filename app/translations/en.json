@@ -1882,7 +1882,9 @@
       "col_total": "Total",
       "subtotal": "Subtotal",
       "preview_banner": "Preview — not yet finalized or sent",
-      "account_holder": "Account holder: {name}"
+      "account_holder": "Account holder: {name}",
+      "page_label": "Page",
+      "of_label": "of"
     }
   }
 }

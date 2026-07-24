@@ -114,6 +114,7 @@ async def _pdf_context(db: AsyncSession) -> dict:
         select(ClubSetting).where(ClubSetting.key.in_([
             "verein_strasse", "verein_plz", "verein_ort",
             "bank_name", "bank_iban", "bank_bic", "bank_account_owner",
+            "registergericht", "vereinsnummer",
         ]))
     )
     settings_map = {e.key: e.value for e in settings_result.scalars().all()}
@@ -131,6 +132,12 @@ async def _pdf_context(db: AsyncSession) -> dict:
         "bank_iban": settings_map.get("bank_iban") or "",
         "bank_bic": settings_map.get("bank_bic") or "",
         "bank_account_owner": settings_map.get("bank_account_owner") or "",
+        # Issue #74's PDF-footer "register court + number" column reuses
+        # the club-data settings that already exist for this (see
+        # admin.py's SETTINGS_FIELDS: vereinsnummer/registergericht) --
+        # they were captured but never actually shown anywhere before.
+        "register_court": settings_map.get("registergericht") or "",
+        "register_number": settings_map.get("vereinsnummer") or "",
         "region": await load_current_region(db),
         "currency": await load_current_currency(db),
         "language": await load_current_language(db),

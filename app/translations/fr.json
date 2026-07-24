@@ -1882,7 +1882,9 @@
       "col_total": "Total",
       "subtotal": "Sous-total",
       "preview_banner": "Aperçu — pas encore finalisé ni envoyé",
-      "account_holder": "Titulaire du compte : {name}"
+      "account_holder": "Titulaire du compte : {name}",
+      "page_label": "Page",
+      "of_label": "sur"
     }
   }
 }

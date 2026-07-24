@@ -1882,7 +1882,9 @@
       "col_total": "Gesamt",
       "subtotal": "Zwischensumme",
       "preview_banner": "Vorschau — noch nicht abgeschlossen oder versendet",
-      "account_holder": "Kontoinhaber: {name}"
+      "account_holder": "Kontoinhaber: {name}",
+      "page_label": "Seite",
+      "of_label": "von"
     }
   }
 }

@@ -1882,7 +1882,9 @@
       "col_total": "Razem",
       "subtotal": "Suma częściowa",
       "preview_banner": "Podgląd — jeszcze niesfinalizowane ani niewysłane",
-      "account_holder": "Właściciel konta: {name}"
+      "account_holder": "Właściciel konta: {name}",
+      "page_label": "Strona",
+      "of_label": "z"
     }
   }
 }

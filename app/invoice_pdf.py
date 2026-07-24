@@ -22,41 +22,59 @@ from app.pdf_utils import file_to_data_uri
 from app.l10n import format_money
 from app.i18n import translate
 
-PAGE_CSS = """
-@page {
+def _page_css(language: str) -> str:
+    """@page CSS, with the "Page X of Y" page-numbering text localized.
+    A function (not a constant) because that's the one static PDF
+    string that can't be swapped via a running() element like the rest
+    of the footer (issue #74's 4th column) -- WeasyPrint only supports
+    page counters directly inside a margin box's own `content`
+    property, not inside the DOM of an element placed there via
+    `content: element(...)`, so it has to be baked into the CSS itself
+    per render rather than translated in the HTML body."""
+    page_word = translate("finances.pdf.page_label", language)
+    of_word = translate("finances.pdf.of_label", language)
+    return f"""
+@page {{
     size: A4;
-    margin: 2.2cm 1.5cm 2.2cm 1.5cm;
-    @top-center { content: element(header); }
-    @bottom-left { content: element(footer); }
-    @bottom-right {
-        content: "Page " counter(page) " of " counter(pages);
+    margin: 2.2cm 1.5cm 2.6cm 1.5cm;
+    @top-center {{ content: element(header); }}
+    @bottom-left {{ content: element(footer); width: 15.7cm; }}
+    @bottom-right {{
+        content: "{page_word} " counter(page) " {of_word} " counter(pages);
         font-size: 8pt; color: #6b7280;
-    }
-}
-body { font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5pt; }
-#header { position: running(header); text-align: center; border-bottom: 2px solid #2f6f3e; padding-bottom: 8px; }
-#header img { max-height: 50px; margin-bottom: 4px; }
-#header .club-name { font-size: 13pt; font-weight: bold; color: #2f6f3e; }
-#footer { position: running(footer); font-size: 8pt; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 6px; }
-.meta-block { display: flex; justify-content: space-between; margin-top: 0.8cm; margin-bottom: 0.8cm; }
-.recipient { white-space: pre-line; line-height: 1.5; }
-.invoice-meta td { padding: 1px 6px; }
-.invoice-meta td:first-child { color: #6b7280; }
-.invoice-meta td:last-child { font-weight: bold; text-align: right; }
-h1 { font-size: 14pt; margin-bottom: 0.1cm; color: #1f2937; }
-.parcel-line { color: #6b7280; margin-bottom: 0.5cm; font-size: 9.5pt; }
-table.items { width: 100%; border-collapse: collapse; margin-top: 0.3cm; }
-table.items th { text-align: left; font-size: 9pt; text-transform: uppercase; color: #4b5563; border-bottom: 2px solid #2f6f3e; padding: 6px 8px; }
-table.items td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
-table.items td.num { text-align: right; white-space: nowrap; }
-table.items small { color: #6b7280; }
-table.items tfoot td { border-bottom: none; border-top: 2px solid #2f6f3e; font-weight: bold; padding-top: 8px; }
-.footer-text { margin-top: 0.8cm; font-size: 9.5pt; color: #374151; white-space: pre-line; }
-.preview-banner {
+    }}
+}}
+body {{ font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5pt; }}
+#header {{ position: running(header); text-align: center; border-bottom: 2px solid #2f6f3e; padding-bottom: 8px; }}
+#header img {{ max-height: 50px; margin-bottom: 4px; }}
+#header .club-name {{ font-size: 13pt; font-weight: bold; color: #2f6f3e; }}
+#footer {{
+    position: running(footer); display: flex; gap: 0.6cm;
+    font-size: 7.5pt; line-height: 1.4; color: #6b7280;
+    border-top: 1px solid #d1d5db; padding-top: 6px;
+}}
+#footer .footer-col {{ flex: 1; min-width: 0; }}
+#footer .footer-col:nth-child(1) {{ flex: 0.85; }}
+#footer .footer-col:nth-child(3) {{ flex: 1.3; }}
+.meta-block {{ display: flex; justify-content: space-between; margin-top: 0.8cm; margin-bottom: 0.8cm; }}
+.recipient {{ white-space: pre-line; line-height: 1.5; }}
+.invoice-meta td {{ padding: 1px 6px; }}
+.invoice-meta td:first-child {{ color: #6b7280; }}
+.invoice-meta td:last-child {{ font-weight: bold; text-align: right; }}
+h1 {{ font-size: 14pt; margin-bottom: 0.1cm; color: #1f2937; }}
+.parcel-line {{ color: #6b7280; margin-bottom: 0.5cm; font-size: 9.5pt; }}
+table.items {{ width: 100%; border-collapse: collapse; margin-top: 0.3cm; }}
+table.items th {{ text-align: left; font-size: 9pt; text-transform: uppercase; color: #4b5563; border-bottom: 2px solid #2f6f3e; padding: 6px 8px; }}
+table.items td {{ padding: 7px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }}
+table.items td.num {{ text-align: right; white-space: nowrap; }}
+table.items small {{ color: #6b7280; }}
+table.items tfoot td {{ border-bottom: none; border-top: 2px solid #2f6f3e; font-weight: bold; padding-top: 8px; }}
+.footer-text {{ margin-top: 0.8cm; font-size: 9.5pt; color: #374151; white-space: pre-line; }}
+.preview-banner {{
     background: #fef3c7; color: #92400e; padding: 6px 10px; border-radius: 4px;
     font-size: 9pt; margin-bottom: 0.4cm; text-align: center;
-}
-.invoice-block + .invoice-block { page-break-before: always; }
+}}
+.invoice-block + .invoice-block {{ page-break-before: always; }}
 """
 
 
@@ -206,45 +224,66 @@ def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, languag
     """
 
 
-def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], footer_line: str) -> str:
+def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], footer_html: str, language: str) -> str:
     logo_data_uri = file_to_data_uri(logo_path)
     logo_block = f'<img src="{logo_data_uri}">' if logo_data_uri else ""
     return f"""
     <html>
-    <head><meta charset="utf-8"><style>{PAGE_CSS}</style></head>
+    <head><meta charset="utf-8"><style>{_page_css(language)}</style></head>
     <body>
         <div id="header">
             {logo_block}
             <div class="club-name">{club_name}</div>
         </div>
-        <div id="footer">{footer_line}</div>
+        <div id="footer">{footer_html}</div>
         {body_html}
     </body>
     </html>
     """
 
 
-def _bank_footer_bits(bank_name: str, bank_iban: str, bank_bic: str, bank_account_owner: str, language: str) -> List[str]:
-    """Bank details for the footer, in the order issue #69 asked for:
-    name, IBAN, BIC, account holder (added since the account holder --
-    e.g. the club's registered legal name -- can differ from the
-    display name used elsewhere in the club_name/branding)."""
-    return [b for b in [
-        bank_name,
+def _footer_html(
+    club_name: str, club_address_lines: List[str], register_court: str, register_number: str,
+    bank_name: str, bank_iban: str, bank_bic: str, bank_account_owner: str, language: str,
+) -> str:
+    """Three-column footer content (issue #74): organization identity,
+    register-court info, and bank details, laid out side by side via
+    the flex #footer running element. "Page X of Y" is the visual
+    fourth column, but lives in its own @bottom-right margin box (see
+    _page_css) rather than here, since WeasyPrint only resolves page
+    counters directly inside a margin box's own `content`, not inside
+    the DOM of an element placed there via `content: element(...)`."""
+    org_lines = [club_name, *club_address_lines]
+
+    register_line = " ".join(filter(None, [register_court, register_number]))
+    register_lines = [register_line] if register_line else []
+
+    bank_line = " · ".join(filter(None, [bank_name, f"BIC {bank_bic}" if bank_bic else ""]))
+    bank_lines = [b for b in [
+        bank_line,
         f"IBAN {bank_iban}" if bank_iban else "",
-        f"BIC {bank_bic}" if bank_bic else "",
         translate("finances.pdf.account_holder", language, name=bank_account_owner) if bank_account_owner else "",
     ] if b]
+
+    def column(lines: List[str]) -> str:
+        return f'<div class="footer-col">{"".join(f"<div>{line}</div>" for line in lines)}</div>'
+
+    return column(org_lines) + column(register_lines) + column(bank_lines)
 
 
 def render_invoice_pdf(
     data: InvoicePdfData, club_name: str, logo_path: Optional[Path],
     club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
     region: str, currency: str, bank_account_owner: str = "", language: str = "en",
+    register_court: str = "", register_number: str = "",
 ) -> bytes:
-    bank_bits = _bank_footer_bits(bank_name, bank_iban, bank_bic, bank_account_owner, language)
-    footer_line = " · ".join([*club_address_lines, *bank_bits])
-    html_doc = _wrap_document(_invoice_body_html(data, region, currency, language), club_name, logo_path, footer_line)
+    footer_html = _footer_html(
+        club_name, club_address_lines, register_court, register_number,
+        bank_name, bank_iban, bank_bic, bank_account_owner, language,
+    )
+    html_doc = _wrap_document(
+        _invoice_body_html(data, region, currency, language), club_name, logo_path, footer_html, language,
+    )
     return HTML(string=html_doc).write_pdf()
 
 
@@ -252,6 +291,7 @@ def render_invoice_bundle_pdf(
     items: List[InvoicePdfData], club_name: str, logo_path: Optional[Path],
     club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
     region: str, currency: str, bank_account_owner: str = "", language: str = "en",
+    register_court: str = "", register_number: str = "",
 ) -> bytes:
     """Same rendering as render_invoice_pdf, but for many invoices in
     one PDF (issue #58's "merge PDFs to one big one so we can print
@@ -259,8 +299,10 @@ def render_invoice_bundle_pdf(
     one @page header/footer/page-numbering across the whole bundle
     rather than resetting per invoice, since it's meant to be printed
     and handled as a single stack."""
-    bank_bits = _bank_footer_bits(bank_name, bank_iban, bank_bic, bank_account_owner, language)
-    footer_line = " · ".join([*club_address_lines, *bank_bits])
+    footer_html = _footer_html(
+        club_name, club_address_lines, register_court, register_number,
+        bank_name, bank_iban, bank_bic, bank_account_owner, language,
+    )
     body_html = "".join(_invoice_body_html(data, region, currency, language) for data in items)
-    html_doc = _wrap_document(body_html, club_name, logo_path, footer_line)
+    html_doc = _wrap_document(body_html, club_name, logo_path, footer_html, language)
     return HTML(string=html_doc).write_pdf()

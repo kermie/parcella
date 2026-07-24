@@ -1882,7 +1882,9 @@
       "col_total": "Totaal",
       "subtotal": "Subtotaal",
       "preview_banner": "Voorbeeld — nog niet afgerond of verzonden",
-      "account_holder": "Rekeninghouder: {name}"
+      "account_holder": "Rekeninghouder: {name}",
+      "page_label": "Pagina",
+      "of_label": "van"
     }
   }
 }
