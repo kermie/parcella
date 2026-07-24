@@ -96,30 +96,6 @@
     </div>
     {% else %}
 
-    {% if has_perm(request, 'finances', 'write') %}
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-123 me-2"></i>{{ t('finances.run_detail.starting_number_header') }}</div>
-            <div class="card-body">
-                <p class="text-muted mb-2" style="font-size: 0.82rem;">
-                    {{ t('finances.run_detail.starting_number_help') }}
-                </p>
-                <form method="post" action="/finances/runs/{{ run.id }}/starting-sequence" class="d-flex gap-2 align-items-end">
-                    <div>
-                        <input type="number" name="starting_sequence_override" class="form-control form-control-sm"
-                               style="width: 160px;"
-                               value="{{ run.starting_sequence_override if run.starting_sequence_override is not none else '' }}"
-                               placeholder="{{ t('finances.run_list.starting_number_placeholder') }}">
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-check-lg me-1"></i>{{ t('finances.run_detail.starting_number_save') }}
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
     <div class="col-12">
         <div class="card">
             <div class="card-header"><i class="bi bi-list-ol me-2"></i>{{ t('finances.run_detail.items_header') }}</div>

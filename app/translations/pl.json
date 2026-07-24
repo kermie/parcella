@@ -294,7 +294,7 @@
         "bank_name": "Nazwa banku",
         "bank_iban": "IBAN",
         "bank_bic": "BIC",
-        "invoice_number_start": "Początkowy numer faktury (dla pierwszego rozliczanego roku)",
+        "invoice_number_start": "Następny numer faktury (nadpisanie)",
         "invoice_number_format": "Format numeru faktury",
         "bank_account_owner": "Posiadacz konta"
       },
@@ -340,7 +340,9 @@
       "invoice_number_format_currently_used": "Obecnie używany: {example}",
       "invoice_number_format_is_default": "(domyślny, nic własnego nie zapisano)",
       "search_placeholder": "Szukaj ustawień...",
-      "search_no_results": "Żadne ustawienia nie pasują do wyszukiwania."
+      "search_no_results": "Żadne ustawienia nie pasują do wyszukiwania.",
+      "invoice_number_start_placeholder": "np. 20000",
+      "invoice_number_start_help": "Opcjonalne. Wymusza, aby następna seria faktur -- niezależnie od roku -- rozpoczynała się od tego numeru zamiast kontynuować automatycznie; kolizje z istniejącymi numerami są sprawdzane dopiero przy finalizacji tej serii. Po użyciu jest automatycznie czyszczone, więc kolejne serie po prostu kontynuują numerację. Pozostaw puste, aby zawsze kontynuować automatycznie."
     },
     "integrations": {
       "title": "Integracje",
@@ -1698,9 +1700,6 @@
       "no_runs": "Brak serii faktur.",
       "delete_confirm": "Usunąć tę serię faktur wraz ze wszystkimi definicjami pozycji? Tej czynności nie można cofnąć.",
       "all_invoices_button": "Wszystkie faktury",
-      "label_starting_number": "Numer początkowy (nadpisanie)",
-      "starting_number_placeholder": "np. 20000",
-      "starting_number_help": "Opcjonalne. Nadpisuje dla tej serii normalne kontynuowanie od ostatniego numeru, niezależnie od tego, co istnieje w innych seriach/latach. Pozostaw puste, aby kontynuować normalnie.",
       "success_message": "Gotowe."
     },
     "run_detail": {
@@ -1746,10 +1745,7 @@
       "copy_items_label": "Skopiuj definicje pozycji z",
       "copy_items_button": "Skopiuj pozycje",
       "col_category": "Kategoria",
-      "label_category": "Kategoria",
-      "starting_number_header": "Nadpisanie numeru początkowego",
-      "starting_number_help": "Ustaw jawny numer początkowy dla faktur tej serii -- zawsze dostępne, sprawdzane pod kątem kolizji z istniejącymi numerami dopiero przy finalizacji.",
-      "starting_number_save": "Zapisz"
+      "label_category": "Kategoria"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Kwota stała za działkę",

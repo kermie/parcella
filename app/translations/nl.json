@@ -294,7 +294,7 @@
         "bank_name": "Naam van de bank",
         "bank_iban": "IBAN",
         "bank_bic": "BIC",
-        "invoice_number_start": "Beginnummer factuur (voor het eerste gefactureerde jaar)",
+        "invoice_number_start": "Volgend factuurnummer (overschrijven)",
         "invoice_number_format": "Factuurnummerformaat",
         "bank_account_owner": "Rekeninghouder"
       },
@@ -340,7 +340,9 @@
       "invoice_number_format_currently_used": "Momenteel gebruikt: {example}",
       "invoice_number_format_is_default": "(standaard, niets aangepasts opgeslagen)",
       "search_placeholder": "Instellingen zoeken...",
-      "search_no_results": "Geen instellingen komen overeen met uw zoekopdracht."
+      "search_no_results": "Geen instellingen komen overeen met uw zoekopdracht.",
+      "invoice_number_start_placeholder": "bijv. 20000",
+      "invoice_number_start_help": "Optioneel. Dwingt af dat de volgende factuurronde -- ongeacht het jaar -- met dit nummer begint in plaats van automatisch door te tellen; botsingen met bestaande nummers worden pas gecontroleerd bij het afronden van die ronde. Wordt na gebruik automatisch geleegd, zodat latere rondes gewoon doortellen. Laat leeg om altijd automatisch door te tellen."
     },
     "integrations": {
       "title": "Integraties",
@@ -1698,9 +1700,6 @@
       "no_runs": "Nog geen factuurrondes.",
       "delete_confirm": "Deze factuurronde met alle regeldefinities verwijderen? Dit kan niet ongedaan worden gemaakt.",
       "all_invoices_button": "Alle facturen",
-      "label_starting_number": "Startnummer (overschrijven)",
-      "starting_number_placeholder": "bijv. 20000",
-      "starting_number_help": "Optioneel. Overschrijft voor deze ronde het normale doortellen vanaf het laatste nummer, ongeacht wat er in andere rondes/jaren bestaat. Laat leeg om normaal door te tellen.",
       "success_message": "Klaar."
     },
     "run_detail": {
@@ -1746,10 +1745,7 @@
       "copy_items_label": "Regeldefinities kopiëren van",
       "copy_items_button": "Regels kopiëren",
       "col_category": "Categorie",
-      "label_category": "Categorie",
-      "starting_number_header": "Startnummer overschrijven",
-      "starting_number_help": "Stel een expliciet startnummer in voor de facturen van deze ronde -- altijd beschikbaar, wordt pas bij het afronden gecontroleerd op botsingen met bestaande nummers.",
-      "starting_number_save": "Opslaan"
+      "label_category": "Categorie"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Vast bedrag per perceel",

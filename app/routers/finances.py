@@ -233,13 +233,9 @@ async def run_create(
     issued_date: str = Form(...),
     due_date: str = Form(...),
     footer_text: str = Form(""),
-    starting_sequence_override: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_permission(request, db, "finances", "write")
-
-    override_value = starting_sequence_override.strip()
-    parsed_override = int(override_value) if override_value.isdigit() else None
 
     run = InvoiceRun(
         year=year,
@@ -247,7 +243,6 @@ async def run_create(
         issued_date=datetime.strptime(issued_date, "%Y-%m-%d").date(),
         due_date=datetime.strptime(due_date, "%Y-%m-%d").date(),
         footer_text=footer_text.strip() or None,
-        starting_sequence_override=parsed_override,
         created_by_id=user.id,
     )
     db.add(run)
@@ -268,29 +263,6 @@ async def run_delete(run_id: str, request: Request, db: AsyncSession = Depends(g
     await db.delete(run)
     await db.commit()
     return RedirectResponse("/finances/runs?success=1", status_code=302)
-
-
-@router.post("/runs/{run_id}/starting-sequence")
-async def run_set_starting_sequence(
-    run_id: str, request: Request,
-    starting_sequence_override: str = Form(""),
-    db: AsyncSession = Depends(get_db),
-):
-    """Sets or clears the run's starting-number override (issue #73)
-    after creation -- so changing your mind doesn't mean deleting and
-    re-creating the whole draft run. Collision checking happens at
-    finalize time (see finalize_run), not here, since which numbers
-    are "taken" can still change while the run is still a draft."""
-    await require_permission(request, db, "finances", "write")
-
-    run = await _get_run_or_404(db, run_id)
-    if run.status != InvoiceRunStatus.DRAFT:
-        raise HTTPException(status_code=400, detail=t_for(request, "finances.errors.run_not_draft"))
-
-    override_value = starting_sequence_override.strip()
-    run.starting_sequence_override = int(override_value) if override_value.isdigit() else None
-    await db.commit()
-    return RedirectResponse(f"/finances/runs/{run_id}", status_code=302)
 
 
 # ---------------------------------------------------------------------------

@@ -294,7 +294,7 @@
         "bank_name": "Nom de la banque",
         "bank_iban": "IBAN",
         "bank_bic": "BIC",
-        "invoice_number_start": "Premier numéro de facture (pour la première année facturée)",
+        "invoice_number_start": "Prochain numéro de facture (remplacer)",
         "invoice_number_format": "Format du numéro de facture",
         "bank_account_owner": "Titulaire du compte"
       },
@@ -340,7 +340,9 @@
       "invoice_number_format_currently_used": "Actuellement utilisé : {example}",
       "invoice_number_format_is_default": "(par défaut, rien de personnalisé enregistré)",
       "search_placeholder": "Rechercher dans les paramètres...",
-      "search_no_results": "Aucun paramètre ne correspond à votre recherche."
+      "search_no_results": "Aucun paramètre ne correspond à votre recherche.",
+      "invoice_number_start_placeholder": "p. ex. 20000",
+      "invoice_number_start_help": "Facultatif. Force la prochaine série de factures -- quelle que soit l'année -- à commencer à ce numéro au lieu de continuer automatiquement ; les collisions avec les numéros existants ne sont vérifiées qu'au moment de la finalisation de cette série. Effacé automatiquement une fois utilisé, afin que les séries suivantes continuent simplement la numérotation. Laissez vide pour toujours continuer automatiquement."
     },
     "integrations": {
       "title": "Intégrations",
@@ -1698,9 +1700,6 @@
       "no_runs": "Aucune série de factures pour le moment.",
       "delete_confirm": "Supprimer cette série de factures ainsi que toutes ses lignes ? Cette action est irréversible.",
       "all_invoices_button": "Toutes les factures",
-      "label_starting_number": "Numéro de départ (remplacer)",
-      "starting_number_placeholder": "p. ex. 20000",
-      "starting_number_help": "Facultatif. Remplace pour cette série le comportement normal de poursuite du dernier numéro, indépendamment des autres séries/années. Laissez vide pour continuer normalement.",
       "success_message": "Terminé."
     },
     "run_detail": {
@@ -1746,10 +1745,7 @@
       "copy_items_label": "Copier les lignes types depuis",
       "copy_items_button": "Copier les lignes",
       "col_category": "Catégorie",
-      "label_category": "Catégorie",
-      "starting_number_header": "Remplacement du numéro de départ",
-      "starting_number_help": "Définissez un numéro de départ explicite pour les factures de cette série -- toujours disponible, vérifié pour les collisions avec les numéros existants uniquement lors de la finalisation.",
-      "starting_number_save": "Enregistrer"
+      "label_category": "Catégorie"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Montant fixe par parcelle",

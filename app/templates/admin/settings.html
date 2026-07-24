@@ -301,7 +301,12 @@
                 {% for key, label in finance_fields %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">{{ label }}</label>
-                    {% if key == 'invoice_number_format' %}
+                    {% if key == 'invoice_number_start' %}
+                    <input type="number" name="{{ key }}" class="form-control"
+                           placeholder="{{ t('admin.settings.invoice_number_start_placeholder') }}"
+                           value="{{ settings_map.get(key, '') or '' }}">
+                    <div class="form-text">{{ t('admin.settings.invoice_number_start_help') }}</div>
+                    {% elif key == 'invoice_number_format' %}
                     <div class="alert alert-success py-2 px-3 mb-2" style="font-size: 0.85rem;">
                         <i class="bi bi-check-circle-fill me-1"></i>
                         {{ t('admin.settings.invoice_number_format_currently_used', example=effective_invoice_number_example) }}
@@ -324,7 +329,6 @@
                     </div>
                     {% else %}
                     <input type="text" name="{{ key }}" class="form-control"
-                           {% if key == 'invoice_number_start' %}placeholder="1"{% endif %}
                            value="{{ settings_map.get(key, '') or '' }}">
                     {% endif %}
                 </div>

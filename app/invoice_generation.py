@@ -212,26 +212,29 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
 
 
 class SequenceCollisionError(Exception):
-    """Raised when a run's starting_sequence_override would collide
-    with sequence numbers already assigned in the same year."""
+    """Raised when the ClubSetting "invoice_number_start" override
+    would collide with sequence numbers already assigned in the same year."""
 
 
 async def _first_invoice_sequence(db: AsyncSession, run: InvoiceRun, invoice_count: int) -> int:
     """The sequence number to start `run`'s numbering at.
 
-    starting_sequence_override (issue #73) wins unconditionally if set
-    -- an explicit, always-available override, unlike the ClubSetting
-    "invoice_number_start" fallback below, which only ever applies
-    when the year has zero invoices so far and silently stops
-    mattering the moment any invoice exists for that year. The
-    override is checked for collisions against every sequence number
-    already used in the same year (across all its runs) before being
-    accepted, since invoice numbers must stay unique.
+    ClubSetting "invoice_number_start" (issue #65, reworked per a later
+    request) is a one-shot override: whenever it holds a number, that
+    number always wins for the very next run finalized -- regardless
+    of year or of what's already been invoiced -- and is checked for
+    collisions against every sequence number already used in that
+    run's year before being accepted. Once successfully used it's
+    cleared back to blank here (the caller commits), so it doesn't
+    keep forcing every future run back to the same starting point --
+    "start at 20000" should mean *this* run starts there and everything
+    after just continues sequentially, not that every run forever
+    starts at 20000.
 
-    Otherwise: one past whatever's already been assigned this year
-    (across every run, so a second run in the same year continues
-    rather than collides), or the club's configured starting number if
-    this is the year's first invoice ever.
+    With no override set: one past whatever's already been assigned
+    this year (across every run, so a second run in the same year
+    continues rather than collides), or 1 if this is the year's first
+    invoice ever.
     """
     existing_result = await db.execute(
         select(Invoice.sequence_number)
@@ -240,28 +243,28 @@ async def _first_invoice_sequence(db: AsyncSession, run: InvoiceRun, invoice_cou
     )
     existing_sequences = {row[0] for row in existing_result.all()}
 
-    if run.starting_sequence_override is not None:
-        start = run.starting_sequence_override
-        wanted_range = set(range(start, start + invoice_count))
+    setting_result = await db.execute(select(ClubSetting).where(ClubSetting.key == "invoice_number_start"))
+    entry = setting_result.scalar_one_or_none()
+    override_value = None
+    if entry and entry.value and entry.value.strip().isdigit():
+        override_value = int(entry.value.strip())
+
+    if override_value is not None:
+        wanted_range = set(range(override_value, override_value + invoice_count))
         collisions = sorted(wanted_range & existing_sequences)
         if collisions:
             raise SequenceCollisionError(
-                f"Starting at {start} would collide with already-used sequence number(s) "
+                f"Starting at {override_value} would collide with already-used sequence number(s) "
                 f"{collisions[0]}"
                 + (f"..{collisions[-1]}" if len(collisions) > 1 else "")
                 + f" in {run.year}."
             )
-        return start
+        entry.value = ""
+        return override_value
 
     if existing_sequences:
         return max(existing_sequences) + 1
-
-    start_result = await db.execute(select(ClubSetting).where(ClubSetting.key == "invoice_number_start"))
-    entry = start_result.scalar_one_or_none()
-    try:
-        return int(entry.value) if entry and entry.value else 1
-    except ValueError:
-        return 1
+    return 1
 
 
 async def _invoice_number_format(db: AsyncSession) -> str:
@@ -275,9 +278,9 @@ async def _invoice_number_format(db: AsyncSession) -> str:
 async def finalize_run(db: AsyncSession, run: InvoiceRun) -> List[Invoice]:
     """Computes and PERSISTS every invoice for `run`, assigning
     permanent invoice numbers in order, then marks the run FINALIZED.
-    Raises SequenceCollisionError (before creating anything) if
-    starting_sequence_override would collide with existing numbers.
-    Caller commits."""
+    Raises SequenceCollisionError (before creating anything) if the
+    "invoice_number_start" override would collide with existing
+    numbers. Caller commits."""
     computed = await compute_invoices_for_run(db, run)
 
     number_format = await _invoice_number_format(db)

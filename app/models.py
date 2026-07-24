@@ -1858,14 +1858,6 @@ class InvoiceRun(Base):
     status: Mapped[InvoiceRunStatus] = mapped_column(
         SAEnum(InvoiceRunStatus), default=InvoiceRunStatus.DRAFT, nullable=False, index=True
     )
-    # Issue #73: an explicit, always-available override for this run's
-    # first invoice number -- unlike ClubSetting "invoice_number_start"
-    # (issue #65), which is only ever consulted when the run's year has
-    # zero invoices so far, this always wins for this run regardless of
-    # what other runs/years exist. See app/invoice_generation.py's
-    # finalize_run().
-    starting_sequence_override: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
     created_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

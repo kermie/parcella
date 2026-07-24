@@ -294,7 +294,7 @@
         "bank_name": "Bankname",
         "bank_iban": "IBAN",
         "bank_bic": "BIC",
-        "invoice_number_start": "Erste Rechnungsnummer (für das erste abgerechnete Jahr)",
+        "invoice_number_start": "Nächste Rechnungsnummer (überschreiben)",
         "invoice_number_format": "Format der Rechnungsnummer",
         "bank_account_owner": "Kontoinhaber"
       },
@@ -340,7 +340,9 @@
       "invoice_number_format_currently_used": "Aktuell verwendet: {example}",
       "invoice_number_format_is_default": "(Standard, nichts Eigenes gespeichert)",
       "search_placeholder": "Einstellungen durchsuchen...",
-      "search_no_results": "Keine Einstellungen entsprechen Ihrer Suche."
+      "search_no_results": "Keine Einstellungen entsprechen Ihrer Suche.",
+      "invoice_number_start_placeholder": "z. B. 20000",
+      "invoice_number_start_help": "Optional. Erzwingt, dass der nächste Rechnungslauf -- unabhängig vom Jahr -- mit dieser Nummer beginnt, anstatt automatisch fortzusetzen; Kollisionen mit bestehenden Nummern werden erst beim Abschließen dieses Laufs geprüft. Wird nach Verwendung automatisch geleert, sodass spätere Läufe einfach fortlaufend weiterzählen. Leer lassen, um immer automatisch fortzusetzen."
     },
     "integrations": {
       "title": "Integrationen",
@@ -1698,9 +1700,6 @@
       "no_runs": "Noch keine Rechnungsläufe vorhanden.",
       "delete_confirm": "Diesen Rechnungslauf mitsamt allen Positionsdefinitionen löschen? Das kann nicht rückgängig gemacht werden.",
       "all_invoices_button": "Alle Rechnungen",
-      "label_starting_number": "Startnummer (überschreiben)",
-      "starting_number_placeholder": "z. B. 20000",
-      "starting_number_help": "Optional. Überschreibt für diesen Lauf das normale Fortsetzen der letzten Nummer, unabhängig davon, was in anderen Läufen/Jahren existiert. Leer lassen, um normal fortzusetzen.",
       "success_message": "Erledigt."
     },
     "run_detail": {
@@ -1746,10 +1745,7 @@
       "copy_items_label": "Positionsdefinitionen übernehmen von",
       "copy_items_button": "Positionen übernehmen",
       "col_category": "Kategorie",
-      "label_category": "Kategorie",
-      "starting_number_header": "Startnummer überschreiben",
-      "starting_number_help": "Legt eine explizite Startnummer für die Rechnungen dieses Laufs fest -- jederzeit verfügbar, wird erst beim Abschließen auf Kollisionen mit bestehenden Nummern geprüft.",
-      "starting_number_save": "Speichern"
+      "label_category": "Kategorie"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Festbetrag je Parzelle",

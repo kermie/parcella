@@ -286,12 +286,28 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     r_third_run = await client.get(f"/finances/runs/{second_run_id}")
     assert "40000" in r_third_run.text and "Membership fees" in r_third_run.text
 
-    # Starting-number override (issue #73): always available, not just
-    # when the year has zero invoices -- and checked for collisions at
-    # finalize time.
+    # Global starting-number override, sourced from the ClubSetting a
+    # user edits on /admin/settings (not a per-run field): always
+    # available, not just when the year has zero invoices -- checked
+    # for collisions at finalize time, and auto-cleared once consumed
+    # so it doesn't keep forcing every later run back to the same number.
+    from app.models import ClubSetting
+    from sqlalchemy import select as sa_select
+
+    async def _set_invoice_number_start(value):
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(sa_select(ClubSetting).where(ClubSetting.key == "invoice_number_start"))
+            entry = result.scalar_one_or_none()
+            if entry is None:
+                session.add(ClubSetting(key="invoice_number_start", value=value, description="test"))
+            else:
+                entry.value = value
+            await session.commit()
+
+    await _set_invoice_number_start("500")
     r_override_run = await client.post("/finances/runs", data={
         "year": "2028", "subject": "Override test", "issued_date": "2028-08-01",
-        "due_date": "2028-09-01", "footer_text": "", "starting_sequence_override": "500",
+        "due_date": "2028-09-01", "footer_text": "",
     })
     override_run_id = r_override_run.headers["location"].rstrip("/").split("/")[-1]
 
@@ -306,10 +322,16 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     r_override_detail = await client.get(f"/finances/runs/{override_run_id}")
     assert "2028/500" in r_override_detail.text
 
-    # A second run in the same year with the same override collides.
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(sa_select(ClubSetting).where(ClubSetting.key == "invoice_number_start"))
+        assert result.scalar_one().value == ""
+
+    # A second run in the same year, re-setting the override to the
+    # number just used, collides.
+    await _set_invoice_number_start("500")
     r_collide_run = await client.post("/finances/runs", data={
         "year": "2028", "subject": "Collision test", "issued_date": "2028-08-01",
-        "due_date": "2028-09-01", "footer_text": "", "starting_sequence_override": "500",
+        "due_date": "2028-09-01", "footer_text": "",
     })
     collide_run_id = r_collide_run.headers["location"].rstrip("/").split("/")[-1]
     await client.post(f"/finances/runs/{collide_run_id}/items", data={
@@ -319,13 +341,25 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     r_collide_finalize = await client.post(f"/finances/runs/{collide_run_id}/finalize")
     assert "error=" in r_collide_finalize.headers["location"]
 
-    # Editing the override to a free number lets it finalize.
-    r_edit_override = await client.post(
-        f"/finances/runs/{collide_run_id}/starting-sequence", data={"starting_sequence_override": "600"},
-    )
-    assert r_edit_override.status_code in (302, 303)
+    # Setting it to a free number lets it finalize; with no override
+    # set at all, a later run just continues naturally from there.
+    await _set_invoice_number_start("600")
     r_collide_retry = await client.post(f"/finances/runs/{collide_run_id}/finalize")
     assert "error" not in r_collide_retry.headers["location"]
+
+    r_natural_run = await client.post("/finances/runs", data={
+        "year": "2028", "subject": "Natural continuation", "issued_date": "2028-08-01",
+        "due_date": "2028-09-01", "footer_text": "",
+    })
+    natural_run_id = r_natural_run.headers["location"].rstrip("/").split("/")[-1]
+    await client.post(f"/finances/runs/{natural_run_id}/items", data={
+        "order_number": "10", "name": "Fee", "pricing_mode": "fixed_per_parcel",
+        "unit_price": "1.00", "applies_to_all_parcels": "on",
+    })
+    r_natural_finalize = await client.post(f"/finances/runs/{natural_run_id}/finalize")
+    assert "error" not in r_natural_finalize.headers["location"]
+    r_natural_detail = await client.get(f"/finances/runs/{natural_run_id}")
+    assert "2028/601" in r_natural_detail.text
 
     # Delivery + payments (phase 3, issue #58). The SMOKE-01 member has
     # no stored email, so deliver() should email nobody and the print

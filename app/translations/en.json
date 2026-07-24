@@ -294,7 +294,7 @@
         "bank_name": "Bank name",
         "bank_iban": "IBAN",
         "bank_bic": "BIC",
-        "invoice_number_start": "Starting invoice number (for the first year invoiced)",
+        "invoice_number_start": "Next invoice number (override)",
         "invoice_number_format": "Invoice number format",
         "bank_account_owner": "Account holder"
       },
@@ -340,7 +340,9 @@
       "invoice_number_format_currently_used": "Currently used: {example}",
       "invoice_number_format_is_default": "(default, nothing custom saved)",
       "search_placeholder": "Search settings...",
-      "search_no_results": "No settings match your search."
+      "search_no_results": "No settings match your search.",
+      "invoice_number_start_placeholder": "e.g. 20000",
+      "invoice_number_start_help": "Optional. Forces the very next invoice run -- in any year -- to start at this number instead of continuing automatically; checked for collisions with existing numbers only when that run is finalized. Cleared automatically once used, so later runs just continue sequentially from there. Leave blank to always continue automatically."
     },
     "integrations": {
       "title": "Integrations",
@@ -1698,9 +1700,6 @@
       "no_runs": "No invoice runs yet.",
       "delete_confirm": "Delete this invoice run and all its item definitions? This cannot be undone.",
       "all_invoices_button": "All invoices",
-      "label_starting_number": "Starting number (override)",
-      "starting_number_placeholder": "e.g. 20000",
-      "starting_number_help": "Optional. Overrides the normal continue-from-last-number behavior for this run, regardless of what other runs/years exist. Leave blank to continue normally.",
       "success_message": "Done."
     },
     "run_detail": {
@@ -1746,10 +1745,7 @@
       "copy_items_label": "Copy item definitions from",
       "copy_items_button": "Copy items",
       "col_category": "Category",
-      "label_category": "Category",
-      "starting_number_header": "Starting number override",
-      "starting_number_help": "Set an explicit starting number for this run's invoices -- always available, checked for collisions with existing numbers only when you finalize.",
-      "starting_number_save": "Save"
+      "label_category": "Category"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Fixed amount per parcel",

@@ -294,7 +294,7 @@
         "bank_name": "Názov banky",
         "bank_iban": "IBAN",
         "bank_bic": "BIC",
-        "invoice_number_start": "Počiatočné číslo faktúry (pre prvý fakturovaný rok)",
+        "invoice_number_start": "Ďalšie číslo faktúry (prepísať)",
         "invoice_number_format": "Formát čísla faktúry",
         "bank_account_owner": "Majiteľ účtu"
       },
@@ -340,7 +340,9 @@
       "invoice_number_format_currently_used": "Aktuálne používaný: {example}",
       "invoice_number_format_is_default": "(predvolený, nič vlastné nie je uložené)",
       "search_placeholder": "Hľadať v nastaveniach...",
-      "search_no_results": "Žiadne nastavenia nezodpovedajú vyhľadávaniu."
+      "search_no_results": "Žiadne nastavenia nezodpovedajú vyhľadávaniu.",
+      "invoice_number_start_placeholder": "napr. 20000",
+      "invoice_number_start_help": "Voliteľné. Vynúti, aby ďalšie vyúčtovanie -- bez ohľadu na rok -- začalo týmto číslom namiesto automatického pokračovania; kolízie s existujúcimi číslami sa kontrolujú až pri finalizácii tohto vyúčtovania. Po použití sa automaticky vymaže, takže ďalšie vyúčtovania jednoducho pokračujú v číslovaní. Nechajte prázdne pre vždy automatické pokračovanie."
     },
     "integrations": {
       "title": "Integrácie",
@@ -1698,9 +1700,6 @@
       "no_runs": "Zatiaľ žiadne vyúčtovania.",
       "delete_confirm": "Zmazať toto vyúčtovanie vrátane všetkých definícií položiek? Túto akciu nemožno vrátiť späť.",
       "all_invoices_button": "Všetky faktúry",
-      "label_starting_number": "Počiatočné číslo (prepísať)",
-      "starting_number_placeholder": "napr. 20000",
-      "starting_number_help": "Voliteľné. Pre toto vyúčtovanie prepíše bežné pokračovanie od posledného čísla, bez ohľadu na to, čo existuje v iných vyúčtovaniach/rokoch. Nechajte prázdne pre bežné pokračovanie.",
       "success_message": "Hotovo."
     },
     "run_detail": {
@@ -1746,10 +1745,7 @@
       "copy_items_label": "Skopírovať definície položiek z",
       "copy_items_button": "Skopírovať položky",
       "col_category": "Kategória",
-      "label_category": "Kategória",
-      "starting_number_header": "Prepísanie počiatočného čísla",
-      "starting_number_help": "Nastavte explicitné počiatočné číslo pre faktúry tohto vyúčtovania -- vždy dostupné, kolízie s existujúcimi číslami sa kontrolujú až pri finalizácii.",
-      "starting_number_save": "Uložiť"
+      "label_category": "Kategória"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Pevná suma za parcelu",
