@@ -222,6 +222,44 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     })
     assert r_blocked.status_code == 400
 
+    # Delivery + payments (phase 3, issue #58). The SMOKE-01 member has
+    # no stored email, so deliver() should email nobody and the print
+    # bundle should include this invoice instead.
+    from app.models import Invoice
+    from sqlalchemy import select as sa_select
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(sa_select(Invoice).where(Invoice.invoice_run_id == run_id))
+        invoice = result.scalars().first()
+    invoice_id = invoice.id
+
+    r_deliver = await client.post(f"/finances/runs/{run_id}/deliver")
+    assert r_deliver.status_code in (302, 303)
+    assert "emailed=0" in r_deliver.headers["location"]
+
+    r_bundle = await client.get(f"/finances/runs/{run_id}/print-bundle")
+    assert r_bundle.status_code == 200
+    assert r_bundle.headers["content-type"] == "application/pdf"
+
+    r_inv_list = await client.get("/finances/invoices")
+    assert r_inv_list.status_code == 200
+    assert "UndefinedError" not in r_inv_list.text
+    assert "SMOKE-01" in r_inv_list.text
+
+    r_inv_detail = await client.get(f"/finances/invoices/{invoice_id}")
+    assert r_inv_detail.status_code == 200
+    assert "UndefinedError" not in r_inv_detail.text
+
+    r_payment = await client.post(f"/finances/invoices/{invoice_id}/payments", data={
+        "amount": "1.00", "paid_on": "2026-08-15", "note": "smoke test payment",
+    })
+    assert r_payment.status_code in (302, 303)
+
+    r_inv_detail2 = await client.get(f"/finances/invoices/{invoice_id}")
+    assert r_inv_detail2.status_code == 200
+    assert "UndefinedError" not in r_inv_detail2.text
+    assert "smoke test payment" in r_inv_detail2.text
+
 
 async def test_smoke_metering_pages_render_without_jinja_errors(client, admin_user):
     token = await login(client, "admin@example.com")

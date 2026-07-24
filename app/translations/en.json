@@ -1655,7 +1655,12 @@
       "body": "{count} ticket(s) have been assigned to you in {app_name}:",
       "instruction": "Please log in to {app_name} to process them."
     },
-    "announcement_test_banner": "This is a test send and has not gone out to any members."
+    "announcement_test_banner": "This is a test send and has not gone out to any members.",
+    "invoice_delivery": {
+      "subject": "Invoice {invoice_number} from {club_name}",
+      "greeting": "Hello {name},",
+      "body": "Please find attached your invoice from {club_name} for parcel {parcel_number}, due {due_date}."
+    }
   },
   "finances": {
     "run_list": {
@@ -1678,7 +1683,8 @@
       "status_finalized": "Finalized",
       "open_button": "Open",
       "no_runs": "No invoice runs yet.",
-      "delete_confirm": "Delete this invoice run and all its item definitions? This cannot be undone."
+      "delete_confirm": "Delete this invoice run and all its item definitions? This cannot be undone.",
+      "all_invoices_button": "All invoices"
     },
     "run_detail": {
       "title": "Invoice run",
@@ -1710,7 +1716,15 @@
       "col_invoice_number": "Invoice no.",
       "col_parcel": "Parcel",
       "col_recipient": "Recipient",
-      "col_invoice_subtotal": "Subtotal"
+      "col_invoice_subtotal": "Subtotal",
+      "delivery_header": "Delivery",
+      "deliver_button": "Send emails & upload to cloud",
+      "deliver_hint": "Members without email notifications stay for the print bundle below.",
+      "print_bundle_button": "Download print bundle",
+      "col_delivery": "Delivery",
+      "icon_emailed": "Emailed",
+      "icon_printed": "Included in a print bundle",
+      "icon_uploaded": "Uploaded to cloud storage"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Fixed amount per parcel",
@@ -1723,7 +1737,9 @@
     "errors": {
       "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",
       "run_not_draft": "This invoice run is already finalized; its item definitions can no longer be changed.",
-      "no_item_definitions": "This invoice run has no item definitions yet — add at least one before finalizing."
+      "no_item_definitions": "This invoice run has no item definitions yet — add at least one before finalizing.",
+      "no_print_invoices": "Every invoice in this run has already been emailed -- nothing left to print.",
+      "no_email_recipient": "No reachable invoice-address member (email notifications + a stored email address) was found for this invoice."
     },
     "run_preview": {
       "title": "Preview invoices",
@@ -1739,6 +1755,49 @@
       "pdf_button": "PDF",
       "no_invoices": "No invoices would be generated — check the item definitions' parcel scope and the affected members' invoice-address flag.",
       "pdf_placeholder_number": "Preview"
+    },
+    "invoice_list": {
+      "title": "Invoices",
+      "heading": "Invoices",
+      "filter_parcel": "Parcel",
+      "filter_invoice_number": "Invoice no.",
+      "filter_status": "Status",
+      "status_all": "All",
+      "status_open": "Open",
+      "status_partially_paid": "Partially paid",
+      "status_paid": "Paid",
+      "filter_button": "Filter",
+      "col_invoice_number": "Invoice no.",
+      "col_parcel": "Parcel",
+      "col_recipient": "Recipient",
+      "col_subtotal": "Subtotal",
+      "col_paid": "Paid",
+      "col_status": "Status",
+      "col_paid_on": "Paid on",
+      "no_invoices": "No invoices match these filters."
+    },
+    "invoice_detail": {
+      "title": "Invoice",
+      "heading": "Invoice {number}",
+      "back": "Back to invoices",
+      "info_header": "Invoice",
+      "due_date": "Due date",
+      "delivery_header": "Delivery",
+      "emailed_at": "Emailed on {date}",
+      "not_emailed": "Not emailed",
+      "printed_at": "Printed on {date}",
+      "not_printed": "Not printed",
+      "uploaded_at": "Uploaded on {date}",
+      "not_uploaded": "Not uploaded",
+      "resend_button": "Resend email",
+      "line_items_header": "Line items",
+      "payments_header": "Payments",
+      "no_payments": "No payments recorded yet.",
+      "label_amount": "Amount",
+      "label_paid_on": "Paid on",
+      "label_note": "Note",
+      "add_payment_button": "Add payment",
+      "delete_payment_confirm": "Delete this payment?"
     }
   }
 }

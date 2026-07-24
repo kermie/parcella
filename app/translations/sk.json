@@ -1655,7 +1655,12 @@
       "body": "Bolo vám pridelených {count} tiket(ov) v {app_name}:",
       "instruction": "Prihláste sa prosím do {app_name}, aby ste ich mohli spracovať."
     },
-    "announcement_test_banner": "Toto je testovacie odoslanie a nebolo doručené žiadnemu členovi."
+    "announcement_test_banner": "Toto je testovacie odoslanie a nebolo doručené žiadnemu členovi.",
+    "invoice_delivery": {
+      "subject": "Faktúra {invoice_number} od {club_name}",
+      "greeting": "Dobrý deň, {name},",
+      "body": "V prílohe nájdete faktúru od {club_name} za parcelu {parcel_number}, splatnú {due_date}."
+    }
   },
   "finances": {
     "run_list": {
@@ -1678,7 +1683,8 @@
       "status_finalized": "Dokončené",
       "open_button": "Otvoriť",
       "no_runs": "Zatiaľ žiadne vyúčtovania.",
-      "delete_confirm": "Zmazať toto vyúčtovanie vrátane všetkých definícií položiek? Túto akciu nemožno vrátiť späť."
+      "delete_confirm": "Zmazať toto vyúčtovanie vrátane všetkých definícií položiek? Túto akciu nemožno vrátiť späť.",
+      "all_invoices_button": "Všetky faktúry"
     },
     "run_detail": {
       "title": "Vyúčtovanie",
@@ -1710,7 +1716,15 @@
       "col_invoice_number": "Č. faktúry",
       "col_parcel": "Parcela",
       "col_recipient": "Príjemca",
-      "col_invoice_subtotal": "Súčet"
+      "col_invoice_subtotal": "Súčet",
+      "delivery_header": "Doručenie",
+      "deliver_button": "Odoslať e-maily a nahrať do cloudu",
+      "deliver_hint": "Členovia bez e-mailových upozornení zostávajú pre tlačový balík nižšie.",
+      "print_bundle_button": "Stiahnuť tlačový balík",
+      "col_delivery": "Doručenie",
+      "icon_emailed": "Odoslané e-mailom",
+      "icon_printed": "Zahrnuté v tlačovom balíku",
+      "icon_uploaded": "Nahrané do cloudového úložiska"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Pevná suma za parcelu",
@@ -1723,7 +1737,9 @@
     "errors": {
       "cannot_delete_finalized_run": "Toto vyúčtovanie je už dokončené a nemožno ho zmazať.",
       "run_not_draft": "Toto vyúčtovanie je už dokončené; jeho definície položiek už nemožno meniť.",
-      "no_item_definitions": "Toto vyúčtovanie zatiaľ nemá žiadne definície položiek — pred dokončením pridajte aspoň jednu."
+      "no_item_definitions": "Toto vyúčtovanie zatiaľ nemá žiadne definície položiek — pred dokončením pridajte aspoň jednu.",
+      "no_print_invoices": "Všetky faktúry v tomto vyúčtovaní už boli odoslané e-mailom -- nie je čo tlačiť.",
+      "no_email_recipient": "Pre túto faktúru nebol nájdený žiadny dostupný člen s fakturačnou adresou (e-mailové upozornenia + uložená e-mailová adresa)."
     },
     "run_preview": {
       "title": "Náhľad faktúr",
@@ -1739,6 +1755,49 @@
       "pdf_button": "PDF",
       "no_invoices": "Nebudú vytvorené žiadne faktúry — skontrolujte rozsah paciel v definíciách položiek a príznak fakturačnej adresy u dotknutých členov.",
       "pdf_placeholder_number": "Náhľad"
+    },
+    "invoice_list": {
+      "title": "Faktúry",
+      "heading": "Faktúry",
+      "filter_parcel": "Parcela",
+      "filter_invoice_number": "Č. faktúry",
+      "filter_status": "Stav",
+      "status_all": "Všetky",
+      "status_open": "Otvorená",
+      "status_partially_paid": "Čiastočne uhradená",
+      "status_paid": "Uhradená",
+      "filter_button": "Filtrovať",
+      "col_invoice_number": "Č. faktúry",
+      "col_parcel": "Parcela",
+      "col_recipient": "Príjemca",
+      "col_subtotal": "Súčet",
+      "col_paid": "Uhradené",
+      "col_status": "Stav",
+      "col_paid_on": "Uhradené dňa",
+      "no_invoices": "Žiadne faktúry nezodpovedajú týmto filtrom."
+    },
+    "invoice_detail": {
+      "title": "Faktúra",
+      "heading": "Faktúra {number}",
+      "back": "Späť na faktúry",
+      "info_header": "Faktúra",
+      "due_date": "Dátum splatnosti",
+      "delivery_header": "Doručenie",
+      "emailed_at": "Odoslané e-mailom {date}",
+      "not_emailed": "Neodoslané e-mailom",
+      "printed_at": "Vytlačené {date}",
+      "not_printed": "Nevytlačené",
+      "uploaded_at": "Nahrané {date}",
+      "not_uploaded": "Nenahrané",
+      "resend_button": "Znova odoslať e-mail",
+      "line_items_header": "Položky",
+      "payments_header": "Platby",
+      "no_payments": "Zatiaľ neboli zaznamenané žiadne platby.",
+      "label_amount": "Suma",
+      "label_paid_on": "Uhradené dňa",
+      "label_note": "Poznámka",
+      "add_payment_button": "Pridať platbu",
+      "delete_payment_confirm": "Zmazať túto platbu?"
     }
   }
 }

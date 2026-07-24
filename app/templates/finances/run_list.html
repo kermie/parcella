@@ -2,6 +2,12 @@
 {% block title %}{{ t('finances.run_list.title') }}{% endblock %}
 {% block page_title %}{{ t('finances.run_list.heading') }}{% endblock %}
 
+{% block topbar_actions %}
+<a href="/finances/invoices" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-receipt me-1"></i>{{ t('finances.run_list.all_invoices_button') }}
+</a>
+{% endblock %}
+
 {% block content %}
 <div class="row g-3">
 

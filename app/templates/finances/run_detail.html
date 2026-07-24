@@ -25,6 +25,25 @@
         </div>
     </div>
 
+    {% if has_perm(request, 'finances', 'write') %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-send me-2"></i>{{ t('finances.run_detail.delivery_header') }}</div>
+            <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+                <form method="post" action="/finances/runs/{{ run.id }}/deliver" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-send me-1"></i>{{ t('finances.run_detail.deliver_button') }}
+                    </button>
+                </form>
+                <a href="/finances/runs/{{ run.id }}/print-bundle" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-printer me-1"></i>{{ t('finances.run_detail.print_bundle_button') }}
+                </a>
+                <span class="text-muted" style="font-size: 0.85rem;">{{ t('finances.run_detail.deliver_hint') }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="col-12">
         <div class="card">
             <div class="card-header"><i class="bi bi-receipt me-2"></i>{{ t('finances.run_detail.invoices_header') }}</div>
@@ -37,16 +56,22 @@
                                 <th>{{ t('finances.run_detail.col_parcel') }}</th>
                                 <th>{{ t('finances.run_detail.col_recipient') }}</th>
                                 <th>{{ t('finances.run_detail.col_invoice_subtotal') }}</th>
+                                <th>{{ t('finances.run_detail.col_delivery') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for invoice in invoices %}
                             <tr>
-                                <td>{{ invoice.invoice_number }}</td>
+                                <td><a href="/finances/invoices/{{ invoice.id }}">{{ invoice.invoice_number }}</a></td>
                                 <td>{{ invoice.parcel.plot_number }}</td>
                                 <td style="white-space: pre-line;">{{ invoice.recipient_names }}</td>
                                 <td>{{ invoice.subtotal|float|money }}</td>
+                                <td class="text-nowrap">
+                                    {% if invoice.emailed_at %}<i class="bi bi-envelope-check text-success" title="{{ t('finances.run_detail.icon_emailed') }}"></i>{% endif %}
+                                    {% if invoice.printed_at %}<i class="bi bi-printer-fill text-success ms-1" title="{{ t('finances.run_detail.icon_printed') }}"></i>{% endif %}
+                                    {% if invoice.uploaded_to_cloud_at %}<i class="bi bi-cloud-check text-success ms-1" title="{{ t('finances.run_detail.icon_uploaded') }}"></i>{% endif %}
+                                </td>
                                 <td class="text-end">
                                     <a href="/finances/invoices/{{ invoice.id }}/pdf" target="_blank" class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('finances.run_preview.pdf_button') }}
@@ -55,7 +80,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="5" class="text-center text-muted py-3">{{ t('finances.run_preview.no_invoices') }}</td>
+                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.run_preview.no_invoices') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

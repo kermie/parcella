@@ -8,10 +8,11 @@ fresh install, before anyone has used the UI), it falls back to the
 long as the environment variables are set.
 """
 import logging
+from email.mime.application import MIMEApplication
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import aiosmtplib
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -71,6 +72,7 @@ async def send_email(
     html_body: str,
     text_body: Optional[str] = None,
     db: Optional[AsyncSession] = None,
+    attachments: Optional[List[Tuple[str, bytes, str]]] = None,
 ) -> bool:
     """
     Sends an email. Returns True on success.
@@ -78,6 +80,14 @@ async def send_email(
     If `db` is passed, the SMTP configuration comes from the database
     (with .env fallback). Without `db`, only the .env configuration is
     used (backwards compatibility).
+
+    attachments: optional list of (filename, content_bytes, mime_type)
+    -- e.g. [("invoice_2026-1.pdf", pdf_bytes, "application/pdf")], used
+    by the Finances module (see app/invoice_delivery.py) to email an
+    invoice's PDF. When present, the message becomes "mixed" with the
+    text/html alternative nested inside, rather than "alternative" at
+    the top level -- the correct MIME structure for attachments to
+    survive alongside a text/html body.
     """
     if db is not None:
         config = await load_smtp_configuration(db)
@@ -97,14 +107,27 @@ async def send_email(
         logger.info(f"[DEV] To: {recipient} | Subject: {subject}")
         return False
 
-    msg = MIMEMultipart("alternative")
+    if attachments:
+        msg = MIMEMultipart("mixed")
+        alt = MIMEMultipart("alternative")
+        if text_body:
+            alt.attach(MIMEText(text_body, "plain", "utf-8"))
+        alt.attach(MIMEText(html_body, "html", "utf-8"))
+        msg.attach(alt)
+        for filename, content, mime_type in attachments:
+            _maintype, _, subtype = mime_type.partition("/")
+            part = MIMEApplication(content, _subtype=subtype or "octet-stream")
+            part.add_header("Content-Disposition", "attachment", filename=filename)
+            msg.attach(part)
+    else:
+        msg = MIMEMultipart("alternative")
+        if text_body:
+            msg.attach(MIMEText(text_body, "plain", "utf-8"))
+        msg.attach(MIMEText(html_body, "html", "utf-8"))
+
     msg["Subject"] = subject
     msg["From"] = formataddr((config["from_name"], config["from"]), charset="utf-8")
     msg["To"] = recipient
-
-    if text_body:
-        msg.attach(MIMEText(text_body, "plain", "utf-8"))
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     try:
         await aiosmtplib.send(

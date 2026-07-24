@@ -1655,7 +1655,12 @@
       "body": "Przypisano Ci {count} zgłoszenie(a) w {app_name}:",
       "instruction": "Zaloguj się do {app_name}, aby je obsłużyć."
     },
-    "announcement_test_banner": "To jest wysyłka testowa i nie dotarła do żadnego członka."
+    "announcement_test_banner": "To jest wysyłka testowa i nie dotarła do żadnego członka.",
+    "invoice_delivery": {
+      "subject": "Faktura {invoice_number} od {club_name}",
+      "greeting": "Witaj {name},",
+      "body": "W załączniku znajduje się faktura od {club_name} za działkę {parcel_number}, termin płatności {due_date}."
+    }
   },
   "finances": {
     "run_list": {
@@ -1678,7 +1683,8 @@
       "status_finalized": "Zakończona",
       "open_button": "Otwórz",
       "no_runs": "Brak serii faktur.",
-      "delete_confirm": "Usunąć tę serię faktur wraz ze wszystkimi definicjami pozycji? Tej czynności nie można cofnąć."
+      "delete_confirm": "Usunąć tę serię faktur wraz ze wszystkimi definicjami pozycji? Tej czynności nie można cofnąć.",
+      "all_invoices_button": "Wszystkie faktury"
     },
     "run_detail": {
       "title": "Seria faktur",
@@ -1710,7 +1716,15 @@
       "col_invoice_number": "Nr faktury",
       "col_parcel": "Działka",
       "col_recipient": "Odbiorca",
-      "col_invoice_subtotal": "Suma"
+      "col_invoice_subtotal": "Suma",
+      "delivery_header": "Doręczenie",
+      "deliver_button": "Wyślij e-maile i prześlij do chmury",
+      "deliver_hint": "Członkowie bez powiadomień e-mail pozostają do pakietu do druku poniżej.",
+      "print_bundle_button": "Pobierz pakiet do druku",
+      "col_delivery": "Doręczenie",
+      "icon_emailed": "Wysłano e-mailem",
+      "icon_printed": "Uwzględniono w pakiecie do druku",
+      "icon_uploaded": "Przesłano do chmury"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Kwota stała za działkę",
@@ -1723,7 +1737,9 @@
     "errors": {
       "cannot_delete_finalized_run": "Ta seria faktur jest już zakończona i nie można jej usunąć.",
       "run_not_draft": "Ta seria faktur jest już zakończona; jej definicji pozycji nie można już zmienić.",
-      "no_item_definitions": "Ta seria faktur nie ma jeszcze żadnych definicji pozycji — dodaj co najmniej jedną przed zakończeniem."
+      "no_item_definitions": "Ta seria faktur nie ma jeszcze żadnych definicji pozycji — dodaj co najmniej jedną przed zakończeniem.",
+      "no_print_invoices": "Wszystkie faktury z tej serii zostały już wysłane e-mailem -- nie ma nic do wydrukowania.",
+      "no_email_recipient": "Nie znaleziono dostępnego członka z adresem do faktur dla tej faktury (powiadomienia e-mail + zapisany adres e-mail)."
     },
     "run_preview": {
       "title": "Podgląd faktur",
@@ -1739,6 +1755,49 @@
       "pdf_button": "PDF",
       "no_invoices": "Nie zostałaby utworzona żadna faktura — sprawdź zakres działek w definicjach pozycji oraz flagę adresu do faktury u odpowiednich członków.",
       "pdf_placeholder_number": "Podgląd"
+    },
+    "invoice_list": {
+      "title": "Faktury",
+      "heading": "Faktury",
+      "filter_parcel": "Działka",
+      "filter_invoice_number": "Nr faktury",
+      "filter_status": "Status",
+      "status_all": "Wszystkie",
+      "status_open": "Otwarta",
+      "status_partially_paid": "Częściowo opłacona",
+      "status_paid": "Opłacona",
+      "filter_button": "Filtruj",
+      "col_invoice_number": "Nr faktury",
+      "col_parcel": "Działka",
+      "col_recipient": "Odbiorca",
+      "col_subtotal": "Suma",
+      "col_paid": "Zapłacono",
+      "col_status": "Status",
+      "col_paid_on": "Zapłacono dnia",
+      "no_invoices": "Żadna faktura nie pasuje do tych filtrów."
+    },
+    "invoice_detail": {
+      "title": "Faktura",
+      "heading": "Faktura {number}",
+      "back": "Powrót do faktur",
+      "info_header": "Faktura",
+      "due_date": "Termin płatności",
+      "delivery_header": "Doręczenie",
+      "emailed_at": "Wysłano e-mailem {date}",
+      "not_emailed": "Nie wysłano e-mailem",
+      "printed_at": "Wydrukowano {date}",
+      "not_printed": "Nie wydrukowano",
+      "uploaded_at": "Przesłano {date}",
+      "not_uploaded": "Nie przesłano",
+      "resend_button": "Wyślij e-mail ponownie",
+      "line_items_header": "Pozycje",
+      "payments_header": "Płatności",
+      "no_payments": "Nie zarejestrowano jeszcze żadnych płatności.",
+      "label_amount": "Kwota",
+      "label_paid_on": "Zapłacono dnia",
+      "label_note": "Notatka",
+      "add_payment_button": "Dodaj płatność",
+      "delete_payment_confirm": "Usunąć tę płatność?"
     }
   }
 }

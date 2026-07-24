@@ -2,12 +2,15 @@
 Finances module router: annual invoices (issues #55/#56/#57/#58).
 
 Phase 1 (#56): creating an InvoiceRun and configuring its
-InvoiceItemDefinitions. Phase 2 (#57, this addition): preview (renders
-a PDF from app.invoice_generation's in-memory computation, no DB
-writes) and finalize (persists real Invoice/InvoiceLineItem rows with
-permanent numbers -- see app/invoice_generation.py's module docstring
-for why this is a one-way action). Delivery/payment tracking (#58)
-builds on top of this in the next phase.
+InvoiceItemDefinitions. Phase 2 (#57): preview (renders a PDF from
+app.invoice_generation's in-memory computation, no DB writes) and
+finalize (persists real Invoice/InvoiceLineItem rows with permanent
+numbers -- see app/invoice_generation.py's module docstring for why
+this is a one-way action). Phase 3 (#58, this addition): delivery
+(email with the PDF attached, upload to the parcel's cloud folder, a
+merged print bundle for anyone not reachable by email -- see
+app/invoice_delivery.py) and payment tracking across every finalized
+run.
 """
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -24,14 +27,18 @@ from app.database import get_db
 from app.i18n import t_for
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel,
-    InvoicePricingMode, Invoice, ClubSetting, Parcel, ParcelStatus,
+    InvoicePricingMode, Invoice, InvoicePayment, ClubSetting, Parcel, ParcelStatus,
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
 from app.branding import load_branding
 from app.l10n import load_current_region, load_current_currency
+from app.cloud_storage import get_nextcloud_provider
 from app.invoice_generation import compute_invoices_for_run, finalize_run
-from app.invoice_pdf import InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf
+from app.invoice_pdf import (
+    InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf, invoice_pdf_data_from_invoice,
+)
+from app.invoice_delivery import send_invoice_email, upload_invoice_to_cloud, build_print_bundle
 
 router = APIRouter(
     prefix="/finances",
@@ -384,21 +391,199 @@ async def invoice_pdf(invoice_id: str, request: Request, db: AsyncSession = Depe
     run = run_result.scalar_one_or_none()
 
     ctx = await _pdf_context(db)
-    data = InvoicePdfData(
-        invoice_number=invoice.invoice_number,
-        issued_date=run.issued_date, due_date=run.due_date, subject=run.subject,
-        recipient_names=invoice.recipient_names, recipient_address=invoice.recipient_address,
-        parcel_plot_number=invoice.parcel.plot_number, parcel_area_sqm=invoice.parcel.area_sqm,
-        line_items=[
-            InvoicePdfLineItem(
-                order_number=li.order_number, name=li.name, description=li.description,
-                quantity=li.quantity, unit_price=li.unit_price, line_total=li.line_total,
-            ) for li in sorted(invoice.line_items, key=lambda li: li.order_number)
-        ],
-        subtotal=invoice.subtotal, footer_text=run.footer_text, is_preview=False,
-    )
+    data = invoice_pdf_data_from_invoice(invoice, run)
     pdf_bytes = render_invoice_pdf(data, **ctx)
     return Response(
         content=pdf_bytes, media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="invoice_{invoice.invoice_number.replace("/", "-")}.pdf"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# Delivery: email, cloud upload, print bundle (issue #58)
+# ---------------------------------------------------------------------------
+
+async def _run_invoices(db: AsyncSession, run_id: str):
+    result = await db.execute(
+        select(Invoice)
+        .options(selectinload(Invoice.line_items), selectinload(Invoice.parcel))
+        .where(Invoice.invoice_run_id == run_id)
+        .order_by(Invoice.invoice_number)
+    )
+    return list(result.scalars().all())
+
+
+@router.post("/runs/{run_id}/deliver")
+async def run_deliver(run_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Emails every not-yet-emailed invoice in the run (to whichever
+    invoice-address resident has email_notifications=True and a
+    stored email -- see app/invoice_delivery.py), and uploads every
+    not-yet-uploaded one to its parcel's cloud folder if configured.
+    Members without email stay for the print bundle (see
+    run_print_bundle below) -- this action never marks anything
+    printed."""
+    await require_permission(request, db, "finances", "write")
+
+    run = await _get_run_or_404(db, run_id)
+    if run.status != InvoiceRunStatus.FINALIZED:
+        raise HTTPException(status_code=400)
+
+    invoices = await _run_invoices(db, run_id)
+    ctx = await _pdf_context(db)
+    provider = await get_nextcloud_provider(db)
+
+    emailed_count = 0
+    uploaded_count = 0
+    for invoice in invoices:
+        if invoice.emailed_at is None and await send_invoice_email(request, db, invoice, run, ctx):
+            emailed_count += 1
+        if invoice.uploaded_to_cloud_at is None and await upload_invoice_to_cloud(db, invoice, run, ctx, provider):
+            uploaded_count += 1
+
+    await db.commit()
+    return RedirectResponse(
+        f"/finances/runs/{run_id}?success=1&emailed={emailed_count}&uploaded={uploaded_count}",
+        status_code=302,
+    )
+
+
+@router.get("/runs/{run_id}/print-bundle")
+async def run_print_bundle(run_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Merges every invoice that hasn't been emailed (no reachable
+    invoice-address member -- see app/invoice_delivery.py) into one
+    print-ready PDF and marks them printed."""
+    await require_permission(request, db, "finances", "write")
+
+    run = await _get_run_or_404(db, run_id)
+    invoices = [i for i in await _run_invoices(db, run_id) if i.emailed_at is None]
+    if not invoices:
+        raise HTTPException(status_code=404, detail=t_for(request, "finances.errors.no_print_invoices"))
+
+    ctx = await _pdf_context(db)
+    pdf_bytes = await build_print_bundle(db, invoices, run, ctx)
+    await db.commit()
+
+    return Response(
+        content=pdf_bytes, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="invoices_{run.year}_print_bundle.pdf"'},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cross-run invoice list, detail, payments (issue #58)
+# ---------------------------------------------------------------------------
+
+async def _get_invoice_or_404(db: AsyncSession, invoice_id: str) -> Invoice:
+    result = await db.execute(
+        select(Invoice)
+        .options(
+            selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.payments),
+        )
+        .where(Invoice.id == invoice_id)
+    )
+    invoice = result.scalar_one_or_none()
+    if not invoice:
+        raise HTTPException(status_code=404)
+    return invoice
+
+
+@router.get("/invoices", response_class=HTMLResponse)
+async def invoice_list(
+    request: Request,
+    parcel: str = "",
+    invoice_number: str = "",
+    status: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_permission(request, db, "finances", "read")
+
+    query = (
+        select(Invoice)
+        .options(selectinload(Invoice.parcel), selectinload(Invoice.payments))
+        .join(Parcel, Invoice.parcel_id == Parcel.id)
+        .order_by(Invoice.invoice_number.desc())
+    )
+    if parcel.strip():
+        query = query.where(Parcel.plot_number.ilike(f"%{parcel.strip()}%"))
+    if invoice_number.strip():
+        query = query.where(Invoice.invoice_number.ilike(f"%{invoice_number.strip()}%"))
+
+    result = await db.execute(query)
+    invoices = list(result.scalars().all())
+    if status in ("open", "partially_paid", "paid"):
+        invoices = [i for i in invoices if i.payment_status == status]
+
+    return templates.TemplateResponse("finances/invoice_list.html", {
+        "request": request, "user": user, "invoices": invoices,
+        "filter_parcel": parcel, "filter_invoice_number": invoice_number, "filter_status": status,
+    })
+
+
+@router.get("/invoices/{invoice_id}", response_class=HTMLResponse)
+async def invoice_detail(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+    invoice = await _get_invoice_or_404(db, invoice_id)
+
+    run_result = await db.execute(select(InvoiceRun).where(InvoiceRun.id == invoice.invoice_run_id))
+    run = run_result.scalar_one_or_none()
+
+    return templates.TemplateResponse("finances/invoice_detail.html", {
+        "request": request, "user": user, "invoice": invoice, "run": run,
+        "today": date.today().isoformat(),
+    })
+
+
+@router.post("/invoices/{invoice_id}/resend-email")
+async def invoice_resend_email(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "write")
+    invoice = await _get_invoice_or_404(db, invoice_id)
+
+    run_result = await db.execute(select(InvoiceRun).where(InvoiceRun.id == invoice.invoice_run_id))
+    run = run_result.scalar_one_or_none()
+
+    ctx = await _pdf_context(db)
+    sent = await send_invoice_email(request, db, invoice, run, ctx)
+    await db.commit()
+
+    if sent:
+        return RedirectResponse(f"/finances/invoices/{invoice_id}?success=1", status_code=302)
+    return RedirectResponse(
+        f"/finances/invoices/{invoice_id}?error={t_for(request, 'finances.errors.no_email_recipient')}",
+        status_code=302,
+    )
+
+
+@router.post("/invoices/{invoice_id}/payments")
+async def payment_create(
+    invoice_id: str, request: Request,
+    amount: str = Form(...), paid_on: str = Form(...), note: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_permission(request, db, "finances", "write")
+    await _get_invoice_or_404(db, invoice_id)
+
+    parsed_amount = _parse_decimal(amount)
+    if parsed_amount is None:
+        raise HTTPException(status_code=400)
+
+    db.add(InvoicePayment(
+        invoice_id=invoice_id, amount=parsed_amount,
+        paid_on=datetime.strptime(paid_on, "%Y-%m-%d").date(),
+        note=note.strip() or None, recorded_by_id=user.id,
+    ))
+    await db.commit()
+    return RedirectResponse(f"/finances/invoices/{invoice_id}", status_code=302)
+
+
+@router.post("/invoices/{invoice_id}/payments/{payment_id}/delete")
+async def payment_delete(invoice_id: str, payment_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "delete")
+
+    result = await db.execute(
+        select(InvoicePayment).where(InvoicePayment.id == payment_id, InvoicePayment.invoice_id == invoice_id)
+    )
+    payment = result.scalar_one_or_none()
+    if payment:
+        await db.delete(payment)
+        await db.commit()
+    return RedirectResponse(f"/finances/invoices/{invoice_id}", status_code=302)

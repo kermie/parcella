@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.invoice_detail.title') }}{% endblock %}
+{% block page_title %}{{ t('finances.invoice_detail.heading', number=invoice.invoice_number) }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2">
+    <a href="/finances/invoices/{{ invoice.id }}/pdf" target="_blank" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('finances.run_preview.pdf_button') }}
+    </a>
+    <a href="/finances/invoices" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>{{ t('finances.invoice_detail.back') }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>{{ t('finances.invoice_detail.info_header') }}</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">{{ t('finances.invoice_list.col_parcel') }}</dt>
+                    <dd class="col-sm-7">{{ invoice.parcel.plot_number }}</dd>
+                    <dt class="col-sm-5">{{ t('finances.invoice_list.col_recipient') }}</dt>
+                    <dd class="col-sm-7" style="white-space: pre-line;">{{ invoice.recipient_names }}<br><small class="text-muted">{{ invoice.recipient_address }}</small></dd>
+                    <dt class="col-sm-5">{{ t('finances.invoice_list.col_subtotal') }}</dt>
+                    <dd class="col-sm-7">{{ invoice.subtotal|float|money }}</dd>
+                    <dt class="col-sm-5">{{ t('finances.invoice_detail.due_date') }}</dt>
+                    <dd class="col-sm-7">{{ run.due_date.strftime('%d.%m.%Y') if run else '-' }}</dd>
+                    <dt class="col-sm-5">{{ t('finances.invoice_list.col_status') }}</dt>
+                    <dd class="col-sm-7">
+                        {% if invoice.payment_status == 'paid' %}
+                        <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('finances.invoice_list.status_paid') }}</span>
+                        {% elif invoice.payment_status == 'partially_paid' %}
+                        <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('finances.invoice_list.status_partially_paid') }}</span>
+                        {% else %}
+                        <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('finances.invoice_list.status_open') }}</span>
+                        {% endif %}
+                        ({{ invoice.paid_total|float|money }} / {{ invoice.subtotal|float|money }})
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-send me-2"></i>{{ t('finances.invoice_detail.delivery_header') }}</div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-3">
+                    <li>
+                        {% if invoice.emailed_at %}<i class="bi bi-envelope-check text-success me-1"></i>{{ t('finances.invoice_detail.emailed_at', date=invoice.emailed_at.strftime('%d.%m.%Y %H:%M')) }}
+                        {% else %}<i class="bi bi-envelope text-muted me-1"></i>{{ t('finances.invoice_detail.not_emailed') }}{% endif %}
+                    </li>
+                    <li>
+                        {% if invoice.printed_at %}<i class="bi bi-printer-fill text-success me-1"></i>{{ t('finances.invoice_detail.printed_at', date=invoice.printed_at.strftime('%d.%m.%Y %H:%M')) }}
+                        {% else %}<i class="bi bi-printer text-muted me-1"></i>{{ t('finances.invoice_detail.not_printed') }}{% endif %}
+                    </li>
+                    <li>
+                        {% if invoice.uploaded_to_cloud_at %}<i class="bi bi-cloud-check text-success me-1"></i>{{ t('finances.invoice_detail.uploaded_at', date=invoice.uploaded_to_cloud_at.strftime('%d.%m.%Y %H:%M')) }}
+                        {% else %}<i class="bi bi-cloud text-muted me-1"></i>{{ t('finances.invoice_detail.not_uploaded') }}{% endif %}
+                    </li>
+                </ul>
+                {% if has_perm(request, 'finances', 'write') %}
+                <form method="post" action="/finances/invoices/{{ invoice.id }}/resend-email">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-repeat me-1"></i>{{ t('finances.invoice_detail.resend_button') }}
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-list-ol me-2"></i>{{ t('finances.invoice_detail.line_items_header') }}</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        {% for li in invoice.line_items|sort(attribute='order_number') %}
+                        <tr>
+                            <td>{{ li.name }}{% if li.description %}<br><small class="text-muted">{{ li.description }}</small>{% endif %}</td>
+                            <td class="text-end">{{ li.line_total|float|money }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="fw-bold">
+                            <td>{{ t('finances.invoice_list.col_subtotal') }}</td>
+                            <td class="text-end">{{ invoice.subtotal|float|money }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-cash-coin me-2"></i>{{ t('finances.invoice_detail.payments_header') }}</div>
+            <div class="card-body">
+                {% if invoice.payments %}
+                <table class="table table-sm">
+                    <tbody>
+                        {% for payment in invoice.payments %}
+                        <tr>
+                            <td>{{ payment.paid_on.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ payment.amount|float|money }}</td>
+                            <td class="text-muted">{{ payment.note or '' }}</td>
+                            <td class="text-end">
+                                {% if has_perm(request, 'finances', 'delete') %}
+                                <form method="post" action="/finances/invoices/{{ invoice.id }}/payments/{{ payment.id }}/delete" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                            onclick="return confirm('{{ t('finances.invoice_detail.delete_payment_confirm') }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-3">{{ t('finances.invoice_detail.no_payments') }}</p>
+                {% endif %}
+
+                {% if has_perm(request, 'finances', 'write') %}
+                <form method="post" action="/finances/invoices/{{ invoice.id }}/payments" class="row g-2 align-items-end">
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_amount') }}</label>
+                        <input type="text" name="amount" class="form-control form-control-sm" placeholder="0,00" required>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_paid_on') }}</label>
+                        <input type="date" name="paid_on" class="form-control form-control-sm" value="{{ today }}" required>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_note') }}</label>
+                        <input type="text" name="note" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>{{ t('finances.invoice_detail.add_payment_button') }}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

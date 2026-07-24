@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.invoice_list.title') }}{% endblock %}
+{% block page_title %}{{ t('finances.invoice_list.heading') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/finances/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.run_detail.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_parcel') }}</label>
+                        <input type="text" name="parcel" class="form-control form-control-sm" value="{{ filter_parcel }}">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_invoice_number') }}</label>
+                        <input type="text" name="invoice_number" class="form-control form-control-sm" value="{{ filter_invoice_number }}">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_status') }}</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="" {% if not filter_status %}selected{% endif %}>{{ t('finances.invoice_list.status_all') }}</option>
+                            <option value="open" {% if filter_status == 'open' %}selected{% endif %}>{{ t('finances.invoice_list.status_open') }}</option>
+                            <option value="partially_paid" {% if filter_status == 'partially_paid' %}selected{% endif %}>{{ t('finances.invoice_list.status_partially_paid') }}</option>
+                            <option value="paid" {% if filter_status == 'paid' %}selected{% endif %}>{{ t('finances.invoice_list.status_paid') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-3">
+                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-funnel me-1"></i>{{ t('finances.invoice_list.filter_button') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('finances.invoice_list.col_invoice_number') }}</th>
+                                <th>{{ t('finances.invoice_list.col_parcel') }}</th>
+                                <th>{{ t('finances.invoice_list.col_recipient') }}</th>
+                                <th>{{ t('finances.invoice_list.col_subtotal') }}</th>
+                                <th>{{ t('finances.invoice_list.col_paid') }}</th>
+                                <th>{{ t('finances.invoice_list.col_status') }}</th>
+                                <th>{{ t('finances.invoice_list.col_paid_on') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td><a href="/finances/invoices/{{ invoice.id }}">{{ invoice.invoice_number }}</a></td>
+                                <td>{{ invoice.parcel.plot_number }}</td>
+                                <td style="white-space: pre-line;">{{ invoice.recipient_names }}</td>
+                                <td>{{ invoice.subtotal|float|money }}</td>
+                                <td>{{ invoice.paid_total|float|money }}</td>
+                                <td>
+                                    {% if invoice.payment_status == 'paid' %}
+                                    <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('finances.invoice_list.status_paid') }}</span>
+                                    {% elif invoice.payment_status == 'partially_paid' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('finances.invoice_list.status_partially_paid') }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('finances.invoice_list.status_open') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for payment in invoice.payments %}{{ payment.paid_on.strftime('%d.%m.%Y') }}{% if not loop.last %}, {% endif %}{% endfor %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-3">{{ t('finances.invoice_list.no_invoices') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

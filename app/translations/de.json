@@ -1655,7 +1655,12 @@
       "body": "Ihnen wurden {count} Ticket(s) im {app_name} zugewiesen:",
       "instruction": "Bitte melden Sie sich im {app_name} an, um sie zu bearbeiten."
     },
-    "announcement_test_banner": "Dies ist ein Testversand und ging an kein Mitglied heraus."
+    "announcement_test_banner": "Dies ist ein Testversand und ging an kein Mitglied heraus.",
+    "invoice_delivery": {
+      "subject": "Rechnung {invoice_number} von {club_name}",
+      "greeting": "Hallo {name},",
+      "body": "Anbei finden Sie Ihre Rechnung von {club_name} für Parzelle {parcel_number}, fällig am {due_date}."
+    }
   },
   "finances": {
     "run_list": {
@@ -1678,7 +1683,8 @@
       "status_finalized": "Abgeschlossen",
       "open_button": "Öffnen",
       "no_runs": "Noch keine Rechnungsläufe vorhanden.",
-      "delete_confirm": "Diesen Rechnungslauf mitsamt allen Positionsdefinitionen löschen? Das kann nicht rückgängig gemacht werden."
+      "delete_confirm": "Diesen Rechnungslauf mitsamt allen Positionsdefinitionen löschen? Das kann nicht rückgängig gemacht werden.",
+      "all_invoices_button": "Alle Rechnungen"
     },
     "run_detail": {
       "title": "Rechnungslauf",
@@ -1710,7 +1716,15 @@
       "col_invoice_number": "Rechnungs-Nr.",
       "col_parcel": "Parzelle",
       "col_recipient": "Empfänger",
-      "col_invoice_subtotal": "Summe"
+      "col_invoice_subtotal": "Summe",
+      "delivery_header": "Versand",
+      "deliver_button": "E-Mails senden & in Cloud hochladen",
+      "deliver_hint": "Mitglieder ohne E-Mail-Benachrichtigung bleiben für den Sammel-Druck unten übrig.",
+      "print_bundle_button": "Sammel-PDF herunterladen",
+      "col_delivery": "Versand",
+      "icon_emailed": "Per E-Mail versendet",
+      "icon_printed": "In Sammel-PDF enthalten",
+      "icon_uploaded": "In Cloud-Speicher hochgeladen"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Festbetrag je Parzelle",
@@ -1723,7 +1737,9 @@
     "errors": {
       "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",
       "run_not_draft": "Dieser Rechnungslauf ist bereits abgeschlossen; seine Positionsdefinitionen können nicht mehr geändert werden.",
-      "no_item_definitions": "Dieser Rechnungslauf hat noch keine Positionsdefinitionen — vor dem Abschluss mindestens eine hinzufügen."
+      "no_item_definitions": "Dieser Rechnungslauf hat noch keine Positionsdefinitionen — vor dem Abschluss mindestens eine hinzufügen.",
+      "no_print_invoices": "Alle Rechnungen dieses Laufs wurden bereits per E-Mail versendet -- nichts mehr zu drucken.",
+      "no_email_recipient": "Für diese Rechnung wurde kein erreichbares Rechnungsadress-Mitglied gefunden (E-Mail-Benachrichtigung + hinterlegte E-Mail-Adresse)."
     },
     "run_preview": {
       "title": "Rechnungsvorschau",
@@ -1739,6 +1755,49 @@
       "pdf_button": "PDF",
       "no_invoices": "Es würden keine Rechnungen erstellt — Parzellenzuordnung der Positionen und die Rechnungsadresse der betroffenen Mitglieder prüfen.",
       "pdf_placeholder_number": "Vorschau"
+    },
+    "invoice_list": {
+      "title": "Rechnungen",
+      "heading": "Rechnungen",
+      "filter_parcel": "Parzelle",
+      "filter_invoice_number": "Rechnungs-Nr.",
+      "filter_status": "Status",
+      "status_all": "Alle",
+      "status_open": "Offen",
+      "status_partially_paid": "Teilweise bezahlt",
+      "status_paid": "Bezahlt",
+      "filter_button": "Filtern",
+      "col_invoice_number": "Rechnungs-Nr.",
+      "col_parcel": "Parzelle",
+      "col_recipient": "Empfänger",
+      "col_subtotal": "Summe",
+      "col_paid": "Bezahlt",
+      "col_status": "Status",
+      "col_paid_on": "Bezahlt am",
+      "no_invoices": "Keine Rechnungen entsprechen diesen Filtern."
+    },
+    "invoice_detail": {
+      "title": "Rechnung",
+      "heading": "Rechnung {number}",
+      "back": "Zurück zu den Rechnungen",
+      "info_header": "Rechnung",
+      "due_date": "Zahlungsziel",
+      "delivery_header": "Versand",
+      "emailed_at": "Per E-Mail versendet am {date}",
+      "not_emailed": "Nicht per E-Mail versendet",
+      "printed_at": "Gedruckt am {date}",
+      "not_printed": "Nicht gedruckt",
+      "uploaded_at": "Hochgeladen am {date}",
+      "not_uploaded": "Nicht hochgeladen",
+      "resend_button": "E-Mail erneut senden",
+      "line_items_header": "Positionen",
+      "payments_header": "Zahlungen",
+      "no_payments": "Noch keine Zahlungen erfasst.",
+      "label_amount": "Betrag",
+      "label_paid_on": "Bezahlt am",
+      "label_note": "Notiz",
+      "add_payment_button": "Zahlung hinzufügen",
+      "delete_payment_confirm": "Diese Zahlung löschen?"
     }
   }
 }

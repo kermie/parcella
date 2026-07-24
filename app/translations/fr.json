@@ -1655,7 +1655,12 @@
       "body": "{count} ticket(s) vous ont été assignés dans {app_name} :",
       "instruction": "Merci de vous connecter à {app_name} pour les traiter."
     },
-    "announcement_test_banner": "Ceci est un envoi de test et n'a été transmis à aucun membre."
+    "announcement_test_banner": "Ceci est un envoi de test et n'a été transmis à aucun membre.",
+    "invoice_delivery": {
+      "subject": "Facture {invoice_number} de {club_name}",
+      "greeting": "Bonjour {name},",
+      "body": "Vous trouverez ci-joint votre facture de {club_name} pour la parcelle {parcel_number}, à régler avant le {due_date}."
+    }
   },
   "finances": {
     "run_list": {
@@ -1678,7 +1683,8 @@
       "status_finalized": "Finalisée",
       "open_button": "Ouvrir",
       "no_runs": "Aucune série de factures pour le moment.",
-      "delete_confirm": "Supprimer cette série de factures ainsi que toutes ses lignes ? Cette action est irréversible."
+      "delete_confirm": "Supprimer cette série de factures ainsi que toutes ses lignes ? Cette action est irréversible.",
+      "all_invoices_button": "Toutes les factures"
     },
     "run_detail": {
       "title": "Série de factures",
@@ -1710,7 +1716,15 @@
       "col_invoice_number": "N° de facture",
       "col_parcel": "Parcelle",
       "col_recipient": "Destinataire",
-      "col_invoice_subtotal": "Total"
+      "col_invoice_subtotal": "Total",
+      "delivery_header": "Envoi",
+      "deliver_button": "Envoyer les e-mails et téléverser vers le cloud",
+      "deliver_hint": "Les membres sans notifications par e-mail restent pour le lot d'impression ci-dessous.",
+      "print_bundle_button": "Télécharger le lot d'impression",
+      "col_delivery": "Envoi",
+      "icon_emailed": "Envoyé par e-mail",
+      "icon_printed": "Inclus dans un lot d'impression",
+      "icon_uploaded": "Téléversé vers le stockage cloud"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Montant fixe par parcelle",
@@ -1723,7 +1737,9 @@
     "errors": {
       "cannot_delete_finalized_run": "Cette série de factures est déjà finalisée et ne peut plus être supprimée.",
       "run_not_draft": "Cette série de factures est déjà finalisée ; ses lignes types ne peuvent plus être modifiées.",
-      "no_item_definitions": "Cette série de factures n'a pas encore de lignes types — ajoutez-en au moins une avant de finaliser."
+      "no_item_definitions": "Cette série de factures n'a pas encore de lignes types — ajoutez-en au moins une avant de finaliser.",
+      "no_print_invoices": "Toutes les factures de cette série ont déjà été envoyées par e-mail -- rien à imprimer.",
+      "no_email_recipient": "Aucun membre à l'adresse de facturation joignable n'a été trouvé pour cette facture (notifications par e-mail + adresse e-mail enregistrée)."
     },
     "run_preview": {
       "title": "Aperçu des factures",
@@ -1739,6 +1755,49 @@
       "pdf_button": "PDF",
       "no_invoices": "Aucune facture ne serait générée — vérifiez la portée des parcelles dans les lignes types et l'indicateur d'adresse de facturation des membres concernés.",
       "pdf_placeholder_number": "Aperçu"
+    },
+    "invoice_list": {
+      "title": "Factures",
+      "heading": "Factures",
+      "filter_parcel": "Parcelle",
+      "filter_invoice_number": "N° de facture",
+      "filter_status": "Statut",
+      "status_all": "Toutes",
+      "status_open": "Ouverte",
+      "status_partially_paid": "Partiellement payée",
+      "status_paid": "Payée",
+      "filter_button": "Filtrer",
+      "col_invoice_number": "N° de facture",
+      "col_parcel": "Parcelle",
+      "col_recipient": "Destinataire",
+      "col_subtotal": "Total",
+      "col_paid": "Payé",
+      "col_status": "Statut",
+      "col_paid_on": "Payé le",
+      "no_invoices": "Aucune facture ne correspond à ces filtres."
+    },
+    "invoice_detail": {
+      "title": "Facture",
+      "heading": "Facture {number}",
+      "back": "Retour aux factures",
+      "info_header": "Facture",
+      "due_date": "Date d'échéance",
+      "delivery_header": "Envoi",
+      "emailed_at": "Envoyée par e-mail le {date}",
+      "not_emailed": "Pas envoyée par e-mail",
+      "printed_at": "Imprimée le {date}",
+      "not_printed": "Pas imprimée",
+      "uploaded_at": "Téléversée le {date}",
+      "not_uploaded": "Pas téléversée",
+      "resend_button": "Renvoyer l'e-mail",
+      "line_items_header": "Lignes",
+      "payments_header": "Paiements",
+      "no_payments": "Aucun paiement enregistré pour le moment.",
+      "label_amount": "Montant",
+      "label_paid_on": "Payé le",
+      "label_note": "Remarque",
+      "add_payment_button": "Ajouter un paiement",
+      "delete_payment_confirm": "Supprimer ce paiement ?"
     }
   }
 }

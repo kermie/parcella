@@ -1655,7 +1655,12 @@
       "body": "Er zijn {count} ticket(s) aan u toegewezen in {app_name}:",
       "instruction": "Log in op {app_name} om ze te verwerken."
     },
-    "announcement_test_banner": "Dit is een testverzending en is naar geen enkel lid verstuurd."
+    "announcement_test_banner": "Dit is een testverzending en is naar geen enkel lid verstuurd.",
+    "invoice_delivery": {
+      "subject": "Factuur {invoice_number} van {club_name}",
+      "greeting": "Hallo {name},",
+      "body": "Bijgevoegd vindt u uw factuur van {club_name} voor perceel {parcel_number}, te betalen vóór {due_date}."
+    }
   },
   "finances": {
     "run_list": {
@@ -1678,7 +1683,8 @@
       "status_finalized": "Afgerond",
       "open_button": "Openen",
       "no_runs": "Nog geen factuurrondes.",
-      "delete_confirm": "Deze factuurronde met alle regeldefinities verwijderen? Dit kan niet ongedaan worden gemaakt."
+      "delete_confirm": "Deze factuurronde met alle regeldefinities verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "all_invoices_button": "Alle facturen"
     },
     "run_detail": {
       "title": "Factuurronde",
@@ -1710,7 +1716,15 @@
       "col_invoice_number": "Factuurnr.",
       "col_parcel": "Perceel",
       "col_recipient": "Ontvanger",
-      "col_invoice_subtotal": "Totaal"
+      "col_invoice_subtotal": "Totaal",
+      "delivery_header": "Verzending",
+      "deliver_button": "E-mails versturen & naar cloud uploaden",
+      "deliver_hint": "Leden zonder e-mailmeldingen blijven over voor de afdrukbundel hieronder.",
+      "print_bundle_button": "Afdrukbundel downloaden",
+      "col_delivery": "Verzending",
+      "icon_emailed": "Verstuurd per e-mail",
+      "icon_printed": "Opgenomen in een afdrukbundel",
+      "icon_uploaded": "Geüpload naar cloudopslag"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Vast bedrag per perceel",
@@ -1723,7 +1737,9 @@
     "errors": {
       "cannot_delete_finalized_run": "Deze factuurronde is al afgerond en kan niet meer worden verwijderd.",
       "run_not_draft": "Deze factuurronde is al afgerond; de regeldefinities kunnen niet meer worden gewijzigd.",
-      "no_item_definitions": "Deze factuurronde heeft nog geen regeldefinities — voeg er minstens één toe voordat u afrondt."
+      "no_item_definitions": "Deze factuurronde heeft nog geen regeldefinities — voeg er minstens één toe voordat u afrondt.",
+      "no_print_invoices": "Alle facturen in deze ronde zijn al per e-mail verstuurd -- niets meer om af te drukken.",
+      "no_email_recipient": "Er is geen bereikbaar lid met factuuradres gevonden voor deze factuur (e-mailmeldingen + opgeslagen e-mailadres)."
     },
     "run_preview": {
       "title": "Facturen voorbeeld",
@@ -1739,6 +1755,49 @@
       "pdf_button": "PDF",
       "no_invoices": "Er zouden geen facturen worden gegenereerd — controleer het perceelbereik van de regeldefinities en de factuuradresvlag van de betrokken leden.",
       "pdf_placeholder_number": "Voorbeeld"
+    },
+    "invoice_list": {
+      "title": "Facturen",
+      "heading": "Facturen",
+      "filter_parcel": "Perceel",
+      "filter_invoice_number": "Factuurnr.",
+      "filter_status": "Status",
+      "status_all": "Alle",
+      "status_open": "Open",
+      "status_partially_paid": "Gedeeltelijk betaald",
+      "status_paid": "Betaald",
+      "filter_button": "Filteren",
+      "col_invoice_number": "Factuurnr.",
+      "col_parcel": "Perceel",
+      "col_recipient": "Ontvanger",
+      "col_subtotal": "Subtotaal",
+      "col_paid": "Betaald",
+      "col_status": "Status",
+      "col_paid_on": "Betaald op",
+      "no_invoices": "Geen facturen komen overeen met deze filters."
+    },
+    "invoice_detail": {
+      "title": "Factuur",
+      "heading": "Factuur {number}",
+      "back": "Terug naar facturen",
+      "info_header": "Factuur",
+      "due_date": "Vervaldatum",
+      "delivery_header": "Verzending",
+      "emailed_at": "Verstuurd per e-mail op {date}",
+      "not_emailed": "Niet per e-mail verstuurd",
+      "printed_at": "Afgedrukt op {date}",
+      "not_printed": "Niet afgedrukt",
+      "uploaded_at": "Geüpload op {date}",
+      "not_uploaded": "Niet geüpload",
+      "resend_button": "E-mail opnieuw versturen",
+      "line_items_header": "Regels",
+      "payments_header": "Betalingen",
+      "no_payments": "Nog geen betalingen geregistreerd.",
+      "label_amount": "Bedrag",
+      "label_paid_on": "Betaald op",
+      "label_note": "Notitie",
+      "add_payment_button": "Betaling toevoegen",
+      "delete_payment_confirm": "Deze betaling verwijderen?"
     }
   }
 }

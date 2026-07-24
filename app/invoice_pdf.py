@@ -55,6 +55,7 @@ table.items tfoot td { border-bottom: none; border-top: 2px solid #2f6f3e; font-
     background: #fef3c7; color: #92400e; padding: 6px 10px; border-radius: 4px;
     font-size: 9pt; margin-bottom: 0.4cm; text-align: center;
 }
+.invoice-block + .invoice-block { page-break-before: always; }
 """
 
 
@@ -84,6 +85,28 @@ class InvoicePdfData:
     is_preview: bool = False
 
 
+def invoice_pdf_data_from_invoice(invoice, run) -> InvoicePdfData:
+    """Builds an InvoicePdfData from a real, persisted Invoice (with
+    .line_items and .parcel eagerly loaded) and its InvoiceRun --
+    shared by the single-invoice PDF route, the email-attachment path,
+    and the print-bundle builder (see app/invoice_delivery.py), so
+    there's exactly one place that knows how to turn an Invoice row
+    into rendered PDF data."""
+    return InvoicePdfData(
+        invoice_number=invoice.invoice_number,
+        issued_date=run.issued_date, due_date=run.due_date, subject=run.subject,
+        recipient_names=invoice.recipient_names, recipient_address=invoice.recipient_address,
+        parcel_plot_number=invoice.parcel.plot_number, parcel_area_sqm=invoice.parcel.area_sqm,
+        line_items=[
+            InvoicePdfLineItem(
+                order_number=li.order_number, name=li.name, description=li.description,
+                quantity=li.quantity, unit_price=li.unit_price, line_total=li.line_total,
+            ) for li in sorted(invoice.line_items, key=lambda li: li.order_number)
+        ],
+        subtotal=invoice.subtotal, footer_text=run.footer_text, is_preview=False,
+    )
+
+
 def _substitute_placeholders(text: Optional[str], data: InvoicePdfData) -> str:
     if not text:
         return ""
@@ -98,17 +121,12 @@ def _substitute_placeholders(text: Optional[str], data: InvoicePdfData) -> str:
         return text
 
 
-def render_invoice_pdf(
-    data: InvoicePdfData, club_name: str, logo_path: Optional[Path],
-    club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
-    region: str, currency: str,
-) -> bytes:
-    logo_data_uri = file_to_data_uri(logo_path)
-    logo_block = f'<img src="{logo_data_uri}">' if logo_data_uri else ""
-
-    bank_bits = [b for b in [bank_name, f"IBAN {bank_iban}" if bank_iban else "", f"BIC {bank_bic}" if bank_bic else ""] if b]
-    footer_line = " · ".join([*club_address_lines, *bank_bits])
-
+def _invoice_body_html(data: InvoicePdfData, region: str, currency: str) -> str:
+    """The part of an invoice that's specific to it (recipient, meta,
+    line items, footer text) -- everything except the page chrome
+    (header/footer/@page CSS), which is shared across a whole document
+    whether that document holds one invoice or a print bundle of many
+    (see render_invoice_pdf / render_invoice_bundle_pdf)."""
     rows_html = []
     for li in data.line_items:
         desc_html = f"<br><small>{li.description}</small>" if li.description else ""
@@ -129,16 +147,8 @@ def render_invoice_pdf(
     preview_banner = '<div class="preview-banner">Preview — not yet finalized or sent</div>' if data.is_preview else ""
     footer_text_html = _substitute_placeholders(data.footer_text, data)
 
-    html_doc = f"""
-    <html>
-    <head><meta charset="utf-8"><style>{PAGE_CSS}</style></head>
-    <body>
-        <div id="header">
-            {logo_block}
-            <div class="club-name">{club_name}</div>
-        </div>
-        <div id="footer">{footer_line}</div>
-
+    return f"""
+    <div class="invoice-block">
         {preview_banner}
 
         <div class="meta-block">
@@ -168,7 +178,52 @@ def render_invoice_pdf(
         </table>
 
         {f'<div class="footer-text">{footer_text_html}</div>' if footer_text_html else ''}
+    </div>
+    """
+
+
+def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], footer_line: str) -> str:
+    logo_data_uri = file_to_data_uri(logo_path)
+    logo_block = f'<img src="{logo_data_uri}">' if logo_data_uri else ""
+    return f"""
+    <html>
+    <head><meta charset="utf-8"><style>{PAGE_CSS}</style></head>
+    <body>
+        <div id="header">
+            {logo_block}
+            <div class="club-name">{club_name}</div>
+        </div>
+        <div id="footer">{footer_line}</div>
+        {body_html}
     </body>
     </html>
     """
+
+
+def render_invoice_pdf(
+    data: InvoicePdfData, club_name: str, logo_path: Optional[Path],
+    club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
+    region: str, currency: str,
+) -> bytes:
+    bank_bits = [b for b in [bank_name, f"IBAN {bank_iban}" if bank_iban else "", f"BIC {bank_bic}" if bank_bic else ""] if b]
+    footer_line = " · ".join([*club_address_lines, *bank_bits])
+    html_doc = _wrap_document(_invoice_body_html(data, region, currency), club_name, logo_path, footer_line)
+    return HTML(string=html_doc).write_pdf()
+
+
+def render_invoice_bundle_pdf(
+    items: List[InvoicePdfData], club_name: str, logo_path: Optional[Path],
+    club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
+    region: str, currency: str,
+) -> bytes:
+    """Same rendering as render_invoice_pdf, but for many invoices in
+    one PDF (issue #58's "merge PDFs to one big one so we can print
+    it") -- a page-break-before between each invoice's block, sharing
+    one @page header/footer/page-numbering across the whole bundle
+    rather than resetting per invoice, since it's meant to be printed
+    and handled as a single stack."""
+    bank_bits = [b for b in [bank_name, f"IBAN {bank_iban}" if bank_iban else "", f"BIC {bank_bic}" if bank_bic else ""] if b]
+    footer_line = " · ".join([*club_address_lines, *bank_bits])
+    body_html = "".join(_invoice_body_html(data, region, currency) for data in items)
+    html_doc = _wrap_document(body_html, club_name, logo_path, footer_line)
     return HTML(string=html_doc).write_pdf()
