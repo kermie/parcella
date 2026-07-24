@@ -44,7 +44,7 @@ from app.l10n import load_current_region, load_current_currency
 from app.cloud_storage import get_nextcloud_provider
 from app.invoice_generation import compute_invoices_for_run, finalize_run, SequenceCollisionError
 from app.invoice_pdf import (
-    InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf, invoice_pdf_data_from_invoice,
+    InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf, invoice_pdf_data_from_invoice, invoice_pdf_filename,
 )
 from app.invoice_delivery import send_invoice_email, upload_invoice_to_cloud, build_print_bundle
 
@@ -551,7 +551,7 @@ async def invoice_pdf(invoice_id: str, request: Request, db: AsyncSession = Depe
     pdf_bytes = render_invoice_pdf(data, **ctx)
     return Response(
         content=pdf_bytes, media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="invoice_{invoice.invoice_number.replace("/", "-")}.pdf"'},
+        headers={"Content-Disposition": f'inline; filename="{invoice_pdf_filename(invoice, run)}"'},
     )
 
 

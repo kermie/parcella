@@ -22,6 +22,7 @@ from app.cloud_storage import CloudStorageError, NextcloudProvider
 from app.i18n import t_for
 from app.invoice_pdf import (
     InvoicePdfData, render_invoice_pdf, render_invoice_bundle_pdf, invoice_pdf_data_from_invoice,
+    invoice_pdf_filename,
 )
 
 
@@ -68,7 +69,7 @@ async def send_invoice_email(
     <p>{t_for(request, "email.invoice_delivery.body", club_name=pdf_context["club_name"], parcel_number=invoice.parcel.plot_number, due_date=run.due_date.strftime("%d.%m.%Y"))}</p>
     </body></html>
     """
-    filename = f"invoice_{invoice.invoice_number.replace('/', '-')}.pdf"
+    filename = invoice_pdf_filename(invoice, run)
     sent = await send_email(
         email_address, subject, html, db=db,
         attachments=[(filename, pdf_bytes, "application/pdf")],
@@ -98,7 +99,7 @@ async def upload_invoice_to_cloud(
 
     data = invoice_pdf_data_from_invoice(invoice, run)
     pdf_bytes = render_invoice_pdf(data, **pdf_context)
-    filename = f"invoice_{invoice.invoice_number.replace('/', '-')}.pdf"
+    filename = invoice_pdf_filename(invoice, run)
 
     try:
         await provider.upload_file(folder.relative_path, filename, pdf_bytes)
