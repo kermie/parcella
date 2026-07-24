@@ -1870,6 +1870,19 @@
       "col_group": "Grupa",
       "no_categories": "Brak jeszcze kategorii -- dodaj powyżej lub zaimportuj plik CSV.",
       "delete_confirm": "Usunąć tę kategorię? Pozycje, które jej używają, nadal będą działać, tylko bez kategorii."
+    },
+    "pdf": {
+      "invoice_no": "Nr faktury",
+      "date": "Data",
+      "due_date": "Termin płatności",
+      "parcel": "Działka",
+      "col_description": "Opis",
+      "col_qty": "Ilość",
+      "col_unit_price": "Cena jedn.",
+      "col_total": "Razem",
+      "subtotal": "Suma częściowa",
+      "preview_banner": "Podgląd — jeszcze niesfinalizowane ani niewysłane",
+      "account_holder": "Właściciel konta: {name}"
     }
   }
 }

@@ -1870,6 +1870,19 @@
       "col_group": "Groupe",
       "no_categories": "Aucune catégorie pour le moment -- ajoutez-en une ci-dessus ou importez un CSV.",
       "delete_confirm": "Supprimer cette catégorie ? Les lignes qui l'utilisent continuent de fonctionner, simplement sans catégorie."
+    },
+    "pdf": {
+      "invoice_no": "N° de facture",
+      "date": "Date",
+      "due_date": "Date d'échéance",
+      "parcel": "Parcelle",
+      "col_description": "Description",
+      "col_qty": "Qté",
+      "col_unit_price": "Prix unitaire",
+      "col_total": "Total",
+      "subtotal": "Sous-total",
+      "preview_banner": "Aperçu — pas encore finalisé ni envoyé",
+      "account_holder": "Titulaire du compte : {name}"
     }
   }
 }

@@ -20,6 +20,7 @@ from weasyprint import HTML
 
 from app.pdf_utils import file_to_data_uri
 from app.l10n import format_money
+from app.i18n import translate
 
 PAGE_CSS = """
 @page {
@@ -135,7 +136,7 @@ def _substitute_placeholders(text: Optional[str], data: InvoicePdfData) -> str:
         return text
 
 
-def _invoice_body_html(data: InvoicePdfData, region: str, currency: str) -> str:
+def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, language: str) -> str:
     """The part of an invoice that's specific to it (recipient, meta,
     line items, footer text) -- everything except the page chrome
     (header/footer/@page CSS), which is shared across a whole document
@@ -158,7 +159,10 @@ def _invoice_body_html(data: InvoicePdfData, region: str, currency: str) -> str:
         </tr>
         """)
 
-    preview_banner = '<div class="preview-banner">Preview — not yet finalized or sent</div>' if data.is_preview else ""
+    preview_banner = (
+        f'<div class="preview-banner">{translate("finances.pdf.preview_banner", language)}</div>'
+        if data.is_preview else ""
+    )
     footer_text_html = _substitute_placeholders(data.footer_text, data)
 
     return f"""
@@ -168,26 +172,32 @@ def _invoice_body_html(data: InvoicePdfData, region: str, currency: str) -> str:
         <div class="meta-block">
             <div class="recipient">{data.recipient_names}<br>{data.recipient_address.replace(chr(10), '<br>')}</div>
             <table class="invoice-meta">
-                <tr><td>Invoice no.</td><td>{data.invoice_number}</td></tr>
-                <tr><td>Date</td><td>{data.issued_date.strftime('%d.%m.%Y')}</td></tr>
-                <tr><td>Due date</td><td>{data.due_date.strftime('%d.%m.%Y')}</td></tr>
+                <tr><td>{translate("finances.pdf.invoice_no", language)}</td><td>{data.invoice_number}</td></tr>
+                <tr><td>{translate("finances.pdf.date", language)}</td><td>{data.issued_date.strftime('%d.%m.%Y')}</td></tr>
+                <tr><td>{translate("finances.pdf.due_date", language)}</td><td>{data.due_date.strftime('%d.%m.%Y')}</td></tr>
             </table>
         </div>
 
         <h1>{data.subject}</h1>
         <div class="parcel-line">
-            Parcel {data.parcel_plot_number}{f" · {data.parcel_area_sqm} m&sup2;" if data.parcel_area_sqm else ""}
+            {translate("finances.pdf.parcel", language)} {data.parcel_plot_number}{f" · {data.parcel_area_sqm} m&sup2;" if data.parcel_area_sqm else ""}
         </div>
 
         <table class="items">
             <thead>
-                <tr><th>#</th><th>Description</th><th>Qty</th><th>Unit price</th><th>Total</th></tr>
+                <tr>
+                    <th>#</th>
+                    <th>{translate("finances.pdf.col_description", language)}</th>
+                    <th>{translate("finances.pdf.col_qty", language)}</th>
+                    <th>{translate("finances.pdf.col_unit_price", language)}</th>
+                    <th>{translate("finances.pdf.col_total", language)}</th>
+                </tr>
             </thead>
             <tbody>
                 {''.join(rows_html)}
             </tbody>
             <tfoot>
-                <tr><td colspan="4">Subtotal</td><td class="num">{format_money(data.subtotal, region, currency)}</td></tr>
+                <tr><td colspan="4">{translate("finances.pdf.subtotal", language)}</td><td class="num">{format_money(data.subtotal, region, currency)}</td></tr>
             </tfoot>
         </table>
 
@@ -214,7 +224,7 @@ def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], fo
     """
 
 
-def _bank_footer_bits(bank_name: str, bank_iban: str, bank_bic: str, bank_account_owner: str) -> List[str]:
+def _bank_footer_bits(bank_name: str, bank_iban: str, bank_bic: str, bank_account_owner: str, language: str) -> List[str]:
     """Bank details for the footer, in the order issue #69 asked for:
     name, IBAN, BIC, account holder (added since the account holder --
     e.g. the club's registered legal name -- can differ from the
@@ -223,25 +233,25 @@ def _bank_footer_bits(bank_name: str, bank_iban: str, bank_bic: str, bank_accoun
         bank_name,
         f"IBAN {bank_iban}" if bank_iban else "",
         f"BIC {bank_bic}" if bank_bic else "",
-        f"Account holder: {bank_account_owner}" if bank_account_owner else "",
+        translate("finances.pdf.account_holder", language, name=bank_account_owner) if bank_account_owner else "",
     ] if b]
 
 
 def render_invoice_pdf(
     data: InvoicePdfData, club_name: str, logo_path: Optional[Path],
     club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
-    region: str, currency: str, bank_account_owner: str = "",
+    region: str, currency: str, bank_account_owner: str = "", language: str = "en",
 ) -> bytes:
-    bank_bits = _bank_footer_bits(bank_name, bank_iban, bank_bic, bank_account_owner)
+    bank_bits = _bank_footer_bits(bank_name, bank_iban, bank_bic, bank_account_owner, language)
     footer_line = " · ".join([*club_address_lines, *bank_bits])
-    html_doc = _wrap_document(_invoice_body_html(data, region, currency), club_name, logo_path, footer_line)
+    html_doc = _wrap_document(_invoice_body_html(data, region, currency, language), club_name, logo_path, footer_line)
     return HTML(string=html_doc).write_pdf()
 
 
 def render_invoice_bundle_pdf(
     items: List[InvoicePdfData], club_name: str, logo_path: Optional[Path],
     club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
-    region: str, currency: str, bank_account_owner: str = "",
+    region: str, currency: str, bank_account_owner: str = "", language: str = "en",
 ) -> bytes:
     """Same rendering as render_invoice_pdf, but for many invoices in
     one PDF (issue #58's "merge PDFs to one big one so we can print
@@ -249,8 +259,8 @@ def render_invoice_bundle_pdf(
     one @page header/footer/page-numbering across the whole bundle
     rather than resetting per invoice, since it's meant to be printed
     and handled as a single stack."""
-    bank_bits = _bank_footer_bits(bank_name, bank_iban, bank_bic, bank_account_owner)
+    bank_bits = _bank_footer_bits(bank_name, bank_iban, bank_bic, bank_account_owner, language)
     footer_line = " · ".join([*club_address_lines, *bank_bits])
-    body_html = "".join(_invoice_body_html(data, region, currency) for data in items)
+    body_html = "".join(_invoice_body_html(data, region, currency, language) for data in items)
     html_doc = _wrap_document(body_html, club_name, logo_path, footer_line)
     return HTML(string=html_doc).write_pdf()

@@ -1870,6 +1870,19 @@
       "col_group": "Gruppe",
       "no_categories": "Noch keine Kategorien -- oben hinzufügen oder eine CSV importieren.",
       "delete_confirm": "Diese Kategorie löschen? Positionen, die sie verwenden, bleiben erhalten, nur ohne Kategorie."
+    },
+    "pdf": {
+      "invoice_no": "Rechnungsnr.",
+      "date": "Datum",
+      "due_date": "Fällig am",
+      "parcel": "Parzelle",
+      "col_description": "Beschreibung",
+      "col_qty": "Menge",
+      "col_unit_price": "Einzelpreis",
+      "col_total": "Gesamt",
+      "subtotal": "Zwischensumme",
+      "preview_banner": "Vorschau — noch nicht abgeschlossen oder versendet",
+      "account_holder": "Kontoinhaber: {name}"
     }
   }
 }

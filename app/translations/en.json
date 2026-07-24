@@ -1870,6 +1870,19 @@
       "col_group": "Group",
       "no_categories": "No categories yet -- add one above, or import a CSV.",
       "delete_confirm": "Delete this category? Items using it keep working, just without a category."
+    },
+    "pdf": {
+      "invoice_no": "Invoice no.",
+      "date": "Date",
+      "due_date": "Due date",
+      "parcel": "Parcel",
+      "col_description": "Description",
+      "col_qty": "Qty",
+      "col_unit_price": "Unit price",
+      "col_total": "Total",
+      "subtotal": "Subtotal",
+      "preview_banner": "Preview — not yet finalized or sent",
+      "account_holder": "Account holder: {name}"
     }
   }
 }

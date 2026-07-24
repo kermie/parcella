@@ -1870,6 +1870,19 @@
       "col_group": "Groep",
       "no_categories": "Nog geen categorieën -- voeg er hierboven een toe of importeer een CSV.",
       "delete_confirm": "Deze categorie verwijderen? Regels die deze gebruiken blijven werken, alleen zonder categorie."
+    },
+    "pdf": {
+      "invoice_no": "Factuurnr.",
+      "date": "Datum",
+      "due_date": "Vervaldatum",
+      "parcel": "Perceel",
+      "col_description": "Omschrijving",
+      "col_qty": "Aantal",
+      "col_unit_price": "Stukprijs",
+      "col_total": "Totaal",
+      "subtotal": "Subtotaal",
+      "preview_banner": "Voorbeeld — nog niet afgerond of verzonden",
+      "account_holder": "Rekeninghouder: {name}"
     }
   }
 }

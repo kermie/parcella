@@ -1870,6 +1870,19 @@
       "col_group": "Skupina",
       "no_categories": "Zatiaľ žiadne kategórie -- pridajte vyššie alebo importujte CSV.",
       "delete_confirm": "Zmazať túto kategóriu? Položky, ktoré ju používajú, zostanú zachované, len bez kategórie."
+    },
+    "pdf": {
+      "invoice_no": "Č. faktúry",
+      "date": "Dátum",
+      "due_date": "Dátum splatnosti",
+      "parcel": "Parcela",
+      "col_description": "Popis",
+      "col_qty": "Množstvo",
+      "col_unit_price": "Jedn. cena",
+      "col_total": "Spolu",
+      "subtotal": "Medzisúčet",
+      "preview_banner": "Náhľad — zatiaľ nedokončené ani neodoslané",
+      "account_holder": "Majiteľ účtu: {name}"
     }
   }
 }

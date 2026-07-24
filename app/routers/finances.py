@@ -31,7 +31,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.i18n import t_for
+from app.i18n import t_for, load_current_language
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel,
     InvoicePricingMode, Invoice, InvoicePayment, ClubSetting, Parcel, ParcelStatus,
@@ -133,6 +133,7 @@ async def _pdf_context(db: AsyncSession) -> dict:
         "bank_account_owner": settings_map.get("bank_account_owner") or "",
         "region": await load_current_region(db),
         "currency": await load_current_currency(db),
+        "language": await load_current_language(db),
     }
 
 

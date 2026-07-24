@@ -1870,6 +1870,19 @@
       "col_group": "Skupina",
       "no_categories": "Zatím žádné kategorie -- přidejte výše nebo importujte CSV.",
       "delete_confirm": "Smazat tuto kategorii? Položky, které ji používají, zůstanou zachovány, jen bez kategorie."
+    },
+    "pdf": {
+      "invoice_no": "Č. faktury",
+      "date": "Datum",
+      "due_date": "Datum splatnosti",
+      "parcel": "Parcela",
+      "col_description": "Popis",
+      "col_qty": "Množství",
+      "col_unit_price": "Jedn. cena",
+      "col_total": "Celkem",
+      "subtotal": "Mezisoučet",
+      "preview_banner": "Náhled — zatím nedokončeno ani neodesláno",
+      "account_holder": "Majitel účtu: {name}"
     }
   }
 }
