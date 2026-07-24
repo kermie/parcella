@@ -552,6 +552,19 @@ MODULE_FIELDS = [
     ("modul_public_signup_api", "admin.settings.modules.public_signup_api_name", "admin.settings.modules.public_signup_api_desc"),
     ("modul_announcements", "admin.settings.modules.announcements_name", "admin.settings.modules.announcements_desc"),
     ("modul_cloud_storage", "admin.settings.modules.cloud_storage_name", "admin.settings.modules.cloud_storage_desc"),
+    ("modul_finances", "admin.settings.modules.finances_name", "admin.settings.modules.finances_desc"),
+]
+
+# Finances module (annual invoices, issue #55): bank details for the
+# invoice footer and the starting sequence number for invoice numbers
+# ("{year}/{sequence}", resets yearly -- see app/models.py's
+# InvoiceRun/Invoice). Rendered as their own card on the settings page,
+# same pattern as SETTINGS_FIELDS above.
+FINANCE_SETTINGS_FIELDS = [
+    ("bank_name", "admin.settings.fields.bank_name"),
+    ("bank_iban", "admin.settings.fields.bank_iban"),
+    ("bank_bic", "admin.settings.fields.bank_bic"),
+    ("invoice_number_start", "admin.settings.fields.invoice_number_start"),
 ]
 
 # Issue #60: lets a club reorder its own sidebar. Keys follow the
@@ -572,6 +585,7 @@ NAV_ORDER_FIELDS = [
     ("announcements", "nav.announcements"),
     ("inventory", "nav.inventory"),
     ("tasks", "nav.tasks"),
+    ("finances", "nav.finances_group"),
 ]
 
 
@@ -583,6 +597,7 @@ async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
     settings_map = {e.key: e.value for e in result.scalars().all()}
 
     resolved_fields = [(key, t_for(request, label_key)) for key, label_key in SETTINGS_FIELDS]
+    resolved_finance_fields = [(key, t_for(request, label_key)) for key, label_key in FINANCE_SETTINGS_FIELDS]
     resolved_module_fields = [
         (key, t_for(request, name_key), t_for(request, desc_key))
         for key, name_key, desc_key in MODULE_FIELDS
@@ -599,6 +614,7 @@ async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
             "user": user,
             "settings_map": settings_map,
             "fields": resolved_fields,
+            "finance_fields": resolved_finance_fields,
             "module_fields": resolved_module_fields,
             "nav_order_fields": resolved_nav_order_fields,
             "available_languages": AVAILABLE_LANGUAGES,
@@ -640,7 +656,7 @@ async def settings_save(
         except ValueError as e:
             logo_error = str(e)
 
-    for key, description in SETTINGS_FIELDS:
+    for key, description in SETTINGS_FIELDS + FINANCE_SETTINGS_FIELDS:
         value = form.get(key, "").strip() or None
 
         result = await db.execute(

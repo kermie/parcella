@@ -145,6 +145,51 @@ async def test_smoke_sample_data_page_add_and_remove_cycle(client, admin_user):
     assert "UndefinedError" not in r_after_remove.text
 
 
+async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_user):
+    """Finances (issue #55/#56) defaults to off, like cloud_storage/
+    announcements -- enable it directly via ClubSetting, same pattern
+    test_announcements.py uses."""
+    from app.database import AsyncSessionLocal
+    from app.models import ClubSetting
+
+    async with AsyncSessionLocal() as session:
+        session.add(ClubSetting(key="modul_finances", value="true", description="test"))
+        await session.commit()
+
+    response = await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    assert response.status_code in (302, 303)
+
+    r_list = await client.get("/finances/")
+    assert r_list.status_code == 200
+    assert "UndefinedError" not in r_list.text
+
+    r_create = await client.post("/finances/runs", data={
+        "year": "2026", "subject": "Test run", "issued_date": "2026-08-01",
+        "due_date": "2026-09-01", "footer_text": "",
+    })
+    assert r_create.status_code in (302, 303)
+    run_id = r_create.headers["location"].rstrip("/").split("/")[-1]
+
+    r_detail = await client.get(f"/finances/runs/{run_id}")
+    assert r_detail.status_code == 200
+    assert "UndefinedError" not in r_detail.text
+
+    for mode, unit_price in [
+        ("fixed_per_parcel", "12.50"), ("fixed_per_person", "5.00"), ("per_sqm", "0.30"),
+        ("water_usage", "3.10"), ("electricity_usage", "0.40"), ("insurance_cost", ""),
+    ]:
+        r_item = await client.post(f"/finances/runs/{run_id}/items", data={
+            "order_number": "10", "name": f"Item {mode}", "description": "",
+            "pricing_mode": mode, "unit_price": unit_price, "applies_to_all_parcels": "on",
+        })
+        assert r_item.status_code in (302, 303)
+
+    r_detail2 = await client.get(f"/finances/runs/{run_id}")
+    assert r_detail2.status_code == 200
+    assert "UndefinedError" not in r_detail2.text
+    assert "Item insurance_cost" in r_detail2.text
+
+
 async def test_smoke_metering_pages_render_without_jinja_errors(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)

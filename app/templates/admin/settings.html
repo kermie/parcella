@@ -202,6 +202,23 @@
             </div>
         </div>
 
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-cash-coin me-2"></i>{{ t('admin.settings.finance_header') }}</div>
+            <div class="card-body">
+                <p class="text-muted mb-3" style="font-size: 0.82rem;">
+                    {{ t('admin.settings.finance_help') }}
+                </p>
+                {% for key, label in finance_fields %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ label }}</label>
+                    <input type="text" name="{{ key }}" class="form-control"
+                           {% if key == 'invoice_number_start' %}placeholder="1"{% endif %}
+                           value="{{ settings_map.get(key, '') or '' }}">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header"><i class="bi bi-envelope-at me-2"></i>{{ t('admin.settings.email_header') }}</div>
             <div class="card-body">

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.run_detail.title') }}{% endblock %}
+{% block page_title %}{{ t('finances.run_detail.heading', year=run.year, subject=run.subject) }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/finances/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.run_detail.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-list-ol me-2"></i>{{ t('finances.run_detail.items_header') }}</div>
+            {% if has_perm(request, 'finances', 'write') %}
+            {% for item in run.item_definitions %}
+            <form method="post" action="/finances/runs/{{ run.id }}/items/{{ item.id }}/edit" id="edit-item-{{ item.id }}"></form>
+            {% endfor %}
+            {% endif %}
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">{{ t('finances.run_detail.col_order') }}</th>
+                                <th>{{ t('finances.run_detail.col_name') }}</th>
+                                <th>{{ t('finances.run_detail.col_pricing_mode') }}</th>
+                                <th>{{ t('finances.run_detail.col_unit_price') }}</th>
+                                <th>{{ t('finances.run_detail.col_scope') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in run.item_definitions %}
+                            <tr>
+                                {% if has_perm(request, 'finances', 'write') %}
+                                <td>
+                                    <input type="number" name="order_number" form="edit-item-{{ item.id }}" class="form-control form-control-sm"
+                                           value="{{ item.order_number }}" style="width: 70px;">
+                                </td>
+                                <td>
+                                    <input type="text" name="name" form="edit-item-{{ item.id }}" class="form-control form-control-sm mb-1"
+                                           value="{{ item.name }}" required>
+                                    <input type="text" name="description" form="edit-item-{{ item.id }}" class="form-control form-control-sm"
+                                           value="{{ item.description or '' }}" placeholder="{{ t('finances.run_detail.label_description') }}">
+                                </td>
+                                <td>
+                                    <select name="pricing_mode" form="edit-item-{{ item.id }}" class="form-select form-select-sm">
+                                        {% for mode in pricing_modes %}
+                                        <option value="{{ mode.value }}" {% if item.pricing_mode == mode %}selected{% endif %}>
+                                            {{ t('finances.pricing_modes.' ~ mode.value) }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" name="unit_price" form="edit-item-{{ item.id }}" class="form-control form-control-sm"
+                                           style="width: 100px;"
+                                           value="{{ '%.2f'|format(item.unit_price|float) if item.unit_price is not none else '' }}">
+                                </td>
+                                <td class="text-nowrap">
+                                    <div class="form-check form-switch mb-0">
+                                        <input type="checkbox" name="applies_to_all_parcels" form="edit-item-{{ item.id }}"
+                                               class="form-check-input" {% if item.applies_to_all_parcels %}checked{% endif %}>
+                                        <label class="form-check-label" style="font-size: 0.8rem;">
+                                            {% if item.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
+                                            {% else %}{{ t('finances.run_detail.scope_n_parcels', n=item.parcel_scopes|length) }}{% endif %}
+                                        </label>
+                                    </div>
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <button type="submit" form="edit-item-{{ item.id }}" class="btn btn-sm btn-outline-primary border-0">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    {% if has_perm(request, 'finances', 'delete') %}
+                                    <form method="post" action="/finances/runs/{{ run.id }}/items/{{ item.id }}/delete" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('{{ t('finances.run_detail.delete_item_confirm') }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                                {% else %}
+                                <td>{{ item.order_number }}</td>
+                                <td>{{ item.name }}{% if item.description %}<br><small class="text-muted">{{ item.description }}</small>{% endif %}</td>
+                                <td>{{ t('finances.pricing_modes.' ~ item.pricing_mode.value) }}</td>
+                                <td>{{ '%.2f'|format(item.unit_price|float) if item.unit_price is not none else '-' }}</td>
+                                <td>
+                                    {% if item.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
+                                    {% else %}{{ t('finances.run_detail.scope_n_parcels', n=item.parcel_scopes|length) }}{% endif %}
+                                </td>
+                                <td></td>
+                                {% endif %}
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.run_detail.no_items') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if has_perm(request, 'finances', 'write') %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.run_detail.new_item_header') }}</div>
+            <div class="card-body">
+                <form method="post" action="/finances/runs/{{ run.id }}/items">
+                    <div class="row g-2 align-items-end mb-2">
+                        <div class="col-sm-1">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_order') }}</label>
+                            <input type="number" name="order_number" class="form-control form-control-sm" value="{{ next_order }}">
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_name') }}</label>
+                            <input type="text" name="name" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_description') }}</label>
+                            <input type="text" name="description" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_pricing_mode') }}</label>
+                            <select name="pricing_mode" class="form-select form-select-sm">
+                                {% for mode in pricing_modes %}
+                                <option value="{{ mode.value }}">{{ t('finances.pricing_modes.' ~ mode.value) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_unit_price') }}</label>
+                            <input type="text" name="unit_price" class="form-control form-control-sm" placeholder="0,00">
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" name="applies_to_all_parcels" id="applies-all-check"
+                               class="form-check-input" checked>
+                        <label class="form-check-label" for="applies-all-check">{{ t('finances.run_detail.label_applies_all') }}</label>
+                    </div>
+
+                    <div id="parcel-picker" class="mb-2" style="display: none;">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
+                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                            {% for parcel in parcels %}
+                            <div class="col-sm-3 col-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" class="form-check-input" id="parcel-{{ parcel.id }}">
+                                    <label class="form-check-label" style="font-size: 0.85rem;" for="parcel-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>{{ t('finances.run_detail.button_create') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var appliesAll = document.getElementById('applies-all-check');
+    var picker = document.getElementById('parcel-picker');
+    if (appliesAll && picker) {
+        function sync() { picker.style.display = appliesAll.checked ? 'none' : 'block'; }
+        appliesAll.addEventListener('change', sync);
+        sync();
+    }
+});
+</script>
+{% endblock %}

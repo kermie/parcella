@@ -39,7 +39,8 @@
     "announcements": "Mitteilungen",
     "inventory": "Inventar",
     "tasks": "Aufgabenboard",
-    "groups": "Gruppen"
+    "groups": "Gruppen",
+    "finances_group": "Finanzen"
   },
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
@@ -249,6 +250,8 @@
       "module_help": "Nicht jeder Verein nutzt jeden Funktionsbereich. Deaktivierte Module verschwinden aus der Navigation – die Daten bleiben dabei erhalten und tauchen nach erneutem Aktivieren wieder auf.",
       "nav_order_header": "Reihenfolge der Navigation",
       "nav_order_help": "Legt die Reihenfolge der Navigationspunkte in der Seitenleiste fest. Kleinere Zahlen erscheinen zuerst; der Abstand von 100 lässt Raum, um später eine neue Position dazwischen einzufügen.",
+      "finance_header": "Finanzeinstellungen",
+      "finance_help": "Wird im Fußbereich jeder Rechnung angezeigt und für die Rechnungsnummerierung verwendet ({year}/{sequence}, setzt sich jährlich zurück).",
       "updates_header": "Updates",
       "updates_toggle_label": "Automatisch nach Updates suchen",
       "updates_toggle_hint": "Prüft regelmäßig auf GitHub, ob eine neuere Parcella-Version veröffentlicht wurde, und zeigt ggf. einen Hinweis auf dem Admin-Dashboard an. Es werden keine Zugangsdaten übertragen -- nur eine öffentliche Abfrage der Releases.",
@@ -284,7 +287,11 @@
         "spam_keyword_blocklist": "Spam: gesperrte Schlüsselwörter (kommagetrennt)",
         "spam_threshold": "Spam: Schwellenwert (0.0–1.0, Standard 0.5)",
         "spam_api_url": "Spam: externe Prüf-API-URL (optional)",
-        "spam_api_key": "Spam: externer API-Key (optional)"
+        "spam_api_key": "Spam: externer API-Key (optional)",
+        "bank_name": "Bankname",
+        "bank_iban": "IBAN",
+        "bank_bic": "BIC",
+        "invoice_number_start": "Erste Rechnungsnummer (für das erste abgerechnete Jahr)"
       },
       "modules": {
         "work_hours_name": "Pflichtstunden-Verwaltung",
@@ -310,7 +317,9 @@
         "cloud_storage_name": "Cloud-Speicher",
         "cloud_storage_desc": "Ermöglicht Vorstand/Admin, für jede Parzelle einen Nextcloud-Ordner zu durchsuchen, hochzuladen und herunterzuladen -- Pachtverträge, Mitgliedsanträge, Ticket-Korrespondenz. Die Verbindung zuerst unter Admin -> Integrationen einrichten.",
         "tasks_name": "Aufgabenboard",
-        "tasks_desc": "Ein allgemeines Kanban-Board (Zu erledigen / In Bearbeitung / Erledigt) für Vereinsangelegenheiten, die nicht an einen Arbeitseinsatz gebunden sind -- z.B. \"Versicherung erneuern\", \"Elektriker anrufen\". Nur für Vorstand/Admin."
+        "tasks_desc": "Ein allgemeines Kanban-Board (Zu erledigen / In Bearbeitung / Erledigt) für Vereinsangelegenheiten, die nicht an einen Arbeitseinsatz gebunden sind -- z.B. \"Versicherung erneuern\", \"Elektriker anrufen\". Nur für Vorstand/Admin.",
+        "finances_name": "Finanzen",
+        "finances_desc": "Jahresrechnungen je Parzelle erstellen und versenden, mit verbrauchsabhängigen Positionen und Zahlungsverfolgung. Bankdaten unten zuerst hinterlegen."
       },
       "region_header": "Region",
       "region_help": "Bestimmt Zahlen- und Adressformat (z.B. Tausendertrennzeichen, Reihenfolge von PLZ und Ort). Unabhängig von der Oberflächensprache.",
@@ -431,7 +440,8 @@
         "tickets": "Tickets",
         "purchase_requests": "Einkaufswünsche",
         "calendar": "Kalender",
-        "inventory": "Inventar"
+        "inventory": "Inventar",
+        "finances": "Finanzen"
       }
     }
   },
@@ -1646,5 +1656,65 @@
       "instruction": "Bitte melden Sie sich im {app_name} an, um sie zu bearbeiten."
     },
     "announcement_test_banner": "Dies ist ein Testversand und ging an kein Mitglied heraus."
+  },
+  "finances": {
+    "run_list": {
+      "title": "Jahresrechnungen",
+      "heading": "Jahresrechnungen",
+      "new_run_header": "Neuer Rechnungslauf",
+      "label_year": "Jahr",
+      "label_subject": "Betreff",
+      "label_issued_date": "Rechnungsdatum",
+      "label_due_date": "Zahlungsziel",
+      "label_footer_text": "Fußtext",
+      "footer_placeholder": "Wird auf jeder Rechnung unter den Positionen angezeigt. Platzhalter: {invoice_number}, {parcel_number}, {invoice_address}, {due_date}",
+      "button_create": "Anlegen",
+      "runs_header": "Rechnungsläufe",
+      "col_year": "Jahr",
+      "col_subject": "Betreff",
+      "col_status": "Status",
+      "col_items": "Positionen",
+      "status_draft": "Entwurf",
+      "status_finalized": "Abgeschlossen",
+      "open_button": "Öffnen",
+      "no_runs": "Noch keine Rechnungsläufe vorhanden.",
+      "delete_confirm": "Diesen Rechnungslauf mitsamt allen Positionsdefinitionen löschen? Das kann nicht rückgängig gemacht werden."
+    },
+    "run_detail": {
+      "title": "Rechnungslauf",
+      "heading": "{year} — {subject}",
+      "back": "Zurück zu den Rechnungsläufen",
+      "items_header": "Positionsdefinitionen",
+      "col_order": "Reihenfolge",
+      "col_name": "Name",
+      "col_pricing_mode": "Berechnung",
+      "col_unit_price": "Einzelpreis",
+      "col_scope": "Gilt für",
+      "no_items": "Noch keine Positionen — unten hinzufügen.",
+      "delete_item_confirm": "Diese Positionsdefinition löschen?",
+      "new_item_header": "Position hinzufügen",
+      "label_order": "Reihenfolge",
+      "label_name": "Name",
+      "label_description": "Beschreibung",
+      "label_pricing_mode": "Berechnungsart",
+      "label_unit_price": "Einzelpreis",
+      "label_applies_all": "Gilt für jede Parzelle",
+      "label_parcels": "Parzellen",
+      "scope_all": "Alle Parzellen",
+      "scope_n_parcels": "{n} Parzelle(n)",
+      "button_create": "Position hinzufügen"
+    },
+    "pricing_modes": {
+      "fixed_per_parcel": "Festbetrag je Parzelle",
+      "fixed_per_person": "Festbetrag je Person",
+      "per_sqm": "Je gepachtetem m²",
+      "water_usage": "Wasserverbrauch (aus Modul)",
+      "electricity_usage": "Stromverbrauch (aus Modul)",
+      "insurance_cost": "Versicherungskosten (aus Modul)"
+    },
+    "errors": {
+      "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",
+      "run_not_draft": "Dieser Rechnungslauf ist bereits abgeschlossen; seine Positionsdefinitionen können nicht mehr geändert werden."
+    }
   }
 }

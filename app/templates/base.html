@@ -386,6 +386,14 @@
         {% endif %}
         {% endmacro %}
 
+        {% macro nav_finances(request) %}
+        {% if request.state.module_flags.finances and has_perm(request, 'finances') %}
+        <a href="/finances/" class="nav-top-link {% if '/finances' in request.url.path %}aktiv{% endif %}">
+            <i class="bi bi-cash-coin"></i> {{ t('nav.finances_group') }}
+        </a>
+        {% endif %}
+        {% endmacro %}
+
         <div id="nav-accordion">
 
         {% for key, _order in request.state.nav_order | dictsort(by='value') %}
@@ -402,6 +410,7 @@
             {% elif key == 'announcements' %}{{ nav_announcements(request) }}
             {% elif key == 'inventory' %}{{ nav_inventory(request) }}
             {% elif key == 'tasks' %}{{ nav_tasks(request) }}
+            {% elif key == 'finances' %}{{ nav_finances(request) }}
             {% endif %}
         {% endfor %}
 

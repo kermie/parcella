@@ -39,7 +39,8 @@
     "announcements": "Annonces",
     "inventory": "Inventaire",
     "tasks": "Tableau des tâches",
-    "groups": "Groupes"
+    "groups": "Groupes",
+    "finances_group": "Finances"
   },
   "errors": {
     "ticket_not_found": "Ticket non trouvé",
@@ -249,6 +250,8 @@
       "module_help": "Tous les clubs n'utilisent pas tous les domaines fonctionnels. Les modules désactivés disparaissent de la navigation -- les données sont conservées et réapparaissent une fois réactivés.",
       "nav_order_header": "Ordre de navigation",
       "nav_order_help": "Définit l'ordre des éléments de navigation dans la barre latérale. Les nombres les plus bas apparaissent en premier ; l'espacement de 100 laisse de la place pour insérer une nouvelle position entre deux existantes plus tard.",
+      "finance_header": "Paramètres financiers",
+      "finance_help": "Affiché en pied de page de chaque facture, et utilisé pour la numérotation des factures ({year}/{sequence}, réinitialisée chaque année).",
       "updates_header": "Mises à jour",
       "updates_toggle_label": "Vérifier automatiquement les mises à jour",
       "updates_toggle_hint": "Vérifie périodiquement sur GitHub si une nouvelle version de Parcella a été publiée et affiche une notification sur le tableau de bord admin. Aucune donnée d'identification n'est transmise -- uniquement une consultation publique des versions.",
@@ -284,7 +287,11 @@
         "spam_keyword_blocklist": "Spam : mots-clés bloqués (séparés par des virgules)",
         "spam_threshold": "Spam : seuil (0.0-1.0, défaut 0.5)",
         "spam_api_url": "Spam : URL de l'API de vérification externe (facultatif)",
-        "spam_api_key": "Spam : clé API externe (facultatif)"
+        "spam_api_key": "Spam : clé API externe (facultatif)",
+        "bank_name": "Nom de la banque",
+        "bank_iban": "IBAN",
+        "bank_bic": "BIC",
+        "invoice_number_start": "Premier numéro de facture (pour la première année facturée)"
       },
       "modules": {
         "work_hours_name": "Gestion des heures de travail",
@@ -310,7 +317,9 @@
         "cloud_storage_name": "Stockage cloud",
         "cloud_storage_desc": "Permet au conseil/à l'administrateur de parcourir, téléverser et télécharger des fichiers depuis un dossier Nextcloud pour chaque parcelle -- baux, demandes d'adhésion, correspondance des tickets. Configurez d'abord la connexion sous Admin -> Intégrations.",
         "tasks_name": "Tableau des tâches",
-        "tasks_desc": "Un tableau kanban général (À faire / En cours / Terminé) pour les affaires du club non liées à une session de travail -- p.ex. \"renouveler l'assurance\", \"appeler l'électricien\". Réservé au conseil/administrateur."
+        "tasks_desc": "Un tableau kanban général (À faire / En cours / Terminé) pour les affaires du club non liées à une session de travail -- p.ex. \"renouveler l'assurance\", \"appeler l'électricien\". Réservé au conseil/administrateur.",
+        "finances_name": "Finances",
+        "finances_desc": "Préparez et envoyez des factures annuelles par parcelle, avec des lignes basées sur la consommation et un suivi des paiements. Configurez d'abord les coordonnées bancaires ci-dessous."
       },
       "region_header": "Région",
       "region_help": "Détermine le format des nombres et de l'adresse (par ex. séparateur de milliers, ordre du code postal et de la ville). Indépendant de la langue de l'interface.",
@@ -431,7 +440,8 @@
         "tickets": "Tickets",
         "purchase_requests": "Demandes d'achat",
         "calendar": "Calendrier",
-        "inventory": "Inventaire"
+        "inventory": "Inventaire",
+        "finances": "Finances"
       }
     }
   },
@@ -1646,5 +1656,65 @@
       "instruction": "Merci de vous connecter à {app_name} pour les traiter."
     },
     "announcement_test_banner": "Ceci est un envoi de test et n'a été transmis à aucun membre."
+  },
+  "finances": {
+    "run_list": {
+      "title": "Factures annuelles",
+      "heading": "Factures annuelles",
+      "new_run_header": "Nouvelle série de factures",
+      "label_year": "Année",
+      "label_subject": "Objet",
+      "label_issued_date": "Date d'émission",
+      "label_due_date": "Date d'échéance",
+      "label_footer_text": "Texte de pied de page",
+      "footer_placeholder": "Affiché sous les lignes de chaque facture. Balises : {invoice_number}, {parcel_number}, {invoice_address}, {due_date}",
+      "button_create": "Créer",
+      "runs_header": "Séries de factures",
+      "col_year": "Année",
+      "col_subject": "Objet",
+      "col_status": "Statut",
+      "col_items": "Lignes",
+      "status_draft": "Brouillon",
+      "status_finalized": "Finalisée",
+      "open_button": "Ouvrir",
+      "no_runs": "Aucune série de factures pour le moment.",
+      "delete_confirm": "Supprimer cette série de factures ainsi que toutes ses lignes ? Cette action est irréversible."
+    },
+    "run_detail": {
+      "title": "Série de factures",
+      "heading": "{year} — {subject}",
+      "back": "Retour aux séries de factures",
+      "items_header": "Lignes types",
+      "col_order": "Ordre",
+      "col_name": "Nom",
+      "col_pricing_mode": "Calcul",
+      "col_unit_price": "Prix unitaire",
+      "col_scope": "S'applique à",
+      "no_items": "Aucune ligne pour le moment — ajoutez-en une ci-dessous.",
+      "delete_item_confirm": "Supprimer cette ligne type ?",
+      "new_item_header": "Ajouter une ligne",
+      "label_order": "Ordre",
+      "label_name": "Nom",
+      "label_description": "Description",
+      "label_pricing_mode": "Mode de calcul",
+      "label_unit_price": "Prix unitaire",
+      "label_applies_all": "S'applique à chaque parcelle",
+      "label_parcels": "Parcelles",
+      "scope_all": "Toutes les parcelles",
+      "scope_n_parcels": "{n} parcelle(s)",
+      "button_create": "Ajouter la ligne"
+    },
+    "pricing_modes": {
+      "fixed_per_parcel": "Montant fixe par parcelle",
+      "fixed_per_person": "Montant fixe par personne",
+      "per_sqm": "Par m² loué",
+      "water_usage": "Consommation d'eau (depuis le module)",
+      "electricity_usage": "Consommation d'électricité (depuis le module)",
+      "insurance_cost": "Coût d'assurance (depuis le module)"
+    },
+    "errors": {
+      "cannot_delete_finalized_run": "Cette série de factures est déjà finalisée et ne peut plus être supprimée.",
+      "run_not_draft": "Cette série de factures est déjà finalisée ; ses lignes types ne peuvent plus être modifiées."
+    }
   }
 }

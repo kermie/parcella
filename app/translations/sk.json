@@ -39,7 +39,8 @@
     "announcements": "Oznamy",
     "inventory": "Inventár",
     "tasks": "Nástenka úloh",
-    "groups": "Skupiny"
+    "groups": "Skupiny",
+    "finances_group": "Financie"
   },
   "errors": {
     "ticket_not_found": "Ticket nebol nájdený",
@@ -249,6 +250,8 @@
       "module_help": "Nie každý spolok používa každú funkčnú oblasť. Vypnuté moduly zmiznú z navigácie -- dáta zostávajú zachované a po opätovnom zapnutí sa znova objavia.",
       "nav_order_header": "Poradie navigácie",
       "nav_order_help": "Nastavuje poradie položiek navigácie v bočnom paneli. Nižšie čísla sa zobrazujú ako prvé; rozstup 100 necháva priestor na neskoršie vloženie novej pozície medzi existujúce.",
+      "finance_header": "Finančné nastavenia",
+      "finance_help": "Zobrazuje sa v pätičke každej faktúry a používa sa na číslovanie faktúr ({year}/{sequence}, každý rok sa resetuje).",
       "updates_header": "Aktualizácie",
       "updates_toggle_label": "Automaticky kontrolovať aktualizácie",
       "updates_toggle_hint": "Pravidelne kontroluje na GitHube, či nebola vydaná novšia verzia Parcelly, a v prípade potreby zobrazí upozornenie na administrátorskom paneli. Neprenášajú sa žiadne prihlasovacie údaje -- len verejný dotaz na vydania.",
@@ -284,7 +287,11 @@
         "spam_keyword_blocklist": "Spam: blokované kľúčové slová (oddelené čiarkami)",
         "spam_threshold": "Spam: prahová hodnota (0.0-1.0, predvolené 0.5)",
         "spam_api_url": "Spam: URL externého kontrolného API (voliteľné)",
-        "spam_api_key": "Spam: externý API kľúč (voliteľný)"
+        "spam_api_key": "Spam: externý API kľúč (voliteľný)",
+        "bank_name": "Názov banky",
+        "bank_iban": "IBAN",
+        "bank_bic": "BIC",
+        "invoice_number_start": "Počiatočné číslo faktúry (pre prvý fakturovaný rok)"
       },
       "modules": {
         "work_hours_name": "Správa pracovných hodín",
@@ -310,7 +317,9 @@
         "cloud_storage_name": "Cloudové úložisko",
         "cloud_storage_desc": "Umožňuje výboru/administrátorovi prehliadať, nahrávať a sťahovať súbory zo zložky Nextcloud pre každú záhradku -- nájomné zmluvy, členské žiadosti, korešpondenciu z ticketov. Najprv nastavte pripojenie v Admin -> Integrácie.",
         "tasks_name": "Nástenka úloh",
-        "tasks_desc": "Všeobecná kanban nástenka (Na vybavenie / Prebieha / Hotovo) pre záležitosti spolku, ktoré nie sú viazané na pracovnú zmenu -- napr. \"obnoviť poistku\", \"zavolať elektrikára\". Len pre výbor/administrátora."
+        "tasks_desc": "Všeobecná kanban nástenka (Na vybavenie / Prebieha / Hotovo) pre záležitosti spolku, ktoré nie sú viazané na pracovnú zmenu -- napr. \"obnoviť poistku\", \"zavolať elektrikára\". Len pre výbor/administrátora.",
+        "finances_name": "Financie",
+        "finances_desc": "Pripravte a odosielajte ročné faktúry za každú parcelu, s položkami podľa spotreby a sledovaním platieb. Najskôr nastavte bankové údaje nižšie."
       },
       "region_header": "Región",
       "region_help": "Určuje formát čísel a adresy (napr. oddeľovač tisícov, poradie PSČ a mesta). Nezávisle od jazyka rozhrania.",
@@ -431,7 +440,8 @@
         "tickets": "Tikety",
         "purchase_requests": "Žiadosti o nákup",
         "calendar": "Kalendár",
-        "inventory": "Inventár"
+        "inventory": "Inventár",
+        "finances": "Financie"
       }
     }
   },
@@ -1646,5 +1656,65 @@
       "instruction": "Prihláste sa prosím do {app_name}, aby ste ich mohli spracovať."
     },
     "announcement_test_banner": "Toto je testovacie odoslanie a nebolo doručené žiadnemu členovi."
+  },
+  "finances": {
+    "run_list": {
+      "title": "Ročné vyúčtovanie",
+      "heading": "Ročné vyúčtovanie",
+      "new_run_header": "Nové vyúčtovanie",
+      "label_year": "Rok",
+      "label_subject": "Predmet",
+      "label_issued_date": "Dátum vystavenia",
+      "label_due_date": "Dátum splatnosti",
+      "label_footer_text": "Text pätičky",
+      "footer_placeholder": "Zobrazuje sa pod položkami na každej faktúre. Značky: {invoice_number}, {parcel_number}, {invoice_address}, {due_date}",
+      "button_create": "Vytvoriť",
+      "runs_header": "Vyúčtovania",
+      "col_year": "Rok",
+      "col_subject": "Predmet",
+      "col_status": "Stav",
+      "col_items": "Položky",
+      "status_draft": "Koncept",
+      "status_finalized": "Dokončené",
+      "open_button": "Otvoriť",
+      "no_runs": "Zatiaľ žiadne vyúčtovania.",
+      "delete_confirm": "Zmazať toto vyúčtovanie vrátane všetkých definícií položiek? Túto akciu nemožno vrátiť späť."
+    },
+    "run_detail": {
+      "title": "Vyúčtovanie",
+      "heading": "{year} — {subject}",
+      "back": "Späť na vyúčtovania",
+      "items_header": "Definície položiek",
+      "col_order": "Poradie",
+      "col_name": "Názov",
+      "col_pricing_mode": "Výpočet",
+      "col_unit_price": "Jednotková cena",
+      "col_scope": "Platí pre",
+      "no_items": "Zatiaľ žiadne položky — pridajte nižšie.",
+      "delete_item_confirm": "Zmazať túto definíciu položky?",
+      "new_item_header": "Pridať položku",
+      "label_order": "Poradie",
+      "label_name": "Názov",
+      "label_description": "Popis",
+      "label_pricing_mode": "Spôsob výpočtu",
+      "label_unit_price": "Jednotková cena",
+      "label_applies_all": "Platí pre každú parcelu",
+      "label_parcels": "Parcely",
+      "scope_all": "Všetky parcely",
+      "scope_n_parcels": "{n} parcel(y)",
+      "button_create": "Pridať položku"
+    },
+    "pricing_modes": {
+      "fixed_per_parcel": "Pevná suma za parcelu",
+      "fixed_per_person": "Pevná suma za osobu",
+      "per_sqm": "Za prenajatý m²",
+      "water_usage": "Spotreba vody (z modúlu)",
+      "electricity_usage": "Spotreba elektriny (z modúlu)",
+      "insurance_cost": "Náklady na poistenie (z modúlu)"
+    },
+    "errors": {
+      "cannot_delete_finalized_run": "Toto vyúčtovanie je už dokončené a nemožno ho zmazať.",
+      "run_not_draft": "Toto vyúčtovanie je už dokončené; jeho definície položiek už nemožno meniť."
+    }
   }
 }

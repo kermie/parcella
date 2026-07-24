@@ -52,6 +52,11 @@ MODULE_DEFAULTS: Dict[str, bool] = {
     # send an email to every member with email_info=True. A club should
     # opt in deliberately rather than have this silently available.
     "announcements": False,
+    # Also defaults to False: it handles member financial data and sends
+    # bulk documents (annual invoices, see docs/ADR and issue #55) --
+    # a club must opt in deliberately, same reasoning as cloud_storage/
+    # announcements above.
+    "finances": False,
 }
 
 

@@ -39,7 +39,8 @@
     "announcements": "Announcements",
     "inventory": "Inventory",
     "tasks": "Task Board",
-    "groups": "Groups"
+    "groups": "Groups",
+    "finances_group": "Finances"
   },
   "errors": {
     "ticket_not_found": "Ticket not found",
@@ -249,6 +250,8 @@
       "module_help": "Not every club uses every feature area. Disabled modules disappear from the navigation -- the data is preserved and reappears once re-enabled.",
       "nav_order_header": "Navigation order",
       "nav_order_help": "Sets the order of the sidebar's navigation items. Lower numbers appear first; the spacing of 100 leaves room to slot a new position between two existing ones later.",
+      "finance_header": "Finance settings",
+      "finance_help": "Shown on every invoice's footer, and used to number invoices ({year}/{sequence}, resets every year).",
       "updates_header": "Updates",
       "updates_toggle_label": "Check for updates automatically",
       "updates_toggle_hint": "Periodically checks GitHub for a newer Parcella release and shows a notice on the admin dashboard. No credentials are sent -- just a public release lookup.",
@@ -284,7 +287,11 @@
         "spam_keyword_blocklist": "Spam: blocked keywords (comma-separated)",
         "spam_threshold": "Spam: threshold (0.0-1.0, default 0.5)",
         "spam_api_url": "Spam: external check API URL (optional)",
-        "spam_api_key": "Spam: external API key (optional)"
+        "spam_api_key": "Spam: external API key (optional)",
+        "bank_name": "Bank name",
+        "bank_iban": "IBAN",
+        "bank_bic": "BIC",
+        "invoice_number_start": "Starting invoice number (for the first year invoiced)"
       },
       "modules": {
         "work_hours_name": "Work-hours management",
@@ -310,7 +317,9 @@
         "cloud_storage_name": "Cloud storage",
         "cloud_storage_desc": "Let board members browse, upload to, and download from a Nextcloud folder per parcel -- lease agreements, membership paperwork, ticket correspondence. Configure the connection under Admin -> Integrations first.",
         "tasks_name": "Task board",
-        "tasks_desc": "A general-purpose kanban board (To Do / In Progress / Done) for club business that isn't tied to a work session -- e.g. \"renew the insurance policy\", \"call the electrician\". Admin/board only."
+        "tasks_desc": "A general-purpose kanban board (To Do / In Progress / Done) for club business that isn't tied to a work session -- e.g. \"renew the insurance policy\", \"call the electrician\". Admin/board only.",
+        "finances_name": "Finances",
+        "finances_desc": "Prepare and send annual invoices per parcel, with usage-based line items and payment tracking. Configure bank details below first."
       },
       "region_header": "Region",
       "region_help": "Determines number and address format (e.g. thousands separator, order of postal code and city). Independent of the interface language.",
@@ -431,7 +440,8 @@
         "tickets": "Tickets",
         "purchase_requests": "Purchase Requests",
         "calendar": "Calendar",
-        "inventory": "Inventory"
+        "inventory": "Inventory",
+        "finances": "Finances"
       }
     }
   },
@@ -1646,5 +1656,65 @@
       "instruction": "Please log in to {app_name} to process them."
     },
     "announcement_test_banner": "This is a test send and has not gone out to any members."
+  },
+  "finances": {
+    "run_list": {
+      "title": "Annual invoices",
+      "heading": "Annual invoices",
+      "new_run_header": "New invoice run",
+      "label_year": "Year",
+      "label_subject": "Subject",
+      "label_issued_date": "Issued date",
+      "label_due_date": "Due date",
+      "label_footer_text": "Footer text",
+      "footer_placeholder": "Shown below the line items on every invoice. Placeholders: {invoice_number}, {parcel_number}, {invoice_address}, {due_date}",
+      "button_create": "Create",
+      "runs_header": "Invoice runs",
+      "col_year": "Year",
+      "col_subject": "Subject",
+      "col_status": "Status",
+      "col_items": "Items",
+      "status_draft": "Draft",
+      "status_finalized": "Finalized",
+      "open_button": "Open",
+      "no_runs": "No invoice runs yet.",
+      "delete_confirm": "Delete this invoice run and all its item definitions? This cannot be undone."
+    },
+    "run_detail": {
+      "title": "Invoice run",
+      "heading": "{year} — {subject}",
+      "back": "Back to invoice runs",
+      "items_header": "Item definitions",
+      "col_order": "Order",
+      "col_name": "Name",
+      "col_pricing_mode": "Pricing",
+      "col_unit_price": "Unit price",
+      "col_scope": "Applies to",
+      "no_items": "No item definitions yet — add one below.",
+      "delete_item_confirm": "Delete this item definition?",
+      "new_item_header": "Add item",
+      "label_order": "Order",
+      "label_name": "Name",
+      "label_description": "Description",
+      "label_pricing_mode": "Pricing mode",
+      "label_unit_price": "Unit price",
+      "label_applies_all": "Applies to every parcel",
+      "label_parcels": "Parcels",
+      "scope_all": "All parcels",
+      "scope_n_parcels": "{n} parcel(s)",
+      "button_create": "Add item"
+    },
+    "pricing_modes": {
+      "fixed_per_parcel": "Fixed amount per parcel",
+      "fixed_per_person": "Fixed amount per person",
+      "per_sqm": "Per leased m²",
+      "water_usage": "Water usage (from module)",
+      "electricity_usage": "Electricity usage (from module)",
+      "insurance_cost": "Insurance cost (from module)"
+    },
+    "errors": {
+      "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",
+      "run_not_draft": "This invoice run is already finalized; its item definitions can no longer be changed."
+    }
   }
 }

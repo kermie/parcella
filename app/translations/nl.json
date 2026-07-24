@@ -39,7 +39,8 @@
     "announcements": "Mededelingen",
     "inventory": "Inventaris",
     "tasks": "Takenbord",
-    "groups": "Groepen"
+    "groups": "Groepen",
+    "finances_group": "Financiën"
   },
   "errors": {
     "ticket_not_found": "Ticket niet gevonden",
@@ -249,6 +250,8 @@
       "module_help": "Niet elke vereniging gebruikt elk functiegebied. Uitgeschakelde modules verdwijnen uit de navigatie — de gegevens blijven behouden en verschijnen opnieuw zodra ze opnieuw worden ingeschakeld.",
       "nav_order_header": "Navigatievolgorde",
       "nav_order_help": "Bepaalt de volgorde van de navigatie-items in de zijbalk. Lagere getallen verschijnen eerst; de tussenruimte van 100 laat later ruimte om een nieuwe positie tussen twee bestaande in te voegen.",
+      "finance_header": "Financiële instellingen",
+      "finance_help": "Wordt getoond in de voettekst van elke factuur en gebruikt voor de factuurnummering ({year}/{sequence}, wordt elk jaar gereset).",
       "updates_header": "Updates",
       "updates_toggle_label": "Automatisch op updates controleren",
       "updates_toggle_hint": "Controleert periodiek op GitHub of er een nieuwere Parcella-versie is uitgebracht en toont dan een melding op het adminmenu. Er worden geen inloggegevens verzonden -- alleen een openbare releasecontrole.",
@@ -284,7 +287,11 @@
         "spam_keyword_blocklist": "Spam: geblokkeerde trefwoorden (kommagescheiden)",
         "spam_threshold": "Spam: drempelwaarde (0.0-1.0, standaard 0.5)",
         "spam_api_url": "Spam: externe controle-API URL (optioneel)",
-        "spam_api_key": "Spam: externe API-sleutel (optioneel)"
+        "spam_api_key": "Spam: externe API-sleutel (optioneel)",
+        "bank_name": "Naam van de bank",
+        "bank_iban": "IBAN",
+        "bank_bic": "BIC",
+        "invoice_number_start": "Beginnummer factuur (voor het eerste gefactureerde jaar)"
       },
       "modules": {
         "work_hours_name": "Werktijdenbeheer",
@@ -310,7 +317,9 @@
         "cloud_storage_name": "Cloudopslag",
         "cloud_storage_desc": "Hiermee kan het bestuur/de beheerder voor elk perceel bestanden doorzoeken, uploaden en downloaden vanuit een Nextcloud-map -- pachtcontracten, lidmaatschapsaanvragen, ticketcorrespondentie. Configureer eerst de verbinding onder Admin -> Integraties.",
         "tasks_name": "Takenbord",
-        "tasks_desc": "Een algemeen kanbanbord (Te doen / Mee bezig / Klaar) voor verenigingszaken die niet aan een werkbeurt gekoppeld zijn -- bijv. \"verzekering verlengen\", \"elektricien bellen\". Alleen voor bestuur/beheerder."
+        "tasks_desc": "Een algemeen kanbanbord (Te doen / Mee bezig / Klaar) voor verenigingszaken die niet aan een werkbeurt gekoppeld zijn -- bijv. \"verzekering verlengen\", \"elektricien bellen\". Alleen voor bestuur/beheerder.",
+        "finances_name": "Financiën",
+        "finances_desc": "Bereid jaarlijkse facturen per perceel voor en verstuur ze, met verbruiksgebaseerde regels en betalingsopvolging. Stel eerst hieronder de bankgegevens in."
       },
       "region_header": "Regio",
       "region_help": "Bepaalt het getal- en adresformaat (bijv. duizendtalscheidingsteken, volgorde van postcode en plaats). Onafhankelijk van de interfacetaal.",
@@ -431,7 +440,8 @@
         "tickets": "Tickets",
         "purchase_requests": "Aankoopaanvragen",
         "calendar": "Kalender",
-        "inventory": "Inventaris"
+        "inventory": "Inventaris",
+        "finances": "Financiën"
       }
     }
   },
@@ -1646,5 +1656,65 @@
       "instruction": "Log in op {app_name} om ze te verwerken."
     },
     "announcement_test_banner": "Dit is een testverzending en is naar geen enkel lid verstuurd."
+  },
+  "finances": {
+    "run_list": {
+      "title": "Jaarlijkse facturen",
+      "heading": "Jaarlijkse facturen",
+      "new_run_header": "Nieuwe factuurronde",
+      "label_year": "Jaar",
+      "label_subject": "Onderwerp",
+      "label_issued_date": "Factuurdatum",
+      "label_due_date": "Vervaldatum",
+      "label_footer_text": "Voettekst",
+      "footer_placeholder": "Wordt onder de factuurregels getoond op elke factuur. Plaatshouders: {invoice_number}, {parcel_number}, {invoice_address}, {due_date}",
+      "button_create": "Aanmaken",
+      "runs_header": "Factuurrondes",
+      "col_year": "Jaar",
+      "col_subject": "Onderwerp",
+      "col_status": "Status",
+      "col_items": "Regels",
+      "status_draft": "Concept",
+      "status_finalized": "Afgerond",
+      "open_button": "Openen",
+      "no_runs": "Nog geen factuurrondes.",
+      "delete_confirm": "Deze factuurronde met alle regeldefinities verwijderen? Dit kan niet ongedaan worden gemaakt."
+    },
+    "run_detail": {
+      "title": "Factuurronde",
+      "heading": "{year} — {subject}",
+      "back": "Terug naar factuurrondes",
+      "items_header": "Regeldefinities",
+      "col_order": "Volgorde",
+      "col_name": "Naam",
+      "col_pricing_mode": "Berekening",
+      "col_unit_price": "Stukprijs",
+      "col_scope": "Geldt voor",
+      "no_items": "Nog geen regels — voeg er hieronder een toe.",
+      "delete_item_confirm": "Deze regeldefinitie verwijderen?",
+      "new_item_header": "Regel toevoegen",
+      "label_order": "Volgorde",
+      "label_name": "Naam",
+      "label_description": "Omschrijving",
+      "label_pricing_mode": "Berekeningswijze",
+      "label_unit_price": "Stukprijs",
+      "label_applies_all": "Geldt voor elk perceel",
+      "label_parcels": "Percelen",
+      "scope_all": "Alle percelen",
+      "scope_n_parcels": "{n} perce(e)l(en)",
+      "button_create": "Regel toevoegen"
+    },
+    "pricing_modes": {
+      "fixed_per_parcel": "Vast bedrag per perceel",
+      "fixed_per_person": "Vast bedrag per persoon",
+      "per_sqm": "Per gehuurde m²",
+      "water_usage": "Waterverbruik (uit module)",
+      "electricity_usage": "Stroomverbruik (uit module)",
+      "insurance_cost": "Verzekeringskosten (uit module)"
+    },
+    "errors": {
+      "cannot_delete_finalized_run": "Deze factuurronde is al afgerond en kan niet meer worden verwijderd.",
+      "run_not_draft": "Deze factuurronde is al afgerond; de regeldefinities kunnen niet meer worden gewijzigd."
+    }
   }
 }

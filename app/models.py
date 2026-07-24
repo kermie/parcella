@@ -1781,3 +1781,238 @@ class Task(Base):
 
     def __repr__(self) -> str:
         return f"<Task {self.title!r} ({self.status.value})>"
+
+
+# ---------------------------------------------------------------------------
+# Finances: annual invoices (issues #55/#56/#57/#58)
+# ---------------------------------------------------------------------------
+
+class InvoiceRunStatus(str, enum.Enum):
+    DRAFT = "draft"
+    FINALIZED = "finalized"
+
+
+class InvoicePricingMode(str, enum.Enum):
+    FIXED_PER_PARCEL = "fixed_per_parcel"
+    FIXED_PER_PERSON = "fixed_per_person"
+    PER_SQM = "per_sqm"
+    WATER_USAGE = "water_usage"
+    ELECTRICITY_USAGE = "electricity_usage"
+    INSURANCE_COST = "insurance_cost"
+
+
+class InvoiceRun(Base):
+    """
+    A single "annual invoices" batch (issue #55). Item definitions are
+    configured while the run is DRAFT; generating invoices assigns
+    permanent invoice numbers and moves it to FINALIZED (see
+    app/invoice_generation.py) -- regenerating a still-DRAFT run must
+    not skip or reuse numbers, which is why numbering only happens once,
+    at finalization.
+    """
+    __tablename__ = "invoice_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    subject: Mapped[str] = mapped_column(String(255), nullable=False)
+    issued_date: Mapped[date] = mapped_column(Date, nullable=False)
+    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # Free text below the line-item table. Supports {invoice_number},
+    # {parcel_number}, {invoice_address}, {due_date} placeholders,
+    # substituted per-invoice at PDF render time (see app/invoice_pdf.py).
+    footer_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[InvoiceRunStatus] = mapped_column(
+        SAEnum(InvoiceRunStatus), default=InvoiceRunStatus.DRAFT, nullable=False, index=True
+    )
+
+    created_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    item_definitions: Mapped[List["InvoiceItemDefinition"]] = relationship(
+        "InvoiceItemDefinition", back_populates="invoice_run",
+        cascade="all, delete-orphan", order_by="InvoiceItemDefinition.order_number",
+    )
+    invoices: Mapped[List["Invoice"]] = relationship(
+        "Invoice", back_populates="invoice_run", cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<InvoiceRun {self.year} ({self.status.value})>"
+
+
+class InvoiceItemDefinition(Base):
+    """
+    One line-item type within an InvoiceRun (e.g. "Membership fee",
+    "Water usage 2026"), applied to every in-scope parcel when the run
+    is generated. `pricing_mode` decides where quantity/price come from
+    -- WATER_USAGE/ELECTRICITY_USAGE pull quantity from
+    app/meter_utils.py's calculate_consumption() but still need a
+    manually-entered unit_price (there's no tariff/price-per-unit
+    stored anywhere else in the app); INSURANCE_COST pulls its whole
+    amount from app/insurance_utils.py's calculate_insurance_cost() and
+    ignores unit_price entirely.
+    """
+    __tablename__ = "invoice_item_definitions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoice_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    order_number: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    pricing_mode: Mapped[InvoicePricingMode] = mapped_column(
+        SAEnum(InvoicePricingMode), nullable=False
+    )
+    unit_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+
+    # "assign all or specific parcels to be accounted or not" (issue #56):
+    # True = every currently-occupied parcel; False = only the parcels
+    # explicitly listed in `parcel_scopes`.
+    applies_to_all_parcels: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    invoice_run: Mapped["InvoiceRun"] = relationship("InvoiceRun", back_populates="item_definitions")
+    parcel_scopes: Mapped[List["InvoiceItemDefinitionParcel"]] = relationship(
+        "InvoiceItemDefinitionParcel", back_populates="item_definition", cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<InvoiceItemDefinition {self.name!r} ({self.pricing_mode.value})>"
+
+
+class InvoiceItemDefinitionParcel(Base):
+    """Explicit parcel inclusion for an InvoiceItemDefinition where
+    applies_to_all_parcels=False."""
+    __tablename__ = "invoice_item_definition_parcels"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_item_definition_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoice_item_definitions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    parcel_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    item_definition: Mapped["InvoiceItemDefinition"] = relationship(
+        "InvoiceItemDefinition", back_populates="parcel_scopes"
+    )
+    parcel: Mapped["Parcel"] = relationship("Parcel")
+
+    __table_args__ = (
+        UniqueConstraint("invoice_item_definition_id", "parcel_id", name="uq_invoice_item_definition_parcel"),
+    )
+
+
+class Invoice(Base):
+    """
+    One invoice for one parcel within an InvoiceRun (issue #57).
+    recipient_names/recipient_address are snapshotted at generation
+    time -- a member moving later must not silently rewrite a
+    historical invoice. The four *_at timestamps track delivery
+    (issue #58): emailed, included in a print bundle, uploaded to the
+    parcel's cloud folder. Payment status is derived from `payments`
+    rather than stored, so it can never go stale.
+    """
+    __tablename__ = "invoices"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_run_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoice_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    parcel_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    invoice_number: Mapped[str] = mapped_column(String(20), nullable=False, unique=True, index=True)
+    recipient_names: Mapped[str] = mapped_column(Text, nullable=False)
+    recipient_address: Mapped[str] = mapped_column(Text, nullable=False)
+    subtotal: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
+
+    pdf_generated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    emailed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    printed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    uploaded_to_cloud_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    invoice_run: Mapped["InvoiceRun"] = relationship("InvoiceRun", back_populates="invoices")
+    parcel: Mapped["Parcel"] = relationship("Parcel")
+    line_items: Mapped[List["InvoiceLineItem"]] = relationship(
+        "InvoiceLineItem", back_populates="invoice",
+        cascade="all, delete-orphan", order_by="InvoiceLineItem.order_number",
+    )
+    payments: Mapped[List["InvoicePayment"]] = relationship(
+        "InvoicePayment", back_populates="invoice",
+        cascade="all, delete-orphan", order_by="InvoicePayment.paid_on",
+    )
+
+    @property
+    def paid_total(self) -> float:
+        return float(sum((p.amount for p in self.payments), 0))
+
+    @property
+    def payment_status(self) -> str:
+        """One of "open" / "partially_paid" / "paid", derived from
+        payments vs. subtotal rather than stored (issue #58's "let me
+        filter which outgoing invoice is open/paid/partially paid")."""
+        paid = self.paid_total
+        if paid <= 0:
+            return "open"
+        if paid < float(self.subtotal):
+            return "partially_paid"
+        return "paid"
+
+    def __repr__(self) -> str:
+        return f"<Invoice {self.invoice_number}>"
+
+
+class InvoiceLineItem(Base):
+    """One priced line on an Invoice, generated from an InvoiceItemDefinition."""
+    __tablename__ = "invoice_line_items"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    order_number: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    quantity: Mapped[float] = mapped_column(Numeric(10, 2), default=1, nullable=False)
+    unit_price: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
+    line_total: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
+
+    invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="line_items")
+
+
+class InvoicePayment(Base):
+    """A single (possibly partial) payment recorded against an Invoice
+    (issue #58's "system for partial payment, more than one date")."""
+    __tablename__ = "invoice_payments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    paid_on: Mapped[date] = mapped_column(Date, nullable=False)
+    note: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    recorded_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="payments")
+    recorded_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[recorded_by_id])
+
+    def __repr__(self) -> str:
+        return f"<InvoicePayment {self.amount} on {self.paid_on}>"

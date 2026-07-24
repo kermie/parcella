@@ -40,6 +40,7 @@ from app.models import Group, GroupModulePermission, GroupMembership, User, User
 MODULES = [
     "members_parcels", "work_hours", "water", "electricity",
     "insurance", "tickets", "purchase_requests", "calendar", "inventory",
+    "finances",
 ]
 
 _EMPTY_PERMISSION = {"read": False, "write": False, "delete": False}
