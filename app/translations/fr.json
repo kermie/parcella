@@ -40,7 +40,10 @@
     "inventory": "Inventaire",
     "tasks": "Tableau des tâches",
     "groups": "Groupes",
-    "finances_group": "Finances"
+    "finances_group": "Finances",
+    "finances_outgoing_invoices": "Factures émises",
+    "finances_reminders": "Relances",
+    "finances_incoming_invoices": "Factures reçues"
   },
   "errors": {
     "ticket_not_found": "Ticket non trouvé",
@@ -1798,6 +1801,27 @@
       "label_note": "Remarque",
       "add_payment_button": "Ajouter un paiement",
       "delete_payment_confirm": "Supprimer ce paiement ?"
+    },
+    "dashboard": {
+      "title": "Finances",
+      "heading": "Finances",
+      "stat_open_invoices": "Factures ouvertes",
+      "stat_outstanding": "Montant en attente",
+      "stat_overdue": "En retard",
+      "outgoing_hint": "{n} série(s) de factures",
+      "coming_soon_hint": "Bientôt disponible",
+      "accounts_header": "Comptes",
+      "accounts_hint": "Bientôt disponible -- les comptes de votre association apparaîtront ici."
+    },
+    "coming_soon": {
+      "message": "Cette fonctionnalité sera bientôt disponible.",
+      "back": "Retour aux Finances"
+    },
+    "reminders": {
+      "title": "Relances"
+    },
+    "incoming_invoices": {
+      "title": "Factures reçues"
     }
   }
 }

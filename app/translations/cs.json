@@ -40,7 +40,10 @@
     "inventory": "Inventář",
     "tasks": "Nástěnka úkolů",
     "groups": "Skupiny",
-    "finances_group": "Finance"
+    "finances_group": "Finance",
+    "finances_outgoing_invoices": "Vydané faktury",
+    "finances_reminders": "Upomínky",
+    "finances_incoming_invoices": "Přijaté faktury"
   },
   "errors": {
     "ticket_not_found": "Ticket nebyl nalezen",
@@ -1798,6 +1801,27 @@
       "label_note": "Poznámka",
       "add_payment_button": "Přidat platbu",
       "delete_payment_confirm": "Smazat tuto platbu?"
+    },
+    "dashboard": {
+      "title": "Finance",
+      "heading": "Finance",
+      "stat_open_invoices": "Otevřené faktury",
+      "stat_outstanding": "Dlužná částka",
+      "stat_overdue": "Po splatnosti",
+      "outgoing_hint": "{n} vyúčtování",
+      "coming_soon_hint": "Již brzy",
+      "accounts_header": "Účty",
+      "accounts_hint": "Již brzy -- zde se zobrazí účty vaší organizace."
+    },
+    "coming_soon": {
+      "message": "Tato funkce bude brzy k dispozici.",
+      "back": "Zpět na Finance"
+    },
+    "reminders": {
+      "title": "Upomínky"
+    },
+    "incoming_invoices": {
+      "title": "Přijaté faktury"
     }
   }
 }

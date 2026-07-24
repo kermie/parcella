@@ -40,7 +40,10 @@
     "inventory": "Inwentarz",
     "tasks": "Tablica zadań",
     "groups": "Grupy",
-    "finances_group": "Finanse"
+    "finances_group": "Finanse",
+    "finances_outgoing_invoices": "Faktury wychodzące",
+    "finances_reminders": "Upomnienia",
+    "finances_incoming_invoices": "Faktury przychodzące"
   },
   "errors": {
     "ticket_not_found": "Nie znaleziono zgłoszenia",
@@ -1798,6 +1801,27 @@
       "label_note": "Notatka",
       "add_payment_button": "Dodaj płatność",
       "delete_payment_confirm": "Usunąć tę płatność?"
+    },
+    "dashboard": {
+      "title": "Finanse",
+      "heading": "Finanse",
+      "stat_open_invoices": "Otwarte faktury",
+      "stat_outstanding": "Kwota do zapłaty",
+      "stat_overdue": "Zaległe",
+      "outgoing_hint": "{n} seria(e) faktur",
+      "coming_soon_hint": "Wkrótce dostępne",
+      "accounts_header": "Konta",
+      "accounts_hint": "Wkrótce dostępne -- tutaj pojawią się konta Twojego stowarzyszenia."
+    },
+    "coming_soon": {
+      "message": "Ta funkcja będzie wkrótce dostępna.",
+      "back": "Powrót do Finansów"
+    },
+    "reminders": {
+      "title": "Upomnienia"
+    },
+    "incoming_invoices": {
+      "title": "Faktury przychodzące"
     }
   }
 }

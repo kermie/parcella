@@ -40,7 +40,10 @@
     "inventory": "Inventar",
     "tasks": "Aufgabenboard",
     "groups": "Gruppen",
-    "finances_group": "Finanzen"
+    "finances_group": "Finanzen",
+    "finances_outgoing_invoices": "Ausgangsrechnungen",
+    "finances_reminders": "Mahnungen",
+    "finances_incoming_invoices": "Eingangsrechnungen"
   },
   "errors": {
     "ticket_not_found": "Ticket nicht gefunden",
@@ -1798,6 +1801,27 @@
       "label_note": "Notiz",
       "add_payment_button": "Zahlung hinzufügen",
       "delete_payment_confirm": "Diese Zahlung löschen?"
+    },
+    "dashboard": {
+      "title": "Finanzen",
+      "heading": "Finanzen",
+      "stat_open_invoices": "Offene Rechnungen",
+      "stat_outstanding": "Offener Betrag",
+      "stat_overdue": "Überfällig",
+      "outgoing_hint": "{n} Rechnungslauf(e/äufe)",
+      "coming_soon_hint": "Demnächst verfügbar",
+      "accounts_header": "Konten",
+      "accounts_hint": "Demnächst verfügbar -- hier erscheinen die Konten Ihres Vereins."
+    },
+    "coming_soon": {
+      "message": "Diese Funktion ist demnächst verfügbar.",
+      "back": "Zurück zu Finanzen"
+    },
+    "reminders": {
+      "title": "Mahnungen"
+    },
+    "incoming_invoices": {
+      "title": "Eingangsrechnungen"
     }
   }
 }

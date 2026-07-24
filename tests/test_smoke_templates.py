@@ -159,9 +159,21 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     response = await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     assert response.status_code in (302, 303)
 
-    r_list = await client.get("/finances/")
+    r_dashboard = await client.get("/finances/")
+    assert r_dashboard.status_code == 200
+    assert "UndefinedError" not in r_dashboard.text
+
+    r_list = await client.get("/finances/runs")
     assert r_list.status_code == 200
     assert "UndefinedError" not in r_list.text
+
+    r_reminders = await client.get("/finances/reminders")
+    assert r_reminders.status_code == 200
+    assert "UndefinedError" not in r_reminders.text
+
+    r_incoming = await client.get("/finances/incoming-invoices")
+    assert r_incoming.status_code == 200
+    assert "UndefinedError" not in r_incoming.text
 
     r_create = await client.post("/finances/runs", data={
         "year": "2026", "subject": "Test run", "issued_date": "2026-08-01",

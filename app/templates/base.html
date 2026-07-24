@@ -388,9 +388,20 @@
 
         {% macro nav_finances(request) %}
         {% if request.state.module_flags.finances and has_perm(request, 'finances') %}
-        <a href="/finances/" class="nav-top-link {% if '/finances' in request.url.path %}aktiv{% endif %}">
-            <i class="bi bi-cash-coin"></i> {{ t('nav.finances_group') }}
-        </a>
+        <div class="nav-group" data-group="finances">
+            <button class="nav-group-toggle" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#nav-group-finances">
+                <i class="bi bi-cash-coin"></i>
+                <span>{{ t('nav.finances_group') }}</span>
+                <i class="bi bi-chevron-down nav-group-chevron"></i>
+            </button>
+            <div class="collapse nav-group-body" id="nav-group-finances" data-bs-parent="#nav-accordion">
+                <a href="/finances/" class="{% if request.url.path == '/finances/' %}aktiv{% endif %}">{{ t('nav.overview') }}</a>
+                <a href="/finances/runs" class="{% if '/finances/runs' in request.url.path or '/finances/invoices' in request.url.path %}aktiv{% endif %}">{{ t('nav.finances_outgoing_invoices') }}</a>
+                <a href="/finances/reminders" class="{% if '/finances/reminders' in request.url.path %}aktiv{% endif %}">{{ t('nav.finances_reminders') }}</a>
+                <a href="/finances/incoming-invoices" class="{% if '/finances/incoming-invoices' in request.url.path %}aktiv{% endif %}">{{ t('nav.finances_incoming_invoices') }}</a>
+            </div>
+        </div>
         {% endif %}
         {% endmacro %}
 

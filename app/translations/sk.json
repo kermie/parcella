@@ -40,7 +40,10 @@
     "inventory": "Inventár",
     "tasks": "Nástenka úloh",
     "groups": "Skupiny",
-    "finances_group": "Financie"
+    "finances_group": "Financie",
+    "finances_outgoing_invoices": "Vydané faktúry",
+    "finances_reminders": "Upomienky",
+    "finances_incoming_invoices": "Prijaté faktúry"
   },
   "errors": {
     "ticket_not_found": "Ticket nebol nájdený",
@@ -1798,6 +1801,27 @@
       "label_note": "Poznámka",
       "add_payment_button": "Pridať platbu",
       "delete_payment_confirm": "Zmazať túto platbu?"
+    },
+    "dashboard": {
+      "title": "Financie",
+      "heading": "Financie",
+      "stat_open_invoices": "Otvorené faktúry",
+      "stat_outstanding": "Dlžná suma",
+      "stat_overdue": "Po splatnosti",
+      "outgoing_hint": "{n} vyúčtovaní",
+      "coming_soon_hint": "Už čoskoro",
+      "accounts_header": "Účty",
+      "accounts_hint": "Už čoskoro -- tu sa zobrazia účty vašej organizácie."
+    },
+    "coming_soon": {
+      "message": "Táto funkcia bude čoskoro k dispozícii.",
+      "back": "Späť na Financie"
+    },
+    "reminders": {
+      "title": "Upomienky"
+    },
+    "incoming_invoices": {
+      "title": "Prijaté faktúry"
     }
   }
 }

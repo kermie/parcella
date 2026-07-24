@@ -40,7 +40,10 @@
     "inventory": "Inventaris",
     "tasks": "Takenbord",
     "groups": "Groepen",
-    "finances_group": "Financiën"
+    "finances_group": "Financiën",
+    "finances_outgoing_invoices": "Uitgaande facturen",
+    "finances_reminders": "Herinneringen",
+    "finances_incoming_invoices": "Inkomende facturen"
   },
   "errors": {
     "ticket_not_found": "Ticket niet gevonden",
@@ -1798,6 +1801,27 @@
       "label_note": "Notitie",
       "add_payment_button": "Betaling toevoegen",
       "delete_payment_confirm": "Deze betaling verwijderen?"
+    },
+    "dashboard": {
+      "title": "Financiën",
+      "heading": "Financiën",
+      "stat_open_invoices": "Openstaande facturen",
+      "stat_outstanding": "Openstaand bedrag",
+      "stat_overdue": "Achterstallig",
+      "outgoing_hint": "{n} factuurronde(s)",
+      "coming_soon_hint": "Binnenkort beschikbaar",
+      "accounts_header": "Rekeningen",
+      "accounts_hint": "Binnenkort beschikbaar -- de rekeningen van uw vereniging verschijnen hier."
+    },
+    "coming_soon": {
+      "message": "Deze functie is binnenkort beschikbaar.",
+      "back": "Terug naar Financiën"
+    },
+    "reminders": {
+      "title": "Herinneringen"
+    },
+    "incoming_invoices": {
+      "title": "Inkomende facturen"
     }
   }
 }

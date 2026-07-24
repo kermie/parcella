@@ -40,7 +40,10 @@
     "inventory": "Inventory",
     "tasks": "Task Board",
     "groups": "Groups",
-    "finances_group": "Finances"
+    "finances_group": "Finances",
+    "finances_outgoing_invoices": "Outgoing Invoices",
+    "finances_reminders": "Reminders",
+    "finances_incoming_invoices": "Incoming Invoices"
   },
   "errors": {
     "ticket_not_found": "Ticket not found",
@@ -1798,6 +1801,27 @@
       "label_note": "Note",
       "add_payment_button": "Add payment",
       "delete_payment_confirm": "Delete this payment?"
+    },
+    "dashboard": {
+      "title": "Finances",
+      "heading": "Finances",
+      "stat_open_invoices": "Open invoices",
+      "stat_outstanding": "Outstanding amount",
+      "stat_overdue": "Overdue",
+      "outgoing_hint": "{n} invoice run(s)",
+      "coming_soon_hint": "Coming soon",
+      "accounts_header": "Accounts",
+      "accounts_hint": "Coming soon -- your club's accounts will appear here."
+    },
+    "coming_soon": {
+      "message": "This feature is coming soon.",
+      "back": "Back to Finances"
+    },
+    "reminders": {
+      "title": "Reminders"
+    },
+    "incoming_invoices": {
+      "title": "Incoming Invoices"
     }
   }
 }

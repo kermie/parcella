@@ -109,10 +109,48 @@ async def _pdf_context(db: AsyncSession) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Invoice runs: list, create
+# Dashboard (nav landing page) -- outstanding-balance summary and quick
+# links into the module's sections. Accounts (planned) will show up
+# here as cards linking out to each account, rather than getting their
+# own nav entries -- see the module docstring.
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
+async def finances_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+
+    result = await db.execute(
+        select(Invoice, InvoiceRun.due_date)
+        .join(InvoiceRun, Invoice.invoice_run_id == InvoiceRun.id)
+        .options(selectinload(Invoice.payments))
+    )
+    today = date.today()
+    outstanding_total = Decimal("0")
+    open_count = 0
+    overdue_count = 0
+    for invoice, due_date in result.all():
+        if invoice.payment_status == "paid":
+            continue
+        open_count += 1
+        outstanding_total += Decimal(str(invoice.subtotal)) - Decimal(str(invoice.paid_total))
+        if due_date and due_date < today:
+            overdue_count += 1
+
+    run_count_result = await db.execute(select(InvoiceRun))
+    run_count = len(run_count_result.scalars().all())
+
+    return templates.TemplateResponse("finances/dashboard.html", {
+        "request": request, "user": user,
+        "run_count": run_count, "open_invoice_count": open_count,
+        "overdue_count": overdue_count, "outstanding_total": outstanding_total,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Invoice runs: list, create
+# ---------------------------------------------------------------------------
+
+@router.get("/runs", response_class=HTMLResponse)
 async def run_list(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_permission(request, db, "finances", "read")
 
@@ -127,6 +165,31 @@ async def run_list(request: Request, db: AsyncSession = Depends(get_db)):
         "request": request, "user": user, "runs": runs,
         "today": date.today().isoformat(),
         "current_year": date.today().year,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Reminders and incoming invoices -- placeholders (issue TBD): the nav
+# structure exists now, the actual features come later.
+# ---------------------------------------------------------------------------
+
+@router.get("/reminders", response_class=HTMLResponse)
+async def reminders_placeholder(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+    return templates.TemplateResponse("finances/coming_soon.html", {
+        "request": request, "user": user,
+        "feature_title": t_for(request, "finances.reminders.title"),
+        "feature_icon": "bi-bell",
+    })
+
+
+@router.get("/incoming-invoices", response_class=HTMLResponse)
+async def incoming_invoices_placeholder(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+    return templates.TemplateResponse("finances/coming_soon.html", {
+        "request": request, "user": user,
+        "feature_title": t_for(request, "finances.incoming_invoices.title"),
+        "feature_icon": "bi-inboxes",
     })
 
 
@@ -162,12 +225,12 @@ async def run_delete(run_id: str, request: Request, db: AsyncSession = Depends(g
     run = await _get_run_or_404(db, run_id)
     if run.status != InvoiceRunStatus.DRAFT:
         return RedirectResponse(
-            f"/finances/?error={t_for(request, 'finances.errors.cannot_delete_finalized_run')}",
+            f"/finances/runs?error={t_for(request, 'finances.errors.cannot_delete_finalized_run')}",
             status_code=302,
         )
     await db.delete(run)
     await db.commit()
-    return RedirectResponse("/finances/?success=1", status_code=302)
+    return RedirectResponse("/finances/runs?success=1", status_code=302)
 
 
 # ---------------------------------------------------------------------------
