@@ -11,6 +11,15 @@
     }
     .settings-card-chevron { transition: transform 0.2s; }
     .settings-card-toggle.collapsed .settings-card-chevron { transform: rotate(-90deg); }
+
+    /* Issue #71: highlight the matched text itself within a card, not
+       just show/hide the card -- makes it obvious *why* a card matched. */
+    mark.settings-search-mark {
+        background-color: #fef3c7;
+        color: #92400e;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
 </style>
 {% endblock %}
 
@@ -416,6 +425,49 @@ document.addEventListener('DOMContentLoaded', function () {
     var searchInput = document.getElementById('settings-search');
     var accordion = document.getElementById('settings-accordion');
     var noResults = document.getElementById('settings-search-no-results');
+
+    function clearHighlights(root) {
+        var marks = root.querySelectorAll('mark.settings-search-mark');
+        marks.forEach(function (mark) {
+            var parent = mark.parentNode;
+            parent.replaceChild(document.createTextNode(mark.textContent), mark);
+            parent.normalize();
+        });
+    }
+
+    function highlightText(root, term) {
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                if (!node.nodeValue.trim()) { return NodeFilter.FILTER_REJECT; }
+                var tag = node.parentNode.tagName;
+                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'MARK') { return NodeFilter.FILTER_REJECT; }
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        var nodes = [];
+        var node;
+        while ((node = walker.nextNode())) { nodes.push(node); }
+        nodes.forEach(function (node) {
+            var text = node.nodeValue;
+            var lower = text.toLowerCase();
+            var idx = lower.indexOf(term);
+            if (idx === -1) { return; }
+            var frag = document.createDocumentFragment();
+            var lastIndex = 0;
+            while (idx !== -1) {
+                frag.appendChild(document.createTextNode(text.slice(lastIndex, idx)));
+                var mark = document.createElement('mark');
+                mark.className = 'settings-search-mark';
+                mark.textContent = text.slice(idx, idx + term.length);
+                frag.appendChild(mark);
+                lastIndex = idx + term.length;
+                idx = lower.indexOf(term, lastIndex);
+            }
+            frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+            node.parentNode.replaceChild(frag, node);
+        });
+    }
+
     if (searchInput && accordion) {
         var wrappers = Array.prototype.filter.call(accordion.children, function (el) {
             return el.querySelector && el.querySelector('.settings-card-toggle');
@@ -435,6 +487,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     toggle.classList.remove('collapsed');
                     toggle.setAttribute('aria-expanded', 'true');
                 }
+                clearHighlights(card);
+                if (term !== '' && matches) { highlightText(card, term); }
             });
             if (noResults) { noResults.style.display = (term !== '' && !anyVisible) ? '' : 'none'; }
         });
