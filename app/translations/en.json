@@ -1702,7 +1702,15 @@
       "label_parcels": "Parcels",
       "scope_all": "All parcels",
       "scope_n_parcels": "{n} parcel(s)",
-      "button_create": "Add item"
+      "button_create": "Add item",
+      "back_to_run": "Back to invoice run",
+      "preview_button": "Preview",
+      "finalized_notice": "This invoice run is finalized. Invoice numbers are permanent and item definitions can no longer be changed.",
+      "invoices_header": "Invoices",
+      "col_invoice_number": "Invoice no.",
+      "col_parcel": "Parcel",
+      "col_recipient": "Recipient",
+      "col_invoice_subtotal": "Subtotal"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Fixed amount per parcel",
@@ -1714,7 +1722,23 @@
     },
     "errors": {
       "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",
-      "run_not_draft": "This invoice run is already finalized; its item definitions can no longer be changed."
+      "run_not_draft": "This invoice run is already finalized; its item definitions can no longer be changed.",
+      "no_item_definitions": "This invoice run has no item definitions yet — add at least one before finalizing."
+    },
+    "run_preview": {
+      "title": "Preview invoices",
+      "heading": "Preview — {year} {subject}",
+      "header": "Computed invoices",
+      "count_label": "{n} invoice(s) would be generated.",
+      "finalize_hint": "Nothing is saved or sent yet — review the PDFs below, then finalize when ready.",
+      "finalize_button": "Finalize & assign invoice numbers",
+      "finalize_confirm": "Finalize this run? Invoice numbers will be permanently assigned and item definitions can no longer be changed. This cannot be undone.",
+      "col_parcel": "Parcel",
+      "col_recipient": "Recipient",
+      "col_subtotal": "Subtotal",
+      "pdf_button": "PDF",
+      "no_invoices": "No invoices would be generated — check the item definitions' parcel scope and the affected members' invoice-address flag.",
+      "pdf_placeholder_number": "Preview"
     }
   }
 }

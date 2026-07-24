@@ -1702,7 +1702,15 @@
       "label_parcels": "Parcely",
       "scope_all": "Všechny parcely",
       "scope_n_parcels": "{n} parcel(y)",
-      "button_create": "Přidat položku"
+      "button_create": "Přidat položku",
+      "back_to_run": "Zpět na vyúčtování",
+      "preview_button": "Náhled",
+      "finalized_notice": "Toto vyúčtování je dokončeno. Čísla faktur jsou trvalá, definice položek již nelze měnit.",
+      "invoices_header": "Faktury",
+      "col_invoice_number": "Č. faktury",
+      "col_parcel": "Parcela",
+      "col_recipient": "Příjemce",
+      "col_invoice_subtotal": "Součet"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Pevná částka za parcelu",
@@ -1714,7 +1722,23 @@
     },
     "errors": {
       "cannot_delete_finalized_run": "Toto vyúčtování je již dokončeno a nelze jej smazat.",
-      "run_not_draft": "Toto vyúčtování je již dokončeno; jeho definice položek již nelze měnit."
+      "run_not_draft": "Toto vyúčtování je již dokončeno; jeho definice položek již nelze měnit.",
+      "no_item_definitions": "Toto vyúčtování zatím nemá žádné definice položek — před dokončením přidejte alespoň jednu."
+    },
+    "run_preview": {
+      "title": "Náhled faktur",
+      "heading": "Náhled — {year} {subject}",
+      "header": "Vypočtené faktury",
+      "count_label": "Bylo by vytvořeno {n} faktur(y).",
+      "finalize_hint": "Zatím nic není uloženo ani odesláno — zkontrolujte PDF níže a poté dokončete.",
+      "finalize_button": "Dokončit a přidělit čísla faktur",
+      "finalize_confirm": "Dokončit toto vyúčtování? Čísla faktur budou trvale přidělena, definice položek již nebude možné měnit. Tuto akci nelze vrátit zpět.",
+      "col_parcel": "Parcela",
+      "col_recipient": "Příjemce",
+      "col_subtotal": "Součet",
+      "pdf_button": "PDF",
+      "no_invoices": "Nebyly by vytvořeny žádné faktury — zkontrolujte rozsah parcel v definicích položek a příznak fakturační adresy u dotčených členů.",
+      "pdf_placeholder_number": "Náhled"
     }
   }
 }

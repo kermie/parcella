@@ -3,13 +3,68 @@
 {% block page_title %}{{ t('finances.run_detail.heading', year=run.year, subject=run.subject) }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/finances/" class="btn btn-sm btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.run_detail.back') }}
-</a>
+<div class="d-flex gap-2">
+    {% if run.status.value == 'draft' and run.item_definitions %}
+    <a href="/finances/runs/{{ run.id }}/preview" class="btn btn-sm btn-primary">
+        <i class="bi bi-eye me-1"></i>{{ t('finances.run_detail.preview_button') }}
+    </a>
+    {% endif %}
+    <a href="/finances/" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>{{ t('finances.run_detail.back') }}
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}
 <div class="row g-3">
+
+    {% if run.status.value == 'finalized' %}
+    <div class="col-12">
+        <div class="alert alert-success mb-0">
+            <i class="bi bi-check2-circle me-1"></i>{{ t('finances.run_detail.finalized_notice') }}
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-receipt me-2"></i>{{ t('finances.run_detail.invoices_header') }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('finances.run_detail.col_invoice_number') }}</th>
+                                <th>{{ t('finances.run_detail.col_parcel') }}</th>
+                                <th>{{ t('finances.run_detail.col_recipient') }}</th>
+                                <th>{{ t('finances.run_detail.col_invoice_subtotal') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td>{{ invoice.invoice_number }}</td>
+                                <td>{{ invoice.parcel.plot_number }}</td>
+                                <td style="white-space: pre-line;">{{ invoice.recipient_names }}</td>
+                                <td>{{ invoice.subtotal|float|money }}</td>
+                                <td class="text-end">
+                                    <a href="/finances/invoices/{{ invoice.id }}/pdf" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('finances.run_preview.pdf_button') }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">{{ t('finances.run_preview.no_invoices') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
 
     <div class="col-12">
         <div class="card">
@@ -167,6 +222,8 @@
             </div>
         </div>
     </div>
+    {% endif %}
+
     {% endif %}
 
 </div>

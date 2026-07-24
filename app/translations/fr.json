@@ -1702,7 +1702,15 @@
       "label_parcels": "Parcelles",
       "scope_all": "Toutes les parcelles",
       "scope_n_parcels": "{n} parcelle(s)",
-      "button_create": "Ajouter la ligne"
+      "button_create": "Ajouter la ligne",
+      "back_to_run": "Retour à la série de factures",
+      "preview_button": "Aperçu",
+      "finalized_notice": "Cette série de factures est finalisée. Les numéros de facture sont définitifs et les lignes types ne peuvent plus être modifiées.",
+      "invoices_header": "Factures",
+      "col_invoice_number": "N° de facture",
+      "col_parcel": "Parcelle",
+      "col_recipient": "Destinataire",
+      "col_invoice_subtotal": "Total"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Montant fixe par parcelle",
@@ -1714,7 +1722,23 @@
     },
     "errors": {
       "cannot_delete_finalized_run": "Cette série de factures est déjà finalisée et ne peut plus être supprimée.",
-      "run_not_draft": "Cette série de factures est déjà finalisée ; ses lignes types ne peuvent plus être modifiées."
+      "run_not_draft": "Cette série de factures est déjà finalisée ; ses lignes types ne peuvent plus être modifiées.",
+      "no_item_definitions": "Cette série de factures n'a pas encore de lignes types — ajoutez-en au moins une avant de finaliser."
+    },
+    "run_preview": {
+      "title": "Aperçu des factures",
+      "heading": "Aperçu — {year} {subject}",
+      "header": "Factures calculées",
+      "count_label": "{n} facture(s) seraient générées.",
+      "finalize_hint": "Rien n'est encore enregistré ni envoyé — vérifiez les PDF ci-dessous, puis finalisez.",
+      "finalize_button": "Finaliser et attribuer les numéros de facture",
+      "finalize_confirm": "Finaliser cette série de factures ? Les numéros de facture seront attribués définitivement et les lignes types ne pourront plus être modifiées. Cette action est irréversible.",
+      "col_parcel": "Parcelle",
+      "col_recipient": "Destinataire",
+      "col_subtotal": "Total",
+      "pdf_button": "PDF",
+      "no_invoices": "Aucune facture ne serait générée — vérifiez la portée des parcelles dans les lignes types et l'indicateur d'adresse de facturation des membres concernés.",
+      "pdf_placeholder_number": "Aperçu"
     }
   }
 }

@@ -1702,7 +1702,15 @@
       "label_parcels": "Percelen",
       "scope_all": "Alle percelen",
       "scope_n_parcels": "{n} perce(e)l(en)",
-      "button_create": "Regel toevoegen"
+      "button_create": "Regel toevoegen",
+      "back_to_run": "Terug naar factuurronde",
+      "preview_button": "Voorbeeld",
+      "finalized_notice": "Deze factuurronde is afgerond. Factuurnummers zijn definitief en regeldefinities kunnen niet meer worden gewijzigd.",
+      "invoices_header": "Facturen",
+      "col_invoice_number": "Factuurnr.",
+      "col_parcel": "Perceel",
+      "col_recipient": "Ontvanger",
+      "col_invoice_subtotal": "Totaal"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Vast bedrag per perceel",
@@ -1714,7 +1722,23 @@
     },
     "errors": {
       "cannot_delete_finalized_run": "Deze factuurronde is al afgerond en kan niet meer worden verwijderd.",
-      "run_not_draft": "Deze factuurronde is al afgerond; de regeldefinities kunnen niet meer worden gewijzigd."
+      "run_not_draft": "Deze factuurronde is al afgerond; de regeldefinities kunnen niet meer worden gewijzigd.",
+      "no_item_definitions": "Deze factuurronde heeft nog geen regeldefinities — voeg er minstens één toe voordat u afrondt."
+    },
+    "run_preview": {
+      "title": "Facturen voorbeeld",
+      "heading": "Voorbeeld — {year} {subject}",
+      "header": "Berekende facturen",
+      "count_label": "Er zouden {n} factu(u)r(en) worden gegenereerd.",
+      "finalize_hint": "Er is nog niets opgeslagen of verzonden — bekijk de PDF's hieronder en rond dan af.",
+      "finalize_button": "Afronden en factuurnummers toekennen",
+      "finalize_confirm": "Deze factuurronde afronden? Factuurnummers worden definitief toegekend en regeldefinities kunnen daarna niet meer worden gewijzigd. Dit kan niet ongedaan worden gemaakt.",
+      "col_parcel": "Perceel",
+      "col_recipient": "Ontvanger",
+      "col_subtotal": "Subtotaal",
+      "pdf_button": "PDF",
+      "no_invoices": "Er zouden geen facturen worden gegenereerd — controleer het perceelbereik van de regeldefinities en de factuuradresvlag van de betrokken leden.",
+      "pdf_placeholder_number": "Voorbeeld"
     }
   }
 }

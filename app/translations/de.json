@@ -1702,7 +1702,15 @@
       "label_parcels": "Parzellen",
       "scope_all": "Alle Parzellen",
       "scope_n_parcels": "{n} Parzelle(n)",
-      "button_create": "Position hinzufügen"
+      "button_create": "Position hinzufügen",
+      "back_to_run": "Zurück zum Rechnungslauf",
+      "preview_button": "Vorschau",
+      "finalized_notice": "Dieser Rechnungslauf ist abgeschlossen. Rechnungsnummern sind endgültig, Positionsdefinitionen können nicht mehr geändert werden.",
+      "invoices_header": "Rechnungen",
+      "col_invoice_number": "Rechnungs-Nr.",
+      "col_parcel": "Parzelle",
+      "col_recipient": "Empfänger",
+      "col_invoice_subtotal": "Summe"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Festbetrag je Parzelle",
@@ -1714,7 +1722,23 @@
     },
     "errors": {
       "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",
-      "run_not_draft": "Dieser Rechnungslauf ist bereits abgeschlossen; seine Positionsdefinitionen können nicht mehr geändert werden."
+      "run_not_draft": "Dieser Rechnungslauf ist bereits abgeschlossen; seine Positionsdefinitionen können nicht mehr geändert werden.",
+      "no_item_definitions": "Dieser Rechnungslauf hat noch keine Positionsdefinitionen — vor dem Abschluss mindestens eine hinzufügen."
+    },
+    "run_preview": {
+      "title": "Rechnungsvorschau",
+      "heading": "Vorschau — {year} {subject}",
+      "header": "Berechnete Rechnungen",
+      "count_label": "{n} Rechnung(en) würden erstellt.",
+      "finalize_hint": "Es wird noch nichts gespeichert oder versendet — PDFs unten prüfen und dann abschließen.",
+      "finalize_button": "Abschließen & Rechnungsnummern vergeben",
+      "finalize_confirm": "Diesen Rechnungslauf abschließen? Rechnungsnummern werden endgültig vergeben, Positionsdefinitionen können danach nicht mehr geändert werden. Das kann nicht rückgängig gemacht werden.",
+      "col_parcel": "Parzelle",
+      "col_recipient": "Empfänger",
+      "col_subtotal": "Summe",
+      "pdf_button": "PDF",
+      "no_invoices": "Es würden keine Rechnungen erstellt — Parzellenzuordnung der Positionen und die Rechnungsadresse der betroffenen Mitglieder prüfen.",
+      "pdf_placeholder_number": "Vorschau"
     }
   }
 }

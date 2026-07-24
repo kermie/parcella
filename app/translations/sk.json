@@ -1702,7 +1702,15 @@
       "label_parcels": "Parcely",
       "scope_all": "Všetky parcely",
       "scope_n_parcels": "{n} parcel(y)",
-      "button_create": "Pridať položku"
+      "button_create": "Pridať položku",
+      "back_to_run": "Späť na vyúčtovanie",
+      "preview_button": "Náhľad",
+      "finalized_notice": "Toto vyúčtovanie je dokončené. Čísla faktúr sú trvalé, definície položiek už nemožno meniť.",
+      "invoices_header": "Faktúry",
+      "col_invoice_number": "Č. faktúry",
+      "col_parcel": "Parcela",
+      "col_recipient": "Príjemca",
+      "col_invoice_subtotal": "Súčet"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Pevná suma za parcelu",
@@ -1714,7 +1722,23 @@
     },
     "errors": {
       "cannot_delete_finalized_run": "Toto vyúčtovanie je už dokončené a nemožno ho zmazať.",
-      "run_not_draft": "Toto vyúčtovanie je už dokončené; jeho definície položiek už nemožno meniť."
+      "run_not_draft": "Toto vyúčtovanie je už dokončené; jeho definície položiek už nemožno meniť.",
+      "no_item_definitions": "Toto vyúčtovanie zatiaľ nemá žiadne definície položiek — pred dokončením pridajte aspoň jednu."
+    },
+    "run_preview": {
+      "title": "Náhľad faktúr",
+      "heading": "Náhľad — {year} {subject}",
+      "header": "Vypočítané faktúry",
+      "count_label": "Bolo by vytvorených {n} faktúr(y).",
+      "finalize_hint": "Zatiaľ nič nie je uložené ani odoslané — skontrolujte PDF nižšie a potom dokončite.",
+      "finalize_button": "Dokončiť a prideliť čísla faktúr",
+      "finalize_confirm": "Dokončiť toto vyúčtovanie? Čísla faktúr budú trvalo pridelené, definície položiek už nebude možné meniť. Túto akciu nemožno vrátiť späť.",
+      "col_parcel": "Parcela",
+      "col_recipient": "Príjemca",
+      "col_subtotal": "Súčet",
+      "pdf_button": "PDF",
+      "no_invoices": "Nebudú vytvorené žiadne faktúry — skontrolujte rozsah paciel v definíciách položiek a príznak fakturačnej adresy u dotknutých členov.",
+      "pdf_placeholder_number": "Náhľad"
     }
   }
 }

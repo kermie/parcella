@@ -189,6 +189,39 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     assert "UndefinedError" not in r_detail2.text
     assert "Item insurance_cost" in r_detail2.text
 
+    # Preview and finalize (phase 2, issue #57). A real parcel+member
+    # with is_invoice_address so the fixed_per_parcel item actually
+    # produces a computed/finalized invoice, not just an empty run.
+    from app.models import Member, Parcel, MemberParcel
+
+    async with AsyncSessionLocal() as session:
+        member = Member(first_name="Preview", last_name="Tester", street="Test-Str 1", postal_code="12345", city="Testort")
+        parcel = Parcel(plot_number="SMOKE-01", area_sqm=100)
+        session.add_all([member, parcel])
+        await session.flush()
+        session.add(MemberParcel(member_id=member.id, parcel_id=parcel.id))
+        await session.commit()
+
+    r_preview = await client.get(f"/finances/runs/{run_id}/preview")
+    assert r_preview.status_code == 200
+    assert "UndefinedError" not in r_preview.text
+    assert "SMOKE-01" in r_preview.text
+
+    r_finalize = await client.post(f"/finances/runs/{run_id}/finalize")
+    assert r_finalize.status_code in (302, 303)
+
+    r_detail3 = await client.get(f"/finances/runs/{run_id}")
+    assert r_detail3.status_code == 200
+    assert "UndefinedError" not in r_detail3.text
+    assert "2026/" in r_detail3.text
+
+    # Can no longer add items to a finalized run.
+    r_blocked = await client.post(f"/finances/runs/{run_id}/items", data={
+        "order_number": "99", "name": "Too late", "pricing_mode": "fixed_per_parcel",
+        "unit_price": "1.00", "applies_to_all_parcels": "on",
+    })
+    assert r_blocked.status_code == 400
+
 
 async def test_smoke_metering_pages_render_without_jinja_errors(client, admin_user):
     token = await login(client, "admin@example.com")

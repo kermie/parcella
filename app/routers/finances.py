@@ -1,17 +1,21 @@
 """
 Finances module router: annual invoices (issues #55/#56/#57/#58).
 
-Phase 1 (#56) lives here: creating an InvoiceRun and configuring its
-InvoiceItemDefinitions. Generation/PDF/preview (#57) and delivery/
-payment tracking (#58) build on top of this in later phases -- see
-docs/ADR and the plan this was built from.
+Phase 1 (#56): creating an InvoiceRun and configuring its
+InvoiceItemDefinitions. Phase 2 (#57, this addition): preview (renders
+a PDF from app.invoice_generation's in-memory computation, no DB
+writes) and finalize (persists real Invoice/InvoiceLineItem rows with
+permanent numbers -- see app/invoice_generation.py's module docstring
+for why this is a one-way action). Delivery/payment tracking (#58)
+builds on top of this in the next phase.
 """
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -20,10 +24,14 @@ from app.database import get_db
 from app.i18n import t_for
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel,
-    InvoicePricingMode, Parcel, ParcelStatus,
+    InvoicePricingMode, Invoice, ClubSetting, Parcel, ParcelStatus,
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
+from app.branding import load_branding
+from app.l10n import load_current_region, load_current_currency
+from app.invoice_generation import compute_invoices_for_run, finalize_run
+from app.invoice_pdf import InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf
 
 router = APIRouter(
     prefix="/finances",
@@ -60,6 +68,37 @@ async def _active_parcels(db: AsyncSession) -> list:
         select(Parcel).where(Parcel.status == ParcelStatus.ACTIVE).order_by(Parcel.plot_number)
     )
     return list(result.scalars().all())
+
+
+async def _pdf_context(db: AsyncSession) -> dict:
+    """Everything render_invoice_pdf() needs beyond the invoice itself
+    -- club branding, address, bank details, and formatting locale.
+    Shared by the preview and the real/finalized PDF routes."""
+    branding = await load_branding(db)
+    logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
+
+    settings_result = await db.execute(
+        select(ClubSetting).where(ClubSetting.key.in_(
+            ["verein_strasse", "verein_plz", "verein_ort", "bank_name", "bank_iban", "bank_bic"]
+        ))
+    )
+    settings_map = {e.key: e.value for e in settings_result.scalars().all()}
+    club_address_lines = [
+        line for line in [settings_map.get("verein_strasse"), " ".join(
+            filter(None, [settings_map.get("verein_plz"), settings_map.get("verein_ort")])
+        )] if line
+    ]
+
+    return {
+        "club_name": branding["club_name"],
+        "logo_path": logo_path,
+        "club_address_lines": club_address_lines,
+        "bank_name": settings_map.get("bank_name") or "",
+        "bank_iban": settings_map.get("bank_iban") or "",
+        "bank_bic": settings_map.get("bank_bic") or "",
+        "region": await load_current_region(db),
+        "currency": await load_current_currency(db),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -137,10 +176,21 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
 
     next_order = (max((i.order_number for i in run.item_definitions), default=0) + 10)
 
+    invoices = []
+    if run.status == InvoiceRunStatus.FINALIZED:
+        result = await db.execute(
+            select(Invoice)
+            .options(selectinload(Invoice.parcel))
+            .where(Invoice.invoice_run_id == run.id)
+            .order_by(Invoice.invoice_number)
+        )
+        invoices = list(result.scalars().all())
+
     return templates.TemplateResponse("finances/run_detail.html", {
         "request": request, "user": user, "run": run, "parcels": parcels,
         "pricing_modes": list(InvoicePricingMode),
         "next_order": next_order,
+        "invoices": invoices,
     })
 
 
@@ -253,3 +303,102 @@ async def item_delete(run_id: str, item_id: str, request: Request, db: AsyncSess
         await db.delete(item)
         await db.commit()
     return RedirectResponse(f"/finances/runs/{run_id}", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# Preview and finalization
+# ---------------------------------------------------------------------------
+
+@router.get("/runs/{run_id}/preview", response_class=HTMLResponse)
+async def run_preview(run_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+
+    run = await _get_run_or_404(db, run_id)
+    computed = await compute_invoices_for_run(db, run)
+
+    return templates.TemplateResponse("finances/run_preview.html", {
+        "request": request, "user": user, "run": run, "computed": computed,
+    })
+
+
+@router.get("/runs/{run_id}/preview/{parcel_id}/pdf")
+async def run_preview_pdf(run_id: str, parcel_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "read")
+
+    run = await _get_run_or_404(db, run_id)
+    computed = await compute_invoices_for_run(db, run)
+    match = next((c for c in computed if c.parcel.id == parcel_id), None)
+    if not match:
+        raise HTTPException(status_code=404)
+
+    ctx = await _pdf_context(db)
+    data = InvoicePdfData(
+        invoice_number=t_for(request, "finances.run_preview.pdf_placeholder_number"),
+        issued_date=run.issued_date, due_date=run.due_date, subject=run.subject,
+        recipient_names=match.recipient_names, recipient_address=match.recipient_address,
+        parcel_plot_number=match.parcel.plot_number, parcel_area_sqm=match.parcel.area_sqm,
+        line_items=[
+            InvoicePdfLineItem(
+                order_number=li.order_number, name=li.name, description=li.description,
+                quantity=li.quantity, unit_price=li.unit_price, line_total=li.line_total,
+            ) for li in match.line_items
+        ],
+        subtotal=match.subtotal, footer_text=run.footer_text, is_preview=True,
+    )
+    pdf_bytes = render_invoice_pdf(data, **ctx)
+    return Response(content=pdf_bytes, media_type="application/pdf")
+
+
+@router.post("/runs/{run_id}/finalize")
+async def run_finalize(run_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "write")
+
+    run = await _get_run_or_404(db, run_id)
+    if run.status != InvoiceRunStatus.DRAFT:
+        return RedirectResponse(f"/finances/runs/{run_id}", status_code=302)
+    if not run.item_definitions:
+        return RedirectResponse(
+            f"/finances/runs/{run_id}?error={t_for(request, 'finances.errors.no_item_definitions')}",
+            status_code=302,
+        )
+
+    await finalize_run(db, run)
+    await db.commit()
+    return RedirectResponse(f"/finances/runs/{run_id}?success=1", status_code=302)
+
+
+@router.get("/invoices/{invoice_id}/pdf")
+async def invoice_pdf(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "read")
+
+    result = await db.execute(
+        select(Invoice)
+        .options(selectinload(Invoice.line_items), selectinload(Invoice.parcel))
+        .where(Invoice.id == invoice_id)
+    )
+    invoice = result.scalar_one_or_none()
+    if not invoice:
+        raise HTTPException(status_code=404)
+
+    run_result = await db.execute(select(InvoiceRun).where(InvoiceRun.id == invoice.invoice_run_id))
+    run = run_result.scalar_one_or_none()
+
+    ctx = await _pdf_context(db)
+    data = InvoicePdfData(
+        invoice_number=invoice.invoice_number,
+        issued_date=run.issued_date, due_date=run.due_date, subject=run.subject,
+        recipient_names=invoice.recipient_names, recipient_address=invoice.recipient_address,
+        parcel_plot_number=invoice.parcel.plot_number, parcel_area_sqm=invoice.parcel.area_sqm,
+        line_items=[
+            InvoicePdfLineItem(
+                order_number=li.order_number, name=li.name, description=li.description,
+                quantity=li.quantity, unit_price=li.unit_price, line_total=li.line_total,
+            ) for li in sorted(invoice.line_items, key=lambda li: li.order_number)
+        ],
+        subtotal=invoice.subtotal, footer_text=run.footer_text, is_preview=False,
+    )
+    pdf_bytes = render_invoice_pdf(data, **ctx)
+    return Response(
+        content=pdf_bytes, media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="invoice_{invoice.invoice_number.replace("/", "-")}.pdf"'},
+    )

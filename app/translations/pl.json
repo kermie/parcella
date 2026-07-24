@@ -1702,7 +1702,15 @@
       "label_parcels": "Działki",
       "scope_all": "Wszystkie działki",
       "scope_n_parcels": "{n} działk(i/a)",
-      "button_create": "Dodaj pozycję"
+      "button_create": "Dodaj pozycję",
+      "back_to_run": "Powrót do serii faktur",
+      "preview_button": "Podgląd",
+      "finalized_notice": "Ta seria faktur jest zakończona. Numery faktur są ostateczne, a definicji pozycji nie można już zmienić.",
+      "invoices_header": "Faktury",
+      "col_invoice_number": "Nr faktury",
+      "col_parcel": "Działka",
+      "col_recipient": "Odbiorca",
+      "col_invoice_subtotal": "Suma"
     },
     "pricing_modes": {
       "fixed_per_parcel": "Kwota stała za działkę",
@@ -1714,7 +1722,23 @@
     },
     "errors": {
       "cannot_delete_finalized_run": "Ta seria faktur jest już zakończona i nie można jej usunąć.",
-      "run_not_draft": "Ta seria faktur jest już zakończona; jej definicji pozycji nie można już zmienić."
+      "run_not_draft": "Ta seria faktur jest już zakończona; jej definicji pozycji nie można już zmienić.",
+      "no_item_definitions": "Ta seria faktur nie ma jeszcze żadnych definicji pozycji — dodaj co najmniej jedną przed zakończeniem."
+    },
+    "run_preview": {
+      "title": "Podgląd faktur",
+      "heading": "Podgląd — {year} {subject}",
+      "header": "Obliczone faktury",
+      "count_label": "Zostanie utworzonych {n} faktur(y).",
+      "finalize_hint": "Nic nie zostało jeszcze zapisane ani wysłane — sprawdź pliki PDF poniżej, a następnie zakończ.",
+      "finalize_button": "Zakończ i nadaj numery faktur",
+      "finalize_confirm": "Zakończyć tę serię faktur? Numery faktur zostaną trwale nadane, a definicji pozycji nie będzie już można zmienić. Tej czynności nie można cofnąć.",
+      "col_parcel": "Działka",
+      "col_recipient": "Odbiorca",
+      "col_subtotal": "Suma",
+      "pdf_button": "PDF",
+      "no_invoices": "Nie zostałaby utworzona żadna faktura — sprawdź zakres działek w definicjach pozycji oraz flagę adresu do faktury u odpowiednich członków.",
+      "pdf_placeholder_number": "Podgląd"
     }
   }
 }
