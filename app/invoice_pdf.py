@@ -109,16 +109,16 @@ def invoice_pdf_data_from_invoice(invoice, run) -> InvoicePdfData:
 
 def invoice_pdf_filename(invoice, run) -> str:
     """Filename for `invoice`'s PDF -- {issued date YYYYMMDD}_{parcel
-    plot number}{invoice number}.pdf, e.g. "20260724_G0932026-500.pdf".
-    Shared by the download route, email attachment, and cloud-storage
-    upload (see app/invoice_delivery.py) so the naming stays
-    consistent everywhere a PDF gets a filename. The invoice number's
-    own "/" is swapped for "-" since it isn't valid in a filename --
-    the (club-configurable) invoice number format is otherwise left
-    untouched."""
+    plot number}_invoice-{invoice number}.pdf, e.g.
+    "20260724_G093_invoice-2026-500.pdf". Shared by the download
+    route, email attachment, and cloud-storage upload (see
+    app/invoice_delivery.py) so the naming stays consistent everywhere
+    a PDF gets a filename. The invoice number's own "/" is swapped for
+    "-" since it isn't valid in a filename -- the (club-configurable)
+    invoice number format is otherwise left untouched."""
     date_part = run.issued_date.strftime("%Y%m%d")
     number_part = invoice.invoice_number.replace("/", "-")
-    return f"{date_part}_{invoice.parcel.plot_number}{number_part}.pdf"
+    return f"{date_part}_{invoice.parcel.plot_number}_invoice-{number_part}.pdf"
 
 
 def _substitute_placeholders(text: Optional[str], data: InvoicePdfData) -> str:
