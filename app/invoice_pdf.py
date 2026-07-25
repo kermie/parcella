@@ -37,7 +37,6 @@ def _page_css(language: str) -> str:
 @page {{
     size: A4;
     margin: 2.2cm 1.5cm 2.6cm 1.5cm;
-    @top-center {{ content: element(header); }}
     @bottom-left {{ content: element(footer); width: 15.7cm; }}
     @bottom-right {{
         content: "{page_word} " counter(page) " {of_word} " counter(pages);
@@ -47,10 +46,23 @@ def _page_css(language: str) -> str:
 /* margin:0 -- the default UA body margin would otherwise throw off
    the address-window's exact DIN 5008 positioning below. */
 body {{ margin: 0; font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5pt; }}
-#header {{ position: running(header); display: flex; align-items: center; border-bottom: 2px solid #2f6f3e; padding-bottom: 8px; }}
-#header .header-logo, #header .header-spacer {{ flex: 1; }}
+/* position:fixed on the page box itself (not the @top-center margin
+   box, which is only as wide as the printable area) so the logo can
+   sit at the true left edge of the A4 sheet and the club name can be
+   centered on the page as a whole -- an absolutely-positioned
+   full-width element for the name, independent of the logo's own
+   width, so it's always exactly page-centered and never wraps. */
+/* top/left are negative by exactly the @page margin (2.2cm/1.5cm) --
+   WeasyPrint's containing block for `position: fixed` here is the
+   page's own content box (inset by the @page margin), not the raw
+   sheet, so this cancels that inset back out to the true page corner. */
+#header {{ position: fixed; top: -2.2cm; left: -1.5cm; width: 21cm; height: 1.8cm; border-bottom: 2px solid #2f6f3e; }}
+#header .header-logo {{ position: absolute; left: 0.5cm; top: 0.3cm; }}
 #header .header-logo img {{ max-height: 50px; }}
-#header .club-name {{ flex: 1; text-align: center; font-size: 13pt; font-weight: bold; color: #2f6f3e; }}
+#header .club-name {{
+    position: absolute; left: 0; top: 0.65cm; width: 21cm; text-align: center;
+    font-size: 13pt; font-weight: bold; color: #2f6f3e; white-space: nowrap;
+}}
 #footer {{
     position: running(footer); display: flex; gap: 0.6cm;
     font-size: 7.5pt; line-height: 1.4; color: #6b7280;
@@ -372,7 +384,6 @@ def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], fo
         <div id="header">
             <div class="header-logo">{logo_block}</div>
             <div class="club-name">{club_name}</div>
-            <div class="header-spacer"></div>
         </div>
         <div id="footer">{footer_html}</div>
         {body_html}
