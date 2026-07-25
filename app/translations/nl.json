@@ -156,8 +156,8 @@
   },
   "auth": {
     "login": {
-      "title": "Inloggen – Tuinvereniging",
-      "app_title": "Tuinvereniging Beheer",
+      "title": "Inloggen – Parcella",
+      "app_title": "Parcella Beheer",
       "subtitle": "Log alstublieft in",
       "label_email": "E-mail",
       "email_placeholder": "uw@email.nl",

@@ -156,8 +156,8 @@
   },
   "auth": {
     "login": {
-      "title": "Logowanie – Ogród działkowy",
-      "app_title": "Zarządzanie ogrodem działkowym",
+      "title": "Logowanie – Parcella",
+      "app_title": "Zarządzanie Parcella",
       "subtitle": "Proszę się zalogować",
       "label_email": "E-mail",
       "email_placeholder": "twoj@email.pl",

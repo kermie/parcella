@@ -19,7 +19,7 @@ import os
 
 os.environ.setdefault(
     "DATABASE_URL",
-    "postgresql+asyncpg://gartenverein:test@db_test:5432/gartenverein_test",
+    "postgresql+asyncpg://parcella:test@db_test:5432/parcella_test",
 )
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-tests-only")
 os.environ.setdefault("ENVIRONMENT", "development")

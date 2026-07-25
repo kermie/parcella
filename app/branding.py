@@ -24,7 +24,7 @@ from sqlalchemy import select
 
 from app.models import ClubSetting
 
-DEFAULT_CLUB_NAME = "Gartenverein"
+DEFAULT_CLUB_NAME = "Parcella"
 
 UPLOAD_DIR = Path("app/static/uploads")
 ALLOWED_LOGO_TYPES = {

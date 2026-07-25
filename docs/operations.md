@@ -46,7 +46,7 @@ created in parallel with the same `down_revision`. Fix: delete one of the
 two migration files, and if necessary correct the `alembic_version` entry
 in the DB directly:
 ```bash
-docker compose exec db psql -U gartenverein -c "UPDATE alembic_version SET version_num = '<correct_revision>' WHERE version_num = '<wrong_revision>';"
+docker compose exec db psql -U parcella -c "UPDATE alembic_version SET version_num = '<correct_revision>' WHERE version_num = '<wrong_revision>';"
 ```
 
 ## SMTP setup
@@ -76,7 +76,7 @@ reached.
 On the very first startup (empty `users` table), an admin account is
 created automatically:
 
-- Email: `admin@gartenverein.local`
+- Email: `admin@parcella.local`
 - Password: `admin1234`
 
 Please change it immediately after your first login.

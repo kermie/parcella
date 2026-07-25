@@ -156,8 +156,8 @@
   },
   "auth": {
     "login": {
-      "title": "Anmelden – Gartenverein",
-      "app_title": "Gartenverein Verwaltung",
+      "title": "Anmelden – Parcella",
+      "app_title": "Parcella Verwaltung",
       "subtitle": "Bitte melden Sie sich an",
       "label_email": "E-Mail",
       "email_placeholder": "ihre@email.de",

@@ -30,7 +30,7 @@ under the same terms (AGPL-3.0).
 
 ```bash
 git clone <your-fork-url>
-cd gartenverein
+cd parcella
 cp .env.example .env
 docker compose build web
 docker compose run --rm --entrypoint alembic web upgrade head

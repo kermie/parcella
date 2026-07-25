@@ -90,7 +90,7 @@ async def lifespan(app: FastAPI):
         user_count = await db.scalar(select(func.count()).select_from(User))
         if not user_count:
             erster_admin = User(
-                email="admin@gartenverein.local",
+                email="admin@parcella.local",
                 name="Administrator",
                 password_hash=hash_password("admin1234"),
                 role=UserRole.ADMIN,
@@ -98,7 +98,7 @@ async def lifespan(app: FastAPI):
             db.add(erster_admin)
             await db.commit()
             logger.warning(
-                "First admin user created: admin@gartenverein.local / admin1234 "
+                "First admin user created: admin@parcella.local / admin1234 "
                 "-- PLEASE CHANGE THE PASSWORD IMMEDIATELY!"
             )
 

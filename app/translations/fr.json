@@ -156,8 +156,8 @@
   },
   "auth": {
     "login": {
-      "title": "Connexion – Jardin associatif",
-      "app_title": "Gestion du jardin associatif",
+      "title": "Connexion – Parcella",
+      "app_title": "Gestion de Parcella",
       "subtitle": "Veuillez vous connecter",
       "label_email": "E-mail",
       "email_placeholder": "votre@email.fr",

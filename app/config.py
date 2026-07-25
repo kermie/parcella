@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database
-    database_url: str = "postgresql+asyncpg://gartenverein:changeme@localhost:5432/gartenverein"
+    database_url: str = "postgresql+asyncpg://parcella:changeme@localhost:5432/parcella"
 
     # Security
     secret_key: str = "dev-secret-key-change-in-production"
@@ -18,11 +18,11 @@ class Settings(BaseSettings):
     smtp_port: int = 587
     smtp_user: str = ""
     smtp_password: str = ""
-    smtp_from: str = "noreply@gartenverein.local"
+    smtp_from: str = "noreply@parcella.local"
     smtp_tls: bool = True
 
     # App metadata
-    app_name: str = "Gartenverein Verwaltung"
+    app_name: str = "Parcella"
     app_version: str = "0.1.0"
 
     @property

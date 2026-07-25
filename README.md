@@ -71,7 +71,7 @@ version publicly available. Details and contribution guidelines in
 - ✅ Database migrations via Alembic
 - ✅ Custom club branding: upload your own logo and set your club's
   display name from Admin -> Settings, replacing the default tree icon
-  and "Gartenverein" placeholder everywhere in the sidebar
+  and "Parcella" placeholder everywhere in the sidebar
 - ✅ i18n: 7 languages (German, English, Polish, Czech, Slovak, French,
   Dutch), one language per installation, switchable in admin settings,
   every module and the navigation fully translated. JSON translation
@@ -167,8 +167,8 @@ version publicly available. Details and contribution guidelines in
 ### 1. Clone and configure the repository
 
 ```bash
-git clone https://github.com/kermie/gartenverein.git
-cd gartenverein
+git clone https://github.com/kermie/parcella.git
+cd parcella
 cp .env.example .env
 # adjust .env as needed (passwords, SMTP, etc.)
 ```
@@ -195,7 +195,7 @@ API documentation: **http://localhost:8000/api/docs**
 
 An admin account is created automatically on first startup:
 
-- **Email:** `admin@gartenverein.local`
+- **Email:** `admin@parcella.local`
 - **Password:** `admin1234`
 
 ⚠️ **Please change the password immediately after your first login!**
@@ -217,7 +217,7 @@ Alongside the web UI, there is a full REST API under `/api/v1/`.
 # Request a token
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@gartenverein.local", "password": "admin1234"}'
+  -d '{"email": "admin@parcella.local", "password": "admin1234"}'
 
 # Response: {"access_token": "...", "token_type": "bearer", "expires_in_minutes": 1440}
 

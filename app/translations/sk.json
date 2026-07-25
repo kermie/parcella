@@ -156,8 +156,8 @@
   },
   "auth": {
     "login": {
-      "title": "Prihlásenie – Záhradkársky spolok",
-      "app_title": "Správa záhradkárskeho spolku",
+      "title": "Prihlásenie – Parcella",
+      "app_title": "Správa Parcella",
       "subtitle": "Prosím, prihláste sa",
       "label_email": "E-mail",
       "email_placeholder": "vas@email.sk",

@@ -156,8 +156,8 @@
   },
   "auth": {
     "login": {
-      "title": "Přihlášení – Zahrádkářský spolek",
-      "app_title": "Správa zahrádkářského spolku",
+      "title": "Přihlášení – Parcella",
+      "app_title": "Správa Parcella",
       "subtitle": "Prosím, přihlaste se",
       "label_email": "E-mail",
       "email_placeholder": "vas@email.cz",

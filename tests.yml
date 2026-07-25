@@ -17,13 +17,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: gartenverein_test
-          POSTGRES_USER: gartenverein
+          POSTGRES_DB: parcella_test
+          POSTGRES_USER: parcella
           POSTGRES_PASSWORD: test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U gartenverein"
+          --health-cmd "pg_isready -U parcella"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
@@ -44,7 +44,7 @@ jobs:
 
       - name: Tests ausführen
         env:
-          DATABASE_URL: postgresql+asyncpg://gartenverein:test@localhost:5432/gartenverein_test
+          DATABASE_URL: postgresql+asyncpg://parcella:test@localhost:5432/parcella_test
           SECRET_KEY: ci-test-secret-key
           ENVIRONMENT: development
         run: python -m pytest -v
