@@ -1675,6 +1675,11 @@
       "subject": "Factuur {invoice_number} van {club_name}",
       "greeting": "Hallo {name},",
       "body": "Bijgevoegd vindt u uw factuur van {club_name} voor perceel {parcel_number}, te betalen vóór {due_date}."
+    },
+    "reminder_delivery": {
+      "subject": "Betalingsherinnering nr. {level} voor factuur {invoice_number} — {club_name}",
+      "greeting": "Beste {name},",
+      "body": "dit is een herinnering dat factuur {invoice_number} van {club_name} nog niet is betaald. Zie de bijgevoegde PDF voor details."
     }
   },
   "finances": {
@@ -1820,7 +1825,8 @@
       "label_paid_on": "Betaald op",
       "label_note": "Notitie",
       "add_payment_button": "Betaling toevoegen",
-      "delete_payment_confirm": "Deze betaling verwijderen?"
+      "delete_payment_confirm": "Deze betaling verwijderen?",
+      "success_message": "Klaar."
     },
     "dashboard": {
       "title": "Financiën",
@@ -1832,14 +1838,34 @@
       "coming_soon_hint": "Binnenkort beschikbaar",
       "accounts_header": "Rekeningen",
       "accounts_hint": "Binnenkort beschikbaar -- de rekeningen van uw vereniging verschijnen hier.",
-      "categories_hint": "{n} categorie(ën) gedefinieerd"
+      "categories_hint": "{n} categorie(ën) gedefinieerd",
+      "reminders_hint": "{n} factu(u)r(en) achterstallig"
     },
     "coming_soon": {
       "message": "Deze functie is binnenkort beschikbaar.",
       "back": "Terug naar Financiën"
     },
     "reminders": {
-      "title": "Herinneringen"
+      "title": "Herinneringen",
+      "overdue_header": "Achterstallige facturen",
+      "col_invoice_number": "Factuurnr.",
+      "col_due_date": "Vervaldatum",
+      "col_days_overdue": "Achterstallig sinds",
+      "col_amount_due": "Openstaand bedrag",
+      "col_reminders_sent": "Verzonden herinneringen",
+      "days_overdue": "{days} dagen",
+      "count_sent": "{count} verzonden",
+      "none_sent": "Nog geen verzonden",
+      "open_button": "Openen",
+      "no_overdue": "Geen achterstallige facturen — niets te herinneren.",
+      "level_label": "Herinnering nr. {level}",
+      "delivery_email": "Per e-mail verzonden",
+      "delivery_print": "Om te printen/per post te versturen",
+      "no_reminders_yet": "Nog geen herinneringen verzonden.",
+      "label_fee": "Kosten (optioneel)",
+      "fee_placeholder": "0,00",
+      "label_message": "Bericht (optioneel)",
+      "send_button": "Herinnering versturen"
     },
     "incoming_invoices": {
       "title": "Inkomende facturen"
@@ -1885,6 +1911,16 @@
       "account_holder": "Rekeninghouder: {name}",
       "page_label": "Pagina",
       "of_label": "van"
+    },
+    "reminder_pdf": {
+      "heading": "Betalingsherinnering nr. {level}",
+      "reference_line": "Betreft factuur {invoice_number} van {date}",
+      "intro": "Volgens onze administratie is onderstaande factuur nog niet betaald:",
+      "row_original_amount": "Oorspronkelijk bedrag",
+      "row_paid": "Reeds betaald",
+      "row_previous_fees": "Kosten eerdere herinneringen",
+      "row_this_fee": "Kosten van deze herinnering",
+      "closing": "Wij verzoeken u het openstaande bedrag zo spoedig mogelijk te voldoen. Heeft u al betaald, dan kunt u deze herinnering als niet verzonden beschouwen."
     }
   }
 }

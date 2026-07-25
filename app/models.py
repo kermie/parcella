@@ -2002,20 +2002,43 @@ class Invoice(Base):
         "InvoicePayment", back_populates="invoice",
         cascade="all, delete-orphan", order_by="InvoicePayment.paid_on",
     )
+    reminders: Mapped[List["InvoiceReminder"]] = relationship(
+        "InvoiceReminder", back_populates="invoice",
+        cascade="all, delete-orphan", order_by="InvoiceReminder.level",
+    )
 
     @property
     def paid_total(self) -> float:
         return float(sum((p.amount for p in self.payments), 0))
 
     @property
+    def reminder_fees_total(self) -> float:
+        return float(sum((r.fee_amount or 0 for r in self.reminders), 0))
+
+    @property
+    def total_owed(self) -> float:
+        """Original subtotal plus any reminder fees -- what "paid"
+        actually requires (issue #59)."""
+        return float(self.subtotal) + self.reminder_fees_total
+
+    @property
+    def amount_due(self) -> float:
+        """What's still owed, including any reminder fees on top of
+        the original subtotal (issue #59) -- never goes negative for
+        display purposes even if overpaid."""
+        return max(0.0, self.total_owed - self.paid_total)
+
+    @property
     def payment_status(self) -> str:
         """One of "open" / "partially_paid" / "paid", derived from
-        payments vs. subtotal rather than stored (issue #58's "let me
-        filter which outgoing invoice is open/paid/partially paid")."""
+        payments vs. subtotal + any reminder fees (issue #58's "let me
+        filter which outgoing invoice is open/paid/partially paid";
+        extended by issue #59 so a reminder fee actually counts toward
+        what "paid" requires)."""
         paid = self.paid_total
         if paid <= 0:
             return "open"
-        if paid < float(self.subtotal):
+        if paid < self.total_owed:
             return "partially_paid"
         return "paid"
 
@@ -2065,3 +2088,43 @@ class InvoicePayment(Base):
 
     def __repr__(self) -> str:
         return f"<InvoicePayment {self.amount} on {self.paid_on}>"
+
+
+class InvoiceReminder(Base):
+    """
+    A dunning/collection reminder sent for an unpaid Invoice (issue
+    #59). `level` is a simple incrementing counter (1st reminder, 2nd,
+    ...) computed at creation time from how many already exist for
+    this invoice -- deliberately no fixed/named stages, so a club can
+    run whatever process it wants. `fee_amount` is optional and
+    club-entered per reminder (not a configured default) since not
+    every club wants to charge a Mahngebühr; when set it's added to
+    what the invoice still owes (see Invoice.reminder_fees_total /
+    amount_due). `delivery_method` mirrors how the reminder actually
+    went out -- resolved the same way as the original invoice's own
+    delivery (email if the recipient has notifications enabled and a
+    stored address, otherwise a PDF for manual/postal sending -- see
+    app/invoice_delivery.py's deliver_reminder).
+    """
+    __tablename__ = "invoice_reminders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    level: Mapped[int] = mapped_column(Integer, nullable=False)
+    fee_amount: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    delivery_method: Mapped[str] = mapped_column(String(10), nullable=False)  # "email" | "print"
+    sent_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    created_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+    invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="reminders")
+    created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+
+    def __repr__(self) -> str:
+        return f"<InvoiceReminder level {self.level} for invoice {self.invoice_id}>"

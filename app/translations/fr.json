@@ -1675,6 +1675,11 @@
       "subject": "Facture {invoice_number} de {club_name}",
       "greeting": "Bonjour {name},",
       "body": "Vous trouverez ci-joint votre facture de {club_name} pour la parcelle {parcel_number}, à régler avant le {due_date}."
+    },
+    "reminder_delivery": {
+      "subject": "Rappel de paiement n° {level} pour la facture {invoice_number} — {club_name}",
+      "greeting": "Cher/Chère {name},",
+      "body": "ceci est un rappel : la facture {invoice_number} de {club_name} n'a pas encore été réglée. Merci de consulter le PDF joint pour plus de détails."
     }
   },
   "finances": {
@@ -1820,7 +1825,8 @@
       "label_paid_on": "Payé le",
       "label_note": "Remarque",
       "add_payment_button": "Ajouter un paiement",
-      "delete_payment_confirm": "Supprimer ce paiement ?"
+      "delete_payment_confirm": "Supprimer ce paiement ?",
+      "success_message": "Fait."
     },
     "dashboard": {
       "title": "Finances",
@@ -1832,14 +1838,34 @@
       "coming_soon_hint": "Bientôt disponible",
       "accounts_header": "Comptes",
       "accounts_hint": "Bientôt disponible -- les comptes de votre association apparaîtront ici.",
-      "categories_hint": "{n} catégorie(s) définie(s)"
+      "categories_hint": "{n} catégorie(s) définie(s)",
+      "reminders_hint": "{n} facture(s) en retard"
     },
     "coming_soon": {
       "message": "Cette fonctionnalité sera bientôt disponible.",
       "back": "Retour aux Finances"
     },
     "reminders": {
-      "title": "Relances"
+      "title": "Relances",
+      "overdue_header": "Factures en retard",
+      "col_invoice_number": "N° de facture",
+      "col_due_date": "Date d'échéance",
+      "col_days_overdue": "Retard",
+      "col_amount_due": "Montant dû",
+      "col_reminders_sent": "Rappels envoyés",
+      "days_overdue": "{days} jours",
+      "count_sent": "{count} envoyé(s)",
+      "none_sent": "Aucun envoyé pour l'instant",
+      "open_button": "Ouvrir",
+      "no_overdue": "Aucune facture en retard — rien à rappeler.",
+      "level_label": "Rappel n° {level}",
+      "delivery_email": "Envoyé par e-mail",
+      "delivery_print": "À imprimer/envoyer par courrier",
+      "no_reminders_yet": "Aucun rappel envoyé pour l'instant.",
+      "label_fee": "Frais (facultatif)",
+      "fee_placeholder": "0,00",
+      "label_message": "Message (facultatif)",
+      "send_button": "Envoyer le rappel"
     },
     "incoming_invoices": {
       "title": "Factures reçues"
@@ -1885,6 +1911,16 @@
       "account_holder": "Titulaire du compte : {name}",
       "page_label": "Page",
       "of_label": "sur"
+    },
+    "reminder_pdf": {
+      "heading": "Rappel de paiement n° {level}",
+      "reference_line": "Concernant la facture {invoice_number} du {date}",
+      "intro": "Selon nos registres, la facture suivante n'a pas encore été réglée :",
+      "row_original_amount": "Montant initial",
+      "row_paid": "Déjà payé",
+      "row_previous_fees": "Frais des rappels précédents",
+      "row_this_fee": "Frais de ce rappel",
+      "closing": "Merci de régler le montant dû dans les meilleurs délais. Si vous avez déjà effectué le paiement, veuillez ignorer ce rappel."
     }
   }
 }

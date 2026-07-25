@@ -1675,6 +1675,11 @@
       "subject": "Invoice {invoice_number} from {club_name}",
       "greeting": "Hello {name},",
       "body": "Please find attached your invoice from {club_name} for parcel {parcel_number}, due {due_date}."
+    },
+    "reminder_delivery": {
+      "subject": "Payment reminder #{level} for invoice {invoice_number} — {club_name}",
+      "greeting": "Dear {name},",
+      "body": "This is a reminder that invoice {invoice_number} from {club_name} is still unpaid. Please see the attached PDF for details."
     }
   },
   "finances": {
@@ -1820,7 +1825,8 @@
       "label_paid_on": "Paid on",
       "label_note": "Note",
       "add_payment_button": "Add payment",
-      "delete_payment_confirm": "Delete this payment?"
+      "delete_payment_confirm": "Delete this payment?",
+      "success_message": "Done."
     },
     "dashboard": {
       "title": "Finances",
@@ -1832,14 +1838,34 @@
       "coming_soon_hint": "Coming soon",
       "accounts_header": "Accounts",
       "accounts_hint": "Coming soon -- your club's accounts will appear here.",
-      "categories_hint": "{n} categor(y/ies) defined"
+      "categories_hint": "{n} categor(y/ies) defined",
+      "reminders_hint": "{n} invoice(s) overdue"
     },
     "coming_soon": {
       "message": "This feature is coming soon.",
       "back": "Back to Finances"
     },
     "reminders": {
-      "title": "Reminders"
+      "title": "Reminders",
+      "overdue_header": "Overdue invoices",
+      "col_invoice_number": "Invoice no.",
+      "col_due_date": "Due date",
+      "col_days_overdue": "Overdue by",
+      "col_amount_due": "Amount due",
+      "col_reminders_sent": "Reminders sent",
+      "days_overdue": "{days} days",
+      "count_sent": "{count} sent",
+      "none_sent": "None sent yet",
+      "open_button": "Open",
+      "no_overdue": "No overdue invoices — nothing to remind.",
+      "level_label": "Reminder #{level}",
+      "delivery_email": "Emailed",
+      "delivery_print": "For printing/postal",
+      "no_reminders_yet": "No reminders sent yet.",
+      "label_fee": "Fee (optional)",
+      "fee_placeholder": "0,00",
+      "label_message": "Message (optional)",
+      "send_button": "Send reminder"
     },
     "incoming_invoices": {
       "title": "Incoming Invoices"
@@ -1885,6 +1911,16 @@
       "account_holder": "Account holder: {name}",
       "page_label": "Page",
       "of_label": "of"
+    },
+    "reminder_pdf": {
+      "heading": "Payment Reminder #{level}",
+      "reference_line": "Regarding invoice {invoice_number} dated {date}",
+      "intro": "Our records show the following invoice is still unpaid:",
+      "row_original_amount": "Original amount",
+      "row_paid": "Paid so far",
+      "row_previous_fees": "Previous reminder fees",
+      "row_this_fee": "This reminder's fee",
+      "closing": "Please settle the outstanding amount as soon as possible. If you have already paid, please disregard this reminder."
     }
   }
 }

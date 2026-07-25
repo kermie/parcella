@@ -8,6 +8,7 @@ Invoice's recipient_names/-address snapshot) since delivery can happen
 well after a run is finalized, and membership may have changed since.
 """
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import List, Optional, Tuple
 
 from fastapi import Request
@@ -15,14 +16,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Invoice, InvoiceRun, MemberParcel, Member
+from app.models import Invoice, InvoiceRun, InvoiceReminder, MemberParcel, Member
 from app.email_service import send_email
 from app.parcel_cloud_folders import get_active_folder
 from app.cloud_storage import CloudStorageError, NextcloudProvider
 from app.i18n import t_for
 from app.invoice_pdf import (
     InvoicePdfData, render_invoice_pdf, render_invoice_bundle_pdf, invoice_pdf_data_from_invoice,
-    invoice_pdf_filename,
+    invoice_pdf_filename, reminder_pdf_data_from_reminder, render_reminder_pdf, reminder_pdf_filename,
 )
 
 
@@ -77,6 +78,53 @@ async def send_invoice_email(
     if sent:
         invoice.emailed_at = datetime.now(timezone.utc)
     return sent
+
+
+async def deliver_reminder(
+    request: Request, db: AsyncSession, invoice: Invoice, run: InvoiceRun,
+    fee_amount: Optional[Decimal], message: Optional[str], created_by_id: Optional[str], pdf_context: dict,
+) -> InvoiceReminder:
+    """Creates and delivers the next reminder for `invoice` (issue #59):
+    level is one past however many already exist. Delivery follows the
+    exact same recipient resolution as the original invoice (see
+    _invoice_recipient) -- email if the member opted in and has a
+    stored address, otherwise the PDF is generated and left available
+    for manual/postal sending, matching "the way the member already
+    chose" for invoice delivery rather than asking again per reminder.
+    Caller commits."""
+    next_level = max((r.level for r in invoice.reminders), default=0) + 1
+    reminder = InvoiceReminder(
+        level=next_level, fee_amount=fee_amount, message=message or None,
+        delivery_method="print", created_by_id=created_by_id,
+    )
+    invoice.reminders.append(reminder)
+    await db.flush()
+
+    data = reminder_pdf_data_from_reminder(reminder, invoice, run)
+    pdf_bytes = render_reminder_pdf(data, **pdf_context)
+
+    recipient = await _invoice_recipient(db, invoice)
+    if recipient is not None:
+        member, email_address = recipient
+        subject = t_for(
+            request, "email.reminder_delivery.subject",
+            invoice_number=invoice.invoice_number, level=next_level, club_name=pdf_context["club_name"],
+        )
+        html = f"""
+        <html><body style="font-family: sans-serif;">
+        <p>{t_for(request, "email.reminder_delivery.greeting", name=member.full_name)}</p>
+        <p>{t_for(request, "email.reminder_delivery.body", club_name=pdf_context["club_name"], invoice_number=invoice.invoice_number)}</p>
+        </body></html>
+        """
+        filename = reminder_pdf_filename(reminder, invoice, run)
+        sent = await send_email(
+            email_address, subject, html, db=db,
+            attachments=[(filename, pdf_bytes, "application/pdf")],
+        )
+        if sent:
+            reminder.delivery_method = "email"
+
+    return reminder
 
 
 async def upload_invoice_to_cloud(

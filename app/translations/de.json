@@ -1675,6 +1675,11 @@
       "subject": "Rechnung {invoice_number} von {club_name}",
       "greeting": "Hallo {name},",
       "body": "Anbei finden Sie Ihre Rechnung von {club_name} für Parzelle {parcel_number}, fällig am {due_date}."
+    },
+    "reminder_delivery": {
+      "subject": "Zahlungserinnerung Nr. {level} zu Rechnung {invoice_number} — {club_name}",
+      "greeting": "Liebe/r {name},",
+      "body": "dies ist eine Erinnerung, dass die Rechnung {invoice_number} von {club_name} noch nicht beglichen wurde. Details finden Sie im beigefügten PDF."
     }
   },
   "finances": {
@@ -1820,7 +1825,8 @@
       "label_paid_on": "Bezahlt am",
       "label_note": "Notiz",
       "add_payment_button": "Zahlung hinzufügen",
-      "delete_payment_confirm": "Diese Zahlung löschen?"
+      "delete_payment_confirm": "Diese Zahlung löschen?",
+      "success_message": "Erledigt."
     },
     "dashboard": {
       "title": "Finanzen",
@@ -1832,14 +1838,34 @@
       "coming_soon_hint": "Demnächst verfügbar",
       "accounts_header": "Konten",
       "accounts_hint": "Demnächst verfügbar -- hier erscheinen die Konten Ihres Vereins.",
-      "categories_hint": "{n} Kategorie(n) angelegt"
+      "categories_hint": "{n} Kategorie(n) angelegt",
+      "reminders_hint": "{n} Rechnung(en) überfällig"
     },
     "coming_soon": {
       "message": "Diese Funktion ist demnächst verfügbar.",
       "back": "Zurück zu Finanzen"
     },
     "reminders": {
-      "title": "Mahnungen"
+      "title": "Mahnungen",
+      "overdue_header": "Überfällige Rechnungen",
+      "col_invoice_number": "Rechnungsnr.",
+      "col_due_date": "Fällig am",
+      "col_days_overdue": "Überfällig seit",
+      "col_amount_due": "Offener Betrag",
+      "col_reminders_sent": "Mahnungen versendet",
+      "days_overdue": "{days} Tagen",
+      "count_sent": "{count} versendet",
+      "none_sent": "Noch keine versendet",
+      "open_button": "Öffnen",
+      "no_overdue": "Keine überfälligen Rechnungen — nichts zu mahnen.",
+      "level_label": "Mahnung Nr. {level}",
+      "delivery_email": "Per E-Mail versendet",
+      "delivery_print": "Zum Drucken/Postversand",
+      "no_reminders_yet": "Noch keine Mahnungen versendet.",
+      "label_fee": "Gebühr (optional)",
+      "fee_placeholder": "0,00",
+      "label_message": "Nachricht (optional)",
+      "send_button": "Mahnung senden"
     },
     "incoming_invoices": {
       "title": "Eingangsrechnungen"
@@ -1885,6 +1911,16 @@
       "account_holder": "Kontoinhaber: {name}",
       "page_label": "Seite",
       "of_label": "von"
+    },
+    "reminder_pdf": {
+      "heading": "Zahlungserinnerung Nr. {level}",
+      "reference_line": "Betreffend Rechnung {invoice_number} vom {date}",
+      "intro": "Laut unseren Unterlagen ist folgende Rechnung noch nicht beglichen:",
+      "row_original_amount": "Ursprünglicher Betrag",
+      "row_paid": "Bereits gezahlt",
+      "row_previous_fees": "Vorherige Mahngebühren",
+      "row_this_fee": "Gebühr dieser Mahnung",
+      "closing": "Bitte begleichen Sie den offenen Betrag schnellstmöglich. Sollten Sie bereits gezahlt haben, betrachten Sie diese Mahnung als gegenstandslos."
     }
   }
 }

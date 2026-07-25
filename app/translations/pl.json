@@ -1675,6 +1675,11 @@
       "subject": "Faktura {invoice_number} od {club_name}",
       "greeting": "Witaj {name},",
       "body": "W załączniku znajduje się faktura od {club_name} za działkę {parcel_number}, termin płatności {due_date}."
+    },
+    "reminder_delivery": {
+      "subject": "Upomnienie nr {level} dotyczące faktury {invoice_number} — {club_name}",
+      "greeting": "Szanowni Państwo {name},",
+      "body": "przypominamy, że faktura {invoice_number} od {club_name} nie została jeszcze opłacona. Szczegóły znajdują się w załączonym pliku PDF."
     }
   },
   "finances": {
@@ -1820,7 +1825,8 @@
       "label_paid_on": "Zapłacono dnia",
       "label_note": "Notatka",
       "add_payment_button": "Dodaj płatność",
-      "delete_payment_confirm": "Usunąć tę płatność?"
+      "delete_payment_confirm": "Usunąć tę płatność?",
+      "success_message": "Gotowe."
     },
     "dashboard": {
       "title": "Finanse",
@@ -1832,14 +1838,34 @@
       "coming_soon_hint": "Wkrótce dostępne",
       "accounts_header": "Konta",
       "accounts_hint": "Wkrótce dostępne -- tutaj pojawią się konta Twojego stowarzyszenia.",
-      "categories_hint": "zdefiniowano {n} kategorii"
+      "categories_hint": "zdefiniowano {n} kategorii",
+      "reminders_hint": "Zaległych faktur: {n}"
     },
     "coming_soon": {
       "message": "Ta funkcja będzie wkrótce dostępna.",
       "back": "Powrót do Finansów"
     },
     "reminders": {
-      "title": "Upomnienia"
+      "title": "Upomnienia",
+      "overdue_header": "Zaległe faktury",
+      "col_invoice_number": "Nr faktury",
+      "col_due_date": "Termin płatności",
+      "col_days_overdue": "Zaległość",
+      "col_amount_due": "Kwota do zapłaty",
+      "col_reminders_sent": "Wysłane upomnienia",
+      "days_overdue": "{days} dni",
+      "count_sent": "Wysłano: {count}",
+      "none_sent": "Jeszcze nie wysłano",
+      "open_button": "Otwórz",
+      "no_overdue": "Brak zaległych faktur — nic do przypomnienia.",
+      "level_label": "Upomnienie nr {level}",
+      "delivery_email": "Wysłano e-mailem",
+      "delivery_print": "Do druku/wysyłki pocztowej",
+      "no_reminders_yet": "Nie wysłano jeszcze żadnych upomnień.",
+      "label_fee": "Opłata (opcjonalnie)",
+      "fee_placeholder": "0,00",
+      "label_message": "Wiadomość (opcjonalnie)",
+      "send_button": "Wyślij upomnienie"
     },
     "incoming_invoices": {
       "title": "Faktury przychodzące"
@@ -1885,6 +1911,16 @@
       "account_holder": "Właściciel konta: {name}",
       "page_label": "Strona",
       "of_label": "z"
+    },
+    "reminder_pdf": {
+      "heading": "Upomnienie o zapłatę nr {level}",
+      "reference_line": "Dotyczy faktury {invoice_number} z dnia {date}",
+      "intro": "Według naszych zapisów poniższa faktura nie została jeszcze opłacona:",
+      "row_original_amount": "Kwota pierwotna",
+      "row_paid": "Dotychczas zapłacono",
+      "row_previous_fees": "Poprzednie opłaty za upomnienia",
+      "row_this_fee": "Opłata za to upomnienie",
+      "closing": "Prosimy o jak najszybsze uregulowanie zaległej kwoty. Jeśli płatność została już dokonana, prosimy zignorować to upomnienie."
     }
   }
 }

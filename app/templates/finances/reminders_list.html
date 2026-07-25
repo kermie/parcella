@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.reminders.title') }}{% endblock %}
+{% block page_title %}{{ t('finances.reminders.title') }}{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-bell me-2"></i>{{ t('finances.reminders.overdue_header') }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('finances.invoice_list.col_parcel') }}</th>
+                                <th>{{ t('finances.invoice_list.col_recipient') }}</th>
+                                <th>{{ t('finances.reminders.col_invoice_number') }}</th>
+                                <th>{{ t('finances.reminders.col_due_date') }}</th>
+                                <th>{{ t('finances.reminders.col_days_overdue') }}</th>
+                                <th>{{ t('finances.reminders.col_amount_due') }}</th>
+                                <th>{{ t('finances.reminders.col_reminders_sent') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice, due_date, days_overdue in overdue %}
+                            <tr>
+                                <td>{{ invoice.parcel.plot_number }}</td>
+                                <td style="white-space: pre-line;">{{ invoice.recipient_names }}</td>
+                                <td>{{ invoice.invoice_number }}</td>
+                                <td>{{ due_date.strftime('%d.%m.%Y') }}</td>
+                                <td>
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">
+                                        {{ t('finances.reminders.days_overdue', days=days_overdue) }}
+                                    </span>
+                                </td>
+                                <td>{{ invoice.amount_due|float|money }}</td>
+                                <td>
+                                    {% if invoice.reminders %}
+                                    {{ t('finances.reminders.count_sent', count=invoice.reminders|length) }}
+                                    <span class="text-muted">({{ invoice.reminders[-1].sent_at.strftime('%d.%m.%Y') }})</span>
+                                    {% else %}
+                                    <span class="text-muted">{{ t('finances.reminders.none_sent') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="/finances/invoices/{{ invoice.id }}" class="btn btn-sm btn-outline-primary">
+                                        {{ t('finances.reminders.open_button') }}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-3">{{ t('finances.reminders.no_overdue') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

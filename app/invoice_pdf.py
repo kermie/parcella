@@ -104,6 +104,23 @@ class InvoicePdfData:
     is_preview: bool = False
 
 
+@dataclass
+class ReminderPdfData:
+    invoice_number: str
+    level: int
+    issued_date: date  # original invoice's issued date
+    due_date: date  # original invoice's due date
+    sent_date: date
+    recipient_names: str
+    recipient_address: str
+    original_subtotal: Decimal
+    paid_total: Decimal
+    previous_fees_total: Decimal
+    fee_amount: Decimal
+    amount_due: Decimal
+    message: Optional[str]
+
+
 def invoice_pdf_data_from_invoice(invoice, run) -> InvoicePdfData:
     """Builds an InvoicePdfData from a real, persisted Invoice (with
     .line_items and .parcel eagerly loaded) and its InvoiceRun --
@@ -126,6 +143,33 @@ def invoice_pdf_data_from_invoice(invoice, run) -> InvoicePdfData:
     )
 
 
+def reminder_pdf_data_from_reminder(reminder, invoice, run) -> ReminderPdfData:
+    """Builds a ReminderPdfData from a real, persisted InvoiceReminder
+    (with `invoice.reminders`/`invoice.payments` eagerly loaded) and
+    its Invoice/InvoiceRun. All amounts are computed from *current*
+    live state (payments/other reminders' fees), not snapshotted at
+    send time -- re-downloading an old reminder shows today's true
+    balance rather than a frozen historical one, which is fine for a
+    dunning notice (unlike Invoice's own recipient/address snapshot,
+    there's no legal requirement here for the numbers to stay fixed)."""
+    previous_fees_total = sum(
+        (Decimal(str(r.fee_amount)) for r in invoice.reminders if r.level < reminder.level and r.fee_amount),
+        Decimal("0"),
+    )
+    fee_amount = Decimal(str(reminder.fee_amount)) if reminder.fee_amount else Decimal("0")
+    paid_total = Decimal(str(invoice.paid_total))
+    original_subtotal = Decimal(str(invoice.subtotal))
+    amount_due = max(Decimal("0"), original_subtotal + previous_fees_total + fee_amount - paid_total)
+    return ReminderPdfData(
+        invoice_number=invoice.invoice_number, level=reminder.level,
+        issued_date=run.issued_date, due_date=run.due_date, sent_date=reminder.sent_at.date(),
+        recipient_names=invoice.recipient_names, recipient_address=invoice.recipient_address,
+        original_subtotal=original_subtotal, paid_total=paid_total,
+        previous_fees_total=previous_fees_total, fee_amount=fee_amount, amount_due=amount_due,
+        message=reminder.message,
+    )
+
+
 def invoice_pdf_filename(invoice, run) -> str:
     """Filename for `invoice`'s PDF -- {issued date YYYYMMDD}_{parcel
     plot number}_invoice-{invoice number}.pdf, e.g.
@@ -138,6 +182,15 @@ def invoice_pdf_filename(invoice, run) -> str:
     date_part = run.issued_date.strftime("%Y%m%d")
     number_part = invoice.invoice_number.replace("/", "-")
     return f"{date_part}_{invoice.parcel.plot_number}_invoice-{number_part}.pdf"
+
+
+def reminder_pdf_filename(reminder, invoice, run) -> str:
+    """Filename for a reminder's PDF -- {sent date YYYYMMDD}_{parcel
+    plot number}_reminder{level}-{invoice number}.pdf, mirroring
+    invoice_pdf_filename's convention."""
+    date_part = reminder.sent_at.strftime("%Y%m%d")
+    number_part = invoice.invoice_number.replace("/", "-")
+    return f"{date_part}_{invoice.parcel.plot_number}_reminder{reminder.level}-{number_part}.pdf"
 
 
 def _substitute_placeholders(text: Optional[str], data: InvoicePdfData) -> str:
@@ -224,6 +277,61 @@ def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, languag
     """
 
 
+def _reminder_body_html(data: ReminderPdfData, region: str, currency: str, language: str) -> str:
+    """The part of a reminder that's specific to it -- same page chrome
+    as an invoice (see render_reminder_pdf), but a much simpler body:
+    a reference back to the original invoice, an itemized amount-due
+    breakdown (only showing rows that actually apply), and an optional
+    free-text message (issue #59's "let me decide whether to add a
+    fee" -- fee/previous-fee rows just don't render when there's
+    nothing to show)."""
+    rows = [(translate("finances.reminder_pdf.row_original_amount", language), data.original_subtotal)]
+    if data.paid_total:
+        rows.append((translate("finances.reminder_pdf.row_paid", language), -data.paid_total))
+    if data.previous_fees_total:
+        rows.append((translate("finances.reminder_pdf.row_previous_fees", language), data.previous_fees_total))
+    if data.fee_amount:
+        rows.append((translate("finances.reminder_pdf.row_this_fee", language), data.fee_amount))
+
+    rows_html = "".join(
+        f'<tr><td>{label}</td><td class="num">{format_money(amount, region, currency)}</td></tr>'
+        for label, amount in rows
+    )
+    message_html = f'<div class="footer-text">{data.message}</div>' if data.message else ""
+
+    return f"""
+    <div class="invoice-block">
+        <div class="meta-block">
+            <div class="recipient">{data.recipient_names}<br>{data.recipient_address.replace(chr(10), '<br>')}</div>
+            <table class="invoice-meta">
+                <tr><td>{translate("finances.pdf.invoice_no", language)}</td><td>{data.invoice_number}</td></tr>
+                <tr><td>{translate("finances.pdf.date", language)}</td><td>{data.sent_date.strftime('%d.%m.%Y')}</td></tr>
+                <tr><td>{translate("finances.pdf.due_date", language)}</td><td>{data.due_date.strftime('%d.%m.%Y')}</td></tr>
+            </table>
+        </div>
+
+        <h1>{translate("finances.reminder_pdf.heading", language, level=data.level)}</h1>
+        <div class="parcel-line">
+            {translate("finances.reminder_pdf.reference_line", language, invoice_number=data.invoice_number, date=data.issued_date.strftime('%d.%m.%Y'))}
+        </div>
+
+        <p>{translate("finances.reminder_pdf.intro", language)}</p>
+
+        <table class="items">
+            <tbody>
+                {rows_html}
+            </tbody>
+            <tfoot>
+                <tr><td>{translate("finances.pdf.subtotal", language)}</td><td class="num">{format_money(data.amount_due, region, currency)}</td></tr>
+            </tfoot>
+        </table>
+
+        <p class="footer-text">{translate("finances.reminder_pdf.closing", language)}</p>
+        {message_html}
+    </div>
+    """
+
+
 def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], footer_html: str, language: str) -> str:
     logo_data_uri = file_to_data_uri(logo_path)
     logo_block = f'<img src="{logo_data_uri}">' if logo_data_uri else ""
@@ -305,4 +413,22 @@ def render_invoice_bundle_pdf(
     )
     body_html = "".join(_invoice_body_html(data, region, currency, language) for data in items)
     html_doc = _wrap_document(body_html, club_name, logo_path, footer_html, language)
+    return HTML(string=html_doc).write_pdf()
+
+
+def render_reminder_pdf(
+    data: ReminderPdfData, club_name: str, logo_path: Optional[Path],
+    club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
+    region: str, currency: str, bank_account_owner: str = "", language: str = "en",
+    register_court: str = "", register_number: str = "",
+) -> bytes:
+    """Same page chrome as render_invoice_pdf (issue #59) -- header,
+    four-column footer, page numbering -- with a reminder-specific body."""
+    footer_html = _footer_html(
+        club_name, club_address_lines, register_court, register_number,
+        bank_name, bank_iban, bank_bic, bank_account_owner, language,
+    )
+    html_doc = _wrap_document(
+        _reminder_body_html(data, region, currency, language), club_name, logo_path, footer_html, language,
+    )
     return HTML(string=html_doc).write_pdf()

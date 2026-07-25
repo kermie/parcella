@@ -14,6 +14,15 @@
 {% endblock %}
 
 {% block content %}
+{% if request.query_params.get('success') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ t('finances.invoice_detail.success_message') }}
+</div>
+{% elif request.query_params.get('error') %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ request.query_params.get('error') }}
+</div>
+{% endif %}
 <div class="row g-3">
 
     <div class="col-lg-6">
@@ -38,7 +47,7 @@
                         {% else %}
                         <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('finances.invoice_list.status_open') }}</span>
                         {% endif %}
-                        ({{ invoice.paid_total|float|money }} / {{ invoice.subtotal|float|money }})
+                        ({{ invoice.paid_total|float|money }} / {{ invoice.total_owed|float|money }})
                     </dd>
                 </dl>
             </div>
@@ -139,6 +148,59 @@
                     <div class="col-12">
                         <button type="submit" class="btn btn-sm btn-primary">
                             <i class="bi bi-plus-lg me-1"></i>{{ t('finances.invoice_detail.add_payment_button') }}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-bell me-2"></i>{{ t('finances.reminders.title') }}</div>
+            <div class="card-body">
+                {% if invoice.reminders %}
+                <table class="table table-sm">
+                    <tbody>
+                        {% for reminder in invoice.reminders %}
+                        <tr>
+                            <td>{{ t('finances.reminders.level_label', level=reminder.level) }}</td>
+                            <td>{{ reminder.sent_at.strftime('%d.%m.%Y') }}</td>
+                            <td>
+                                {% if reminder.delivery_method == 'email' %}
+                                <i class="bi bi-envelope-check text-success me-1"></i>{{ t('finances.reminders.delivery_email') }}
+                                {% else %}
+                                <i class="bi bi-printer text-muted me-1"></i>{{ t('finances.reminders.delivery_print') }}
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{% if reminder.fee_amount %}{{ reminder.fee_amount|float|money }}{% endif %}</td>
+                            <td class="text-end">
+                                <a href="/finances/reminders/{{ reminder.id }}/pdf" target="_blank"
+                                   class="btn btn-sm btn-outline-secondary border-0">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-3">{{ t('finances.reminders.no_reminders_yet') }}</p>
+                {% endif %}
+
+                {% if has_perm(request, 'finances', 'write') and invoice.payment_status != 'paid' %}
+                <form method="post" action="/finances/invoices/{{ invoice.id }}/reminders" class="row g-2 align-items-end">
+                    <div class="col-sm-4">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.reminders.label_fee') }}</label>
+                        <input type="text" name="fee_amount" class="form-control form-control-sm"
+                               placeholder="{{ t('finances.reminders.fee_placeholder') }}">
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.reminders.label_message') }}</label>
+                        <input type="text" name="message" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-send me-1"></i>{{ t('finances.reminders.send_button') }}
                         </button>
                     </div>
                 </form>

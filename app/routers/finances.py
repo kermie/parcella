@@ -34,7 +34,7 @@ from app.database import get_db
 from app.i18n import t_for, load_current_language
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel,
-    InvoicePricingMode, Invoice, InvoicePayment, ClubSetting, Parcel, ParcelStatus,
+    InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, ClubSetting, Parcel, ParcelStatus,
     FinanceCategory, FinanceCategoryGroup,
 )
 from app.permissions import require_permission
@@ -45,8 +45,9 @@ from app.cloud_storage import get_nextcloud_provider
 from app.invoice_generation import compute_invoices_for_run, finalize_run, SequenceCollisionError
 from app.invoice_pdf import (
     InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf, invoice_pdf_data_from_invoice, invoice_pdf_filename,
+    reminder_pdf_data_from_reminder, render_reminder_pdf, reminder_pdf_filename,
 )
-from app.invoice_delivery import send_invoice_email, upload_invoice_to_cloud, build_print_bundle
+from app.invoice_delivery import send_invoice_email, upload_invoice_to_cloud, build_print_bundle, deliver_reminder
 
 router = APIRouter(
     prefix="/finances",
@@ -158,7 +159,7 @@ async def finances_dashboard(request: Request, db: AsyncSession = Depends(get_db
     result = await db.execute(
         select(Invoice, InvoiceRun.due_date)
         .join(InvoiceRun, Invoice.invoice_run_id == InvoiceRun.id)
-        .options(selectinload(Invoice.payments))
+        .options(selectinload(Invoice.payments), selectinload(Invoice.reminders))
     )
     today = date.today()
     outstanding_total = Decimal("0")
@@ -209,18 +210,76 @@ async def run_list(request: Request, db: AsyncSession = Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
-# Reminders and incoming invoices -- placeholders (issue TBD): the nav
-# structure exists now, the actual features come later.
+# Reminders (issue #59): a "don't let an unpaid invoice get forgotten"
+# overview of overdue invoices, plus sending/tracking dunning
+# reminders against them. Incoming invoices remains a placeholder
+# (issue TBD).
 # ---------------------------------------------------------------------------
 
 @router.get("/reminders", response_class=HTMLResponse)
-async def reminders_placeholder(request: Request, db: AsyncSession = Depends(get_db)):
+async def reminders_list(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_permission(request, db, "finances", "read")
-    return templates.TemplateResponse("finances/coming_soon.html", {
-        "request": request, "user": user,
-        "feature_title": t_for(request, "finances.reminders.title"),
-        "feature_icon": "bi-bell",
+
+    result = await db.execute(
+        select(Invoice, InvoiceRun.due_date)
+        .join(InvoiceRun, Invoice.invoice_run_id == InvoiceRun.id)
+        .options(
+            selectinload(Invoice.parcel), selectinload(Invoice.payments), selectinload(Invoice.reminders),
+        )
+    )
+    today = date.today()
+    overdue = []
+    for invoice, due_date in result.all():
+        if invoice.payment_status == "paid" or not due_date or due_date >= today:
+            continue
+        overdue.append((invoice, due_date, (today - due_date).days))
+    overdue.sort(key=lambda row: row[2], reverse=True)
+
+    return templates.TemplateResponse("finances/reminders_list.html", {
+        "request": request, "user": user, "overdue": overdue,
     })
+
+
+@router.post("/invoices/{invoice_id}/reminders")
+async def reminder_create(
+    invoice_id: str, request: Request,
+    fee_amount: str = Form(""), message: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_permission(request, db, "finances", "write")
+    invoice = await _get_invoice_or_404(db, invoice_id)
+
+    run_result = await db.execute(select(InvoiceRun).where(InvoiceRun.id == invoice.invoice_run_id))
+    run = run_result.scalar_one_or_none()
+
+    parsed_fee = _parse_decimal(fee_amount) if fee_amount.strip() else None
+
+    ctx = await _pdf_context(db)
+    await deliver_reminder(request, db, invoice, run, parsed_fee, message.strip(), user.id, ctx)
+    await db.commit()
+    return RedirectResponse(f"/finances/invoices/{invoice_id}?success=1", status_code=302)
+
+
+@router.get("/reminders/{reminder_id}/pdf")
+async def reminder_pdf(reminder_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "read")
+
+    result = await db.execute(select(InvoiceReminder).where(InvoiceReminder.id == reminder_id))
+    reminder = result.scalar_one_or_none()
+    if not reminder:
+        raise HTTPException(status_code=404)
+
+    invoice = await _get_invoice_or_404(db, reminder.invoice_id)
+    run_result = await db.execute(select(InvoiceRun).where(InvoiceRun.id == invoice.invoice_run_id))
+    run = run_result.scalar_one_or_none()
+
+    ctx = await _pdf_context(db)
+    data = reminder_pdf_data_from_reminder(reminder, invoice, run)
+    pdf_bytes = render_reminder_pdf(data, **ctx)
+    return Response(
+        content=pdf_bytes, media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{reminder_pdf_filename(reminder, invoice, run)}"'},
+    )
 
 
 @router.get("/incoming-invoices", response_class=HTMLResponse)
@@ -642,6 +701,7 @@ async def _get_invoice_or_404(db: AsyncSession, invoice_id: str) -> Invoice:
         select(Invoice)
         .options(
             selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.payments),
+            selectinload(Invoice.reminders),
         )
         .where(Invoice.id == invoice_id)
     )
@@ -663,7 +723,7 @@ async def invoice_list(
 
     query = (
         select(Invoice)
-        .options(selectinload(Invoice.parcel), selectinload(Invoice.payments))
+        .options(selectinload(Invoice.parcel), selectinload(Invoice.payments), selectinload(Invoice.reminders))
         .join(Parcel, Invoice.parcel_id == Parcel.id)
         .order_by(Invoice.invoice_number.desc())
     )

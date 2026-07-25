@@ -1675,6 +1675,11 @@
       "subject": "Faktúra {invoice_number} od {club_name}",
       "greeting": "Dobrý deň, {name},",
       "body": "V prílohe nájdete faktúru od {club_name} za parcelu {parcel_number}, splatnú {due_date}."
+    },
+    "reminder_delivery": {
+      "subject": "Upomienka č. {level} k faktúre {invoice_number} — {club_name}",
+      "greeting": "Vážený/á {name},",
+      "body": "toto je upomienka, že faktúra {invoice_number} od {club_name} ešte nebola uhradená. Podrobnosti nájdete v priloženom PDF."
     }
   },
   "finances": {
@@ -1820,7 +1825,8 @@
       "label_paid_on": "Uhradené dňa",
       "label_note": "Poznámka",
       "add_payment_button": "Pridať platbu",
-      "delete_payment_confirm": "Zmazať túto platbu?"
+      "delete_payment_confirm": "Zmazať túto platbu?",
+      "success_message": "Hotovo."
     },
     "dashboard": {
       "title": "Financie",
@@ -1832,14 +1838,34 @@
       "coming_soon_hint": "Už čoskoro",
       "accounts_header": "Účty",
       "accounts_hint": "Už čoskoro -- tu sa zobrazia účty vašej organizácie.",
-      "categories_hint": "definovaných {n} kategórií"
+      "categories_hint": "definovaných {n} kategórií",
+      "reminders_hint": "Faktúr po splatnosti: {n}"
     },
     "coming_soon": {
       "message": "Táto funkcia bude čoskoro k dispozícii.",
       "back": "Späť na Financie"
     },
     "reminders": {
-      "title": "Upomienky"
+      "title": "Upomienky",
+      "overdue_header": "Faktúry po splatnosti",
+      "col_invoice_number": "Č. faktúry",
+      "col_due_date": "Dátum splatnosti",
+      "col_days_overdue": "Po splatnosti",
+      "col_amount_due": "Dlžná suma",
+      "col_reminders_sent": "Odoslané upomienky",
+      "days_overdue": "{days} dní",
+      "count_sent": "Odoslané: {count}",
+      "none_sent": "Zatiaľ žiadna odoslaná",
+      "open_button": "Otvoriť",
+      "no_overdue": "Žiadne faktúry po splatnosti — niet čo upomínať.",
+      "level_label": "Upomienka č. {level}",
+      "delivery_email": "Odoslané e-mailom",
+      "delivery_print": "Na tlač/poštové odoslanie",
+      "no_reminders_yet": "Zatiaľ nebola odoslaná žiadna upomienka.",
+      "label_fee": "Poplatok (voliteľné)",
+      "fee_placeholder": "0,00",
+      "label_message": "Správa (voliteľné)",
+      "send_button": "Odoslať upomienku"
     },
     "incoming_invoices": {
       "title": "Prijaté faktúry"
@@ -1885,6 +1911,16 @@
       "account_holder": "Majiteľ účtu: {name}",
       "page_label": "Strana",
       "of_label": "z"
+    },
+    "reminder_pdf": {
+      "heading": "Upomienka k platbe č. {level}",
+      "reference_line": "Týka sa faktúry {invoice_number} zo dňa {date}",
+      "intro": "Podľa našich záznamov nasledujúca faktúra ešte nebola uhradená:",
+      "row_original_amount": "Pôvodná suma",
+      "row_paid": "Doteraz uhradené",
+      "row_previous_fees": "Predchádzajúce poplatky za upomienky",
+      "row_this_fee": "Poplatok za túto upomienku",
+      "closing": "Uhraďte, prosím, dlžnú sumu čo najskôr. Ak ste už zaplatili, považujte túto upomienku za bezpredmetnú."
     }
   }
 }

@@ -399,6 +399,118 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     assert "UndefinedError" not in r_inv_detail2.text
     assert "smoke test payment" in r_inv_detail2.text
 
+    # Reminders (issue #59): sending one adds an optional, custom fee
+    # that actually counts toward what "paid" requires. Delivery
+    # mirrors the invoice's own recipient resolution -- SMOKE-01's
+    # member has no stored email, so this always resolves to "print".
+    from sqlalchemy.orm import selectinload as sa_selectinload
+
+    r_reminder_send = await client.post(f"/finances/invoices/{invoice_id}/reminders", data={
+        "fee_amount": "5.00", "message": "Please pay soon.",
+    })
+    assert r_reminder_send.status_code in (302, 303)
+    assert "error" not in r_reminder_send.headers["location"]
+
+    r_inv_detail3 = await client.get(f"/finances/invoices/{invoice_id}")
+    assert r_inv_detail3.status_code == 200
+    assert "UndefinedError" not in r_inv_detail3.text
+    assert "Reminder #1" in r_inv_detail3.text
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            sa_select(Invoice).where(Invoice.id == invoice_id)
+            .options(sa_selectinload(Invoice.reminders), sa_selectinload(Invoice.payments))
+        )
+        invoice_after_reminder = result.scalar_one()
+        assert len(invoice_after_reminder.reminders) == 1
+        first_reminder = invoice_after_reminder.reminders[0]
+        assert first_reminder.level == 1
+        assert first_reminder.delivery_method == "print"
+        assert float(first_reminder.fee_amount) == 5.00
+        subtotal_before_fee = float(invoice_after_reminder.subtotal)
+        # The 5.00 fee now counts toward what "paid" requires.
+        assert invoice_after_reminder.total_owed == subtotal_before_fee + 5.00
+        assert invoice_after_reminder.payment_status == "partially_paid"
+
+    r_reminder_pdf = await client.get(f"/finances/reminders/{first_reminder.id}/pdf")
+    assert r_reminder_pdf.status_code == 200
+    assert r_reminder_pdf.headers["content-type"] == "application/pdf"
+
+    # A second reminder, no fee this time -- level increments, and the
+    # first reminder's fee still counts (it doesn't reset/disappear).
+    r_reminder_send2 = await client.post(f"/finances/invoices/{invoice_id}/reminders", data={
+        "fee_amount": "", "message": "",
+    })
+    assert r_reminder_send2.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            sa_select(Invoice).where(Invoice.id == invoice_id).options(sa_selectinload(Invoice.reminders))
+        )
+        invoice_after_second = result.scalar_one()
+        assert len(invoice_after_second.reminders) == 2
+        levels = sorted(r.level for r in invoice_after_second.reminders)
+        assert levels == [1, 2]
+        assert invoice_after_second.reminder_fees_total == 5.00
+
+    # Paying the rest (subtotal + fee - the 1.00 already paid) settles it.
+    remaining = subtotal_before_fee + 5.00 - 1.00
+    r_final_payment = await client.post(f"/finances/invoices/{invoice_id}/payments", data={
+        "amount": f"{remaining:.2f}", "paid_on": "2026-08-20", "note": "settles including reminder fee",
+    })
+    assert r_final_payment.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            sa_select(Invoice).where(Invoice.id == invoice_id)
+            .options(sa_selectinload(Invoice.reminders), sa_selectinload(Invoice.payments))
+        )
+        invoice_final = result.scalar_one()
+        assert invoice_final.payment_status == "paid"
+        assert invoice_final.amount_due == 0.0
+
+    # Reminders overview (the "don't let it get forgotten" page):
+    # a separate run with a due date safely in the past, so it shows
+    # up regardless of what today happens to be when this test runs.
+    r_overdue_run = await client.post("/finances/runs", data={
+        "year": "2020", "subject": "Overdue test run", "issued_date": "2020-01-01",
+        "due_date": "2020-02-01", "footer_text": "",
+    })
+    overdue_run_id = r_overdue_run.headers["location"].rstrip("/").split("/")[-1]
+    await client.post(f"/finances/runs/{overdue_run_id}/items", data={
+        "order_number": "10", "name": "Overdue fee", "pricing_mode": "fixed_per_parcel",
+        "unit_price": "9.00", "applies_to_all_parcels": "on",
+    })
+    r_overdue_finalize = await client.post(f"/finances/runs/{overdue_run_id}/finalize")
+    assert r_overdue_finalize.status_code in (302, 303)
+
+    r_reminders_list = await client.get("/finances/reminders")
+    assert r_reminders_list.status_code == 200
+    assert "UndefinedError" not in r_reminders_list.text
+    assert "SMOKE-01" in r_reminders_list.text
+    assert "Overdue test run" not in r_reminders_list.text  # subject isn't shown, invoice number is
+    assert "2020/" in r_reminders_list.text
+
+    # Regression guard: dashboard and the (unfiltered + status-filtered)
+    # invoice list both compute payment_status -- which now touches
+    # Invoice.reminders -- for every invoice, including ones that
+    # actually have reminders by this point in the test. A route that
+    # doesn't eager-load .reminders 500s here (MissingGreenlet from a
+    # lazy-load outside the request's async context) even though it
+    # looks fine with zero reminders, which this test's earlier,
+    # reminder-free calls to these same routes wouldn't have caught.
+    r_dashboard2 = await client.get("/finances/")
+    assert r_dashboard2.status_code == 200
+    assert "UndefinedError" not in r_dashboard2.text
+
+    r_inv_list2 = await client.get("/finances/invoices")
+    assert r_inv_list2.status_code == 200
+    assert "UndefinedError" not in r_inv_list2.text
+
+    r_inv_list_filtered = await client.get("/finances/invoices?status=partially_paid")
+    assert r_inv_list_filtered.status_code == 200
+    assert "UndefinedError" not in r_inv_list_filtered.text
+
 
 async def test_smoke_metering_pages_render_without_jinja_errors(client, admin_user):
     token = await login(client, "admin@example.com")
