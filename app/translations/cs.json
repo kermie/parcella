@@ -160,9 +160,10 @@
       "app_title": "Správa zahrádkářského spolku",
       "subtitle": "Prosím, přihlaste se",
       "label_email": "E-mail",
+      "email_placeholder": "vas@email.cz",
       "label_password": "Heslo",
       "button_submit": "Přihlásit",
-      "no_account_notice": "Nemáte účet? Vyžaduje se pozvánka."
+      "no_account_notice": "Nemáte účet? Vyžaduje se pozvánka. Obraťte se prosím na členy výboru."
     },
     "invitation": {
       "title": "Přijmout pozvánku",

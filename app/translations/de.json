@@ -160,9 +160,10 @@
       "app_title": "Gartenverein Verwaltung",
       "subtitle": "Bitte melden Sie sich an",
       "label_email": "E-Mail",
+      "email_placeholder": "ihre@email.de",
       "label_password": "Passwort",
       "button_submit": "Anmelden",
-      "no_account_notice": "Kein Konto? Eine Einladung ist erforderlich."
+      "no_account_notice": "Kein Konto? Eine Einladung ist erforderlich. Bitte wenden Sie sich an Ihre Vorstandsmitglieder."
     },
     "invitation": {
       "title": "Einladung annehmen",

@@ -160,9 +160,10 @@
       "app_title": "Tuinvereniging Beheer",
       "subtitle": "Log alstublieft in",
       "label_email": "E-mail",
+      "email_placeholder": "uw@email.nl",
       "label_password": "Wachtwoord",
       "button_submit": "Inloggen",
-      "no_account_notice": "Geen account? Een uitnodiging is vereist."
+      "no_account_notice": "Geen account? Een uitnodiging is vereist. Neem contact op met uw bestuursleden."
     },
     "invitation": {
       "title": "Uitnodiging accepteren",

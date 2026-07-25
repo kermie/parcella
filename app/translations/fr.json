@@ -160,9 +160,10 @@
       "app_title": "Gestion du jardin associatif",
       "subtitle": "Veuillez vous connecter",
       "label_email": "E-mail",
+      "email_placeholder": "votre@email.fr",
       "label_password": "Mot de passe",
       "button_submit": "Se connecter",
-      "no_account_notice": "Pas de compte ? Une invitation est requise."
+      "no_account_notice": "Pas de compte ? Une invitation est requise. Veuillez contacter les membres du bureau."
     },
     "invitation": {
       "title": "Accepter l'invitation",

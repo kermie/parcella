@@ -160,9 +160,10 @@
       "app_title": "Správa záhradkárskeho spolku",
       "subtitle": "Prosím, prihláste sa",
       "label_email": "E-mail",
+      "email_placeholder": "vas@email.sk",
       "label_password": "Heslo",
       "button_submit": "Prihlásiť sa",
-      "no_account_notice": "Nemáte účet? Vyžaduje sa pozvánka."
+      "no_account_notice": "Nemáte účet? Vyžaduje sa pozvánka. Obráťte sa prosím na členov výboru."
     },
     "invitation": {
       "title": "Prijať pozvánku",

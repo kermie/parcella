@@ -6,9 +6,14 @@
     <div style="width: 100%; max-width: 400px; padding: 1rem;">
         <div class="text-center mb-4">
             <div style="font-size: 3rem; color: var(--gv-gruen);">
+                {% if request.state.logo_url %}
+                <img src="{{ request.state.logo_url }}" alt="{{ request.state.club_name }}"
+                     style="height: 48px; width: auto; max-width: 100%;">
+                {% else %}
                 <i class="bi bi-tree"></i>
+                {% endif %}
             </div>
-            <h1 style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">{{ t('auth.login.app_title') }}</h1>
+            <h1 style="font-size: 1.4rem; font-weight: 700; color: var(--gv-gruen);">{{ request.state.club_name }}</h1>
             <p class="text-muted" style="font-size: 0.85rem;">{{ t('auth.login.subtitle') }}</p>
         </div>
 
@@ -25,7 +30,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold" for="email">{{ t('auth.login.label_email') }}</label>
                         <input type="email" id="email" name="email" class="form-control"
-                               placeholder="ihre@email.de" required autofocus>
+                               placeholder="{{ t('auth.login.email_placeholder') }}" required autofocus>
                     </div>
                     <div class="mb-4">
                         <label class="form-label fw-semibold" for="password">{{ t('auth.login.label_password') }}</label>

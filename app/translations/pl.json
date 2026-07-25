@@ -160,9 +160,10 @@
       "app_title": "Zarządzanie ogrodem działkowym",
       "subtitle": "Proszę się zalogować",
       "label_email": "E-mail",
+      "email_placeholder": "twoj@email.pl",
       "label_password": "Hasło",
       "button_submit": "Zaloguj się",
-      "no_account_notice": "Brak konta? Wymagane jest zaproszenie."
+      "no_account_notice": "Brak konta? Wymagane jest zaproszenie. Skontaktuj się z członkami zarządu."
     },
     "invitation": {
       "title": "Przyjmij zaproszenie",

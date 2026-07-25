@@ -160,9 +160,10 @@
       "app_title": "Gartenverein Management",
       "subtitle": "Please sign in",
       "label_email": "Email",
+      "email_placeholder": "your@email.com",
       "label_password": "Password",
       "button_submit": "Sign in",
-      "no_account_notice": "No account? An invitation is required."
+      "no_account_notice": "No account? An invitation is required. Please talk to your board members."
     },
     "invitation": {
       "title": "Accept invitation",
