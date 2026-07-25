@@ -44,10 +44,13 @@ def _page_css(language: str) -> str:
         font-size: 8pt; color: #6b7280;
     }}
 }}
-body {{ font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5pt; }}
-#header {{ position: running(header); text-align: center; border-bottom: 2px solid #2f6f3e; padding-bottom: 8px; }}
-#header img {{ max-height: 50px; margin-bottom: 4px; }}
-#header .club-name {{ font-size: 13pt; font-weight: bold; color: #2f6f3e; }}
+/* margin:0 -- the default UA body margin would otherwise throw off
+   the address-window's exact DIN 5008 positioning below. */
+body {{ margin: 0; font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5pt; }}
+#header {{ position: running(header); display: flex; align-items: center; border-bottom: 2px solid #2f6f3e; padding-bottom: 8px; }}
+#header .header-logo, #header .header-spacer {{ flex: 1; }}
+#header .header-logo img {{ max-height: 50px; }}
+#header .club-name {{ flex: 1; text-align: center; font-size: 13pt; font-weight: bold; color: #2f6f3e; }}
 #footer {{
     position: running(footer); display: flex; gap: 0.6cm;
     font-size: 7.5pt; line-height: 1.4; color: #6b7280;
@@ -56,7 +59,19 @@ body {{ font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5p
 #footer .footer-col {{ flex: 1; min-width: 0; }}
 #footer .footer-col:nth-child(1) {{ flex: 0.85; }}
 #footer .footer-col:nth-child(3) {{ flex: 1.3; }}
-.meta-block {{ display: flex; justify-content: space-between; margin-top: 0.8cm; margin-bottom: 0.8cm; }}
+.meta-block {{ display: flex; justify-content: space-between; margin-bottom: 0.8cm; }}
+/* DIN 5008 Form A address window: page margin-top is 2.2cm, so the
+   0.5cm padding-top here lands the sender line at 2.7cm from the page
+   edge and the 1.8cm sender-line box ends exactly at 4.5cm, where the
+   Anschriftzone (recipient address) must start; padding-left 0.5cm
+   plus the 1.5cm page margin lands the whole window's left edge at
+   the standard 2.0cm. */
+.address-window {{ width: 8.5cm; padding-top: 0.5cm; padding-left: 0.5cm; box-sizing: content-box; }}
+.sender-line {{
+    height: 1.8cm; display: flex; align-items: flex-end;
+    font-size: 7.5pt; color: #4b5563; border-bottom: 0.5pt solid #9ca3af;
+    margin-bottom: 2pt;
+}}
 .recipient {{ white-space: pre-line; line-height: 1.5; }}
 .invoice-meta td {{ padding: 1px 6px; }}
 .invoice-meta td:first-child {{ color: #6b7280; }}
@@ -207,7 +222,16 @@ def _substitute_placeholders(text: Optional[str], data: InvoicePdfData) -> str:
         return text
 
 
-def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, language: str) -> str:
+def _sender_line(club_name: str, club_address_lines: List[str]) -> str:
+    """The DIN 5008 Form A "Einzeilige Rücksendeangabe" -- the club's
+    own name/address compressed onto one small line, printed directly
+    above the recipient's address so it stays visible through a
+    windowed envelope (and tells the recipient/post office who to
+    return the letter to)."""
+    return " · ".join(filter(None, [club_name, *club_address_lines]))
+
+
+def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, language: str, sender_line: str) -> str:
     """The part of an invoice that's specific to it (recipient, meta,
     line items, footer text) -- everything except the page chrome
     (header/footer/@page CSS), which is shared across a whole document
@@ -241,7 +265,10 @@ def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, languag
         {preview_banner}
 
         <div class="meta-block">
-            <div class="recipient">{data.recipient_names}<br>{data.recipient_address.replace(chr(10), '<br>')}</div>
+            <div class="address-window">
+                <div class="sender-line">{sender_line}</div>
+                <div class="recipient">{data.recipient_names}<br>{data.recipient_address.replace(chr(10), '<br>')}</div>
+            </div>
             <table class="invoice-meta">
                 <tr><td>{translate("finances.pdf.invoice_no", language)}</td><td>{data.invoice_number}</td></tr>
                 <tr><td>{translate("finances.pdf.date", language)}</td><td>{data.issued_date.strftime('%d.%m.%Y')}</td></tr>
@@ -277,7 +304,7 @@ def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, languag
     """
 
 
-def _reminder_body_html(data: ReminderPdfData, region: str, currency: str, language: str) -> str:
+def _reminder_body_html(data: ReminderPdfData, region: str, currency: str, language: str, sender_line: str) -> str:
     """The part of a reminder that's specific to it -- same page chrome
     as an invoice (see render_reminder_pdf), but a much simpler body:
     a reference back to the original invoice, an itemized amount-due
@@ -302,7 +329,10 @@ def _reminder_body_html(data: ReminderPdfData, region: str, currency: str, langu
     return f"""
     <div class="invoice-block">
         <div class="meta-block">
-            <div class="recipient">{data.recipient_names}<br>{data.recipient_address.replace(chr(10), '<br>')}</div>
+            <div class="address-window">
+                <div class="sender-line">{sender_line}</div>
+                <div class="recipient">{data.recipient_names}<br>{data.recipient_address.replace(chr(10), '<br>')}</div>
+            </div>
             <table class="invoice-meta">
                 <tr><td>{translate("finances.pdf.invoice_no", language)}</td><td>{data.invoice_number}</td></tr>
                 <tr><td>{translate("finances.pdf.date", language)}</td><td>{data.sent_date.strftime('%d.%m.%Y')}</td></tr>
@@ -340,8 +370,9 @@ def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], fo
     <head><meta charset="utf-8"><style>{_page_css(language)}</style></head>
     <body>
         <div id="header">
-            {logo_block}
+            <div class="header-logo">{logo_block}</div>
             <div class="club-name">{club_name}</div>
+            <div class="header-spacer"></div>
         </div>
         <div id="footer">{footer_html}</div>
         {body_html}
@@ -389,8 +420,9 @@ def render_invoice_pdf(
         club_name, club_address_lines, register_court, register_number,
         bank_name, bank_iban, bank_bic, bank_account_owner, language,
     )
+    sender_line = _sender_line(club_name, club_address_lines)
     html_doc = _wrap_document(
-        _invoice_body_html(data, region, currency, language), club_name, logo_path, footer_html, language,
+        _invoice_body_html(data, region, currency, language, sender_line), club_name, logo_path, footer_html, language,
     )
     return HTML(string=html_doc).write_pdf()
 
@@ -411,7 +443,8 @@ def render_invoice_bundle_pdf(
         club_name, club_address_lines, register_court, register_number,
         bank_name, bank_iban, bank_bic, bank_account_owner, language,
     )
-    body_html = "".join(_invoice_body_html(data, region, currency, language) for data in items)
+    sender_line = _sender_line(club_name, club_address_lines)
+    body_html = "".join(_invoice_body_html(data, region, currency, language, sender_line) for data in items)
     html_doc = _wrap_document(body_html, club_name, logo_path, footer_html, language)
     return HTML(string=html_doc).write_pdf()
 
@@ -428,7 +461,8 @@ def render_reminder_pdf(
         club_name, club_address_lines, register_court, register_number,
         bank_name, bank_iban, bank_bic, bank_account_owner, language,
     )
+    sender_line = _sender_line(club_name, club_address_lines)
     html_doc = _wrap_document(
-        _reminder_body_html(data, region, currency, language), club_name, logo_path, footer_html, language,
+        _reminder_body_html(data, region, currency, language, sender_line), club_name, logo_path, footer_html, language,
     )
     return HTML(string=html_doc).write_pdf()
