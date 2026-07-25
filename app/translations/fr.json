@@ -1765,7 +1765,7 @@
       "cannot_delete_finalized_run": "Cette série de factures est déjà finalisée et ne peut plus être supprimée.",
       "run_not_draft": "Cette série de factures est déjà finalisée ; ses lignes types ne peuvent plus être modifiées.",
       "no_item_definitions": "Cette série de factures n'a pas encore de lignes types — ajoutez-en au moins une avant de finaliser.",
-      "no_print_invoices": "Toutes les factures de cette série ont déjà été envoyées par e-mail -- rien à imprimer.",
+      "no_print_invoices": "Pour toutes les factures de cette série, un membre est joignable par e-mail -- rien à imprimer.",
       "no_email_recipient": "Aucun membre à l'adresse de facturation joignable n'a été trouvé pour cette facture (notifications par e-mail + adresse e-mail enregistrée).",
       "invalid_category": "Catégorie invalide -- le code doit comporter exactement 5 chiffres, un intitulé et un groupe sont requis.",
       "duplicate_category_code": "Une catégorie avec ce code existe déjà."

@@ -1765,7 +1765,7 @@
       "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",
       "run_not_draft": "This invoice run is already finalized; its item definitions can no longer be changed.",
       "no_item_definitions": "This invoice run has no item definitions yet — add at least one before finalizing.",
-      "no_print_invoices": "Every invoice in this run has already been emailed -- nothing left to print.",
+      "no_print_invoices": "Every invoice in this run has a member who is reachable by email -- nothing left to print.",
       "no_email_recipient": "No reachable invoice-address member (email notifications + a stored email address) was found for this invoice.",
       "invalid_category": "Invalid category -- the code must be exactly 5 digits, and a title and group are required.",
       "duplicate_category_code": "A category with this code already exists."

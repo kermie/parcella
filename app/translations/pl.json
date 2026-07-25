@@ -1765,7 +1765,7 @@
       "cannot_delete_finalized_run": "Ta seria faktur jest już zakończona i nie można jej usunąć.",
       "run_not_draft": "Ta seria faktur jest już zakończona; jej definicji pozycji nie można już zmienić.",
       "no_item_definitions": "Ta seria faktur nie ma jeszcze żadnych definicji pozycji — dodaj co najmniej jedną przed zakończeniem.",
-      "no_print_invoices": "Wszystkie faktury z tej serii zostały już wysłane e-mailem -- nie ma nic do wydrukowania.",
+      "no_print_invoices": "Przy wszystkich fakturach z tej serii jest osiągalny e-mailowo członek -- nie ma nic do wydrukowania.",
       "no_email_recipient": "Nie znaleziono dostępnego członka z adresem do faktur dla tej faktury (powiadomienia e-mail + zapisany adres e-mail).",
       "invalid_category": "Nieprawidłowa kategoria -- numer musi mieć dokładnie 5 cyfr, wymagane są nazwa i grupa.",
       "duplicate_category_code": "Kategoria z tym numerem już istnieje."

@@ -1765,7 +1765,7 @@
       "cannot_delete_finalized_run": "Toto vyúčtovanie je už dokončené a nemožno ho zmazať.",
       "run_not_draft": "Toto vyúčtovanie je už dokončené; jeho definície položiek už nemožno meniť.",
       "no_item_definitions": "Toto vyúčtovanie zatiaľ nemá žiadne definície položiek — pred dokončením pridajte aspoň jednu.",
-      "no_print_invoices": "Všetky faktúry v tomto vyúčtovaní už boli odoslané e-mailom -- nie je čo tlačiť.",
+      "no_print_invoices": "Pri všetkých faktúrach v tomto vyúčtovaní je člen dostupný e-mailom -- nie je čo tlačiť.",
       "no_email_recipient": "Pre túto faktúru nebol nájdený žiadny dostupný člen s fakturačnou adresou (e-mailové upozornenia + uložená e-mailová adresa).",
       "invalid_category": "Neplatná kategória -- číslo musí mať presne 5 číslic, názov a skupina sú povinné.",
       "duplicate_category_code": "Kategória s týmto číslom už existuje."

@@ -47,7 +47,9 @@ from app.invoice_pdf import (
     InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf, invoice_pdf_data_from_invoice, invoice_pdf_filename,
     reminder_pdf_data_from_reminder, render_reminder_pdf, reminder_pdf_filename,
 )
-from app.invoice_delivery import send_invoice_email, upload_invoice_to_cloud, build_print_bundle, deliver_reminder
+from app.invoice_delivery import (
+    send_invoice_email, upload_invoice_to_cloud, build_print_bundle, deliver_reminder, invoice_has_email_recipient,
+)
 
 router = APIRouter(
     prefix="/finances",
@@ -672,13 +674,19 @@ async def run_deliver(run_id: str, request: Request, db: AsyncSession = Depends(
 
 @router.get("/runs/{run_id}/print-bundle")
 async def run_print_bundle(run_id: str, request: Request, db: AsyncSession = Depends(get_db)):
-    """Merges every invoice that hasn't been emailed (no reachable
-    invoice-address member -- see app/invoice_delivery.py) into one
-    print-ready PDF and marks them printed."""
+    """Merges every invoice without a reachable invoice-address member
+    (is_invoice_address=True and email_notifications=True -- see
+    app/invoice_delivery.py) into one print-ready PDF and marks them
+    printed. Filtered by recipient eligibility rather than emailed_at
+    so the bundle is correct regardless of whether /deliver has run
+    yet -- members eligible for email must never end up printed."""
     await require_permission(request, db, "finances", "write")
 
     run = await _get_run_or_404(db, run_id)
-    invoices = [i for i in await _run_invoices(db, run_id) if i.emailed_at is None]
+    invoices = [
+        invoice for invoice in await _run_invoices(db, run_id)
+        if not await invoice_has_email_recipient(db, invoice)
+    ]
     if not invoices:
         raise HTTPException(status_code=404, detail=t_for(request, "finances.errors.no_print_invoices"))
 

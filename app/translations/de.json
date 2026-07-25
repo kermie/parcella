@@ -1765,7 +1765,7 @@
       "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",
       "run_not_draft": "Dieser Rechnungslauf ist bereits abgeschlossen; seine Positionsdefinitionen können nicht mehr geändert werden.",
       "no_item_definitions": "Dieser Rechnungslauf hat noch keine Positionsdefinitionen — vor dem Abschluss mindestens eine hinzufügen.",
-      "no_print_invoices": "Alle Rechnungen dieses Laufs wurden bereits per E-Mail versendet -- nichts mehr zu drucken.",
+      "no_print_invoices": "Bei allen Rechnungen dieses Laufs ist ein Mitglied per E-Mail erreichbar -- nichts mehr zu drucken.",
       "no_email_recipient": "Für diese Rechnung wurde kein erreichbares Rechnungsadress-Mitglied gefunden (E-Mail-Benachrichtigung + hinterlegte E-Mail-Adresse).",
       "invalid_category": "Ungültige Kategorie -- die Nummer muss genau 5 Ziffern haben, Bezeichnung und Gruppe sind erforderlich.",
       "duplicate_category_code": "Eine Kategorie mit dieser Nummer existiert bereits."

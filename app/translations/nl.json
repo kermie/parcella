@@ -1765,7 +1765,7 @@
       "cannot_delete_finalized_run": "Deze factuurronde is al afgerond en kan niet meer worden verwijderd.",
       "run_not_draft": "Deze factuurronde is al afgerond; de regeldefinities kunnen niet meer worden gewijzigd.",
       "no_item_definitions": "Deze factuurronde heeft nog geen regeldefinities — voeg er minstens één toe voordat u afrondt.",
-      "no_print_invoices": "Alle facturen in deze ronde zijn al per e-mail verstuurd -- niets meer om af te drukken.",
+      "no_print_invoices": "Bij alle facturen in deze ronde is een lid per e-mail bereikbaar -- niets meer om af te drukken.",
       "no_email_recipient": "Er is geen bereikbaar lid met factuuradres gevonden voor deze factuur (e-mailmeldingen + opgeslagen e-mailadres).",
       "invalid_category": "Ongeldige categorie -- de code moet precies 5 cijfers bevatten, titel en groep zijn verplicht.",
       "duplicate_category_code": "Er bestaat al een categorie met deze code."

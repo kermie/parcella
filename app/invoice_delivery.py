@@ -49,6 +49,14 @@ async def _invoice_recipient(db: AsyncSession, invoice: Invoice) -> Optional[Tup
     return None
 
 
+async def invoice_has_email_recipient(db: AsyncSession, invoice: Invoice) -> bool:
+    """Whether `invoice` has a reachable invoice-address resident with
+    email_notifications=True (see _invoice_recipient) -- i.e. it will
+    be delivered by email rather than print, independent of whether
+    that email has actually been sent yet."""
+    return await _invoice_recipient(db, invoice) is not None
+
+
 async def send_invoice_email(
     request: Request, db: AsyncSession, invoice: Invoice, run: InvoiceRun, pdf_context: dict,
 ) -> bool:
