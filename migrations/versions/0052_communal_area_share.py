@@ -26,8 +26,12 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # SQLAlchemy's Enum column stores the Python enum MEMBER NAME (e.g.
+    # "FIXED_PER_PARCEL"), not its .value ("fixed_per_parcel") -- matching
+    # every other value already in this type (see 0040_annual_invoices).
+    # COMMUNAL_AREA_SHARE must be added the same way, uppercase.
     with op.get_context().autocommit_block():
-        op.execute("ALTER TYPE invoicepricingmode ADD VALUE IF NOT EXISTS 'communal_area_share'")
+        op.execute("ALTER TYPE invoicepricingmode ADD VALUE IF NOT EXISTS 'COMMUNAL_AREA_SHARE'")
 
 
 def downgrade() -> None:
@@ -37,6 +41,6 @@ def downgrade() -> None:
     # here since nothing in this project relies on downgrading past
     # this point in normal operation. Any invoice_item_definitions or
     # invoice_item_templates row left with pricing_mode=
-    # 'communal_area_share' would need to be changed to another mode by
+    # 'COMMUNAL_AREA_SHARE' would need to be changed to another mode by
     # hand before attempting a real downgrade.
     pass
