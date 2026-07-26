@@ -1747,9 +1747,10 @@
       "icon_emailed": "Wysłano e-mailem",
       "icon_printed": "Uwzględniono w pakiecie do druku",
       "icon_uploaded": "Przesłano do chmury",
-      "copy_items_header": "Ponowne użycie pozycji z innej serii",
-      "copy_items_label": "Skopiuj definicje pozycji z",
-      "copy_items_button": "Skopiuj pozycje",
+      "catalog_header": "Dodaj z katalogu pozycji",
+      "catalog_manage_link": "Zarządzaj katalogiem",
+      "catalog_button": "Dodaj zaznaczone pozycje",
+      "catalog_empty_hint": "Brak jeszcze pozycji w katalogu -- dodaj powtarzające się pozycje raz i wybieraj je tutaj co roku.",
       "col_category": "Kategoria",
       "label_category": "Kategoria"
     },
@@ -1840,6 +1841,7 @@
       "accounts_header": "Konta",
       "accounts_hint": "Wkrótce dostępne -- tutaj pojawią się konta Twojego stowarzyszenia.",
       "categories_hint": "zdefiniowano {n} kategorii",
+      "item_templates_hint": "zdefiniowano {n} szablonów pozycji",
       "reminders_hint": "Zaległych faktur: {n}"
     },
     "coming_soon": {
@@ -1897,6 +1899,15 @@
       "col_group": "Grupa",
       "no_categories": "Brak jeszcze kategorii -- dodaj powyżej lub zaimportuj plik CSV.",
       "delete_confirm": "Usunąć tę kategorię? Pozycje, które jej używają, nadal będą działać, tylko bez kategorii."
+    },
+    "item_template_list": {
+      "title": "Katalog pozycji",
+      "heading": "Katalog pozycji",
+      "new_header": "Nowy szablon pozycji",
+      "list_header": "Szablony pozycji",
+      "no_templates": "Brak jeszcze szablonów pozycji -- dodaj jeden powyżej.",
+      "delete_confirm": "Usunąć ten szablon pozycji? Serie, które go już użyły, zachowują swoje pozycje, tylko bez powiązania z szablonem.",
+      "saved": "Zapisano."
     },
     "pdf": {
       "invoice_no": "Nr faktury",

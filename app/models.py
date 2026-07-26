@@ -1878,6 +1878,40 @@ class InvoiceRun(Base):
         return f"<InvoiceRun {self.year} ({self.status.value})>"
 
 
+class InvoiceItemTemplate(Base):
+    """
+    A reusable catalog of billable line items (e.g. "Membership fee",
+    "Water usage") a board member curates once, so building a new
+    run's items means picking from a visible, known-good list instead
+    of blindly copying everything from a specific past run (which may
+    have included one-off items). Fields mirror InvoiceItemDefinition,
+    minus invoice_run_id/parcel scoping -- those only make sense once
+    a template is actually applied to a specific run (see
+    app/routers/finances.py's items_add_from_catalog).
+    """
+    __tablename__ = "invoice_item_templates"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    order_number: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    pricing_mode: Mapped[InvoicePricingMode] = mapped_column(SAEnum(InvoicePricingMode), nullable=False)
+    unit_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+
+    category_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("finance_categories.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    category: Mapped[Optional["FinanceCategory"]] = relationship("FinanceCategory")
+
+    def __repr__(self) -> str:
+        return f"<InvoiceItemTemplate {self.name!r} ({self.pricing_mode.value})>"
+
+
 class InvoiceItemDefinition(Base):
     """
     One line-item type within an InvoiceRun (e.g. "Membership fee",

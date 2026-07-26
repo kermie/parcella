@@ -1747,9 +1747,10 @@
       "icon_emailed": "Verstuurd per e-mail",
       "icon_printed": "Opgenomen in een afdrukbundel",
       "icon_uploaded": "Geüpload naar cloudopslag",
-      "copy_items_header": "Regels van een andere ronde hergebruiken",
-      "copy_items_label": "Regeldefinities kopiëren van",
-      "copy_items_button": "Regels kopiëren",
+      "catalog_header": "Toevoegen uit artikelcatalogus",
+      "catalog_manage_link": "Catalogus beheren",
+      "catalog_button": "Geselecteerde items toevoegen",
+      "catalog_empty_hint": "Nog geen catalogusitems -- voeg terugkerende items eenmalig toe en selecteer ze hier elk jaar.",
       "col_category": "Categorie",
       "label_category": "Categorie"
     },
@@ -1840,6 +1841,7 @@
       "accounts_header": "Rekeningen",
       "accounts_hint": "Binnenkort beschikbaar -- de rekeningen van uw vereniging verschijnen hier.",
       "categories_hint": "{n} categorie(ën) gedefinieerd",
+      "item_templates_hint": "{n} artikelsjabloon/sjablonen gedefinieerd",
       "reminders_hint": "{n} factu(u)r(en) achterstallig"
     },
     "coming_soon": {
@@ -1897,6 +1899,15 @@
       "col_group": "Groep",
       "no_categories": "Nog geen categorieën -- voeg er hierboven een toe of importeer een CSV.",
       "delete_confirm": "Deze categorie verwijderen? Regels die deze gebruiken blijven werken, alleen zonder categorie."
+    },
+    "item_template_list": {
+      "title": "Artikelcatalogus",
+      "heading": "Artikelcatalogus",
+      "new_header": "Nieuw artikelsjabloon",
+      "list_header": "Artikelsjablonen",
+      "no_templates": "Nog geen artikelsjablonen -- voeg er hierboven een toe.",
+      "delete_confirm": "Dit artikelsjabloon verwijderen? Runs die het al gebruikt hebben, behouden hun items, alleen zonder koppeling naar het sjabloon.",
+      "saved": "Opgeslagen."
     },
     "pdf": {
       "invoice_no": "Factuurnr.",

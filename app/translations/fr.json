@@ -1747,9 +1747,10 @@
       "icon_emailed": "Envoyé par e-mail",
       "icon_printed": "Inclus dans un lot d'impression",
       "icon_uploaded": "Téléversé vers le stockage cloud",
-      "copy_items_header": "Réutiliser les lignes d'une autre série",
-      "copy_items_label": "Copier les lignes types depuis",
-      "copy_items_button": "Copier les lignes",
+      "catalog_header": "Ajouter depuis le catalogue d'articles",
+      "catalog_manage_link": "Gérer le catalogue",
+      "catalog_button": "Ajouter les articles sélectionnés",
+      "catalog_empty_hint": "Aucun article dans le catalogue pour l'instant -- ajoutez les articles récurrents une fois et sélectionnez-les ici chaque année.",
       "col_category": "Catégorie",
       "label_category": "Catégorie"
     },
@@ -1840,6 +1841,7 @@
       "accounts_header": "Comptes",
       "accounts_hint": "Bientôt disponible -- les comptes de votre association apparaîtront ici.",
       "categories_hint": "{n} catégorie(s) définie(s)",
+      "item_templates_hint": "{n} modèle(s) d'article défini(s)",
       "reminders_hint": "{n} facture(s) en retard"
     },
     "coming_soon": {
@@ -1897,6 +1899,15 @@
       "col_group": "Groupe",
       "no_categories": "Aucune catégorie pour le moment -- ajoutez-en une ci-dessus ou importez un CSV.",
       "delete_confirm": "Supprimer cette catégorie ? Les lignes qui l'utilisent continuent de fonctionner, simplement sans catégorie."
+    },
+    "item_template_list": {
+      "title": "Catalogue d'articles",
+      "heading": "Catalogue d'articles",
+      "new_header": "Nouveau modèle d'article",
+      "list_header": "Modèles d'articles",
+      "no_templates": "Aucun modèle d'article pour l'instant -- ajoutez-en un ci-dessus.",
+      "delete_confirm": "Supprimer ce modèle d'article ? Les séries qui l'ont déjà utilisé conservent leurs articles, simplement sans lien vers le modèle.",
+      "saved": "Enregistré."
     },
     "pdf": {
       "invoice_no": "N° de facture",

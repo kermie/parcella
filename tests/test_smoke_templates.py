@@ -236,20 +236,45 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
 
     # Re-using items in another year (issue #66): a finalized run's
     # item definitions stay attached to it, so a new draft run can
-    # copy them instead of retyping everything.
+    # pick from a curated item catalog instead of retyping everything
+    # (replaces the old "copy items from another run" mechanism).
     r_second_run = await client.post("/finances/runs", data={
         "year": "2027", "subject": "Second run", "issued_date": "2027-08-01",
         "due_date": "2027-09-01", "footer_text": "",
     })
     second_run_id = r_second_run.headers["location"].rstrip("/").split("/")[-1]
 
-    r_copy = await client.post(f"/finances/runs/{second_run_id}/items/copy-from", data={"source_run_id": run_id})
-    assert r_copy.status_code in (302, 303)
+    r_templates_empty = await client.get("/finances/item-templates")
+    assert r_templates_empty.status_code == 200
+    assert "UndefinedError" not in r_templates_empty.text
+
+    r_template_create = await client.post("/finances/item-templates", data={
+        "order_number": "10", "name": "Catalog fee", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "9.90",
+    })
+    assert r_template_create.status_code in (302, 303)
+    assert "error" not in r_template_create.headers["location"]
+
+    r_templates = await client.get("/finances/item-templates")
+    assert r_templates.status_code == 200
+    assert "Catalog fee" in r_templates.text
+
+    from sqlalchemy import select as sa_select
+    from app.models import InvoiceItemTemplate
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(sa_select(InvoiceItemTemplate).where(InvoiceItemTemplate.name == "Catalog fee"))
+        template = result.scalars().first()
+
+    r_apply = await client.post(
+        f"/finances/runs/{second_run_id}/items/add-from-catalog", data={"template_ids": [template.id]},
+    )
+    assert r_apply.status_code in (302, 303)
 
     r_second_detail = await client.get(f"/finances/runs/{second_run_id}")
     assert r_second_detail.status_code == 200
     assert "UndefinedError" not in r_second_detail.text
-    assert "Item fixed_per_parcel" in r_second_detail.text
+    assert "Catalog fee" in r_second_detail.text
 
     # Bookkeeping categories (issue #67): CRUD, CSV import, and the
     # item-form picker.

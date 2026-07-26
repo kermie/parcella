@@ -33,7 +33,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.i18n import t_for, load_current_language
 from app.models import (
-    InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel,
+    InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel, InvoiceItemTemplate,
     InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, ClubSetting, Parcel, ParcelStatus,
     FinanceCategory, FinanceCategoryGroup,
 )
@@ -84,19 +84,13 @@ async def _get_run_or_404(db: AsyncSession, run_id: str) -> InvoiceRun:
     return run
 
 
-async def _runs_with_items(db: AsyncSession, exclude_run_id: str) -> list:
-    """Other runs that have at least one item definition -- offered as
-    a copy source (issue #66's "re-use them in another year"), newest
-    first. A run's item definitions stay attached to it permanently
-    (never cleared on finalize), so last year's real configuration is
-    always available to copy from, not just still-open drafts."""
+async def _item_templates(db: AsyncSession) -> list:
     result = await db.execute(
-        select(InvoiceRun)
-        .options(selectinload(InvoiceRun.item_definitions))
-        .where(InvoiceRun.id != exclude_run_id)
-        .order_by(InvoiceRun.year.desc())
+        select(InvoiceItemTemplate)
+        .options(selectinload(InvoiceItemTemplate.category))
+        .order_by(InvoiceItemTemplate.order_number)
     )
-    return [r for r in result.scalars().all() if r.item_definitions]
+    return list(result.scalars().all())
 
 
 async def _active_parcels(db: AsyncSession) -> list:
@@ -181,11 +175,14 @@ async def finances_dashboard(request: Request, db: AsyncSession = Depends(get_db
     category_count_result = await db.execute(select(FinanceCategory))
     category_count = len(category_count_result.scalars().all())
 
+    item_template_count_result = await db.execute(select(InvoiceItemTemplate))
+    item_template_count = len(item_template_count_result.scalars().all())
+
     return templates.TemplateResponse("finances/dashboard.html", {
         "request": request, "user": user,
         "run_count": run_count, "open_invoice_count": open_count,
         "overdue_count": overdue_count, "outstanding_total": outstanding_total,
-        "category_count": category_count,
+        "category_count": category_count, "item_template_count": item_template_count,
     })
 
 
@@ -357,9 +354,9 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
         )
         invoices = list(result.scalars().all())
 
-    copyable_runs = []
+    item_templates = []
     if run.status == InvoiceRunStatus.DRAFT:
-        copyable_runs = await _runs_with_items(db, exclude_run_id=run.id)
+        item_templates = await _item_templates(db)
 
     categories_result = await db.execute(select(FinanceCategory).order_by(FinanceCategory.code))
     categories = list(categories_result.scalars().all())
@@ -369,7 +366,7 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
         "pricing_modes": list(InvoicePricingMode),
         "next_order": next_order,
         "invoices": invoices,
-        "copyable_runs": copyable_runs,
+        "item_templates": item_templates,
         "categories": categories,
     })
 
@@ -421,45 +418,43 @@ async def item_create(
     return RedirectResponse(f"/finances/runs/{run_id}", status_code=302)
 
 
-@router.post("/runs/{run_id}/items/copy-from")
-async def items_copy_from(
+@router.post("/runs/{run_id}/items/add-from-catalog")
+async def items_add_from_catalog(
     run_id: str,
     request: Request,
-    source_run_id: str = Form(...),
+    template_ids: list[str] = Form([]),
     db: AsyncSession = Depends(get_db),
 ):
-    """Duplicates every item definition (including parcel scoping)
-    from `source_run_id` into `run_id` -- issue #66, so the board
-    doesn't have to retype the same membership fee/water/insurance
-    items every year. Adds to whatever's already on the target run
-    rather than replacing it, so it can be combined with items typed
-    by hand."""
+    """Adds one InvoiceItemDefinition per selected InvoiceItemTemplate
+    to `run_id` -- the visible, curated replacement for the old "copy
+    items from another run" mechanism (issue #66), so a board member
+    picks known-good recurring items by name/price instead of blindly
+    duplicating everything from a specific past run (which may have
+    included one-off items). Always applies to all parcels -- a
+    catalog item that needs custom per-parcel scoping for this run can
+    still be edited afterward like any manually-added item. Adds to
+    whatever's already on the target run rather than replacing it."""
     await require_permission(request, db, "finances", "write")
 
     run = await _get_run_or_404(db, run_id)
     if run.status != InvoiceRunStatus.DRAFT:
         raise HTTPException(status_code=400, detail=t_for(request, "finances.errors.run_not_draft"))
 
-    source = await _get_run_or_404(db, source_run_id)
-    for source_item in source.item_definitions:
-        new_item = InvoiceItemDefinition(
-            invoice_run_id=run.id,
-            order_number=source_item.order_number,
-            name=source_item.name,
-            description=source_item.description,
-            pricing_mode=source_item.pricing_mode,
-            unit_price=source_item.unit_price,
-            applies_to_all_parcels=source_item.applies_to_all_parcels,
-            category_id=source_item.category_id,
+    if template_ids:
+        result = await db.execute(
+            select(InvoiceItemTemplate).where(InvoiceItemTemplate.id.in_(template_ids))
         )
-        db.add(new_item)
-        await db.flush()
-
-        if not source_item.applies_to_all_parcels:
-            for scope in source_item.parcel_scopes:
-                db.add(InvoiceItemDefinitionParcel(
-                    invoice_item_definition_id=new_item.id, parcel_id=scope.parcel_id,
-                ))
+        for template in result.scalars().all():
+            db.add(InvoiceItemDefinition(
+                invoice_run_id=run.id,
+                order_number=template.order_number,
+                name=template.name,
+                description=template.description,
+                pricing_mode=template.pricing_mode,
+                unit_price=template.unit_price,
+                applies_to_all_parcels=True,
+                category_id=template.category_id,
+            ))
 
     await db.commit()
     return RedirectResponse(f"/finances/runs/{run_id}", status_code=302)
@@ -960,3 +955,101 @@ async def category_import(request: Request, file: UploadFile = File(...), db: As
     return RedirectResponse(
         f"/finances/categories?success=1&imported={imported}&skipped={skipped}", status_code=302,
     )
+
+
+# ---------------------------------------------------------------------------
+# Item catalog: reusable line-item templates a board member curates
+# directly, replacing the old "copy items from another run" mechanism
+# (issue #66) -- see InvoiceItemTemplate's docstring in app/models.py.
+# ---------------------------------------------------------------------------
+
+@router.get("/item-templates", response_class=HTMLResponse)
+async def item_template_list(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+
+    item_templates = await _item_templates(db)
+    next_order = max((t.order_number for t in item_templates), default=0) + 10
+    categories_result = await db.execute(select(FinanceCategory).order_by(FinanceCategory.code))
+    categories = list(categories_result.scalars().all())
+
+    return templates.TemplateResponse("finances/item_template_list.html", {
+        "request": request, "user": user, "item_templates": item_templates, "next_order": next_order,
+        "pricing_modes": list(InvoicePricingMode), "categories": categories,
+    })
+
+
+@router.post("/item-templates")
+async def item_template_create(
+    request: Request,
+    order_number: int = Form(0),
+    name: str = Form(...),
+    description: str = Form(""),
+    pricing_mode: str = Form(...),
+    unit_price: str = Form(""),
+    category_id: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "finances", "write")
+
+    try:
+        mode = InvoicePricingMode(pricing_mode)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid pricing_mode")
+
+    db.add(InvoiceItemTemplate(
+        order_number=order_number,
+        name=name.strip(),
+        description=description.strip() or None,
+        pricing_mode=mode,
+        unit_price=_parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None,
+        category_id=category_id.strip() or None,
+    ))
+    await db.commit()
+    return RedirectResponse("/finances/item-templates?success=1", status_code=302)
+
+
+@router.post("/item-templates/{template_id}/edit")
+async def item_template_update(
+    template_id: str,
+    request: Request,
+    order_number: int = Form(0),
+    name: str = Form(...),
+    description: str = Form(""),
+    pricing_mode: str = Form(...),
+    unit_price: str = Form(""),
+    category_id: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(InvoiceItemTemplate).where(InvoiceItemTemplate.id == template_id))
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=404)
+
+    try:
+        mode = InvoicePricingMode(pricing_mode)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid pricing_mode")
+
+    template.order_number = order_number
+    template.name = name.strip()
+    template.description = description.strip() or None
+    template.pricing_mode = mode
+    template.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
+    template.category_id = category_id.strip() or None
+
+    await db.commit()
+    return RedirectResponse("/finances/item-templates?success=1", status_code=302)
+
+
+@router.post("/item-templates/{template_id}/delete")
+async def item_template_delete(template_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "delete")
+
+    result = await db.execute(select(InvoiceItemTemplate).where(InvoiceItemTemplate.id == template_id))
+    template = result.scalar_one_or_none()
+    if template:
+        await db.delete(template)
+        await db.commit()
+    return RedirectResponse("/finances/item-templates?success=1", status_code=302)

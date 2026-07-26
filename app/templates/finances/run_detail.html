@@ -204,29 +204,47 @@
         </div>
     </div>
 
-    {% if has_perm(request, 'finances', 'write') and copyable_runs %}
+    {% if has_perm(request, 'finances', 'write') and item_templates %}
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><i class="bi bi-clipboard-check me-2"></i>{{ t('finances.run_detail.copy_items_header') }}</div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-collection me-2"></i>{{ t('finances.run_detail.catalog_header') }}</span>
+                <a href="/finances/item-templates" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-gear me-1"></i>{{ t('finances.run_detail.catalog_manage_link') }}
+                </a>
+            </div>
             <div class="card-body">
-                <form method="post" action="/finances/runs/{{ run.id }}/items/copy-from" class="row g-2 align-items-end">
-                    <div class="col-sm-9">
-                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.copy_items_label') }}</label>
-                        <select name="source_run_id" class="form-select form-select-sm">
-                            {% for source_run in copyable_runs %}
-                            <option value="{{ source_run.id }}">
-                                {{ source_run.year }} — {{ source_run.subject }} ({{ source_run.item_definitions|length }})
-                            </option>
-                            {% endfor %}
-                        </select>
+                <form method="post" action="/finances/runs/{{ run.id }}/items/add-from-catalog">
+                    <div class="row" style="max-height: 260px; overflow-y: auto;">
+                        {% for template in item_templates %}
+                        <div class="col-sm-6 mb-2">
+                            <div class="form-check">
+                                <input type="checkbox" name="template_ids" value="{{ template.id }}" class="form-check-input" id="template-{{ template.id }}">
+                                <label class="form-check-label" for="template-{{ template.id }}">
+                                    <strong>{{ template.name }}</strong>
+                                    <span class="text-muted" style="font-size: 0.82rem;">
+                                        — {{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}
+                                        {% if template.unit_price is not none %} · {{ '%.2f'|format(template.unit_price|float) }}{% endif %}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                    <div class="col-sm-3">
-                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">
-                            <i class="bi bi-clipboard-check me-1"></i>{{ t('finances.run_detail.copy_items_button') }}
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary mt-2">
+                        <i class="bi bi-plus-lg me-1"></i>{{ t('finances.run_detail.catalog_button') }}
+                    </button>
                 </form>
             </div>
+        </div>
+    </div>
+    {% elif has_perm(request, 'finances', 'write') and run.status.value == 'draft' %}
+    <div class="col-12">
+        <div class="alert alert-light border d-flex justify-content-between align-items-center mb-0">
+            <span class="text-muted" style="font-size: 0.85rem;">{{ t('finances.run_detail.catalog_empty_hint') }}</span>
+            <a href="/finances/item-templates" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-gear me-1"></i>{{ t('finances.run_detail.catalog_manage_link') }}
+            </a>
         </div>
     </div>
     {% endif %}

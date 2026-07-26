@@ -1747,9 +1747,10 @@
       "icon_emailed": "Odoslané e-mailom",
       "icon_printed": "Zahrnuté v tlačovom balíku",
       "icon_uploaded": "Nahrané do cloudového úložiska",
-      "copy_items_header": "Znova použiť položky z iného vyúčtovania",
-      "copy_items_label": "Skopírovať definície položiek z",
-      "copy_items_button": "Skopírovať položky",
+      "catalog_header": "Pridať z katalógu položiek",
+      "catalog_manage_link": "Spravovať katalóg",
+      "catalog_button": "Pridať vybrané položky",
+      "catalog_empty_hint": "Zatiaľ žiadne položky v katalógu -- pridajte opakujúce sa položky raz a vyberajte ich tu každý rok.",
       "col_category": "Kategória",
       "label_category": "Kategória"
     },
@@ -1840,6 +1841,7 @@
       "accounts_header": "Účty",
       "accounts_hint": "Už čoskoro -- tu sa zobrazia účty vašej organizácie.",
       "categories_hint": "definovaných {n} kategórií",
+      "item_templates_hint": "definovaných {n} šablón položiek",
       "reminders_hint": "Faktúr po splatnosti: {n}"
     },
     "coming_soon": {
@@ -1897,6 +1899,15 @@
       "col_group": "Skupina",
       "no_categories": "Zatiaľ žiadne kategórie -- pridajte vyššie alebo importujte CSV.",
       "delete_confirm": "Zmazať túto kategóriu? Položky, ktoré ju používajú, zostanú zachované, len bez kategórie."
+    },
+    "item_template_list": {
+      "title": "Katalóg položiek",
+      "heading": "Katalóg položiek",
+      "new_header": "Nová šablóna položky",
+      "list_header": "Šablóny položiek",
+      "no_templates": "Zatiaľ žiadne šablóny položiek -- pridajte jednu vyššie.",
+      "delete_confirm": "Odstrániť túto šablónu položky? Vyúčtovania, ktoré ju už použili, si zachovajú svoje položky, len bez odkazu na šablónu.",
+      "saved": "Uložené."
     },
     "pdf": {
       "invoice_no": "Č. faktúry",

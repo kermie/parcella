@@ -1747,9 +1747,10 @@
       "icon_emailed": "Per E-Mail versendet",
       "icon_printed": "In Sammel-PDF enthalten",
       "icon_uploaded": "In Cloud-Speicher hochgeladen",
-      "copy_items_header": "Positionen aus einem anderen Lauf übernehmen",
-      "copy_items_label": "Positionsdefinitionen übernehmen von",
-      "copy_items_button": "Positionen übernehmen",
+      "catalog_header": "Aus dem Artikelkatalog hinzufügen",
+      "catalog_manage_link": "Katalog verwalten",
+      "catalog_button": "Ausgewählte Posten hinzufügen",
+      "catalog_empty_hint": "Noch keine Katalogeinträge -- fügen Sie wiederkehrende Posten einmal hinzu und wählen Sie sie hier jedes Jahr aus.",
       "col_category": "Kategorie",
       "label_category": "Kategorie"
     },
@@ -1840,6 +1841,7 @@
       "accounts_header": "Konten",
       "accounts_hint": "Demnächst verfügbar -- hier erscheinen die Konten Ihres Vereins.",
       "categories_hint": "{n} Kategorie(n) angelegt",
+      "item_templates_hint": "{n} Artikelvorlage(n) angelegt",
       "reminders_hint": "{n} Rechnung(en) überfällig"
     },
     "coming_soon": {
@@ -1897,6 +1899,15 @@
       "col_group": "Gruppe",
       "no_categories": "Noch keine Kategorien -- oben hinzufügen oder eine CSV importieren.",
       "delete_confirm": "Diese Kategorie löschen? Positionen, die sie verwenden, bleiben erhalten, nur ohne Kategorie."
+    },
+    "item_template_list": {
+      "title": "Artikelkatalog",
+      "heading": "Artikelkatalog",
+      "new_header": "Neue Artikelvorlage",
+      "list_header": "Artikelvorlagen",
+      "no_templates": "Noch keine Artikelvorlagen -- oben eine hinzufügen.",
+      "delete_confirm": "Diese Artikelvorlage löschen? Läufe, die sie bereits verwendet haben, behalten ihre Posten, nur ohne Verknüpfung zur Vorlage.",
+      "saved": "Gespeichert."
     },
     "pdf": {
       "invoice_no": "Rechnungsnr.",
