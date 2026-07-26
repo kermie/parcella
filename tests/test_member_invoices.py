@@ -479,6 +479,134 @@ async def test_item_member_scope_stays_editable_before_finalize(client, admin_us
     assert item.member_scopes == []
 
 
+async def test_switching_back_to_all_parcels_bills_every_parcel_not_just_the_stale_scope(client, admin_user):
+    """A member asked explicitly: if a parcel was picked via the
+    specific-parcel picker and the item is then switched back to
+    "applies to every parcel", every parcel must really be billed --
+    not just the one that happened to still be checked in the (now
+    hidden) picker grid. Submits parcel_ids alongside
+    applies_to_all_parcels=on, simulating exactly what a browser would
+    send if a previously-checked box is still checked while its picker
+    is collapsed/hidden, and confirms the DB scope is cleared AND that
+    generating invoices actually covers every occupied parcel, not just
+    the stale one."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    await _enable_finances_module()
+
+    async with AsyncSessionLocal() as session:
+        parcels = [Parcel(plot_number=f"ALLBACK-{i}", area_sqm=100) for i in "ABC"]
+        session.add_all(parcels)
+        await session.flush()
+        for i, parcel in enumerate(parcels):
+            tenant = Member(
+                first_name="Tenant", last_name=f"AllBack{i}",
+                street=f"Gartenweg {i}", postal_code="12345", city="Testort",
+            )
+            session.add(tenant)
+            await session.flush()
+            session.add(MemberParcel(member_id=tenant.id, parcel_id=parcel.id, is_invoice_address=True))
+        await session.commit()
+        parcel_a_id = parcels[0].id
+        all_plot_numbers = {p.plot_number for p in parcels}
+
+    run_id = await _make_run(client, year="2038")
+    r_item = await client.post(f"/finances/runs/{run_id}/items", data={
+        "order_number": "10", "name": "Scope-back fee", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "5.00",
+        "parcel_ids": [parcel_a_id],
+    })
+    assert r_item.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .where(InvoiceItemDefinition.invoice_run_id == run_id)
+        )
+        item = result.scalars().one()
+
+    # Switch back to "all parcels", but still submit parcel_ids=[A] --
+    # exactly what happens if the browser leaves the hidden checkbox
+    # checked. The "all parcels" toggle must win regardless.
+    r_edit = await client.post(f"/finances/runs/{run_id}/items/{item.id}/edit", data={
+        "order_number": "10", "name": "Scope-back fee", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "5.00",
+        "applies_to_all_parcels": "on", "parcel_ids": [parcel_a_id],
+    })
+    assert r_edit.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .options(selectinload(InvoiceItemDefinition.parcel_scopes))
+            .where(InvoiceItemDefinition.id == item.id)
+        )
+        item = result.scalars().one()
+    assert item.applies_to_all_parcels is True
+    assert item.parcel_scopes == [], "a stale parcel_ids submission must not survive switching to all-parcels"
+
+    r_preview = await client.get(f"/finances/runs/{run_id}/preview")
+    assert r_preview.status_code == 200
+    for plot_number in all_plot_numbers:
+        assert plot_number in r_preview.text, f"{plot_number} must be billed once 'all parcels' is on"
+
+
+async def test_switching_back_to_all_members_bills_every_member_not_just_the_stale_scope(client, admin_user):
+    """Same guarantee as the parcel version, for fixed_per_person's
+    member scope: switching back to "applies to every member" must
+    bill every active member, not just whichever member was still
+    checked in the hidden picker grid."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    await _enable_finances_module()
+
+    async with AsyncSessionLocal() as session:
+        members = [
+            Member(first_name="AllBack", last_name=f"Member{i}", street=f"Vereinsstr {i}",
+                   postal_code="12345", city="Testort")
+            for i in "ABC"
+        ]
+        session.add_all(members)
+        await session.commit()
+        member_a_id = members[0].id
+        all_names = {m.full_name for m in members}
+
+    run_id = await _make_run(client, year="2039")
+    r_item = await client.post(f"/finances/runs/{run_id}/items", data={
+        "order_number": "10", "name": "Scope-back person fee", "description": "",
+        "pricing_mode": "fixed_per_person", "unit_price": "5.00",
+        "member_ids": [member_a_id],
+    })
+    assert r_item.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .where(InvoiceItemDefinition.invoice_run_id == run_id)
+        )
+        item = result.scalars().one()
+
+    r_edit = await client.post(f"/finances/runs/{run_id}/items/{item.id}/edit", data={
+        "order_number": "10", "name": "Scope-back person fee", "description": "",
+        "pricing_mode": "fixed_per_person", "unit_price": "5.00",
+        "applies_to_all_members": "on", "member_ids": [member_a_id],
+    })
+    assert r_edit.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .options(selectinload(InvoiceItemDefinition.member_scopes))
+            .where(InvoiceItemDefinition.id == item.id)
+        )
+        item = result.scalars().one()
+    assert item.applies_to_all_members is True
+    assert item.member_scopes == [], "a stale member_ids submission must not survive switching to all-members"
+
+    r_preview = await client.get(f"/finances/runs/{run_id}/preview")
+    assert r_preview.status_code == 200
+    for name in all_names:
+        assert name in r_preview.text, f"{name} must be billed once 'all members' is on"
+
+
 async def test_item_template_parcel_scope_editable_and_copied_to_run(client, admin_user):
     """Explicit request: the item catalog needs the same specific-
     parcel picker the run's own items have. Covers: create a template
