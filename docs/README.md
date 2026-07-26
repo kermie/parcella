@@ -15,6 +15,7 @@ decisions and reasoning are still fresh.
 - [Purchase Requests](./module-purchase-requests.md) -- two-person approval principle for club expenses
 - [Calendar](./module-calendar.md) -- community calendar, birthdays, council presence/absence, ICS export
 - [Public Signup API](./module-public-api.md) -- CMS-agnostic public API for external site connectors (WordPress plugin included)
+- [Finances](./module-finances.md) -- annual invoicing, payments, dunning reminders, bookkeeping categories
 
 ## Cross-cutting topics
 

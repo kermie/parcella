@@ -45,3 +45,4 @@ in chronological order.
 39. [Admin panel is ADMIN-only; BOARD is full module access, not panel access](./0039-admin-panel-is-system-admin-only-board-is-full-module-access.md)
 40. [Hard-deleting a user: only when they have zero footprint anywhere](./0040-user-hard-delete-only-when-zero-footprint.md)
 41. [Groups supersede roles for new user access](./0041-groups-supersede-roles-for-new-user-access.md)
+42. [Invoice item targeting: plot-scoped vs. person-scoped, as two independent mechanisms](./0042-invoice-item-targeting-plot-scoped-vs-person-scoped.md)
