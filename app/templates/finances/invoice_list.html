@@ -62,7 +62,10 @@
                             {% for invoice in invoices %}
                             <tr>
                                 <td><a href="/finances/invoices/{{ invoice.id }}">{{ invoice.invoice_number }}</a></td>
-                                <td>{{ invoice.parcel.plot_number }}</td>
+                                <td>
+                                    {% if invoice.parcel %}{{ invoice.parcel.plot_number }}
+                                    {% else %}<span class="badge bg-secondary-subtle text-secondary-emphasis">{{ t('finances.run_detail.member_invoice_badge') }}</span>{% endif %}
+                                </td>
                                 <td style="white-space: pre-line;">{{ invoice.recipient_names }}</td>
                                 <td>{{ invoice.subtotal|float|money }}</td>
                                 <td>{{ invoice.paid_total|float|money }}</td>

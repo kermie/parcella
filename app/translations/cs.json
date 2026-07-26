@@ -1675,7 +1675,8 @@
     "invoice_delivery": {
       "subject": "Faktura {invoice_number} od {club_name}",
       "greeting": "Dobrý den, {name},",
-      "body": "V příloze naleznete fakturu od {club_name} za parcelu {parcel_number}, splatnou {due_date}."
+      "body": "V příloze naleznete fakturu od {club_name} za parcelu {parcel_number}, splatnou {due_date}.",
+      "body_member": "V příloze naleznete fakturu od {club_name}, splatnou {due_date}."
     },
     "reminder_delivery": {
       "subject": "Upomínka č. {level} k faktuře {invoice_number} — {club_name}",
@@ -1727,8 +1728,11 @@
       "label_pricing_mode": "Způsob výpočtu",
       "label_unit_price": "Jednotková cena",
       "label_applies_all": "Platí pro každou parcelu",
+      "label_applies_members_without_parcel": "Účtovat i členům bez aktuální parcely",
+      "label_applies_members_without_parcel_short": "+ členové bez parcely",
       "label_parcels": "Parcely",
       "scope_all": "Všechny parcely",
+      "member_invoice_badge": "Bez parcely (člen)",
       "scope_n_parcels": "{n} parcel(y)",
       "button_create": "Přidat položku",
       "back_to_run": "Zpět na vyúčtování",

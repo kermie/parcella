@@ -45,14 +45,24 @@
                         <tbody>
                             {% for c in computed %}
                             <tr>
-                                <td>{{ c.parcel.plot_number }}</td>
+                                <td>
+                                    {% if c.parcel %}{{ c.parcel.plot_number }}
+                                    {% else %}<span class="badge bg-secondary-subtle text-secondary-emphasis">{{ t('finances.run_detail.member_invoice_badge') }}</span>{% endif %}
+                                </td>
                                 <td style="white-space: pre-line;">{{ c.recipient_names }}</td>
                                 <td>{{ c.subtotal|float|money }}</td>
                                 <td class="text-end">
+                                    {% if c.parcel %}
                                     <a href="/finances/runs/{{ run.id }}/preview/{{ c.parcel.id }}/pdf"
                                        target="_blank" class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('finances.run_preview.pdf_button') }}
                                     </a>
+                                    {% else %}
+                                    <a href="/finances/runs/{{ run.id }}/preview/member/{{ c.member.id }}/pdf"
+                                       target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('finances.run_preview.pdf_button') }}
+                                    </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% else %}

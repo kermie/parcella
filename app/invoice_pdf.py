@@ -123,7 +123,7 @@ class InvoicePdfData:
     subject: str
     recipient_names: str
     recipient_address: str
-    parcel_plot_number: str
+    parcel_plot_number: Optional[str]
     parcel_area_sqm: Optional[float]
     line_items: List[InvoicePdfLineItem]
     subtotal: Decimal
@@ -154,12 +154,14 @@ def invoice_pdf_data_from_invoice(invoice, run) -> InvoicePdfData:
     shared by the single-invoice PDF route, the email-attachment path,
     and the print-bundle builder (see app/invoice_delivery.py), so
     there's exactly one place that knows how to turn an Invoice row
-    into rendered PDF data."""
+    into rendered PDF data. A member invoice (no parcel) simply omits
+    the parcel line -- see _invoice_body_html."""
     return InvoicePdfData(
         invoice_number=invoice.invoice_number,
         issued_date=run.issued_date, due_date=run.due_date, subject=run.subject,
         recipient_names=invoice.recipient_names, recipient_address=invoice.recipient_address,
-        parcel_plot_number=invoice.parcel.plot_number, parcel_area_sqm=invoice.parcel.area_sqm,
+        parcel_plot_number=invoice.parcel.plot_number if invoice.parcel else None,
+        parcel_area_sqm=invoice.parcel.area_sqm if invoice.parcel else None,
         line_items=[
             InvoicePdfLineItem(
                 order_number=li.order_number, name=li.name, description=li.description,
@@ -197,27 +199,35 @@ def reminder_pdf_data_from_reminder(reminder, invoice, run) -> ReminderPdfData:
     )
 
 
+def _invoice_subject_slug(invoice) -> str:
+    """The parcel's plot number, or -- for a member invoice with no
+    parcel -- the member's last name, used as the filename segment
+    identifying who/what an invoice PDF is for."""
+    return invoice.parcel.plot_number if invoice.parcel else invoice.member.last_name
+
+
 def invoice_pdf_filename(invoice, run) -> str:
     """Filename for `invoice`'s PDF -- {issued date YYYYMMDD}_{parcel
-    plot number}_invoice-{invoice number}.pdf, e.g.
-    "20260724_G093_invoice-2026-500.pdf". Shared by the download
-    route, email attachment, and cloud-storage upload (see
-    app/invoice_delivery.py) so the naming stays consistent everywhere
-    a PDF gets a filename. The invoice number's own "/" is swapped for
-    "-" since it isn't valid in a filename -- the (club-configurable)
-    invoice number format is otherwise left untouched."""
+    plot number, or the member's last name for a member invoice}
+    _invoice-{invoice number}.pdf, e.g. "20260724_G093_invoice-2026-500.pdf".
+    Shared by the download route, email attachment, and cloud-storage
+    upload (see app/invoice_delivery.py) so the naming stays consistent
+    everywhere a PDF gets a filename. The invoice number's own "/" is
+    swapped for "-" since it isn't valid in a filename -- the
+    (club-configurable) invoice number format is otherwise left
+    untouched."""
     date_part = run.issued_date.strftime("%Y%m%d")
     number_part = invoice.invoice_number.replace("/", "-")
-    return f"{date_part}_{invoice.parcel.plot_number}_invoice-{number_part}.pdf"
+    return f"{date_part}_{_invoice_subject_slug(invoice)}_invoice-{number_part}.pdf"
 
 
 def reminder_pdf_filename(reminder, invoice, run) -> str:
     """Filename for a reminder's PDF -- {sent date YYYYMMDD}_{parcel
-    plot number}_reminder{level}-{invoice number}.pdf, mirroring
-    invoice_pdf_filename's convention."""
+    plot number, or the member's last name}_reminder{level}-{invoice
+    number}.pdf, mirroring invoice_pdf_filename's convention."""
     date_part = reminder.sent_at.strftime("%Y%m%d")
     number_part = invoice.invoice_number.replace("/", "-")
-    return f"{date_part}_{invoice.parcel.plot_number}_reminder{reminder.level}-{number_part}.pdf"
+    return f"{date_part}_{_invoice_subject_slug(invoice)}_reminder{reminder.level}-{number_part}.pdf"
 
 
 def _substitute_placeholders(text: Optional[str], data: InvoicePdfData) -> str:
@@ -289,9 +299,9 @@ def _invoice_body_html(data: InvoicePdfData, region: str, currency: str, languag
         </div>
 
         <h1>{data.subject}</h1>
-        <div class="parcel-line">
+        {f'''<div class="parcel-line">
             {translate("finances.pdf.parcel", language)} {data.parcel_plot_number}{f" · {data.parcel_area_sqm} m&sup2;" if data.parcel_area_sqm else ""}
-        </div>
+        </div>''' if data.parcel_plot_number else ''}
 
         <table class="items">
             <thead>

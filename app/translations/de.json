@@ -1675,7 +1675,8 @@
     "invoice_delivery": {
       "subject": "Rechnung {invoice_number} von {club_name}",
       "greeting": "Hallo {name},",
-      "body": "Anbei finden Sie Ihre Rechnung von {club_name} für Parzelle {parcel_number}, fällig am {due_date}."
+      "body": "Anbei finden Sie Ihre Rechnung von {club_name} für Parzelle {parcel_number}, fällig am {due_date}.",
+      "body_member": "Anbei finden Sie Ihre Rechnung von {club_name}, fällig am {due_date}."
     },
     "reminder_delivery": {
       "subject": "Zahlungserinnerung Nr. {level} zu Rechnung {invoice_number} — {club_name}",
@@ -1727,8 +1728,11 @@
       "label_pricing_mode": "Berechnungsart",
       "label_unit_price": "Einzelpreis",
       "label_applies_all": "Gilt für jede Parzelle",
+      "label_applies_members_without_parcel": "Auch Mitglieder ohne aktuelle Parzelle abrechnen",
+      "label_applies_members_without_parcel_short": "+ Mitglieder ohne Parzelle",
       "label_parcels": "Parzellen",
       "scope_all": "Alle Parzellen",
+      "member_invoice_badge": "Keine Parzelle (Mitglied)",
       "scope_n_parcels": "{n} Parzelle(n)",
       "button_create": "Position hinzufügen",
       "back_to_run": "Zurück zum Rechnungslauf",

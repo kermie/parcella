@@ -1675,7 +1675,8 @@
     "invoice_delivery": {
       "subject": "Faktura {invoice_number} od {club_name}",
       "greeting": "Witaj {name},",
-      "body": "W załączniku znajduje się faktura od {club_name} za działkę {parcel_number}, termin płatności {due_date}."
+      "body": "W załączniku znajduje się faktura od {club_name} za działkę {parcel_number}, termin płatności {due_date}.",
+      "body_member": "W załączniku znajduje się faktura od {club_name}, termin płatności {due_date}."
     },
     "reminder_delivery": {
       "subject": "Upomnienie nr {level} dotyczące faktury {invoice_number} — {club_name}",
@@ -1727,8 +1728,11 @@
       "label_pricing_mode": "Sposób naliczania",
       "label_unit_price": "Cena jednostkowa",
       "label_applies_all": "Dotyczy każdej działki",
+      "label_applies_members_without_parcel": "Obciążaj też członków bez aktualnej działki",
+      "label_applies_members_without_parcel_short": "+ członkowie bez działki",
       "label_parcels": "Działki",
       "scope_all": "Wszystkie działki",
+      "member_invoice_badge": "Brak działki (członek)",
       "scope_n_parcels": "{n} działk(i/a)",
       "button_create": "Dodaj pozycję",
       "back_to_run": "Powrót do serii faktur",

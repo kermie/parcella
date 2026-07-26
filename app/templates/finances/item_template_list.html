@@ -41,7 +41,7 @@
                     </div>
                     <div class="col-sm-3">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_pricing_mode') }}</label>
-                        <select name="pricing_mode" class="form-select form-select-sm">
+                        <select name="pricing_mode" id="new-template-pricing-mode" class="form-select form-select-sm">
                             {% for mode in pricing_modes %}
                             <option value="{{ mode.value }}">{{ t('finances.pricing_modes.' ~ mode.value) }}</option>
                             {% endfor %}
@@ -65,6 +65,11 @@
                             <i class="bi bi-plus-lg"></i>
                         </button>
                     </div>
+                    <div class="col-12 form-check form-switch mb-0" id="new-template-members-wrap" style="display: none;">
+                        <input type="checkbox" name="applies_to_members_without_parcel" id="new-template-members-check"
+                               class="form-check-input">
+                        <label class="form-check-label" for="new-template-members-check">{{ t('finances.run_detail.label_applies_members_without_parcel') }}</label>
+                    </div>
                 </form>
             </div>
         </div>
@@ -83,6 +88,7 @@
                                 <th>{{ t('finances.run_detail.col_name') }}</th>
                                 <th>{{ t('finances.run_detail.col_pricing_mode') }}</th>
                                 <th>{{ t('finances.run_detail.col_unit_price') }}</th>
+                                <th>{{ t('finances.run_detail.col_scope') }}</th>
                                 <th>{{ t('finances.run_detail.col_category') }}</th>
                                 <th></th>
                             </tr>
@@ -107,7 +113,8 @@
                                            value="{{ template.description or '' }}" placeholder="{{ t('finances.run_detail.label_description') }}">
                                 </td>
                                 <td>
-                                    <select name="pricing_mode" form="edit-template-{{ template.id }}" class="form-select form-select-sm">
+                                    <select name="pricing_mode" form="edit-template-{{ template.id }}" class="form-select form-select-sm item-pricing-mode-select"
+                                            id="template-pricing-mode-{{ template.id }}" data-members-wrap="template-members-wrap-{{ template.id }}">
                                         {% for mode in pricing_modes %}
                                         <option value="{{ mode.value }}" {% if template.pricing_mode == mode %}selected{% endif %}>
                                             {{ t('finances.pricing_modes.' ~ mode.value) }}
@@ -119,6 +126,15 @@
                                     <input type="text" name="unit_price" form="edit-template-{{ template.id }}" class="form-control form-control-sm"
                                            style="width: 100px;"
                                            value="{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '' }}">
+                                </td>
+                                <td class="text-nowrap">
+                                    <div class="form-check form-switch mb-0" id="template-members-wrap-{{ template.id }}" style="display: none;">
+                                        <input type="checkbox" name="applies_to_members_without_parcel" form="edit-template-{{ template.id }}"
+                                               class="form-check-input" {% if template.applies_to_members_without_parcel %}checked{% endif %}>
+                                        <label class="form-check-label" style="font-size: 0.8rem;">
+                                            {{ t('finances.run_detail.label_applies_members_without_parcel_short') }}
+                                        </label>
+                                    </div>
                                 </td>
                                 <td>
                                     <select name="category_id" form="edit-template-{{ template.id }}" class="form-select form-select-sm">
@@ -148,13 +164,14 @@
                                 <td>{{ template.name }}{% if template.description %}<br><small class="text-muted">{{ template.description }}</small>{% endif %}</td>
                                 <td>{{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}</td>
                                 <td>{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '-' }}</td>
+                                <td>{% if template.applies_to_members_without_parcel %}{{ t('finances.run_detail.label_applies_members_without_parcel_short') }}{% else %}—{% endif %}</td>
                                 <td>{% if template.category %}{{ template.category.code }} · {{ template.category.title }}{% else %}—{% endif %}</td>
                                 <td></td>
                                 {% endif %}
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.item_template_list.no_templates') }}</td>
+                                <td colspan="7" class="text-center text-muted py-3">{{ t('finances.item_template_list.no_templates') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -165,4 +182,28 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var newPricingMode = document.getElementById('new-template-pricing-mode');
+    var newMembersWrap = document.getElementById('new-template-members-wrap');
+    if (newPricingMode && newMembersWrap) {
+        function syncNew() {
+            newMembersWrap.style.display = newPricingMode.value === 'fixed_per_person' ? 'flex' : 'none';
+        }
+        newPricingMode.addEventListener('change', syncNew);
+        syncNew();
+    }
+
+    document.querySelectorAll('.item-pricing-mode-select').forEach(function (select) {
+        var wrap = document.getElementById(select.dataset.membersWrap);
+        if (!wrap) return;
+        function syncRow() { wrap.style.display = select.value === 'fixed_per_person' ? 'flex' : 'none'; }
+        select.addEventListener('change', syncRow);
+        syncRow();
+    });
+});
+</script>
 {% endblock %}

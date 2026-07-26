@@ -1675,7 +1675,8 @@
     "invoice_delivery": {
       "subject": "Facture {invoice_number} de {club_name}",
       "greeting": "Bonjour {name},",
-      "body": "Vous trouverez ci-joint votre facture de {club_name} pour la parcelle {parcel_number}, à régler avant le {due_date}."
+      "body": "Vous trouverez ci-joint votre facture de {club_name} pour la parcelle {parcel_number}, à régler avant le {due_date}.",
+      "body_member": "Vous trouverez ci-joint votre facture de {club_name}, à régler avant le {due_date}."
     },
     "reminder_delivery": {
       "subject": "Rappel de paiement n° {level} pour la facture {invoice_number} — {club_name}",
@@ -1727,8 +1728,11 @@
       "label_pricing_mode": "Mode de calcul",
       "label_unit_price": "Prix unitaire",
       "label_applies_all": "S'applique à chaque parcelle",
+      "label_applies_members_without_parcel": "Facturer aussi les membres sans parcelle actuelle",
+      "label_applies_members_without_parcel_short": "+ membres sans parcelle",
       "label_parcels": "Parcelles",
       "scope_all": "Toutes les parcelles",
+      "member_invoice_badge": "Sans parcelle (membre)",
       "scope_n_parcels": "{n} parcelle(s)",
       "button_create": "Ajouter la ligne",
       "back_to_run": "Retour à la série de factures",

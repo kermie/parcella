@@ -1675,7 +1675,8 @@
     "invoice_delivery": {
       "subject": "Factuur {invoice_number} van {club_name}",
       "greeting": "Hallo {name},",
-      "body": "Bijgevoegd vindt u uw factuur van {club_name} voor perceel {parcel_number}, te betalen vóór {due_date}."
+      "body": "Bijgevoegd vindt u uw factuur van {club_name} voor perceel {parcel_number}, te betalen vóór {due_date}.",
+      "body_member": "Bijgevoegd vindt u uw factuur van {club_name}, te betalen vóór {due_date}."
     },
     "reminder_delivery": {
       "subject": "Betalingsherinnering nr. {level} voor factuur {invoice_number} — {club_name}",
@@ -1727,8 +1728,11 @@
       "label_pricing_mode": "Berekeningswijze",
       "label_unit_price": "Stukprijs",
       "label_applies_all": "Geldt voor elk perceel",
+      "label_applies_members_without_parcel": "Ook leden zonder huidig perceel factureren",
+      "label_applies_members_without_parcel_short": "+ leden zonder perceel",
       "label_parcels": "Percelen",
       "scope_all": "Alle percelen",
+      "member_invoice_badge": "Geen perceel (lid)",
       "scope_n_parcels": "{n} perce(e)l(en)",
       "button_create": "Regel toevoegen",
       "back_to_run": "Terug naar factuurronde",

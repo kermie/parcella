@@ -223,7 +223,7 @@ async def reminders_list(request: Request, db: AsyncSession = Depends(get_db)):
         select(Invoice, InvoiceRun.due_date)
         .join(InvoiceRun, Invoice.invoice_run_id == InvoiceRun.id)
         .options(
-            selectinload(Invoice.parcel), selectinload(Invoice.payments), selectinload(Invoice.reminders),
+            selectinload(Invoice.parcel), selectinload(Invoice.member), selectinload(Invoice.payments), selectinload(Invoice.reminders),
         )
     )
     today = date.today()
@@ -348,7 +348,7 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
     if run.status == InvoiceRunStatus.FINALIZED:
         result = await db.execute(
             select(Invoice)
-            .options(selectinload(Invoice.parcel))
+            .options(selectinload(Invoice.parcel), selectinload(Invoice.member))
             .where(Invoice.invoice_run_id == run.id)
             .order_by(Invoice.invoice_number)
         )
@@ -381,6 +381,7 @@ async def item_create(
     pricing_mode: str = Form(...),
     unit_price: str = Form(""),
     applies_to_all_parcels: str = Form(""),
+    applies_to_members_without_parcel: str = Form(""),
     parcel_ids: list[str] = Form([]),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -405,6 +406,7 @@ async def item_create(
         pricing_mode=mode,
         unit_price=_parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None,
         applies_to_all_parcels=applies_all,
+        applies_to_members_without_parcel=applies_to_members_without_parcel == "on",
         category_id=category_id.strip() or None,
     )
     db.add(item)
@@ -453,6 +455,7 @@ async def items_add_from_catalog(
                 pricing_mode=template.pricing_mode,
                 unit_price=template.unit_price,
                 applies_to_all_parcels=True,
+                applies_to_members_without_parcel=template.applies_to_members_without_parcel,
                 category_id=template.category_id,
             ))
 
@@ -471,6 +474,7 @@ async def item_update(
     pricing_mode: str = Form(...),
     unit_price: str = Form(""),
     applies_to_all_parcels: str = Form(""),
+    applies_to_members_without_parcel: str = Form(""),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -506,6 +510,7 @@ async def item_update(
     item.pricing_mode = mode
     item.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
     item.applies_to_all_parcels = applies_to_all_parcels == "on"
+    item.applies_to_members_without_parcel = applies_to_members_without_parcel == "on"
     item.category_id = category_id.strip() or None
 
     await db.commit()
@@ -550,7 +555,7 @@ async def run_preview_pdf(run_id: str, parcel_id: str, request: Request, db: Asy
 
     run = await _get_run_or_404(db, run_id)
     computed = await compute_invoices_for_run(db, run)
-    match = next((c for c in computed if c.parcel.id == parcel_id), None)
+    match = next((c for c in computed if c.parcel and c.parcel.id == parcel_id), None)
     if not match:
         raise HTTPException(status_code=404)
 
@@ -560,6 +565,38 @@ async def run_preview_pdf(run_id: str, parcel_id: str, request: Request, db: Asy
         issued_date=run.issued_date, due_date=run.due_date, subject=run.subject,
         recipient_names=match.recipient_names, recipient_address=match.recipient_address,
         parcel_plot_number=match.parcel.plot_number, parcel_area_sqm=match.parcel.area_sqm,
+        line_items=[
+            InvoicePdfLineItem(
+                order_number=li.order_number, name=li.name, description=li.description,
+                quantity=li.quantity, unit_price=li.unit_price, line_total=li.line_total,
+            ) for li in match.line_items
+        ],
+        subtotal=match.subtotal, footer_text=run.footer_text, is_preview=True,
+    )
+    pdf_bytes = render_invoice_pdf(data, **ctx)
+    return Response(content=pdf_bytes, media_type="application/pdf")
+
+
+@router.get("/runs/{run_id}/preview/member/{member_id}/pdf")
+async def run_preview_member_pdf(run_id: str, member_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Same as run_preview_pdf, but for a computed member invoice (a
+    club member with no current parcel, billed by a fixed_per_person
+    item marked applies_to_members_without_parcel -- see
+    app/invoice_generation.py)."""
+    await require_permission(request, db, "finances", "read")
+
+    run = await _get_run_or_404(db, run_id)
+    computed = await compute_invoices_for_run(db, run)
+    match = next((c for c in computed if c.member and c.member.id == member_id), None)
+    if not match:
+        raise HTTPException(status_code=404)
+
+    ctx = await _pdf_context(db)
+    data = InvoicePdfData(
+        invoice_number=t_for(request, "finances.run_preview.pdf_placeholder_number"),
+        issued_date=run.issued_date, due_date=run.due_date, subject=run.subject,
+        recipient_names=match.recipient_names, recipient_address=match.recipient_address,
+        parcel_plot_number=None, parcel_area_sqm=None,
         line_items=[
             InvoicePdfLineItem(
                 order_number=li.order_number, name=li.name, description=li.description,
@@ -600,7 +637,7 @@ async def invoice_pdf(invoice_id: str, request: Request, db: AsyncSession = Depe
 
     result = await db.execute(
         select(Invoice)
-        .options(selectinload(Invoice.line_items), selectinload(Invoice.parcel))
+        .options(selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.member))
         .where(Invoice.id == invoice_id)
     )
     invoice = result.scalar_one_or_none()
@@ -626,7 +663,7 @@ async def invoice_pdf(invoice_id: str, request: Request, db: AsyncSession = Depe
 async def _run_invoices(db: AsyncSession, run_id: str):
     result = await db.execute(
         select(Invoice)
-        .options(selectinload(Invoice.line_items), selectinload(Invoice.parcel))
+        .options(selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.member))
         .where(Invoice.invoice_run_id == run_id)
         .order_by(Invoice.invoice_number)
     )
@@ -703,7 +740,7 @@ async def _get_invoice_or_404(db: AsyncSession, invoice_id: str) -> Invoice:
     result = await db.execute(
         select(Invoice)
         .options(
-            selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.payments),
+            selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.member), selectinload(Invoice.payments),
             selectinload(Invoice.reminders),
         )
         .where(Invoice.id == invoice_id)
@@ -726,8 +763,8 @@ async def invoice_list(
 
     query = (
         select(Invoice)
-        .options(selectinload(Invoice.parcel), selectinload(Invoice.payments), selectinload(Invoice.reminders))
-        .join(Parcel, Invoice.parcel_id == Parcel.id)
+        .options(selectinload(Invoice.parcel), selectinload(Invoice.member), selectinload(Invoice.payments), selectinload(Invoice.reminders))
+        .outerjoin(Parcel, Invoice.parcel_id == Parcel.id)
         .order_by(Invoice.invoice_number.desc())
     )
     if parcel.strip():
@@ -986,6 +1023,7 @@ async def item_template_create(
     description: str = Form(""),
     pricing_mode: str = Form(...),
     unit_price: str = Form(""),
+    applies_to_members_without_parcel: str = Form(""),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -1002,6 +1040,7 @@ async def item_template_create(
         description=description.strip() or None,
         pricing_mode=mode,
         unit_price=_parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None,
+        applies_to_members_without_parcel=applies_to_members_without_parcel == "on",
         category_id=category_id.strip() or None,
     ))
     await db.commit()
@@ -1017,6 +1056,7 @@ async def item_template_update(
     description: str = Form(""),
     pricing_mode: str = Form(...),
     unit_price: str = Form(""),
+    applies_to_members_without_parcel: str = Form(""),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -1037,6 +1077,7 @@ async def item_template_update(
     template.description = description.strip() or None
     template.pricing_mode = mode
     template.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
+    template.applies_to_members_without_parcel = applies_to_members_without_parcel == "on"
     template.category_id = category_id.strip() or None
 
     await db.commit()

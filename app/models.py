@@ -1899,6 +1899,14 @@ class InvoiceItemTemplate(Base):
     pricing_mode: Mapped[InvoicePricingMode] = mapped_column(SAEnum(InvoicePricingMode), nullable=False)
     unit_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
 
+    # Only meaningful for FIXED_PER_PERSON: also bill active club
+    # members with no *current* parcel assignment (e.g. a supporting
+    # member without a plot), one line per member, quantity=1 -- see
+    # app/invoice_generation.py's compute_invoices_for_run. Defaults to
+    # False so applying an existing/imported template never silently
+    # starts billing someone new.
+    applies_to_members_without_parcel: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     category_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("finance_categories.id", ondelete="SET NULL"), nullable=True
     )
@@ -1944,6 +1952,15 @@ class InvoiceItemDefinition(Base):
     # explicitly listed in `parcel_scopes`.
     applies_to_all_parcels: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
+    # Only meaningful for FIXED_PER_PERSON: also bill active club
+    # members with no *current* parcel assignment (e.g. a supporting
+    # member without a plot), one line per member, quantity=1 -- see
+    # app/invoice_generation.py's compute_invoices_for_run. Independent
+    # of applies_to_all_parcels/parcel_scopes (an item can reach parcel
+    # tenants, non-tenant members, or both). Defaults to False so
+    # existing item definitions never silently start billing someone new.
+    applies_to_members_without_parcel: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     # Optional bookkeeping category (issue #67) -- purely for the
     # club's own accounting/reporting, doesn't affect invoice
     # generation. SET NULL rather than blocking deletion, so removing
@@ -1987,13 +2004,19 @@ class InvoiceItemDefinitionParcel(Base):
 
 class Invoice(Base):
     """
-    One invoice for one parcel within an InvoiceRun (issue #57).
-    recipient_names/recipient_address are snapshotted at generation
-    time -- a member moving later must not silently rewrite a
-    historical invoice. The four *_at timestamps track delivery
-    (issue #58): emailed, included in a print bundle, uploaded to the
-    parcel's cloud folder. Payment status is derived from `payments`
-    rather than stored, so it can never go stale.
+    One invoice for one parcel, OR (for a fixed-per-person item marked
+    applies_to_members_without_parcel) one club member with no current
+    parcel -- e.g. a supporting member without a plot -- within an
+    InvoiceRun (issue #57). Exactly one of parcel_id/member_id is set,
+    enforced by ck_invoice_exactly_one_subject. recipient_names/
+    recipient_address are snapshotted at generation time -- a member
+    moving (or losing their parcel, or being deleted) later must not
+    silently rewrite a historical invoice. The four *_at timestamps
+    track delivery (issue #58): emailed, included in a print bundle,
+    uploaded to the parcel's cloud folder (member invoices have no
+    cloud-folder concept, see app/invoice_delivery.py). Payment status
+    is derived from `payments` rather than stored, so it can never go
+    stale.
     """
     __tablename__ = "invoices"
 
@@ -2001,8 +2024,15 @@ class Invoice(Base):
     invoice_run_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("invoice_runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    parcel_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
+    parcel_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    # SET NULL (not CASCADE) since recipient_names/recipient_address are
+    # already a full snapshot -- an invoice must survive its member
+    # being deleted later, same as parcel invoices already survive a
+    # member move.
+    member_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("members.id", ondelete="SET NULL"), nullable=True, index=True
     )
 
     invoice_number: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
@@ -2027,7 +2057,8 @@ class Invoice(Base):
     )
 
     invoice_run: Mapped["InvoiceRun"] = relationship("InvoiceRun", back_populates="invoices")
-    parcel: Mapped["Parcel"] = relationship("Parcel")
+    parcel: Mapped[Optional["Parcel"]] = relationship("Parcel")
+    member: Mapped[Optional["Member"]] = relationship("Member")
     line_items: Mapped[List["InvoiceLineItem"]] = relationship(
         "InvoiceLineItem", back_populates="invoice",
         cascade="all, delete-orphan", order_by="InvoiceLineItem.order_number",
@@ -2039,6 +2070,13 @@ class Invoice(Base):
     reminders: Mapped[List["InvoiceReminder"]] = relationship(
         "InvoiceReminder", back_populates="invoice",
         cascade="all, delete-orphan", order_by="InvoiceReminder.level",
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "(parcel_id IS NOT NULL AND member_id IS NULL) OR (parcel_id IS NULL AND member_id IS NOT NULL)",
+            name="ck_invoice_exactly_one_subject",
+        ),
     )
 
     @property

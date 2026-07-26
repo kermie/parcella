@@ -31,7 +31,10 @@
             <div class="card-body">
                 <dl class="row mb-0">
                     <dt class="col-sm-5">{{ t('finances.invoice_list.col_parcel') }}</dt>
-                    <dd class="col-sm-7">{{ invoice.parcel.plot_number }}</dd>
+                    <dd class="col-sm-7">
+                        {% if invoice.parcel %}{{ invoice.parcel.plot_number }}
+                        {% else %}<span class="badge bg-secondary-subtle text-secondary-emphasis">{{ t('finances.run_detail.member_invoice_badge') }}</span>{% endif %}
+                    </dd>
                     <dt class="col-sm-5">{{ t('finances.invoice_list.col_recipient') }}</dt>
                     <dd class="col-sm-7" style="white-space: pre-line;">{{ invoice.recipient_names }}<br><small class="text-muted">{{ invoice.recipient_address }}</small></dd>
                     <dt class="col-sm-5">{{ t('finances.invoice_list.col_subtotal') }}</dt>

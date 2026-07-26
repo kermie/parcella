@@ -69,7 +69,10 @@
                             {% for invoice in invoices %}
                             <tr>
                                 <td><a href="/finances/invoices/{{ invoice.id }}">{{ invoice.invoice_number }}</a></td>
-                                <td>{{ invoice.parcel.plot_number }}</td>
+                                <td>
+                                    {% if invoice.parcel %}{{ invoice.parcel.plot_number }}
+                                    {% else %}<span class="badge bg-secondary-subtle text-secondary-emphasis">{{ t('finances.run_detail.member_invoice_badge') }}</span>{% endif %}
+                                </td>
                                 <td style="white-space: pre-line;">{{ invoice.recipient_names }}</td>
                                 <td>{{ invoice.subtotal|float|money }}</td>
                                 <td class="text-nowrap">
@@ -133,7 +136,8 @@
                                            value="{{ item.description or '' }}" placeholder="{{ t('finances.run_detail.label_description') }}">
                                 </td>
                                 <td>
-                                    <select name="pricing_mode" form="edit-item-{{ item.id }}" class="form-select form-select-sm">
+                                    <select name="pricing_mode" form="edit-item-{{ item.id }}" class="form-select form-select-sm item-pricing-mode-select"
+                                            id="pricing-mode-{{ item.id }}" data-members-wrap="members-wrap-{{ item.id }}">
                                         {% for mode in pricing_modes %}
                                         <option value="{{ mode.value }}" {% if item.pricing_mode == mode %}selected{% endif %}>
                                             {{ t('finances.pricing_modes.' ~ mode.value) }}
@@ -153,6 +157,13 @@
                                         <label class="form-check-label" style="font-size: 0.8rem;">
                                             {% if item.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
                                             {% else %}{{ t('finances.run_detail.scope_n_parcels', n=item.parcel_scopes|length) }}{% endif %}
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-switch mb-0" id="members-wrap-{{ item.id }}" style="display: none;">
+                                        <input type="checkbox" name="applies_to_members_without_parcel" form="edit-item-{{ item.id }}"
+                                               class="form-check-input" {% if item.applies_to_members_without_parcel %}checked{% endif %}>
+                                        <label class="form-check-label" style="font-size: 0.8rem;">
+                                            {{ t('finances.run_detail.label_applies_members_without_parcel_short') }}
                                         </label>
                                     </div>
                                 </td>
@@ -187,6 +198,9 @@
                                 <td>
                                     {% if item.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
                                     {% else %}{{ t('finances.run_detail.scope_n_parcels', n=item.parcel_scopes|length) }}{% endif %}
+                                    {% if item.applies_to_members_without_parcel %}
+                                    <br><small class="text-muted">{{ t('finances.run_detail.label_applies_members_without_parcel_short') }}</small>
+                                    {% endif %}
                                 </td>
                                 <td>{% if item.category %}{{ item.category.code }} · {{ item.category.title }}{% else %}—{% endif %}</td>
                                 <td></td>
@@ -270,7 +284,7 @@
                         </div>
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_pricing_mode') }}</label>
-                            <select name="pricing_mode" class="form-select form-select-sm">
+                            <select name="pricing_mode" id="new-item-pricing-mode" class="form-select form-select-sm">
                                 {% for mode in pricing_modes %}
                                 <option value="{{ mode.value }}">{{ t('finances.pricing_modes.' ~ mode.value) }}</option>
                                 {% endfor %}
@@ -295,6 +309,12 @@
                         <input type="checkbox" name="applies_to_all_parcels" id="applies-all-check"
                                class="form-check-input" checked>
                         <label class="form-check-label" for="applies-all-check">{{ t('finances.run_detail.label_applies_all') }}</label>
+                    </div>
+
+                    <div class="form-check form-switch mb-2" id="new-item-members-wrap" style="display: none;">
+                        <input type="checkbox" name="applies_to_members_without_parcel" id="new-item-members-check"
+                               class="form-check-input">
+                        <label class="form-check-label" for="new-item-members-check">{{ t('finances.run_detail.label_applies_members_without_parcel') }}</label>
                     </div>
 
                     <div id="parcel-picker" class="mb-2" style="display: none;">
@@ -335,6 +355,24 @@ document.addEventListener('DOMContentLoaded', function () {
         appliesAll.addEventListener('change', sync);
         sync();
     }
+
+    var newItemPricingMode = document.getElementById('new-item-pricing-mode');
+    var newItemMembersWrap = document.getElementById('new-item-members-wrap');
+    if (newItemPricingMode && newItemMembersWrap) {
+        function syncMembersWrap() {
+            newItemMembersWrap.style.display = newItemPricingMode.value === 'fixed_per_person' ? 'block' : 'none';
+        }
+        newItemPricingMode.addEventListener('change', syncMembersWrap);
+        syncMembersWrap();
+    }
+
+    document.querySelectorAll('.item-pricing-mode-select').forEach(function (select) {
+        var wrap = document.getElementById(select.dataset.membersWrap);
+        if (!wrap) return;
+        function syncRow() { wrap.style.display = select.value === 'fixed_per_person' ? 'flex' : 'none'; }
+        select.addEventListener('change', syncRow);
+        syncRow();
+    });
 });
 </script>
 {% endblock %}

@@ -23,9 +23,10 @@ from sqlalchemy.orm import selectinload
 
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoicePricingMode, Invoice, InvoiceLineItem,
-    Parcel, ParcelStatus, MemberParcel, MeteringPoint, MeteringMedium, MeteringPointType, Meter,
+    Parcel, ParcelStatus, MemberParcel, Member, MeteringPoint, MeteringMedium, MeteringPointType, Meter,
     ParcelInsurance, InsuranceConfiguration, ClubSetting,
 )
+from app.database import active_member_filter
 from app.insurance_utils import calculate_insurance_cost, _normalized_address
 from app.meter_utils import calculate_consumption
 from app.l10n import load_current_region, format_address
@@ -73,11 +74,17 @@ class ComputedLineItem:
 
 @dataclass
 class ComputedInvoice:
-    parcel: Parcel
+    """Either `parcel` or `member` is set, never both/neither -- a
+    parcel invoice (the normal case) or a member invoice (a club
+    member with no current parcel, billed by a fixed_per_person item
+    with applies_to_members_without_parcel=True; see
+    _compute_member_invoices)."""
     recipient_names: str
     recipient_address: str
     line_items: List[ComputedLineItem]
     subtotal: Decimal
+    parcel: Optional[Parcel] = None
+    member: Optional[Member] = None
 
 
 def _group_recipient(members: list) -> Tuple[str, str, str, str]:
@@ -115,6 +122,56 @@ async def _load_parcel_insurance_by_parcel(db: AsyncSession, year: int) -> Dict[
         .where(ParcelInsurance.year == year)
     )
     return {pi.parcel_id: pi for pi in result.scalars().all()}
+
+
+async def _compute_member_invoices(db: AsyncSession, run: InvoiceRun, region: str) -> List[ComputedInvoice]:
+    """Active club members with no *current* parcel assignment (e.g. a
+    supporting member without a plot), billed by any fixed_per_person
+    item definition marked applies_to_members_without_parcel=True --
+    one line per such definition, quantity=1 (a lone person, no
+    household grouping needed, unlike a parcel's multiple residents).
+    Only queries the member roster at all if the run actually has such
+    a definition."""
+    applicable_defs = [
+        d for d in run.item_definitions
+        if d.pricing_mode == InvoicePricingMode.FIXED_PER_PERSON and d.applies_to_members_without_parcel
+    ]
+    if not applicable_defs:
+        return []
+
+    members_result = await db.execute(
+        select(Member)
+        .options(selectinload(Member.parcel_assignments))
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
+    )
+    members_without_parcel = [
+        m for m in members_result.scalars().all()
+        if not any(a.assigned_until is None for a in m.parcel_assignments)
+    ]
+
+    computed: List[ComputedInvoice] = []
+    for member in members_without_parcel:
+        line_items = []
+        for definition in sorted(applicable_defs, key=lambda d: d.order_number):
+            if definition.unit_price is None:
+                continue
+            unit_price = Decimal(str(definition.unit_price))
+            line_items.append(ComputedLineItem(
+                order_number=definition.order_number, name=definition.name, description=definition.description,
+                quantity=Decimal("1"), unit_price=unit_price, line_total=unit_price,
+            ))
+        if not line_items:
+            continue
+
+        subtotal = sum((li.line_total for li in line_items), Decimal("0"))
+        recipient_address = format_address(member.street, member.postal_code, member.city, region)
+        computed.append(ComputedInvoice(
+            member=member, recipient_names=member.full_name, recipient_address=recipient_address,
+            line_items=line_items, subtotal=subtotal,
+        ))
+
+    return computed
 
 
 async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[ComputedInvoice]:
@@ -208,6 +265,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             line_items=line_items, subtotal=subtotal,
         ))
 
+    computed.extend(await _compute_member_invoices(db, run, region))
     return computed
 
 
@@ -289,7 +347,9 @@ async def finalize_run(db: AsyncSession, run: InvoiceRun) -> List[Invoice]:
     for c in computed:
         invoice_number = number_format.format(year=run.year, number=next_seq)
         invoice = Invoice(
-            invoice_run_id=run.id, parcel_id=c.parcel.id,
+            invoice_run_id=run.id,
+            parcel_id=c.parcel.id if c.parcel else None,
+            member_id=c.member.id if c.member else None,
             invoice_number=invoice_number, sequence_number=next_seq,
             recipient_names=c.recipient_names, recipient_address=c.recipient_address,
             subtotal=c.subtotal,

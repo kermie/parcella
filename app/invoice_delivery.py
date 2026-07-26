@@ -28,9 +28,26 @@ from app.invoice_pdf import (
 
 
 async def _invoice_recipient(db: AsyncSession, invoice: Invoice) -> Optional[Tuple[Member, str]]:
-    """The (member, email) to send `invoice` to, if any current
-    invoice-address resident of its parcel has email_notifications=True
-    and a stored email address."""
+    """The (member, email) to send `invoice` to. For a parcel invoice:
+    any current invoice-address resident of its parcel with
+    email_notifications=True and a stored email address. For a member
+    invoice (no parcel, invoice.member_id set instead -- see
+    app/invoice_generation.py's _compute_member_invoices): that member
+    directly, same email_notifications/stored-address check, no
+    household grouping needed since it's always exactly that one
+    member."""
+    if invoice.member_id is not None:
+        result = await db.execute(
+            select(Member)
+            .options(selectinload(Member.email_addresses))
+            .where(Member.id == invoice.member_id)
+        )
+        member = result.scalar_one_or_none()
+        if member is None or not member.email_notifications or not member.email_addresses:
+            return None
+        primary = next((e for e in member.email_addresses if e.is_primary), member.email_addresses[0])
+        return member, primary.address
+
     result = await db.execute(
         select(MemberParcel)
         .options(selectinload(MemberParcel.member).selectinload(Member.email_addresses))
@@ -72,10 +89,15 @@ async def send_invoice_email(
     pdf_bytes = render_invoice_pdf(data, **pdf_context)
 
     subject = t_for(request, "email.invoice_delivery.subject", invoice_number=invoice.invoice_number, club_name=pdf_context["club_name"])
+    body = (
+        t_for(request, "email.invoice_delivery.body", club_name=pdf_context["club_name"], parcel_number=invoice.parcel.plot_number, due_date=run.due_date.strftime("%d.%m.%Y"))
+        if invoice.parcel else
+        t_for(request, "email.invoice_delivery.body_member", club_name=pdf_context["club_name"], due_date=run.due_date.strftime("%d.%m.%Y"))
+    )
     html = f"""
     <html><body style="font-family: sans-serif;">
     <p>{t_for(request, "email.invoice_delivery.greeting", name=member.full_name)}</p>
-    <p>{t_for(request, "email.invoice_delivery.body", club_name=pdf_context["club_name"], parcel_number=invoice.parcel.plot_number, due_date=run.due_date.strftime("%d.%m.%Y"))}</p>
+    <p>{body}</p>
     </body></html>
     """
     filename = invoice_pdf_filename(invoice, run)
@@ -143,11 +165,12 @@ async def upload_invoice_to_cloud(
     caller (app.cloud_storage.get_nextcloud_provider) and reused across
     every invoice in a run, rather than reconnecting per invoice.
     Returns whether it was actually uploaded (silently skipped -- not
-    an error -- if cloud storage isn't configured or the parcel has no
-    folder assigned, same as the rest of the app treats this as
-    opt-in). Sets invoice.uploaded_to_cloud_at on success. Caller
-    commits."""
-    if provider is None:
+    an error -- if cloud storage isn't configured, the parcel has no
+    folder assigned, or `invoice` is a member invoice with no parcel at
+    all -- there's no member-level cloud folder concept, same as the
+    rest of the app treats this as opt-in). Sets
+    invoice.uploaded_to_cloud_at on success. Caller commits."""
+    if provider is None or invoice.parcel_id is None:
         return False
     folder = await get_active_folder(db, invoice.parcel_id)
     if folder is None:
