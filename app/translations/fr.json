@@ -1774,7 +1774,8 @@
       "per_sqm": "Par m² loué",
       "water_usage": "Consommation d'eau (depuis le module)",
       "electricity_usage": "Consommation d'électricité (depuis le module)",
-      "insurance_cost": "Coût d'assurance (depuis le module)"
+      "insurance_cost": "Coût d'assurance (depuis le module)",
+      "communal_area_share": "Part du bail de la surface commune"
     },
     "errors": {
       "cannot_delete_finalized_run": "Cette série de factures est déjà finalisée et ne peut plus être supprimée.",

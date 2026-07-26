@@ -8,7 +8,7 @@ import urllib.parse
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
@@ -18,7 +18,7 @@ from app.models import (
     GroupMembership, ParcelCloudFolder, WorkSession, WorkTask, ChangeHistory,
     MeterReading, Ticket, TicketMessage, PurchaseRequest, PurchaseRequestApproval,
     CalendarEvent, CouncilPresence, CouncilAbsence, Announcement, InventoryItem,
-    ItemLoan, Task, Parcel, ParcelStatus,
+    ItemLoan, Task,
 )
 from app.auth import require_system_admin, create_invitation_token, hash_password
 from app.permissions import is_last_admin
@@ -30,6 +30,7 @@ from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
 from app.branding import save_logo_upload, remove_logo_file
 from app.nav_order import NAV_ORDER_DEFAULTS
+from app.area_utils import compute_area_a_sqm, compute_area_b_sqm
 from app.invoice_generation import (
     INVOICE_NUMBER_FORMAT_EXAMPLES, DEFAULT_INVOICE_NUMBER_FORMAT, is_valid_invoice_number_format,
 )
@@ -631,21 +632,11 @@ async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
     # query as the dashboard's "Total area" card, see issue #80), and
     # Area B is derived from it, so only Total area and Area C
     # (municipal) remain things a board member actually has to type in.
-    area_a_result = await db.scalar(
-        select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(Parcel.status != ParcelStatus.DELETED)
-    )
-    area_a_sqm = float(area_a_result or 0)
-
-    def _parse_area_setting(key: str) -> float:
-        raw = settings_map.get(key)
-        try:
-            return float(raw) if raw else 0.0
-        except ValueError:
-            return 0.0
-
-    total_area_sqm = _parse_area_setting("flaeche_gesamt_qm")
-    area_c_sqm = _parse_area_setting("flaeche_c_qm")
-    area_b_sqm = total_area_sqm - area_a_sqm - area_c_sqm
+    # Shared with the "communal area share" invoice pricing mode
+    # (issue #82, app/invoice_generation.py) via app/area_utils.py so
+    # both agree on exactly the same numbers.
+    area_a_sqm = await compute_area_a_sqm(db)
+    area_b_sqm = await compute_area_b_sqm(db, area_a_sqm)
 
     return templates.TemplateResponse(
         "admin/settings.html",

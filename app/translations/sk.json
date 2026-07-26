@@ -1774,7 +1774,8 @@
       "per_sqm": "Za prenajatý m²",
       "water_usage": "Spotreba vody (z modúlu)",
       "electricity_usage": "Spotreba elektriny (z modúlu)",
-      "insurance_cost": "Náklady na poistenie (z modúlu)"
+      "insurance_cost": "Náklady na poistenie (z modúlu)",
+      "communal_area_share": "Podiel na nájme spoločnej plochy"
     },
     "errors": {
       "cannot_delete_finalized_run": "Toto vyúčtovanie je už dokončené a nemožno ho zmazať.",

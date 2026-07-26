@@ -1833,6 +1833,7 @@ class InvoicePricingMode(str, enum.Enum):
     WATER_USAGE = "water_usage"
     ELECTRICITY_USAGE = "electricity_usage"
     INSURANCE_COST = "insurance_cost"
+    COMMUNAL_AREA_SHARE = "communal_area_share"
 
 
 class InvoiceRun(Base):

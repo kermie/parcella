@@ -1774,7 +1774,8 @@
       "per_sqm": "Per leased m²",
       "water_usage": "Water usage (from module)",
       "electricity_usage": "Electricity usage (from module)",
-      "insurance_cost": "Insurance cost (from module)"
+      "insurance_cost": "Insurance cost (from module)",
+      "communal_area_share": "Share of the communal area lease"
     },
     "errors": {
       "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",

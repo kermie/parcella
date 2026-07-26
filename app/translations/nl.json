@@ -1774,7 +1774,8 @@
       "per_sqm": "Per gehuurde m²",
       "water_usage": "Waterverbruik (uit module)",
       "electricity_usage": "Stroomverbruik (uit module)",
-      "insurance_cost": "Verzekeringskosten (uit module)"
+      "insurance_cost": "Verzekeringskosten (uit module)",
+      "communal_area_share": "Aandeel in de pacht van het gemeenschappelijk terrein"
     },
     "errors": {
       "cannot_delete_finalized_run": "Deze factuurronde is al afgerond en kan niet meer worden verwijderd.",

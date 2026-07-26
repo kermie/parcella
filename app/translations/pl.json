@@ -1774,7 +1774,8 @@
       "per_sqm": "Za dzierżaw. m²",
       "water_usage": "Zużycie wody (z modułu)",
       "electricity_usage": "Zużycie energii (z modułu)",
-      "insurance_cost": "Koszt ubezpieczenia (z modułu)"
+      "insurance_cost": "Koszt ubezpieczenia (z modułu)",
+      "communal_area_share": "Udział w dzierżawie powierzchni wspólnej"
     },
     "errors": {
       "cannot_delete_finalized_run": "Ta seria faktur jest już zakończona i nie można jej usunąć.",

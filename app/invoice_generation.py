@@ -30,6 +30,7 @@ from app.database import active_member_filter
 from app.insurance_utils import calculate_insurance_cost, _normalized_address
 from app.meter_utils import calculate_consumption
 from app.l10n import load_current_region, format_address
+from app.area_utils import compute_area_b_sqm
 
 # Issue #65: club-configurable invoice number format/starting sequence.
 # Freely typed (e.g. "R-{year}-{number}"), not a fixed list -- {year}
@@ -180,6 +181,21 @@ async def _compute_member_invoices(db: AsyncSession, run: InvoiceRun, region: st
     return computed
 
 
+def _parcel_is_billable(parcel: Parcel) -> bool:
+    """Whether `parcel` currently has at least one invoice-address
+    resident -- the same check compute_invoices_for_run's parcel loop
+    uses to decide whether a parcel gets an invoice at all. Shared with
+    the communal-area-share denominator below (issue #82), so "how many
+    parcels split Area B" always matches "how many parcels actually get
+    billed"."""
+    current_residents = [a for a in parcel.member_assignments if a.assigned_until is None]
+    return any(a.is_invoice_address for a in current_residents)
+
+
+def _parcel_in_scope(definition, parcel: Parcel) -> bool:
+    return definition.applies_to_all_parcels or any(s.parcel_id == parcel.id for s in definition.parcel_scopes)
+
+
 async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[ComputedInvoice]:
     region = await load_current_region(db)
 
@@ -199,6 +215,20 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
         select(InsuranceConfiguration).where(InsuranceConfiguration.year == run.year)
     )
     insurance_configuration = insurance_config_result.scalar_one_or_none()
+
+    # "Share of the lease for the communal area" (issue #82): Area B is
+    # split evenly across however many parcels actually get billed for
+    # each such item definition, so the sum of every tenant's share
+    # reconstructs the whole communal area -- the club only enters the
+    # price per sqm by hand. The denominator is per-definition (not
+    # global) since two communal-share items could theoretically be
+    # scoped to different subsets of parcels.
+    area_b_sqm = await compute_area_b_sqm(db)
+    communal_share_denominators: Dict[str, int] = {
+        d.id: sum(1 for p in all_parcels if _parcel_in_scope(d, p) and _parcel_is_billable(p))
+        for d in run.item_definitions
+        if d.pricing_mode == InvoicePricingMode.COMMUNAL_AREA_SHARE
+    }
 
     def item_quantity_and_price(definition, parcel):
         mode = definition.pricing_mode
@@ -228,22 +258,29 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             if cost["total"] <= 0:
                 return None, None
             return Decimal("1"), cost["total"]
+        if mode == InvoicePricingMode.COMMUNAL_AREA_SHARE:
+            if definition.unit_price is None:
+                return None, None
+            denom = communal_share_denominators.get(definition.id, 0)
+            if denom == 0 or area_b_sqm is None or area_b_sqm <= 0:
+                return None, None
+            return Decimal(str(area_b_sqm)) / Decimal(denom), Decimal(str(definition.unit_price))
         return None, None
 
     computed: List[ComputedInvoice] = []
     for parcel in all_parcels:
         applicable_defs = [
             d for d in run.item_definitions
-            if d.pricing_mode != InvoicePricingMode.FIXED_PER_PERSON
-            and (d.applies_to_all_parcels or any(s.parcel_id == parcel.id for s in d.parcel_scopes))
+            if d.pricing_mode != InvoicePricingMode.FIXED_PER_PERSON and _parcel_in_scope(d, parcel)
         ]
         if not applicable_defs:
             continue
 
-        current_residents = [a for a in parcel.member_assignments if a.assigned_until is None]
-        invoice_address_members = [a.member for a in current_residents if a.is_invoice_address]
-        if not invoice_address_members:
+        if not _parcel_is_billable(parcel):
             continue
+        invoice_address_members = [
+            a.member for a in parcel.member_assignments if a.assigned_until is None and a.is_invoice_address
+        ]
 
         names, street, postal_code, city = _group_recipient(invoice_address_members)
         recipient_address = format_address(street, postal_code, city, region)

@@ -1774,7 +1774,8 @@
       "per_sqm": "Je gepachtetem m²",
       "water_usage": "Wasserverbrauch (aus Modul)",
       "electricity_usage": "Stromverbrauch (aus Modul)",
-      "insurance_cost": "Versicherungskosten (aus Modul)"
+      "insurance_cost": "Versicherungskosten (aus Modul)",
+      "communal_area_share": "Anteil an der Gemeinschaftsflächenpacht"
     },
     "errors": {
       "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",
