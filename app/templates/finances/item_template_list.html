@@ -67,13 +67,26 @@
                     </div>
                     <div class="col-12 form-check form-switch mb-0">
                         <input type="checkbox" name="applies_to_all_parcels" id="new-template-all-parcels-check"
-                               class="form-check-input" checked>
+                               class="form-check-input" checked data-parcel-picker="new-template-parcel-picker">
                         <label class="form-check-label" for="new-template-all-parcels-check">{{ t('finances.run_detail.label_applies_all') }}</label>
                     </div>
                     <div class="col-12 form-check form-switch mb-0" id="new-template-members-wrap" style="display: none;">
                         <input type="checkbox" name="applies_to_members_without_parcel" id="new-template-members-check"
                                class="form-check-input">
                         <label class="form-check-label" for="new-template-members-check">{{ t('finances.run_detail.label_applies_members_without_parcel') }}</label>
+                    </div>
+                    <div class="col-12" id="new-template-parcel-picker" style="display: none;">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
+                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                            {% for parcel in parcels %}
+                            <div class="col-sm-3 col-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" class="form-check-input" id="new-template-parcel-{{ parcel.id }}">
+                                    <label class="form-check-label" style="font-size: 0.85rem;" for="new-template-parcel-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </form>
             </div>
@@ -135,8 +148,13 @@
                                 <td class="text-nowrap">
                                     <div class="form-check form-switch mb-0">
                                         <input type="checkbox" name="applies_to_all_parcels" form="edit-template-{{ template.id }}"
-                                               class="form-check-input" {% if template.applies_to_all_parcels %}checked{% endif %}>
-                                        <label class="form-check-label" style="font-size: 0.8rem;">{{ t('finances.run_detail.scope_all') }}</label>
+                                               class="form-check-input applies-all-toggle" id="template-all-parcels-{{ template.id }}"
+                                               data-parcel-picker="template-parcel-picker-row-{{ template.id }}"
+                                               {% if template.applies_to_all_parcels %}checked{% endif %}>
+                                        <label class="form-check-label" for="template-all-parcels-{{ template.id }}" style="font-size: 0.8rem;">
+                                            {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
+                                            {% else %}{{ t('finances.run_detail.scope_n_parcels', n=template.parcel_scopes|length) }}{% endif %}
+                                        </label>
                                     </div>
                                     <div class="form-check form-switch mb-0" id="template-members-wrap-{{ template.id }}" style="display: none;">
                                         <input type="checkbox" name="applies_to_members_without_parcel" form="edit-template-{{ template.id }}"
@@ -175,7 +193,8 @@
                                 <td>{{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}</td>
                                 <td>{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '-' }}</td>
                                 <td>
-                                    {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}{% else %}—{% endif %}
+                                    {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
+                                    {% else %}{{ t('finances.run_detail.scope_n_parcels', n=template.parcel_scopes|length) }}{% endif %}
                                     {% if template.applies_to_members_without_parcel %}
                                     <br><small class="text-muted">{{ t('finances.run_detail.label_applies_members_without_parcel_short') }}</small>
                                     {% endif %}
@@ -184,6 +203,26 @@
                                 <td></td>
                                 {% endif %}
                             </tr>
+                            {% if has_perm(request, 'finances', 'write') %}
+                            <tr id="template-parcel-picker-row-{{ template.id }}" style="display: none;">
+                                <td colspan="7" class="bg-light">
+                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
+                                    <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                                        {% set scoped_parcel_ids = template.parcel_scopes|map(attribute='parcel_id')|list %}
+                                        {% for parcel in parcels %}
+                                        <div class="col-sm-3 col-6">
+                                            <div class="form-check">
+                                                <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="edit-template-{{ template.id }}"
+                                                       class="form-check-input" id="template-parcel-{{ template.id }}-{{ parcel.id }}"
+                                                       {% if parcel.id in scoped_parcel_ids %}checked{% endif %}>
+                                                <label class="form-check-label" style="font-size: 0.85rem;" for="template-parcel-{{ template.id }}-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% else %}
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-3">{{ t('finances.item_template_list.no_templates') }}</td>
@@ -218,6 +257,22 @@ document.addEventListener('DOMContentLoaded', function () {
         function syncRow() { wrap.style.display = select.value === 'fixed_per_person' ? 'flex' : 'none'; }
         select.addEventListener('change', syncRow);
         syncRow();
+    });
+
+    var newAllParcels = document.getElementById('new-template-all-parcels-check');
+    var newParcelPicker = document.getElementById('new-template-parcel-picker');
+    if (newAllParcels && newParcelPicker) {
+        function syncNewPicker() { newParcelPicker.style.display = newAllParcels.checked ? 'none' : 'block'; }
+        newAllParcels.addEventListener('change', syncNewPicker);
+        syncNewPicker();
+    }
+
+    document.querySelectorAll('.applies-all-toggle').forEach(function (checkbox) {
+        var pickerRow = document.getElementById(checkbox.dataset.parcelPicker);
+        if (!pickerRow) return;
+        function syncPickerRow() { pickerRow.style.display = checkbox.checked ? 'none' : 'table-row'; }
+        checkbox.addEventListener('change', syncPickerRow);
+        syncPickerRow();
     });
 });
 </script>

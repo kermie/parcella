@@ -33,7 +33,8 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.i18n import t_for, load_current_language
 from app.models import (
-    InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel, InvoiceItemTemplate,
+    InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel,
+    InvoiceItemTemplate, InvoiceItemTemplateParcel,
     InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, ClubSetting, Parcel, ParcelStatus,
     FinanceCategory, FinanceCategoryGroup,
 )
@@ -87,7 +88,7 @@ async def _get_run_or_404(db: AsyncSession, run_id: str) -> InvoiceRun:
 async def _item_templates(db: AsyncSession) -> list:
     result = await db.execute(
         select(InvoiceItemTemplate)
-        .options(selectinload(InvoiceItemTemplate.category))
+        .options(selectinload(InvoiceItemTemplate.category), selectinload(InvoiceItemTemplate.parcel_scopes))
         .order_by(InvoiceItemTemplate.order_number)
     )
     return list(result.scalars().all())
@@ -432,13 +433,10 @@ async def items_add_from_catalog(
     items from another run" mechanism (issue #66), so a board member
     picks known-good recurring items by name/price instead of blindly
     duplicating everything from a specific past run (which may have
-    included one-off items). Inherits the template's own
-    applies_to_all_parcels/applies_to_members_without_parcel scope
-    verbatim -- a catalog item that needs custom per-parcel scoping for
-    this specific run can still be edited afterward like any
-    manually-added item (parcel_scopes themselves aren't editable post
-    creation, see item_update). Adds to whatever's already on the
-    target run rather than replacing it."""
+    included one-off items). Inherits the template's own scope
+    verbatim, including specific parcel_scopes -- itself still freely
+    editable afterward on the new item, same as the template. Adds to
+    whatever's already on the target run rather than replacing it."""
     await require_permission(request, db, "finances", "write")
 
     run = await _get_run_or_404(db, run_id)
@@ -447,10 +445,12 @@ async def items_add_from_catalog(
 
     if template_ids:
         result = await db.execute(
-            select(InvoiceItemTemplate).where(InvoiceItemTemplate.id.in_(template_ids))
+            select(InvoiceItemTemplate)
+            .options(selectinload(InvoiceItemTemplate.parcel_scopes))
+            .where(InvoiceItemTemplate.id.in_(template_ids))
         )
         for template in result.scalars().all():
-            db.add(InvoiceItemDefinition(
+            item = InvoiceItemDefinition(
                 invoice_run_id=run.id,
                 order_number=template.order_number,
                 name=template.name,
@@ -460,7 +460,13 @@ async def items_add_from_catalog(
                 applies_to_all_parcels=template.applies_to_all_parcels,
                 applies_to_members_without_parcel=template.applies_to_members_without_parcel,
                 category_id=template.category_id,
-            ))
+            )
+            db.add(item)
+            await db.flush()
+
+            if not template.applies_to_all_parcels:
+                for scope in template.parcel_scopes:
+                    db.add(InvoiceItemDefinitionParcel(invoice_item_definition_id=item.id, parcel_id=scope.parcel_id))
 
     await db.commit()
     return RedirectResponse(f"/finances/runs/{run_id}", status_code=302)
@@ -1026,10 +1032,11 @@ async def item_template_list(request: Request, db: AsyncSession = Depends(get_db
     next_order = max((t.order_number for t in item_templates), default=0) + 10
     categories_result = await db.execute(select(FinanceCategory).order_by(FinanceCategory.code))
     categories = list(categories_result.scalars().all())
+    parcels = await _active_parcels(db)
 
     return templates.TemplateResponse("finances/item_template_list.html", {
         "request": request, "user": user, "item_templates": item_templates, "next_order": next_order,
-        "pricing_modes": list(InvoicePricingMode), "categories": categories,
+        "pricing_modes": list(InvoicePricingMode), "categories": categories, "parcels": parcels,
     })
 
 
@@ -1043,6 +1050,7 @@ async def item_template_create(
     unit_price: str = Form(""),
     applies_to_all_parcels: str = Form(""),
     applies_to_members_without_parcel: str = Form(""),
+    parcel_ids: list[str] = Form([]),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -1053,16 +1061,24 @@ async def item_template_create(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid pricing_mode")
 
-    db.add(InvoiceItemTemplate(
+    applies_all = applies_to_all_parcels == "on"
+    template = InvoiceItemTemplate(
         order_number=order_number,
         name=name.strip(),
         description=description.strip() or None,
         pricing_mode=mode,
         unit_price=_parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None,
-        applies_to_all_parcels=applies_to_all_parcels == "on",
+        applies_to_all_parcels=applies_all,
         applies_to_members_without_parcel=applies_to_members_without_parcel == "on",
         category_id=category_id.strip() or None,
-    ))
+    )
+    db.add(template)
+    await db.flush()
+
+    if not applies_all:
+        for parcel_id in parcel_ids:
+            db.add(InvoiceItemTemplateParcel(invoice_item_template_id=template.id, parcel_id=parcel_id))
+
     await db.commit()
     return RedirectResponse("/finances/item-templates?success=1", status_code=302)
 
@@ -1078,12 +1094,20 @@ async def item_template_update(
     unit_price: str = Form(""),
     applies_to_all_parcels: str = Form(""),
     applies_to_members_without_parcel: str = Form(""),
+    parcel_ids: list[str] = Form([]),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
+    """Edits a template, including its specific-parcel scoping --
+    freely editable at any time, same as a run's own item (see
+    item_update)."""
     await require_permission(request, db, "finances", "write")
 
-    result = await db.execute(select(InvoiceItemTemplate).where(InvoiceItemTemplate.id == template_id))
+    result = await db.execute(
+        select(InvoiceItemTemplate)
+        .options(selectinload(InvoiceItemTemplate.parcel_scopes))
+        .where(InvoiceItemTemplate.id == template_id)
+    )
     template = result.scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404)
@@ -1093,14 +1117,21 @@ async def item_template_update(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid pricing_mode")
 
+    applies_all = applies_to_all_parcels == "on"
     template.order_number = order_number
     template.name = name.strip()
     template.description = description.strip() or None
     template.pricing_mode = mode
     template.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
-    template.applies_to_all_parcels = applies_to_all_parcels == "on"
+    template.applies_to_all_parcels = applies_all
     template.applies_to_members_without_parcel = applies_to_members_without_parcel == "on"
     template.category_id = category_id.strip() or None
+
+    for scope in list(template.parcel_scopes):
+        await db.delete(scope)
+    if not applies_all:
+        for parcel_id in parcel_ids:
+            db.add(InvoiceItemTemplateParcel(invoice_item_template_id=template.id, parcel_id=parcel_id))
 
     await db.commit()
     return RedirectResponse("/finances/item-templates?success=1", status_code=302)

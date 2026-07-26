@@ -306,3 +306,71 @@ async def test_item_parcel_scope_stays_editable_before_finalize(client, admin_us
         item = result.scalars().one()
     assert item.applies_to_all_parcels is True
     assert item.parcel_scopes == []
+
+
+async def test_item_template_parcel_scope_editable_and_copied_to_run(client, admin_user):
+    """Explicit request: the item catalog needs the same specific-
+    parcel picker the run's own items have. Covers: create a template
+    scoped to one parcel, edit it to a different parcel, then apply it
+    from the catalog to a run and confirm the exact scope is copied
+    onto the new item (and stays independently editable there)."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    await _enable_finances_module()
+
+    async with AsyncSessionLocal() as session:
+        parcel_a = Parcel(plot_number="TPL-SCOPE-A", area_sqm=100)
+        parcel_b = Parcel(plot_number="TPL-SCOPE-B", area_sqm=100)
+        session.add_all([parcel_a, parcel_b])
+        await session.commit()
+        parcel_a_id, parcel_b_id = parcel_a.id, parcel_b.id
+
+    r_template = await client.post("/finances/item-templates", data={
+        "order_number": "10", "name": "Scoped template", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "7.00",
+        "parcel_ids": [parcel_a_id],
+    })
+    assert r_template.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemTemplate)
+            .options(selectinload(InvoiceItemTemplate.parcel_scopes))
+            .where(InvoiceItemTemplate.name == "Scoped template")
+        )
+        template = result.scalars().one()
+    assert template.applies_to_all_parcels is False
+    assert {s.parcel_id for s in template.parcel_scopes} == {parcel_a_id}
+
+    # Edit the template: swap the scope from parcel A to parcel B.
+    r_edit = await client.post(f"/finances/item-templates/{template.id}/edit", data={
+        "order_number": "10", "name": "Scoped template", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "7.00",
+        "parcel_ids": [parcel_b_id],
+    })
+    assert r_edit.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemTemplate)
+            .options(selectinload(InvoiceItemTemplate.parcel_scopes))
+            .where(InvoiceItemTemplate.id == template.id)
+        )
+        template = result.scalars().one()
+    assert {s.parcel_id for s in template.parcel_scopes} == {parcel_b_id}, "scope must be replaced, not merged"
+
+    # Apply from the catalog to a run -- the exact scope must transfer.
+    run_id = await _make_run(client, year="2031")
+    r_apply = await client.post(
+        f"/finances/runs/{run_id}/items/add-from-catalog", data={"template_ids": [template.id]},
+    )
+    assert r_apply.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .options(selectinload(InvoiceItemDefinition.parcel_scopes))
+            .where(InvoiceItemDefinition.invoice_run_id == run_id)
+        )
+        item = result.scalars().one()
+    assert item.applies_to_all_parcels is False
+    assert {s.parcel_id for s in item.parcel_scopes} == {parcel_b_id}

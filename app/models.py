@@ -1885,13 +1885,12 @@ class InvoiceItemTemplate(Base):
     run's items means picking from a visible, known-good list instead
     of blindly copying everything from a specific past run (which may
     have included one-off items). Fields mirror InvoiceItemDefinition,
-    minus invoice_run_id and specific per-parcel scoping (parcel_scopes)
-    -- picking individual parcels only makes sense once a template is
-    actually applied to a specific run's actual membership (see
-    app/routers/finances.py's items_add_from_catalog), but the
-    all-or-none applies_to_all_parcels toggle is still meaningful at
-    the template level (e.g. a supporting-member fee that should apply
-    to NO parcels at all, only members without one).
+    including specific per-parcel scoping (parcel_scopes, used when
+    applies_to_all_parcels=False) -- copied verbatim onto the new
+    InvoiceItemDefinition when applied to a run (see
+    app/routers/finances.py's items_add_from_catalog) and freely
+    editable on the template itself at any time, same as on a run's
+    own item.
     """
     __tablename__ = "invoice_item_templates"
 
@@ -1928,9 +1927,35 @@ class InvoiceItemTemplate(Base):
     )
 
     category: Mapped[Optional["FinanceCategory"]] = relationship("FinanceCategory")
+    parcel_scopes: Mapped[List["InvoiceItemTemplateParcel"]] = relationship(
+        "InvoiceItemTemplateParcel", back_populates="item_template", cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<InvoiceItemTemplate {self.name!r} ({self.pricing_mode.value})>"
+
+
+class InvoiceItemTemplateParcel(Base):
+    """Explicit parcel inclusion for an InvoiceItemTemplate where
+    applies_to_all_parcels=False -- mirrors InvoiceItemDefinitionParcel."""
+    __tablename__ = "invoice_item_template_parcels"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_item_template_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoice_item_templates.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    parcel_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("parcels.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    item_template: Mapped["InvoiceItemTemplate"] = relationship(
+        "InvoiceItemTemplate", back_populates="parcel_scopes"
+    )
+    parcel: Mapped["Parcel"] = relationship("Parcel")
+
+    __table_args__ = (
+        UniqueConstraint("invoice_item_template_id", "parcel_id", name="uq_invoice_item_template_parcel"),
+    )
 
 
 class InvoiceItemDefinition(Base):
