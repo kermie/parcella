@@ -300,9 +300,14 @@ async def startseite(request: Request):
                 Parcel.id.not_in(besetzte_ids)
             )
         )
+        # Every parcel that's ever been leased (active or terminated) --
+        # not just currently-active ones (issue #80) -- but not DELETED,
+        # which represents a parcel removed from the system entirely
+        # (e.g. a data correction), not a real leased plot. Matches how
+        # api_stats.py's parcels_total already counts "total" parcels.
         area_total = await db.scalar(
             select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(
-                Parcel.status == ParcelStatus.ACTIVE
+                Parcel.status != ParcelStatus.DELETED
             )
         )
         neueste_result = await db.execute(
