@@ -229,9 +229,9 @@
             </div>
             <div class="card-body">
                 <form method="post" action="/finances/runs/{{ run.id }}/items/add-from-catalog">
-                    <div class="row" style="max-height: 260px; overflow-y: auto;">
+                    <div style="max-height: 260px; overflow-y: auto;">
                         {% for template in item_templates %}
-                        <div class="col-sm-6 mb-2">
+                        <div class="mb-2">
                             <div class="form-check">
                                 <input type="checkbox" name="template_ids" value="{{ template.id }}" class="form-check-input" id="template-{{ template.id }}">
                                 <label class="form-check-label" for="template-{{ template.id }}">
@@ -270,56 +270,59 @@
         <div class="card">
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.run_detail.new_item_header') }}</div>
             <div class="card-body">
-                <form method="post" action="/finances/runs/{{ run.id }}/items">
-                    <div class="row g-2 align-items-end mb-2">
-                        <div class="col-sm-1">
-                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_order') }}</label>
-                            <input type="number" name="order_number" class="form-control form-control-sm" value="{{ next_order }}">
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_name') }}</label>
-                            <input type="text" name="name" class="form-control form-control-sm" required>
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_description') }}</label>
-                            <input type="text" name="description" class="form-control form-control-sm">
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_pricing_mode') }}</label>
-                            <select name="pricing_mode" id="new-item-pricing-mode" class="form-select form-select-sm">
-                                {% for mode in pricing_modes %}
-                                <option value="{{ mode.value }}">{{ t('finances.pricing_modes.' ~ mode.value) }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-sm-2">
-                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_unit_price') }}</label>
-                            <input type="text" name="unit_price" class="form-control form-control-sm" placeholder="0,00">
-                        </div>
-                        <div class="col-sm-3">
-                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_category') }}</label>
-                            <select name="category_id" class="form-select form-select-sm">
-                                <option value="">—</option>
-                                {% for category in categories %}
-                                <option value="{{ category.id }}">{{ category.code }} · {{ category.title }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                <form method="post" action="/finances/runs/{{ run.id }}/items" class="row g-2 align-items-end">
+                    <div class="col-sm-1">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_order') }}</label>
+                        <input type="number" name="order_number" class="form-control form-control-sm" value="{{ next_order }}">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_name') }}</label>
+                        <input type="text" name="name" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_description') }}</label>
+                        <input type="text" name="description" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_pricing_mode') }}</label>
+                        <select name="pricing_mode" id="new-item-pricing-mode" class="form-select form-select-sm">
+                            {% for mode in pricing_modes %}
+                            <option value="{{ mode.value }}">{{ t('finances.pricing_modes.' ~ mode.value) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-1">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_unit_price') }}</label>
+                        <input type="text" name="unit_price" class="form-control form-control-sm" placeholder="0,00">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_category') }}</label>
+                        <select name="category_id" class="form-select form-select-sm">
+                            <option value="">—</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.code }} · {{ category.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-1">
+                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
                     </div>
 
-                    <div class="form-check form-switch mb-2">
+                    <div class="col-12 form-check form-switch mb-0">
                         <input type="checkbox" name="applies_to_all_parcels" id="applies-all-check"
                                class="form-check-input" checked>
                         <label class="form-check-label" for="applies-all-check">{{ t('finances.run_detail.label_applies_all') }}</label>
                     </div>
 
-                    <div class="form-check form-switch mb-2" id="new-item-members-wrap" style="display: none;">
+                    <div class="col-12 form-check form-switch mb-0" id="new-item-members-wrap" style="display: none;">
                         <input type="checkbox" name="applies_to_members_without_parcel" id="new-item-members-check"
                                class="form-check-input">
                         <label class="form-check-label" for="new-item-members-check">{{ t('finances.run_detail.label_applies_members_without_parcel') }}</label>
                     </div>
 
-                    <div id="parcel-picker" class="mb-2" style="display: none;">
+                    <div class="col-12" id="parcel-picker" style="display: none;">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
                         <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
                             {% for parcel in parcels %}
@@ -332,10 +335,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
-                    <button type="submit" class="btn btn-sm btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i>{{ t('finances.run_detail.button_create') }}
-                    </button>
                 </form>
             </div>
         </div>
