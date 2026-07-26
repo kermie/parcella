@@ -432,10 +432,13 @@ async def items_add_from_catalog(
     items from another run" mechanism (issue #66), so a board member
     picks known-good recurring items by name/price instead of blindly
     duplicating everything from a specific past run (which may have
-    included one-off items). Always applies to all parcels -- a
-    catalog item that needs custom per-parcel scoping for this run can
-    still be edited afterward like any manually-added item. Adds to
-    whatever's already on the target run rather than replacing it."""
+    included one-off items). Inherits the template's own
+    applies_to_all_parcels/applies_to_members_without_parcel scope
+    verbatim -- a catalog item that needs custom per-parcel scoping for
+    this specific run can still be edited afterward like any
+    manually-added item (parcel_scopes themselves aren't editable post
+    creation, see item_update). Adds to whatever's already on the
+    target run rather than replacing it."""
     await require_permission(request, db, "finances", "write")
 
     run = await _get_run_or_404(db, run_id)
@@ -454,7 +457,7 @@ async def items_add_from_catalog(
                 description=template.description,
                 pricing_mode=template.pricing_mode,
                 unit_price=template.unit_price,
-                applies_to_all_parcels=True,
+                applies_to_all_parcels=template.applies_to_all_parcels,
                 applies_to_members_without_parcel=template.applies_to_members_without_parcel,
                 category_id=template.category_id,
             ))
@@ -1023,6 +1026,7 @@ async def item_template_create(
     description: str = Form(""),
     pricing_mode: str = Form(...),
     unit_price: str = Form(""),
+    applies_to_all_parcels: str = Form(""),
     applies_to_members_without_parcel: str = Form(""),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -1040,6 +1044,7 @@ async def item_template_create(
         description=description.strip() or None,
         pricing_mode=mode,
         unit_price=_parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None,
+        applies_to_all_parcels=applies_to_all_parcels == "on",
         applies_to_members_without_parcel=applies_to_members_without_parcel == "on",
         category_id=category_id.strip() or None,
     ))
@@ -1056,6 +1061,7 @@ async def item_template_update(
     description: str = Form(""),
     pricing_mode: str = Form(...),
     unit_price: str = Form(""),
+    applies_to_all_parcels: str = Form(""),
     applies_to_members_without_parcel: str = Form(""),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -1077,6 +1083,7 @@ async def item_template_update(
     template.description = description.strip() or None
     template.pricing_mode = mode
     template.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
+    template.applies_to_all_parcels = applies_to_all_parcels == "on"
     template.applies_to_members_without_parcel = applies_to_members_without_parcel == "on"
     template.category_id = category_id.strip() or None
 

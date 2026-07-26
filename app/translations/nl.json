@@ -1733,6 +1733,7 @@
       "label_parcels": "Percelen",
       "scope_all": "Alle percelen",
       "member_invoice_badge": "Geen perceel (lid)",
+      "catalog_scope_no_parcels": "geen percelen",
       "scope_n_parcels": "{n} perce(e)l(en)",
       "button_create": "Regel toevoegen",
       "back_to_run": "Terug naar factuurronde",

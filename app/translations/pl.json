@@ -1733,6 +1733,7 @@
       "label_parcels": "Działki",
       "scope_all": "Wszystkie działki",
       "member_invoice_badge": "Brak działki (członek)",
+      "catalog_scope_no_parcels": "bez działek",
       "scope_n_parcels": "{n} działk(i/a)",
       "button_create": "Dodaj pozycję",
       "back_to_run": "Powrót do serii faktur",

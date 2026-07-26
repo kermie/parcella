@@ -1733,6 +1733,7 @@
       "label_parcels": "Parzellen",
       "scope_all": "Alle Parzellen",
       "member_invoice_badge": "Keine Parzelle (Mitglied)",
+      "catalog_scope_no_parcels": "keine Parzellen",
       "scope_n_parcels": "{n} Parzelle(n)",
       "button_create": "Position hinzufügen",
       "back_to_run": "Zurück zum Rechnungslauf",

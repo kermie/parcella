@@ -239,6 +239,8 @@
                                     <span class="text-muted" style="font-size: 0.82rem;">
                                         — {{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}
                                         {% if template.unit_price is not none %} · {{ '%.2f'|format(template.unit_price|float) }}{% endif %}
+                                        · {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}{% else %}{{ t('finances.run_detail.catalog_scope_no_parcels') }}{% endif %}
+                                        {% if template.applies_to_members_without_parcel %} + {{ t('finances.run_detail.label_applies_members_without_parcel_short') }}{% endif %}
                                     </span>
                                 </label>
                             </div>

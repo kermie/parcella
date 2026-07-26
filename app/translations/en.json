@@ -1734,6 +1734,7 @@
       "scope_all": "All parcels",
       "scope_n_parcels": "{n} parcel(s)",
       "member_invoice_badge": "No parcel (member)",
+      "catalog_scope_no_parcels": "no parcels",
       "button_create": "Add item",
       "back_to_run": "Back to invoice run",
       "preview_button": "Preview",

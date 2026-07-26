@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import AsyncSessionLocal
-from app.models import Member, MemberEmail, Invoice, ClubSetting
+from app.models import Member, MemberEmail, MemberParcel, Parcel, Invoice, InvoiceItemTemplate, ClubSetting
 
 
 async def _enable_finances_module():
@@ -168,3 +168,68 @@ async def test_member_invoice_delivered_by_email_directly(client, admin_user, mo
         invoice = result.scalars().one()
     assert invoice.emailed_at is not None
     assert invoice.printed_at is None
+
+
+async def test_catalog_item_scoped_to_members_only_does_not_bill_parcel_tenants(client, admin_user):
+    """Regression for the exact reported bug: items_add_from_catalog
+    used to hardcode applies_to_all_parcels=True for every catalog
+    item, so a fixed_per_person template meant to bill ONLY members
+    without a parcel (applies_to_all_parcels unchecked,
+    applies_to_members_without_parcel checked) still also billed every
+    parcel tenant. Must produce exactly one invoice -- the member
+    without a parcel -- and none for the parcel tenant."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    await _enable_finances_module()
+
+    async with AsyncSessionLocal() as session:
+        tenant = Member(
+            first_name="Parcel", last_name="Tenant",
+            street="Gartenweg 1", postal_code="12345", city="Testort",
+        )
+        supporter = Member(
+            first_name="Support", last_name="NoParcelAtAll",
+            street="Vereinsstr 1", postal_code="12345", city="Testort",
+        )
+        parcel = Parcel(plot_number="CATALOGSCOPE-1", area_sqm=100)
+        session.add_all([tenant, supporter, parcel])
+        await session.flush()
+        session.add(MemberParcel(member_id=tenant.id, parcel_id=parcel.id, is_invoice_address=True))
+        await session.commit()
+
+    r_template = await client.post("/finances/item-templates", data={
+        "order_number": "10", "name": "Fördermitgliedsbeitrag", "description": "",
+        "pricing_mode": "fixed_per_person", "unit_price": "30.00",
+        # applies_to_all_parcels deliberately omitted (unchecked) --
+        # this template must reach ONLY members without a parcel.
+        "applies_to_members_without_parcel": "on",
+    })
+    assert r_template.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemTemplate).where(InvoiceItemTemplate.name == "Fördermitgliedsbeitrag")
+        )
+        template = result.scalars().one()
+    assert template.applies_to_all_parcels is False
+
+    run_id = await _make_run(client, year="2029")
+    r_apply = await client.post(
+        f"/finances/runs/{run_id}/items/add-from-catalog", data={"template_ids": [template.id]},
+    )
+    assert r_apply.status_code in (302, 303)
+
+    r_preview = await client.get(f"/finances/runs/{run_id}/preview")
+    assert r_preview.status_code == 200
+    assert "Support NoParcelAtAll" in r_preview.text
+    assert "Parcel Tenant" not in r_preview.text
+
+    r_finalize = await client.post(f"/finances/runs/{run_id}/finalize")
+    assert r_finalize.status_code in (302, 303), r_finalize.headers.get("location")
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Invoice).where(Invoice.invoice_run_id == run_id))
+        invoices = result.scalars().all()
+    assert len(invoices) == 1, "only the member without a parcel should be billed, not the parcel tenant"
+    assert invoices[0].member_id is not None
+    assert invoices[0].parcel_id is None
+    assert "Support NoParcelAtAll" in invoices[0].recipient_names

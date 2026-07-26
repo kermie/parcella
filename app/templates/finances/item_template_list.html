@@ -65,6 +65,11 @@
                             <i class="bi bi-plus-lg"></i>
                         </button>
                     </div>
+                    <div class="col-12 form-check form-switch mb-0">
+                        <input type="checkbox" name="applies_to_all_parcels" id="new-template-all-parcels-check"
+                               class="form-check-input" checked>
+                        <label class="form-check-label" for="new-template-all-parcels-check">{{ t('finances.run_detail.label_applies_all') }}</label>
+                    </div>
                     <div class="col-12 form-check form-switch mb-0" id="new-template-members-wrap" style="display: none;">
                         <input type="checkbox" name="applies_to_members_without_parcel" id="new-template-members-check"
                                class="form-check-input">
@@ -128,6 +133,11 @@
                                            value="{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '' }}">
                                 </td>
                                 <td class="text-nowrap">
+                                    <div class="form-check form-switch mb-0">
+                                        <input type="checkbox" name="applies_to_all_parcels" form="edit-template-{{ template.id }}"
+                                               class="form-check-input" {% if template.applies_to_all_parcels %}checked{% endif %}>
+                                        <label class="form-check-label" style="font-size: 0.8rem;">{{ t('finances.run_detail.scope_all') }}</label>
+                                    </div>
                                     <div class="form-check form-switch mb-0" id="template-members-wrap-{{ template.id }}" style="display: none;">
                                         <input type="checkbox" name="applies_to_members_without_parcel" form="edit-template-{{ template.id }}"
                                                class="form-check-input" {% if template.applies_to_members_without_parcel %}checked{% endif %}>
@@ -164,7 +174,12 @@
                                 <td>{{ template.name }}{% if template.description %}<br><small class="text-muted">{{ template.description }}</small>{% endif %}</td>
                                 <td>{{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}</td>
                                 <td>{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '-' }}</td>
-                                <td>{% if template.applies_to_members_without_parcel %}{{ t('finances.run_detail.label_applies_members_without_parcel_short') }}{% else %}—{% endif %}</td>
+                                <td>
+                                    {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}{% else %}—{% endif %}
+                                    {% if template.applies_to_members_without_parcel %}
+                                    <br><small class="text-muted">{{ t('finances.run_detail.label_applies_members_without_parcel_short') }}</small>
+                                    {% endif %}
+                                </td>
                                 <td>{% if template.category %}{{ template.category.code }} · {{ template.category.title }}{% else %}—{% endif %}</td>
                                 <td></td>
                                 {% endif %}

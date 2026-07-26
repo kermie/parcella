@@ -1733,6 +1733,7 @@
       "label_parcels": "Parcely",
       "scope_all": "Všetky parcely",
       "member_invoice_badge": "Bez parcely (člen)",
+      "catalog_scope_no_parcels": "žiadne parcely",
       "scope_n_parcels": "{n} parcel(y)",
       "button_create": "Pridať položku",
       "back_to_run": "Späť na vyúčtovanie",

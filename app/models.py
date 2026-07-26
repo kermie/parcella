@@ -1885,9 +1885,13 @@ class InvoiceItemTemplate(Base):
     run's items means picking from a visible, known-good list instead
     of blindly copying everything from a specific past run (which may
     have included one-off items). Fields mirror InvoiceItemDefinition,
-    minus invoice_run_id/parcel scoping -- those only make sense once
-    a template is actually applied to a specific run (see
-    app/routers/finances.py's items_add_from_catalog).
+    minus invoice_run_id and specific per-parcel scoping (parcel_scopes)
+    -- picking individual parcels only makes sense once a template is
+    actually applied to a specific run's actual membership (see
+    app/routers/finances.py's items_add_from_catalog), but the
+    all-or-none applies_to_all_parcels toggle is still meaningful at
+    the template level (e.g. a supporting-member fee that should apply
+    to NO parcels at all, only members without one).
     """
     __tablename__ = "invoice_item_templates"
 
@@ -1899,12 +1903,21 @@ class InvoiceItemTemplate(Base):
     pricing_mode: Mapped[InvoicePricingMode] = mapped_column(SAEnum(InvoicePricingMode), nullable=False)
     unit_price: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
 
+    # Same meaning as InvoiceItemDefinition.applies_to_all_parcels --
+    # defaults to True to match this catalog's original behavior
+    # (every item applied to all parcels, unconditionally) before this
+    # toggle existed, so existing templates keep working exactly as
+    # before until someone deliberately unchecks it.
+    applies_to_all_parcels: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
     # Only meaningful for FIXED_PER_PERSON: also bill active club
     # members with no *current* parcel assignment (e.g. a supporting
     # member without a plot), one line per member, quantity=1 -- see
     # app/invoice_generation.py's compute_invoices_for_run. Defaults to
     # False so applying an existing/imported template never silently
-    # starts billing someone new.
+    # starts billing someone new. Combine with
+    # applies_to_all_parcels=False for a fee that bills ONLY members
+    # without a parcel, not parcel tenants too.
     applies_to_members_without_parcel: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     category_id: Mapped[Optional[str]] = mapped_column(

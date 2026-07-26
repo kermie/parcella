@@ -1733,6 +1733,7 @@
       "label_parcels": "Parcelles",
       "scope_all": "Toutes les parcelles",
       "member_invoice_badge": "Sans parcelle (membre)",
+      "catalog_scope_no_parcels": "aucune parcelle",
       "scope_n_parcels": "{n} parcelle(s)",
       "button_create": "Ajouter la ligne",
       "back_to_run": "Retour à la série de factures",
