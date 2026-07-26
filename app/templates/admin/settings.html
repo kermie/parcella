@@ -273,14 +273,28 @@
             </div>
             <div class="collapse" id="settings-card-areas" data-bs-parent="#settings-accordion">
             <div class="card-body">
-                {% for key, label in fields[6:10] %}
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">{{ label }}</label>
-                    <input type="text" name="{{ key }}" class="form-control"
+                    <label class="form-label fw-semibold">{{ t('admin.settings.fields.total_area') }}</label>
+                    <input type="text" name="flaeche_gesamt_qm" class="form-control"
                            placeholder="0.00"
-                           value="{{ settings_map.get(key, '') or '' }}">
+                           value="{{ settings_map.get('flaeche_gesamt_qm', '') or '' }}">
                 </div>
-                {% endfor %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ t('admin.settings.fields.area_a') }}</label>
+                    <input type="text" class="form-control" value="{{ area_a_sqm|number(2) }}" disabled readonly>
+                    <div class="form-text">{{ t('admin.settings.area_a_help') }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ t('admin.settings.fields.area_b') }}</label>
+                    <input type="text" class="form-control" value="{{ area_b_sqm|number(2) }}" disabled readonly>
+                    <div class="form-text">{{ t('admin.settings.area_b_help') }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ t('admin.settings.fields.area_c') }}</label>
+                    <input type="text" name="flaeche_c_qm" class="form-control"
+                           placeholder="0.00"
+                           value="{{ settings_map.get('flaeche_c_qm', '') or '' }}">
+                </div>
             </div>
             </div>
         </div>
@@ -350,7 +364,7 @@
                 <p class="text-muted mb-3" style="font-size: 0.82rem;">
                     {{ t('admin.settings.email_help') }}
                 </p>
-                {% for key, label in fields[10:18] %}
+                {% for key, label in fields[8:16] %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">{{ label }}</label>
                     <input type="{{ 'password' if ('password' in key or 'api_key' in key) else 'text' }}"
@@ -378,7 +392,7 @@
                 <p class="text-muted mb-3" style="font-size: 0.82rem;">
                     {{ t('admin.settings.spam_help') }}
                 </p>
-                {% for key, label in fields[18:] %}
+                {% for key, label in fields[16:] %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">{{ label }}</label>
                     <input type="{{ 'password' if ('password' in key or 'api_key' in key) else 'text' }}"

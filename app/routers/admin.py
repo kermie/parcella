@@ -8,7 +8,7 @@ import urllib.parse
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
@@ -18,7 +18,7 @@ from app.models import (
     GroupMembership, ParcelCloudFolder, WorkSession, WorkTask, ChangeHistory,
     MeterReading, Ticket, TicketMessage, PurchaseRequest, PurchaseRequestApproval,
     CalendarEvent, CouncilPresence, CouncilAbsence, Announcement, InventoryItem,
-    ItemLoan, Task,
+    ItemLoan, Task, Parcel, ParcelStatus,
 )
 from app.auth import require_system_admin, create_invitation_token, hash_password
 from app.permissions import is_last_admin
@@ -521,8 +521,6 @@ SETTINGS_FIELDS = [
     ("vereinsnummer", "admin.settings.fields.club_number"),
     ("registergericht", "admin.settings.fields.register_court"),
     ("flaeche_gesamt_qm", "admin.settings.fields.total_area"),
-    ("flaeche_a_qm", "admin.settings.fields.area_a"),
-    ("flaeche_b_qm", "admin.settings.fields.area_b"),
     ("flaeche_c_qm", "admin.settings.fields.area_c"),
     ("smtp_host", "admin.settings.fields.smtp_host"),
     ("smtp_port", "admin.settings.fields.smtp_port"),
@@ -624,6 +622,31 @@ async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
     effective_invoice_number_format = settings_map.get("invoice_number_format") or DEFAULT_INVOICE_NUMBER_FORMAT
     effective_invoice_number_example = effective_invoice_number_format.replace("{year}", "2026").replace("{number}", "1")
 
+    # Issue #81: Area A (parcels) and Area B (communal) are no longer
+    # manually entered -- Area A was drifting out of sync with reality
+    # (and was mislabeled "municipal" while Area C was mislabeled
+    # "parcels", the opposite of what they should mean) whenever a
+    # parcel was added/resized/removed. Area A is now always the live
+    # sum of every parcel's area regardless of lease status (same
+    # query as the dashboard's "Total area" card, see issue #80), and
+    # Area B is derived from it, so only Total area and Area C
+    # (municipal) remain things a board member actually has to type in.
+    area_a_result = await db.scalar(
+        select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(Parcel.status != ParcelStatus.DELETED)
+    )
+    area_a_sqm = float(area_a_result or 0)
+
+    def _parse_area_setting(key: str) -> float:
+        raw = settings_map.get(key)
+        try:
+            return float(raw) if raw else 0.0
+        except ValueError:
+            return 0.0
+
+    total_area_sqm = _parse_area_setting("flaeche_gesamt_qm")
+    area_c_sqm = _parse_area_setting("flaeche_c_qm")
+    area_b_sqm = total_area_sqm - area_a_sqm - area_c_sqm
+
     return templates.TemplateResponse(
         "admin/settings.html",
         {
@@ -640,6 +663,8 @@ async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
             "available_languages": AVAILABLE_LANGUAGES,
             "available_regions": AVAILABLE_REGIONS,
             "available_currencies": AVAILABLE_CURRENCIES,
+            "area_a_sqm": area_a_sqm,
+            "area_b_sqm": area_b_sqm,
         },
     )
 
