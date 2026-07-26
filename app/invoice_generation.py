@@ -75,9 +75,9 @@ class ComputedLineItem:
 @dataclass
 class ComputedInvoice:
     """Either `parcel` or `member` is set, never both/neither -- a
-    parcel invoice (the normal case) or a member invoice (a club
-    member with no current parcel, billed by a fixed_per_person item
-    with applies_to_members_without_parcel=True; see
+    parcel invoice (every plot-scoped pricing mode) or a member
+    invoice (fixed_per_person items, billed to targeted members
+    directly regardless of parcel status; see
     _compute_member_invoices)."""
     recipient_names: str
     recipient_address: str
@@ -125,45 +125,50 @@ async def _load_parcel_insurance_by_parcel(db: AsyncSession, year: int) -> Dict[
 
 
 async def _compute_member_invoices(db: AsyncSession, run: InvoiceRun, region: str) -> List[ComputedInvoice]:
-    """Active club members with no *current* parcel assignment (e.g. a
-    supporting member without a plot), billed by any fixed_per_person
-    item definition marked applies_to_members_without_parcel=True --
-    one line per such definition, quantity=1 (a lone person, no
-    household grouping needed, unlike a parcel's multiple residents).
-    Only queries the member roster at all if the run actually has such
-    a definition."""
-    applicable_defs = [
-        d for d in run.item_definitions
-        if d.pricing_mode == InvoicePricingMode.FIXED_PER_PERSON and d.applies_to_members_without_parcel
-    ]
+    """fixed_per_person items are person-scoped, not parcel-scoped --
+    excluded from the parcel loop entirely (see compute_invoices_for_run)
+    and handled solely here, via each definition's own
+    applies_to_all_members/member_scopes, exactly mirroring how the
+    parcel loop uses applies_to_all_parcels/parcel_scopes. Billed to
+    targeted members directly regardless of current parcel status.
+    Quantity is always 1 -- a flat fee per person, not a per-resident
+    count. A member targeted by multiple fixed_per_person definitions
+    gets ONE invoice with multiple lines, not one invoice per
+    definition (mirrors how a parcel's multiple applicable items merge
+    onto its one invoice)."""
+    applicable_defs = [d for d in run.item_definitions if d.pricing_mode == InvoicePricingMode.FIXED_PER_PERSON]
     if not applicable_defs:
         return []
 
     members_result = await db.execute(
-        select(Member)
-        .options(selectinload(Member.parcel_assignments))
-        .where(active_member_filter())
-        .order_by(Member.last_name, Member.first_name)
+        select(Member).where(active_member_filter()).order_by(Member.last_name, Member.first_name)
     )
-    members_without_parcel = [
-        m for m in members_result.scalars().all()
-        if not any(a.assigned_until is None for a in m.parcel_assignments)
-    ]
+    all_members = list(members_result.scalars().all())
 
-    computed: List[ComputedInvoice] = []
-    for member in members_without_parcel:
-        line_items = []
-        for definition in sorted(applicable_defs, key=lambda d: d.order_number):
-            if definition.unit_price is None:
-                continue
-            unit_price = Decimal(str(definition.unit_price))
-            line_items.append(ComputedLineItem(
+    lines_by_member: Dict[str, List[ComputedLineItem]] = {}
+    members_by_id: Dict[str, Member] = {}
+    for definition in sorted(applicable_defs, key=lambda d: d.order_number):
+        if definition.unit_price is None:
+            continue
+        if definition.applies_to_all_members:
+            targets = all_members
+        else:
+            scoped_ids = {s.member_id for s in definition.member_scopes}
+            targets = [m for m in all_members if m.id in scoped_ids]
+        if not targets:
+            continue
+
+        unit_price = Decimal(str(definition.unit_price))
+        for member in targets:
+            members_by_id[member.id] = member
+            lines_by_member.setdefault(member.id, []).append(ComputedLineItem(
                 order_number=definition.order_number, name=definition.name, description=definition.description,
                 quantity=Decimal("1"), unit_price=unit_price, line_total=unit_price,
             ))
-        if not line_items:
-            continue
 
+    computed: List[ComputedInvoice] = []
+    for member_id, line_items in lines_by_member.items():
+        member = members_by_id[member_id]
         subtotal = sum((li.line_total for li in line_items), Decimal("0"))
         recipient_address = format_address(member.street, member.postal_code, member.city, region)
         computed.append(ComputedInvoice(
@@ -171,6 +176,7 @@ async def _compute_member_invoices(db: AsyncSession, run: InvoiceRun, region: st
             line_items=line_items, subtotal=subtotal,
         ))
 
+    computed.sort(key=lambda c: (c.member.last_name, c.member.first_name))
     return computed
 
 
@@ -194,16 +200,12 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
     )
     insurance_configuration = insurance_config_result.scalar_one_or_none()
 
-    def item_quantity_and_price(definition, parcel, residents_count):
+    def item_quantity_and_price(definition, parcel):
         mode = definition.pricing_mode
         if mode == InvoicePricingMode.FIXED_PER_PARCEL:
             if definition.unit_price is None:
                 return None, None
             return Decimal("1"), Decimal(str(definition.unit_price))
-        if mode == InvoicePricingMode.FIXED_PER_PERSON:
-            if definition.unit_price is None or residents_count == 0:
-                return None, None
-            return Decimal(residents_count), Decimal(str(definition.unit_price))
         if mode == InvoicePricingMode.PER_SQM:
             if definition.unit_price is None or parcel.area_sqm is None:
                 return None, None
@@ -232,7 +234,8 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
     for parcel in all_parcels:
         applicable_defs = [
             d for d in run.item_definitions
-            if d.applies_to_all_parcels or any(s.parcel_id == parcel.id for s in d.parcel_scopes)
+            if d.pricing_mode != InvoicePricingMode.FIXED_PER_PERSON
+            and (d.applies_to_all_parcels or any(s.parcel_id == parcel.id for s in d.parcel_scopes))
         ]
         if not applicable_defs:
             continue
@@ -247,7 +250,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
 
         line_items = []
         for definition in sorted(applicable_defs, key=lambda d: d.order_number):
-            quantity, unit_price = item_quantity_and_price(definition, parcel, len(current_residents))
+            quantity, unit_price = item_quantity_and_price(definition, parcel)
             if quantity is None or unit_price is None:
                 continue
             line_total = (Decimal(quantity) * Decimal(unit_price)).quantize(Decimal("0.01"))

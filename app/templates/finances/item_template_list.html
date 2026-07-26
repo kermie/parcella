@@ -65,15 +65,15 @@
                             <i class="bi bi-plus-lg"></i>
                         </button>
                     </div>
-                    <div class="col-12 form-check form-switch mb-0">
+                    <div class="col-12 form-check form-switch mb-0" id="new-template-parcel-toggle-wrap">
                         <input type="checkbox" name="applies_to_all_parcels" id="new-template-all-parcels-check"
-                               class="form-check-input" checked data-parcel-picker="new-template-parcel-picker">
+                               class="form-check-input" checked>
                         <label class="form-check-label" for="new-template-all-parcels-check">{{ t('finances.run_detail.label_applies_all') }}</label>
                     </div>
-                    <div class="col-12 form-check form-switch mb-0" id="new-template-members-wrap" style="display: none;">
-                        <input type="checkbox" name="applies_to_members_without_parcel" id="new-template-members-check"
-                               class="form-check-input">
-                        <label class="form-check-label" for="new-template-members-check">{{ t('finances.run_detail.label_applies_members_without_parcel') }}</label>
+                    <div class="col-12 form-check form-switch mb-0" id="new-template-member-toggle-wrap" style="display: none;">
+                        <input type="checkbox" name="applies_to_all_members" id="new-template-members-check"
+                               class="form-check-input" checked>
+                        <label class="form-check-label" for="new-template-members-check">{{ t('finances.run_detail.label_applies_all_members') }}</label>
                     </div>
                     <div class="col-12" id="new-template-parcel-picker" style="display: none;">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
@@ -83,6 +83,19 @@
                                 <div class="form-check">
                                     <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" class="form-check-input" id="new-template-parcel-{{ parcel.id }}">
                                     <label class="form-check-label" style="font-size: 0.85rem;" for="new-template-parcel-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-12" id="new-template-member-picker" style="display: none;">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_members') }}</label>
+                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                            {% for member in members %}
+                            <div class="col-sm-3 col-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="member_ids" value="{{ member.id }}" class="form-check-input" id="new-template-member-{{ member.id }}">
+                                    <label class="form-check-label" style="font-size: 0.85rem;" for="new-template-member-{{ member.id }}">{{ member.full_name }}</label>
                                 </div>
                             </div>
                             {% endfor %}
@@ -132,7 +145,7 @@
                                 </td>
                                 <td>
                                     <select name="pricing_mode" form="edit-template-{{ template.id }}" class="form-select form-select-sm item-pricing-mode-select"
-                                            id="template-pricing-mode-{{ template.id }}" data-members-wrap="template-members-wrap-{{ template.id }}">
+                                            id="template-pricing-mode-{{ template.id }}" data-item-id="{{ template.id }}">
                                         {% for mode in pricing_modes %}
                                         <option value="{{ mode.value }}" {% if template.pricing_mode == mode %}selected{% endif %}>
                                             {{ t('finances.pricing_modes.' ~ mode.value) }}
@@ -146,21 +159,22 @@
                                            value="{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '' }}">
                                 </td>
                                 <td class="text-nowrap">
-                                    <div class="form-check form-switch mb-0">
+                                    <div class="form-check form-switch mb-0" id="parcel-toggle-wrap-{{ template.id }}">
                                         <input type="checkbox" name="applies_to_all_parcels" form="edit-template-{{ template.id }}"
-                                               class="form-check-input applies-all-toggle" id="template-all-parcels-{{ template.id }}"
-                                               data-parcel-picker="template-parcel-picker-row-{{ template.id }}"
+                                               class="form-check-input" id="applies-all-{{ template.id }}"
                                                {% if template.applies_to_all_parcels %}checked{% endif %}>
-                                        <label class="form-check-label" for="template-all-parcels-{{ template.id }}" style="font-size: 0.8rem;">
+                                        <label class="form-check-label" for="applies-all-{{ template.id }}" style="font-size: 0.8rem;">
                                             {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
                                             {% else %}{{ t('finances.run_detail.scope_n_parcels', n=template.parcel_scopes|length) }}{% endif %}
                                         </label>
                                     </div>
-                                    <div class="form-check form-switch mb-0" id="template-members-wrap-{{ template.id }}" style="display: none;">
-                                        <input type="checkbox" name="applies_to_members_without_parcel" form="edit-template-{{ template.id }}"
-                                               class="form-check-input" {% if template.applies_to_members_without_parcel %}checked{% endif %}>
-                                        <label class="form-check-label" style="font-size: 0.8rem;">
-                                            {{ t('finances.run_detail.label_applies_members_without_parcel_short') }}
+                                    <div class="form-check form-switch mb-0" id="member-toggle-wrap-{{ template.id }}" style="display: none;">
+                                        <input type="checkbox" name="applies_to_all_members" form="edit-template-{{ template.id }}"
+                                               class="form-check-input" id="applies-all-members-{{ template.id }}"
+                                               {% if template.applies_to_all_members %}checked{% endif %}>
+                                        <label class="form-check-label" for="applies-all-members-{{ template.id }}" style="font-size: 0.8rem;">
+                                            {% if template.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
+                                            {% else %}{{ t('finances.run_detail.scope_n_members', n=template.member_scopes|length) }}{% endif %}
                                         </label>
                                     </div>
                                 </td>
@@ -193,10 +207,12 @@
                                 <td>{{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}</td>
                                 <td>{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '-' }}</td>
                                 <td>
+                                    {% if template.pricing_mode.value == 'fixed_per_person' %}
+                                    {% if template.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
+                                    {% else %}{{ t('finances.run_detail.scope_n_members', n=template.member_scopes|length) }}{% endif %}
+                                    {% else %}
                                     {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
                                     {% else %}{{ t('finances.run_detail.scope_n_parcels', n=template.parcel_scopes|length) }}{% endif %}
-                                    {% if template.applies_to_members_without_parcel %}
-                                    <br><small class="text-muted">{{ t('finances.run_detail.label_applies_members_without_parcel_short') }}</small>
                                     {% endif %}
                                 </td>
                                 <td>{% if template.category %}{{ template.category.code }} · {{ template.category.title }}{% else %}—{% endif %}</td>
@@ -204,21 +220,39 @@
                                 {% endif %}
                             </tr>
                             {% if has_perm(request, 'finances', 'write') %}
-                            <tr id="template-parcel-picker-row-{{ template.id }}" style="display: none;">
+                            <tr id="picker-row-{{ template.id }}" style="display: none;">
                                 <td colspan="7" class="bg-light">
-                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
-                                    <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
-                                        {% set scoped_parcel_ids = template.parcel_scopes|map(attribute='parcel_id')|list %}
-                                        {% for parcel in parcels %}
-                                        <div class="col-sm-3 col-6">
-                                            <div class="form-check">
-                                                <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="edit-template-{{ template.id }}"
-                                                       class="form-check-input" id="template-parcel-{{ template.id }}-{{ parcel.id }}"
-                                                       {% if parcel.id in scoped_parcel_ids %}checked{% endif %}>
-                                                <label class="form-check-label" style="font-size: 0.85rem;" for="template-parcel-{{ template.id }}-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                    <div id="parcel-picker-block-{{ template.id }}" style="display: none;">
+                                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
+                                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                                            {% set scoped_parcel_ids = template.parcel_scopes|map(attribute='parcel_id')|list %}
+                                            {% for parcel in parcels %}
+                                            <div class="col-sm-3 col-6">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="edit-template-{{ template.id }}"
+                                                           class="form-check-input" id="template-parcel-{{ template.id }}-{{ parcel.id }}"
+                                                           {% if parcel.id in scoped_parcel_ids %}checked{% endif %}>
+                                                    <label class="form-check-label" style="font-size: 0.85rem;" for="template-parcel-{{ template.id }}-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                                </div>
                                             </div>
+                                            {% endfor %}
                                         </div>
-                                        {% endfor %}
+                                    </div>
+                                    <div id="member-picker-block-{{ template.id }}" style="display: none;">
+                                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_members') }}</label>
+                                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                                            {% set scoped_member_ids = template.member_scopes|map(attribute='member_id')|list %}
+                                            {% for member in members %}
+                                            <div class="col-sm-3 col-6">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="member_ids" value="{{ member.id }}" form="edit-template-{{ template.id }}"
+                                                           class="form-check-input" id="template-member-{{ template.id }}-{{ member.id }}"
+                                                           {% if member.id in scoped_member_ids %}checked{% endif %}>
+                                                    <label class="form-check-label" style="font-size: 0.85rem;" for="template-member-{{ template.id }}-{{ member.id }}">{{ member.full_name }}</label>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -241,38 +275,57 @@
 {% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var newPricingMode = document.getElementById('new-template-pricing-mode');
-    var newMembersWrap = document.getElementById('new-template-members-wrap');
-    if (newPricingMode && newMembersWrap) {
-        function syncNew() {
-            newMembersWrap.style.display = newPricingMode.value === 'fixed_per_person' ? 'flex' : 'none';
+    // "New template" form: pricing mode picks parcel-scope OR
+    // member-scope (fixed_per_person), never both.
+    (function () {
+        var select = document.getElementById('new-template-pricing-mode');
+        var parcelToggleWrap = document.getElementById('new-template-parcel-toggle-wrap');
+        var memberToggleWrap = document.getElementById('new-template-member-toggle-wrap');
+        var parcelPicker = document.getElementById('new-template-parcel-picker');
+        var memberPicker = document.getElementById('new-template-member-picker');
+        var parcelToggle = document.getElementById('new-template-all-parcels-check');
+        var memberToggle = document.getElementById('new-template-members-check');
+        if (!select) return;
+
+        function sync() {
+            var isPerson = select.value === 'fixed_per_person';
+            parcelToggleWrap.style.display = isPerson ? 'none' : 'block';
+            memberToggleWrap.style.display = isPerson ? 'block' : 'none';
+            parcelPicker.style.display = (!isPerson && !parcelToggle.checked) ? 'block' : 'none';
+            memberPicker.style.display = (isPerson && !memberToggle.checked) ? 'block' : 'none';
         }
-        newPricingMode.addEventListener('change', syncNew);
-        syncNew();
-    }
+        select.addEventListener('change', sync);
+        parcelToggle.addEventListener('change', sync);
+        memberToggle.addEventListener('change', sync);
+        sync();
+    })();
 
+    // Existing templates table: same idea, one instance per row.
     document.querySelectorAll('.item-pricing-mode-select').forEach(function (select) {
-        var wrap = document.getElementById(select.dataset.membersWrap);
-        if (!wrap) return;
-        function syncRow() { wrap.style.display = select.value === 'fixed_per_person' ? 'flex' : 'none'; }
-        select.addEventListener('change', syncRow);
-        syncRow();
-    });
+        var itemId = select.dataset.itemId;
+        var parcelToggleWrap = document.getElementById('parcel-toggle-wrap-' + itemId);
+        var memberToggleWrap = document.getElementById('member-toggle-wrap-' + itemId);
+        var pickerRow = document.getElementById('picker-row-' + itemId);
+        var parcelPickerBlock = document.getElementById('parcel-picker-block-' + itemId);
+        var memberPickerBlock = document.getElementById('member-picker-block-' + itemId);
+        var parcelToggle = document.getElementById('applies-all-' + itemId);
+        var memberToggle = document.getElementById('applies-all-members-' + itemId);
+        if (!parcelToggleWrap || !memberToggleWrap || !pickerRow) return;
 
-    var newAllParcels = document.getElementById('new-template-all-parcels-check');
-    var newParcelPicker = document.getElementById('new-template-parcel-picker');
-    if (newAllParcels && newParcelPicker) {
-        function syncNewPicker() { newParcelPicker.style.display = newAllParcels.checked ? 'none' : 'block'; }
-        newAllParcels.addEventListener('change', syncNewPicker);
-        syncNewPicker();
-    }
-
-    document.querySelectorAll('.applies-all-toggle').forEach(function (checkbox) {
-        var pickerRow = document.getElementById(checkbox.dataset.parcelPicker);
-        if (!pickerRow) return;
-        function syncPickerRow() { pickerRow.style.display = checkbox.checked ? 'none' : 'table-row'; }
-        checkbox.addEventListener('change', syncPickerRow);
-        syncPickerRow();
+        function sync() {
+            var isPerson = select.value === 'fixed_per_person';
+            parcelToggleWrap.style.display = isPerson ? 'none' : 'flex';
+            memberToggleWrap.style.display = isPerson ? 'flex' : 'none';
+            var showParcelPicker = !isPerson && parcelToggle && !parcelToggle.checked;
+            var showMemberPicker = isPerson && memberToggle && !memberToggle.checked;
+            parcelPickerBlock.style.display = showParcelPicker ? 'block' : 'none';
+            memberPickerBlock.style.display = showMemberPicker ? 'block' : 'none';
+            pickerRow.style.display = (showParcelPicker || showMemberPicker) ? 'table-row' : 'none';
+        }
+        select.addEventListener('change', sync);
+        if (parcelToggle) parcelToggle.addEventListener('change', sync);
+        if (memberToggle) memberToggle.addEventListener('change', sync);
+        sync();
     });
 });
 </script>

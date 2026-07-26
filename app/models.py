@@ -1909,15 +1909,15 @@ class InvoiceItemTemplate(Base):
     # before until someone deliberately unchecks it.
     applies_to_all_parcels: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    # Only meaningful for FIXED_PER_PERSON: also bill active club
-    # members with no *current* parcel assignment (e.g. a supporting
-    # member without a plot), one line per member, quantity=1 -- see
-    # app/invoice_generation.py's compute_invoices_for_run. Defaults to
-    # False so applying an existing/imported template never silently
-    # starts billing someone new. Combine with
-    # applies_to_all_parcels=False for a fee that bills ONLY members
-    # without a parcel, not parcel tenants too.
-    applies_to_members_without_parcel: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Only meaningful for FIXED_PER_PERSON, mirroring
+    # applies_to_all_parcels/parcel_scopes above but over members
+    # instead of parcels -- a person-scoped fee (e.g. annual dues) is
+    # billed to targeted members directly, regardless of whether they
+    # currently have a parcel. Defaults to True to keep the picker
+    # simple by default (mirrors applies_to_all_parcels' own default),
+    # and is meaningless/ignored for every other pricing mode. See
+    # app/invoice_generation.py's _compute_member_invoices.
+    applies_to_all_members: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     category_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("finance_categories.id", ondelete="SET NULL"), nullable=True
@@ -1929,6 +1929,9 @@ class InvoiceItemTemplate(Base):
     category: Mapped[Optional["FinanceCategory"]] = relationship("FinanceCategory")
     parcel_scopes: Mapped[List["InvoiceItemTemplateParcel"]] = relationship(
         "InvoiceItemTemplateParcel", back_populates="item_template", cascade="all, delete-orphan",
+    )
+    member_scopes: Mapped[List["InvoiceItemTemplateMember"]] = relationship(
+        "InvoiceItemTemplateMember", back_populates="item_template", cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
@@ -1955,6 +1958,30 @@ class InvoiceItemTemplateParcel(Base):
 
     __table_args__ = (
         UniqueConstraint("invoice_item_template_id", "parcel_id", name="uq_invoice_item_template_parcel"),
+    )
+
+
+class InvoiceItemTemplateMember(Base):
+    """Explicit member inclusion for an InvoiceItemTemplate where
+    applies_to_all_members=False (FIXED_PER_PERSON only) -- mirrors
+    InvoiceItemTemplateParcel, but over members instead of parcels."""
+    __tablename__ = "invoice_item_template_members"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_item_template_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoice_item_templates.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    member_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    item_template: Mapped["InvoiceItemTemplate"] = relationship(
+        "InvoiceItemTemplate", back_populates="member_scopes"
+    )
+    member: Mapped["Member"] = relationship("Member")
+
+    __table_args__ = (
+        UniqueConstraint("invoice_item_template_id", "member_id", name="uq_invoice_item_template_member"),
     )
 
 
@@ -1990,14 +2017,16 @@ class InvoiceItemDefinition(Base):
     # explicitly listed in `parcel_scopes`.
     applies_to_all_parcels: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    # Only meaningful for FIXED_PER_PERSON: also bill active club
-    # members with no *current* parcel assignment (e.g. a supporting
-    # member without a plot), one line per member, quantity=1 -- see
-    # app/invoice_generation.py's compute_invoices_for_run. Independent
-    # of applies_to_all_parcels/parcel_scopes (an item can reach parcel
-    # tenants, non-tenant members, or both). Defaults to False so
-    # existing item definitions never silently start billing someone new.
-    applies_to_members_without_parcel: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Only meaningful for FIXED_PER_PERSON, mirroring
+    # applies_to_all_parcels/parcel_scopes above but over members --
+    # a person-scoped fee (e.g. annual dues, honorary membership) is
+    # billed to targeted members directly, regardless of whether they
+    # currently have a parcel. FIXED_PER_PERSON items are excluded from
+    # the parcel loop entirely (see compute_invoices_for_run) and
+    # handled solely via this + member_scopes in
+    # _compute_member_invoices. Meaningless/ignored for every other
+    # pricing mode. Defaults to True, mirroring applies_to_all_parcels.
+    applies_to_all_members: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     # Optional bookkeeping category (issue #67) -- purely for the
     # club's own accounting/reporting, doesn't affect invoice
@@ -2010,6 +2039,9 @@ class InvoiceItemDefinition(Base):
     invoice_run: Mapped["InvoiceRun"] = relationship("InvoiceRun", back_populates="item_definitions")
     parcel_scopes: Mapped[List["InvoiceItemDefinitionParcel"]] = relationship(
         "InvoiceItemDefinitionParcel", back_populates="item_definition", cascade="all, delete-orphan",
+    )
+    member_scopes: Mapped[List["InvoiceItemDefinitionMember"]] = relationship(
+        "InvoiceItemDefinitionMember", back_populates="item_definition", cascade="all, delete-orphan",
     )
     category: Mapped[Optional["FinanceCategory"]] = relationship("FinanceCategory")
 
@@ -2040,11 +2072,35 @@ class InvoiceItemDefinitionParcel(Base):
     )
 
 
+class InvoiceItemDefinitionMember(Base):
+    """Explicit member inclusion for an InvoiceItemDefinition where
+    applies_to_all_members=False (FIXED_PER_PERSON only) -- mirrors
+    InvoiceItemDefinitionParcel, but over members instead of parcels."""
+    __tablename__ = "invoice_item_definition_members"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    invoice_item_definition_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("invoice_item_definitions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    member_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    item_definition: Mapped["InvoiceItemDefinition"] = relationship(
+        "InvoiceItemDefinition", back_populates="member_scopes"
+    )
+    member: Mapped["Member"] = relationship("Member")
+
+    __table_args__ = (
+        UniqueConstraint("invoice_item_definition_id", "member_id", name="uq_invoice_item_definition_member"),
+    )
+
+
 class Invoice(Base):
     """
-    One invoice for one parcel, OR (for a fixed-per-person item marked
-    applies_to_members_without_parcel) one club member with no current
-    parcel -- e.g. a supporting member without a plot -- within an
+    One invoice for one parcel, OR (for a fixed_per_person item) one
+    directly-targeted club member -- e.g. annual dues or a supporting
+    membership fee, regardless of current parcel status -- within an
     InvoiceRun (issue #57). Exactly one of parcel_id/member_id is set,
     enforced by ck_invoice_exactly_one_subject. recipient_names/
     recipient_address are snapshotted at generation time -- a member

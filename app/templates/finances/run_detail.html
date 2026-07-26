@@ -137,7 +137,7 @@
                                 </td>
                                 <td>
                                     <select name="pricing_mode" form="edit-item-{{ item.id }}" class="form-select form-select-sm item-pricing-mode-select"
-                                            id="pricing-mode-{{ item.id }}" data-members-wrap="members-wrap-{{ item.id }}">
+                                            id="pricing-mode-{{ item.id }}" data-item-id="{{ item.id }}">
                                         {% for mode in pricing_modes %}
                                         <option value="{{ mode.value }}" {% if item.pricing_mode == mode %}selected{% endif %}>
                                             {{ t('finances.pricing_modes.' ~ mode.value) }}
@@ -151,21 +151,22 @@
                                            value="{{ '%.2f'|format(item.unit_price|float) if item.unit_price is not none else '' }}">
                                 </td>
                                 <td class="text-nowrap">
-                                    <div class="form-check form-switch mb-0">
+                                    <div class="form-check form-switch mb-0" id="parcel-toggle-wrap-{{ item.id }}">
                                         <input type="checkbox" name="applies_to_all_parcels" form="edit-item-{{ item.id }}"
-                                               class="form-check-input applies-all-toggle" id="applies-all-{{ item.id }}"
-                                               data-parcel-picker="parcel-picker-row-{{ item.id }}"
+                                               class="form-check-input" id="applies-all-{{ item.id }}"
                                                {% if item.applies_to_all_parcels %}checked{% endif %}>
                                         <label class="form-check-label" for="applies-all-{{ item.id }}" style="font-size: 0.8rem;">
                                             {% if item.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
                                             {% else %}{{ t('finances.run_detail.scope_n_parcels', n=item.parcel_scopes|length) }}{% endif %}
                                         </label>
                                     </div>
-                                    <div class="form-check form-switch mb-0" id="members-wrap-{{ item.id }}" style="display: none;">
-                                        <input type="checkbox" name="applies_to_members_without_parcel" form="edit-item-{{ item.id }}"
-                                               class="form-check-input" {% if item.applies_to_members_without_parcel %}checked{% endif %}>
-                                        <label class="form-check-label" style="font-size: 0.8rem;">
-                                            {{ t('finances.run_detail.label_applies_members_without_parcel_short') }}
+                                    <div class="form-check form-switch mb-0" id="member-toggle-wrap-{{ item.id }}" style="display: none;">
+                                        <input type="checkbox" name="applies_to_all_members" form="edit-item-{{ item.id }}"
+                                               class="form-check-input" id="applies-all-members-{{ item.id }}"
+                                               {% if item.applies_to_all_members %}checked{% endif %}>
+                                        <label class="form-check-label" for="applies-all-members-{{ item.id }}" style="font-size: 0.8rem;">
+                                            {% if item.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
+                                            {% else %}{{ t('finances.run_detail.scope_n_members', n=item.member_scopes|length) }}{% endif %}
                                         </label>
                                     </div>
                                 </td>
@@ -198,10 +199,12 @@
                                 <td>{{ t('finances.pricing_modes.' ~ item.pricing_mode.value) }}</td>
                                 <td>{{ '%.2f'|format(item.unit_price|float) if item.unit_price is not none else '-' }}</td>
                                 <td>
+                                    {% if item.pricing_mode.value == 'fixed_per_person' %}
+                                    {% if item.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
+                                    {% else %}{{ t('finances.run_detail.scope_n_members', n=item.member_scopes|length) }}{% endif %}
+                                    {% else %}
                                     {% if item.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
                                     {% else %}{{ t('finances.run_detail.scope_n_parcels', n=item.parcel_scopes|length) }}{% endif %}
-                                    {% if item.applies_to_members_without_parcel %}
-                                    <br><small class="text-muted">{{ t('finances.run_detail.label_applies_members_without_parcel_short') }}</small>
                                     {% endif %}
                                 </td>
                                 <td>{% if item.category %}{{ item.category.code }} · {{ item.category.title }}{% else %}—{% endif %}</td>
@@ -209,21 +212,39 @@
                                 {% endif %}
                             </tr>
                             {% if has_perm(request, 'finances', 'write') %}
-                            <tr id="parcel-picker-row-{{ item.id }}" style="display: none;">
+                            <tr id="picker-row-{{ item.id }}" style="display: none;">
                                 <td colspan="7" class="bg-light">
-                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
-                                    <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
-                                        {% set scoped_parcel_ids = item.parcel_scopes|map(attribute='parcel_id')|list %}
-                                        {% for parcel in parcels %}
-                                        <div class="col-sm-3 col-6">
-                                            <div class="form-check">
-                                                <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="edit-item-{{ item.id }}"
-                                                       class="form-check-input" id="parcel-{{ item.id }}-{{ parcel.id }}"
-                                                       {% if parcel.id in scoped_parcel_ids %}checked{% endif %}>
-                                                <label class="form-check-label" style="font-size: 0.85rem;" for="parcel-{{ item.id }}-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                    <div id="parcel-picker-block-{{ item.id }}" style="display: none;">
+                                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
+                                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                                            {% set scoped_parcel_ids = item.parcel_scopes|map(attribute='parcel_id')|list %}
+                                            {% for parcel in parcels %}
+                                            <div class="col-sm-3 col-6">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="edit-item-{{ item.id }}"
+                                                           class="form-check-input" id="parcel-{{ item.id }}-{{ parcel.id }}"
+                                                           {% if parcel.id in scoped_parcel_ids %}checked{% endif %}>
+                                                    <label class="form-check-label" style="font-size: 0.85rem;" for="parcel-{{ item.id }}-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                                </div>
                                             </div>
+                                            {% endfor %}
                                         </div>
-                                        {% endfor %}
+                                    </div>
+                                    <div id="member-picker-block-{{ item.id }}" style="display: none;">
+                                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_members') }}</label>
+                                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                                            {% set scoped_member_ids = item.member_scopes|map(attribute='member_id')|list %}
+                                            {% for member in members %}
+                                            <div class="col-sm-3 col-6">
+                                                <div class="form-check">
+                                                    <input type="checkbox" name="member_ids" value="{{ member.id }}" form="edit-item-{{ item.id }}"
+                                                           class="form-check-input" id="member-{{ item.id }}-{{ member.id }}"
+                                                           {% if member.id in scoped_member_ids %}checked{% endif %}>
+                                                    <label class="form-check-label" style="font-size: 0.85rem;" for="member-{{ item.id }}-{{ member.id }}">{{ member.full_name }}</label>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -261,8 +282,13 @@
                                     <span class="text-muted" style="font-size: 0.82rem;">
                                         — {{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}
                                         {% if template.unit_price is not none %} · {{ '%.2f'|format(template.unit_price|float) }}{% endif %}
-                                        · {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}{% else %}{{ t('finances.run_detail.catalog_scope_no_parcels') }}{% endif %}
-                                        {% if template.applies_to_members_without_parcel %} + {{ t('finances.run_detail.label_applies_members_without_parcel_short') }}{% endif %}
+                                        {% if template.pricing_mode.value == 'fixed_per_person' %}
+                                        · {% if template.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
+                                          {% else %}{{ t('finances.run_detail.scope_n_members', n=template.member_scopes|length) }}{% endif %}
+                                        {% else %}
+                                        · {% if template.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
+                                          {% else %}{{ t('finances.run_detail.scope_n_parcels', n=template.parcel_scopes|length) }}{% endif %}
+                                        {% endif %}
                                     </span>
                                 </label>
                             </div>
@@ -332,16 +358,16 @@
                         </button>
                     </div>
 
-                    <div class="col-12 form-check form-switch mb-0">
+                    <div class="col-12 form-check form-switch mb-0" id="new-item-parcel-toggle-wrap">
                         <input type="checkbox" name="applies_to_all_parcels" id="applies-all-check"
                                class="form-check-input" checked>
                         <label class="form-check-label" for="applies-all-check">{{ t('finances.run_detail.label_applies_all') }}</label>
                     </div>
 
-                    <div class="col-12 form-check form-switch mb-0" id="new-item-members-wrap" style="display: none;">
-                        <input type="checkbox" name="applies_to_members_without_parcel" id="new-item-members-check"
-                               class="form-check-input">
-                        <label class="form-check-label" for="new-item-members-check">{{ t('finances.run_detail.label_applies_members_without_parcel') }}</label>
+                    <div class="col-12 form-check form-switch mb-0" id="new-item-member-toggle-wrap" style="display: none;">
+                        <input type="checkbox" name="applies_to_all_members" id="new-item-members-check"
+                               class="form-check-input" checked>
+                        <label class="form-check-label" for="new-item-members-check">{{ t('finances.run_detail.label_applies_all_members') }}</label>
                     </div>
 
                     <div class="col-12" id="parcel-picker" style="display: none;">
@@ -352,6 +378,20 @@
                                 <div class="form-check">
                                     <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" class="form-check-input" id="parcel-{{ parcel.id }}">
                                     <label class="form-check-label" style="font-size: 0.85rem;" for="parcel-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="col-12" id="member-picker" style="display: none;">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_members') }}</label>
+                        <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                            {% for member in members %}
+                            <div class="col-sm-3 col-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="member_ids" value="{{ member.id }}" class="form-check-input" id="member-{{ member.id }}">
+                                    <label class="form-check-label" style="font-size: 0.85rem;" for="member-{{ member.id }}">{{ member.full_name }}</label>
                                 </div>
                             </div>
                             {% endfor %}
@@ -371,38 +411,59 @@
 {% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var appliesAll = document.getElementById('applies-all-check');
-    var picker = document.getElementById('parcel-picker');
-    if (appliesAll && picker) {
-        function sync() { picker.style.display = appliesAll.checked ? 'none' : 'block'; }
-        appliesAll.addEventListener('change', sync);
-        sync();
-    }
+    // "New item" form: pricing mode picks parcel-scope OR member-scope
+    // (fixed_per_person), never both -- each scope's own "applies to
+    // all" switch further decides whether its picker list is shown.
+    (function () {
+        var select = document.getElementById('new-item-pricing-mode');
+        var parcelToggleWrap = document.getElementById('new-item-parcel-toggle-wrap');
+        var memberToggleWrap = document.getElementById('new-item-member-toggle-wrap');
+        var parcelPicker = document.getElementById('parcel-picker');
+        var memberPicker = document.getElementById('member-picker');
+        var parcelToggle = document.getElementById('applies-all-check');
+        var memberToggle = document.getElementById('new-item-members-check');
+        if (!select) return;
 
-    var newItemPricingMode = document.getElementById('new-item-pricing-mode');
-    var newItemMembersWrap = document.getElementById('new-item-members-wrap');
-    if (newItemPricingMode && newItemMembersWrap) {
-        function syncMembersWrap() {
-            newItemMembersWrap.style.display = newItemPricingMode.value === 'fixed_per_person' ? 'block' : 'none';
+        function sync() {
+            var isPerson = select.value === 'fixed_per_person';
+            parcelToggleWrap.style.display = isPerson ? 'none' : 'block';
+            memberToggleWrap.style.display = isPerson ? 'block' : 'none';
+            parcelPicker.style.display = (!isPerson && !parcelToggle.checked) ? 'block' : 'none';
+            memberPicker.style.display = (isPerson && !memberToggle.checked) ? 'block' : 'none';
         }
-        newItemPricingMode.addEventListener('change', syncMembersWrap);
-        syncMembersWrap();
-    }
+        select.addEventListener('change', sync);
+        parcelToggle.addEventListener('change', sync);
+        memberToggle.addEventListener('change', sync);
+        sync();
+    })();
 
+    // Existing items table: same idea, one instance per row, wired up
+    // by item id via data-item-id on the row's pricing-mode select.
     document.querySelectorAll('.item-pricing-mode-select').forEach(function (select) {
-        var wrap = document.getElementById(select.dataset.membersWrap);
-        if (!wrap) return;
-        function syncRow() { wrap.style.display = select.value === 'fixed_per_person' ? 'flex' : 'none'; }
-        select.addEventListener('change', syncRow);
-        syncRow();
-    });
+        var itemId = select.dataset.itemId;
+        var parcelToggleWrap = document.getElementById('parcel-toggle-wrap-' + itemId);
+        var memberToggleWrap = document.getElementById('member-toggle-wrap-' + itemId);
+        var pickerRow = document.getElementById('picker-row-' + itemId);
+        var parcelPickerBlock = document.getElementById('parcel-picker-block-' + itemId);
+        var memberPickerBlock = document.getElementById('member-picker-block-' + itemId);
+        var parcelToggle = document.getElementById('applies-all-' + itemId);
+        var memberToggle = document.getElementById('applies-all-members-' + itemId);
+        if (!parcelToggleWrap || !memberToggleWrap || !pickerRow) return;
 
-    document.querySelectorAll('.applies-all-toggle').forEach(function (checkbox) {
-        var pickerRow = document.getElementById(checkbox.dataset.parcelPicker);
-        if (!pickerRow) return;
-        function syncPickerRow() { pickerRow.style.display = checkbox.checked ? 'none' : 'table-row'; }
-        checkbox.addEventListener('change', syncPickerRow);
-        syncPickerRow();
+        function sync() {
+            var isPerson = select.value === 'fixed_per_person';
+            parcelToggleWrap.style.display = isPerson ? 'none' : 'flex';
+            memberToggleWrap.style.display = isPerson ? 'flex' : 'none';
+            var showParcelPicker = !isPerson && parcelToggle && !parcelToggle.checked;
+            var showMemberPicker = isPerson && memberToggle && !memberToggle.checked;
+            parcelPickerBlock.style.display = showParcelPicker ? 'block' : 'none';
+            memberPickerBlock.style.display = showMemberPicker ? 'block' : 'none';
+            pickerRow.style.display = (showParcelPicker || showMemberPicker) ? 'table-row' : 'none';
+        }
+        select.addEventListener('change', sync);
+        if (parcelToggle) parcelToggle.addEventListener('change', sync);
+        if (memberToggle) memberToggle.addEventListener('change', sync);
+        sync();
     });
 });
 </script>
