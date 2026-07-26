@@ -420,7 +420,7 @@ async def item_create(
         name=name.strip(),
         description=description.strip() or None,
         pricing_mode=mode,
-        unit_price=_parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None,
+        unit_price=_parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None,
         applies_to_all_parcels=applies_all_parcels,
         applies_to_all_members=applies_all_members,
         category_id=category_id.strip() or None,
@@ -551,7 +551,7 @@ async def item_update(
     item.name = name.strip()
     item.description = description.strip() or None
     item.pricing_mode = mode
-    item.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
+    item.unit_price = _parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None
     item.applies_to_all_parcels = applies_all_parcels
     item.applies_to_all_members = applies_all_members
     item.category_id = category_id.strip() or None
@@ -1104,7 +1104,7 @@ async def item_template_create(
         name=name.strip(),
         description=description.strip() or None,
         pricing_mode=mode,
-        unit_price=_parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None,
+        unit_price=_parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None,
         applies_to_all_parcels=applies_all_parcels,
         applies_to_all_members=applies_all_members,
         category_id=category_id.strip() or None,
@@ -1166,7 +1166,7 @@ async def item_template_update(
     template.name = name.strip()
     template.description = description.strip() or None
     template.pricing_mode = mode
-    template.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
+    template.unit_price = _parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None
     template.applies_to_all_parcels = applies_all_parcels
     template.applies_to_all_members = applies_all_members
     template.category_id = category_id.strip() or None

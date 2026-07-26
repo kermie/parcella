@@ -24,13 +24,14 @@ from sqlalchemy.orm import selectinload
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoicePricingMode, Invoice, InvoiceLineItem,
     Parcel, ParcelStatus, MemberParcel, Member, MeteringPoint, MeteringMedium, MeteringPointType, Meter,
-    ParcelInsurance, InsuranceConfiguration, ClubSetting,
+    ParcelInsurance, InsuranceConfiguration, ClubSetting, WorkHoursMode,
 )
 from app.database import active_member_filter
 from app.insurance_utils import calculate_insurance_cost, _normalized_address
 from app.meter_utils import calculate_consumption
 from app.l10n import load_current_region, format_address
 from app.area_utils import compute_area_b_sqm
+from app.work_hours_evaluation import compute_work_hours_shortfalls
 
 # Issue #65: club-configurable invoice number format/starting sequence.
 # Freely typed (e.g. "R-{year}-{number}"), not a fixed list -- {year}
@@ -125,7 +126,10 @@ async def _load_parcel_insurance_by_parcel(db: AsyncSession, year: int) -> Dict[
     return {pi.parcel_id: pi for pi in result.scalars().all()}
 
 
-async def _compute_member_invoices(db: AsyncSession, run: InvoiceRun, region: str) -> List[ComputedInvoice]:
+async def _compute_member_invoices(
+    db: AsyncSession, run: InvoiceRun, region: str,
+    work_hours_mode: Optional[WorkHoursMode] = None, work_hours_by_member: Optional[Dict[str, float]] = None,
+) -> List[ComputedInvoice]:
     """fixed_per_person items are person-scoped, not parcel-scoped --
     excluded from the parcel loop entirely (see compute_invoices_for_run)
     and handled solely here, via each definition's own
@@ -136,8 +140,20 @@ async def _compute_member_invoices(db: AsyncSession, run: InvoiceRun, region: st
     count. A member targeted by multiple fixed_per_person definitions
     gets ONE invoice with multiple lines, not one invoice per
     definition (mirrors how a parcel's multiple applicable items merge
-    onto its one invoice)."""
-    applicable_defs = [d for d in run.item_definitions if d.pricing_mode == InvoicePricingMode.FIXED_PER_PERSON]
+    onto its one invoice).
+
+    work_hours_shortfall items (issue #83) also land here when that
+    year's work-hours mode is PER_MEMBER -- but unlike fixed_per_person,
+    they ignore applies_to_all_members/member_scopes entirely (a member
+    explicitly asked for no manual scoping) and bill exactly whoever
+    app/work_hours_evaluation.py computed a nonzero amount for, at that
+    computed amount rather than definition.unit_price."""
+    work_hours_by_member = work_hours_by_member or {}
+    applicable_defs = [
+        d for d in run.item_definitions
+        if d.pricing_mode == InvoicePricingMode.FIXED_PER_PERSON
+        or (d.pricing_mode == InvoicePricingMode.WORK_HOURS_SHORTFALL and work_hours_mode == WorkHoursMode.PER_MEMBER)
+    ]
     if not applicable_defs:
         return []
 
@@ -146,25 +162,44 @@ async def _compute_member_invoices(db: AsyncSession, run: InvoiceRun, region: st
     )
     all_members = list(members_result.scalars().all())
 
+    # Members owing a work-hours shortfall might not all satisfy
+    # active_member_filter() (app/work_hours_evaluation.py's own
+    # PER_MEMBER criteria is "not soft-deleted and has a parcel", not
+    # the same predicate) -- fetch them directly so a real shortfall
+    # never silently disappears due to a filter mismatch.
+    work_hours_members_by_id: Dict[str, Member] = {}
+    if work_hours_by_member:
+        wh_result = await db.execute(select(Member).where(Member.id.in_(list(work_hours_by_member.keys()))))
+        work_hours_members_by_id = {m.id: m for m in wh_result.scalars().all()}
+
     lines_by_member: Dict[str, List[ComputedLineItem]] = {}
     members_by_id: Dict[str, Member] = {}
     for definition in sorted(applicable_defs, key=lambda d: d.order_number):
-        if definition.unit_price is None:
-            continue
-        if definition.applies_to_all_members:
-            targets = all_members
+        if definition.pricing_mode == InvoicePricingMode.WORK_HOURS_SHORTFALL:
+            targets_with_price = [
+                (work_hours_members_by_id[mid], Decimal(str(amount)))
+                for mid, amount in work_hours_by_member.items()
+                if mid in work_hours_members_by_id
+            ]
         else:
-            scoped_ids = {s.member_id for s in definition.member_scopes}
-            targets = [m for m in all_members if m.id in scoped_ids]
-        if not targets:
+            if definition.unit_price is None:
+                continue
+            if definition.applies_to_all_members:
+                targets = all_members
+            else:
+                scoped_ids = {s.member_id for s in definition.member_scopes}
+                targets = [m for m in all_members if m.id in scoped_ids]
+            unit_price = Decimal(str(definition.unit_price))
+            targets_with_price = [(m, unit_price) for m in targets]
+
+        if not targets_with_price:
             continue
 
-        unit_price = Decimal(str(definition.unit_price))
-        for member in targets:
+        for member, price in targets_with_price:
             members_by_id[member.id] = member
             lines_by_member.setdefault(member.id, []).append(ComputedLineItem(
                 order_number=definition.order_number, name=definition.name, description=definition.description,
-                quantity=Decimal("1"), unit_price=unit_price, line_total=unit_price,
+                quantity=Decimal("1"), unit_price=price, line_total=price,
             ))
 
     computed: List[ComputedInvoice] = []
@@ -230,6 +265,27 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
         if d.pricing_mode == InvoicePricingMode.COMMUNAL_AREA_SHARE
     }
 
+    # "Charge those who not completely or never used their work
+    # sessions, according to /work-hours/evaluation" (issue #83) --
+    # fully computed and automatically excludes exempt/fulfilled
+    # parcels or members (see app/work_hours_evaluation.py), so it's
+    # only computed at all when a definition actually uses it (the
+    # per-member evaluation involves an hours+exemption query per
+    # member, unlike the other precomputed structures above).
+    work_hours_mode: Optional[WorkHoursMode] = None
+    work_hours_by_parcel: Dict[str, float] = {}
+    work_hours_by_member: Dict[str, float] = {}
+    if any(d.pricing_mode == InvoicePricingMode.WORK_HOURS_SHORTFALL for d in run.item_definitions):
+        work_hours_mode, work_hours_by_parcel, work_hours_by_member = await compute_work_hours_shortfalls(db, run.year)
+
+    def _applies_to_parcel_loop(definition) -> bool:
+        mode = definition.pricing_mode
+        if mode == InvoicePricingMode.FIXED_PER_PERSON:
+            return False
+        if mode == InvoicePricingMode.WORK_HOURS_SHORTFALL:
+            return work_hours_mode == WorkHoursMode.PER_PARCEL
+        return True
+
     def item_quantity_and_price(definition, parcel):
         mode = definition.pricing_mode
         if mode == InvoicePricingMode.FIXED_PER_PARCEL:
@@ -265,13 +321,19 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             if denom == 0 or area_b_sqm is None or area_b_sqm <= 0:
                 return None, None
             return Decimal(str(area_b_sqm)) / Decimal(denom), Decimal(str(definition.unit_price))
+        if mode == InvoicePricingMode.WORK_HOURS_SHORTFALL:
+            amount = work_hours_by_parcel.get(parcel.id)
+            if amount is None:
+                return None, None
+            return Decimal("1"), Decimal(str(amount))
         return None, None
 
     computed: List[ComputedInvoice] = []
     for parcel in all_parcels:
         applicable_defs = [
             d for d in run.item_definitions
-            if d.pricing_mode != InvoicePricingMode.FIXED_PER_PERSON and _parcel_in_scope(d, parcel)
+            if _applies_to_parcel_loop(d)
+            and (d.pricing_mode == InvoicePricingMode.WORK_HOURS_SHORTFALL or _parcel_in_scope(d, parcel))
         ]
         if not applicable_defs:
             continue
@@ -305,7 +367,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             line_items=line_items, subtotal=subtotal,
         ))
 
-    computed.extend(await _compute_member_invoices(db, run, region))
+    computed.extend(await _compute_member_invoices(db, run, region, work_hours_mode, work_hours_by_member))
     return computed
 
 

@@ -1739,6 +1739,8 @@
       "picker_select_all": "Vybrať všetko",
       "picker_select_none": "Zrušiť výber",
       "picker_no_matches": "Žiadne výsledky",
+      "scope_automatic": "Automaticky (na základe vyhodnotenia pracovných hodín)",
+      "computed_automatically": "Počíta sa automaticky",
       "scope_all": "Všetky parcely",
       "scope_all_members": "Všetci členovia",
       "member_invoice_badge": "Bez parcely (člen)",
@@ -1775,7 +1777,8 @@
       "water_usage": "Spotreba vody (z modúlu)",
       "electricity_usage": "Spotreba elektriny (z modúlu)",
       "insurance_cost": "Náklady na poistenie (z modúlu)",
-      "communal_area_share": "Podiel na nájme spoločnej plochy"
+      "communal_area_share": "Podiel na nájme spoločnej plochy",
+      "work_hours_shortfall": "Nedoplatok pracovných hodín (z modulu)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Toto vyúčtovanie je už dokončené a nemožno ho zmazať.",

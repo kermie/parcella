@@ -1834,6 +1834,7 @@ class InvoicePricingMode(str, enum.Enum):
     ELECTRICITY_USAGE = "electricity_usage"
     INSURANCE_COST = "insurance_cost"
     COMMUNAL_AREA_SHARE = "communal_area_share"
+    WORK_HOURS_SHORTFALL = "work_hours_shortfall"
 
 
 class InvoiceRun(Base):

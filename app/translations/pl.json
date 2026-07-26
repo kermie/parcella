@@ -1739,6 +1739,8 @@
       "picker_select_all": "Zaznacz wszystko",
       "picker_select_none": "Odznacz wszystko",
       "picker_no_matches": "Brak wyników",
+      "scope_automatic": "Automatycznie (na podstawie ewaluacji godzin pracy)",
+      "computed_automatically": "Obliczane automatycznie",
       "scope_all": "Wszystkie działki",
       "scope_all_members": "Wszyscy członkowie",
       "member_invoice_badge": "Brak działki (członek)",
@@ -1775,7 +1777,8 @@
       "water_usage": "Zużycie wody (z modułu)",
       "electricity_usage": "Zużycie energii (z modułu)",
       "insurance_cost": "Koszt ubezpieczenia (z modułu)",
-      "communal_area_share": "Udział w dzierżawie powierzchni wspólnej"
+      "communal_area_share": "Udział w dzierżawie powierzchni wspólnej",
+      "work_hours_shortfall": "Niedobór godzin pracy (z modułu)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Ta seria faktur jest już zakończona i nie można jej usunąć.",

@@ -1739,6 +1739,8 @@
       "picker_select_all": "Alle auswählen",
       "picker_select_none": "Keine auswählen",
       "picker_no_matches": "Keine Treffer",
+      "scope_automatic": "Automatisch (Pflichtstunden-Auswertung)",
+      "computed_automatically": "Wird automatisch berechnet",
       "scope_all": "Alle Parzellen",
       "scope_all_members": "Alle Mitglieder",
       "member_invoice_badge": "Keine Parzelle (Mitglied)",
@@ -1775,7 +1777,8 @@
       "water_usage": "Wasserverbrauch (aus Modul)",
       "electricity_usage": "Stromverbrauch (aus Modul)",
       "insurance_cost": "Versicherungskosten (aus Modul)",
-      "communal_area_share": "Anteil an der Gemeinschaftsflächenpacht"
+      "communal_area_share": "Anteil an der Gemeinschaftsflächenpacht",
+      "work_hours_shortfall": "Pflichtstunden-Fehlbetrag (aus Modul)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",

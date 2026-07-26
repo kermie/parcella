@@ -1739,6 +1739,8 @@
       "picker_select_all": "Select all",
       "picker_select_none": "Select none",
       "picker_no_matches": "No matches",
+      "scope_automatic": "Automatic (work-hours evaluation)",
+      "computed_automatically": "Computed automatically",
       "scope_all": "All parcels",
       "scope_n_parcels": "{n} parcel(s)",
       "scope_all_members": "All members",
@@ -1775,7 +1777,8 @@
       "water_usage": "Water usage (from module)",
       "electricity_usage": "Electricity usage (from module)",
       "insurance_cost": "Insurance cost (from module)",
-      "communal_area_share": "Share of the communal area lease"
+      "communal_area_share": "Share of the communal area lease",
+      "work_hours_shortfall": "Work-hours shortfall (from module)"
     },
     "errors": {
       "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",

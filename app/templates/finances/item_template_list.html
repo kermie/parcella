@@ -79,7 +79,10 @@
                     </div>
                     <div class="col-sm-1">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_unit_price') }}</label>
-                        <input type="text" name="unit_price" class="form-control form-control-sm" placeholder="0,00">
+                        <input type="text" name="unit_price" id="new-template-unit-price" class="form-control form-control-sm" placeholder="0,00">
+                        <div class="text-muted" id="new-template-unit-price-auto" style="display: none; font-size: 0.75rem;">
+                            {{ t('finances.run_detail.computed_automatically') }}
+                        </div>
                     </div>
                     <div class="col-sm-2">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_category') }}</label>
@@ -104,6 +107,9 @@
                         <input type="checkbox" name="applies_to_all_members" id="new-template-members-check"
                                class="form-check-input" checked>
                         <label class="form-check-label" for="new-template-members-check">{{ t('finances.run_detail.label_applies_all_members') }}</label>
+                    </div>
+                    <div class="col-12 text-muted" id="new-template-scope-auto" style="display: none; font-size: 0.85rem;">
+                        {{ t('finances.run_detail.scope_automatic') }}
                     </div>
                     <div class="col-12" id="new-template-parcel-picker" style="display: none;">
                         {{ scope_picker('newtemplate-parcel', t('finances.run_detail.label_parcels'), 'parcel_ids', parcels, 'plot_number', []) }}
@@ -165,8 +171,11 @@
                                 </td>
                                 <td>
                                     <input type="text" name="unit_price" form="edit-template-{{ template.id }}" class="form-control form-control-sm"
-                                           style="width: 100px;"
+                                           id="unit-price-{{ template.id }}" style="width: 100px;"
                                            value="{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '' }}">
+                                    <div class="text-muted" id="unit-price-auto-{{ template.id }}" style="display: none; font-size: 0.75rem;">
+                                        {{ t('finances.run_detail.computed_automatically') }}
+                                    </div>
                                 </td>
                                 <td class="text-nowrap">
                                     <div class="form-check form-switch mb-0" id="parcel-toggle-wrap-{{ template.id }}">
@@ -186,6 +195,9 @@
                                             {% if template.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
                                             {% else %}{{ t('finances.run_detail.scope_n_members', n=template.member_scopes|length) }}{% endif %}
                                         </label>
+                                    </div>
+                                    <div class="text-muted" id="scope-auto-{{ template.id }}" style="display: none; font-size: 0.8rem;">
+                                        {{ t('finances.run_detail.scope_automatic') }}
                                     </div>
                                 </td>
                                 <td>
@@ -217,7 +229,9 @@
                                 <td>{{ t('finances.pricing_modes.' ~ template.pricing_mode.value) }}</td>
                                 <td>{{ '%.2f'|format(template.unit_price|float) if template.unit_price is not none else '-' }}</td>
                                 <td>
-                                    {% if template.pricing_mode.value == 'fixed_per_person' %}
+                                    {% if template.pricing_mode.value == 'work_hours_shortfall' %}
+                                    {{ t('finances.run_detail.scope_automatic') }}
+                                    {% elif template.pricing_mode.value == 'fixed_per_person' %}
                                     {% if template.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
                                     {% else %}{{ t('finances.run_detail.scope_n_members', n=template.member_scopes|length) }}{% endif %}
                                     {% else %}
@@ -267,18 +281,25 @@ document.addEventListener('DOMContentLoaded', function () {
         var select = document.getElementById('new-template-pricing-mode');
         var parcelToggleWrap = document.getElementById('new-template-parcel-toggle-wrap');
         var memberToggleWrap = document.getElementById('new-template-member-toggle-wrap');
+        var scopeAutoNote = document.getElementById('new-template-scope-auto');
         var parcelPicker = document.getElementById('new-template-parcel-picker');
         var memberPicker = document.getElementById('new-template-member-picker');
         var parcelToggle = document.getElementById('new-template-all-parcels-check');
         var memberToggle = document.getElementById('new-template-members-check');
+        var unitPriceInput = document.getElementById('new-template-unit-price');
+        var unitPriceAutoNote = document.getElementById('new-template-unit-price-auto');
         if (!select) return;
 
         function sync() {
             var isPerson = select.value === 'fixed_per_person';
-            parcelToggleWrap.style.display = isPerson ? 'none' : 'block';
-            memberToggleWrap.style.display = isPerson ? 'block' : 'none';
-            parcelPicker.style.display = (!isPerson && !parcelToggle.checked) ? 'block' : 'none';
-            memberPicker.style.display = (isPerson && !memberToggle.checked) ? 'block' : 'none';
+            var isAutomatic = select.value === 'work_hours_shortfall';
+            parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
+            memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
+            if (scopeAutoNote) scopeAutoNote.style.display = isAutomatic ? 'block' : 'none';
+            parcelPicker.style.display = (!isPerson && !isAutomatic && !parcelToggle.checked) ? 'block' : 'none';
+            memberPicker.style.display = (isPerson && !isAutomatic && !memberToggle.checked) ? 'block' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         parcelToggle.addEventListener('change', sync);
@@ -291,22 +312,29 @@ document.addEventListener('DOMContentLoaded', function () {
         var itemId = select.dataset.itemId;
         var parcelToggleWrap = document.getElementById('parcel-toggle-wrap-' + itemId);
         var memberToggleWrap = document.getElementById('member-toggle-wrap-' + itemId);
+        var scopeAutoNote = document.getElementById('scope-auto-' + itemId);
         var pickerRow = document.getElementById('picker-row-' + itemId);
         var parcelPickerBlock = document.getElementById('parcel-picker-block-' + itemId);
         var memberPickerBlock = document.getElementById('member-picker-block-' + itemId);
         var parcelToggle = document.getElementById('applies-all-' + itemId);
         var memberToggle = document.getElementById('applies-all-members-' + itemId);
+        var unitPriceInput = document.getElementById('unit-price-' + itemId);
+        var unitPriceAutoNote = document.getElementById('unit-price-auto-' + itemId);
         if (!parcelToggleWrap || !memberToggleWrap || !pickerRow) return;
 
         function sync() {
             var isPerson = select.value === 'fixed_per_person';
-            parcelToggleWrap.style.display = isPerson ? 'none' : 'block';
-            memberToggleWrap.style.display = isPerson ? 'block' : 'none';
-            var showParcelPicker = !isPerson && parcelToggle && !parcelToggle.checked;
-            var showMemberPicker = isPerson && memberToggle && !memberToggle.checked;
+            var isAutomatic = select.value === 'work_hours_shortfall';
+            parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'flex';
+            memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'flex' : 'none';
+            if (scopeAutoNote) scopeAutoNote.style.display = isAutomatic ? 'block' : 'none';
+            var showParcelPicker = !isPerson && !isAutomatic && parcelToggle && !parcelToggle.checked;
+            var showMemberPicker = isPerson && !isAutomatic && memberToggle && !memberToggle.checked;
             parcelPickerBlock.style.display = showParcelPicker ? 'block' : 'none';
             memberPickerBlock.style.display = showMemberPicker ? 'block' : 'none';
             pickerRow.style.display = (showParcelPicker || showMemberPicker) ? 'table-row' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         if (parcelToggle) parcelToggle.addEventListener('change', sync);

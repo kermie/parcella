@@ -1739,6 +1739,8 @@
       "picker_select_all": "Alles selecteren",
       "picker_select_none": "Niets selecteren",
       "picker_no_matches": "Geen resultaten",
+      "scope_automatic": "Automatisch (werkurenevaluatie)",
+      "computed_automatically": "Wordt automatisch berekend",
       "scope_all": "Alle percelen",
       "scope_all_members": "Alle leden",
       "member_invoice_badge": "Geen perceel (lid)",
@@ -1775,7 +1777,8 @@
       "water_usage": "Waterverbruik (uit module)",
       "electricity_usage": "Stroomverbruik (uit module)",
       "insurance_cost": "Verzekeringskosten (uit module)",
-      "communal_area_share": "Aandeel in de pacht van het gemeenschappelijk terrein"
+      "communal_area_share": "Aandeel in de pacht van het gemeenschappelijk terrein",
+      "work_hours_shortfall": "Tekort werkuren (uit module)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Deze factuurronde is al afgerond en kan niet meer worden verwijderd.",
