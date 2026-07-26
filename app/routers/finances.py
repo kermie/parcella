@@ -478,21 +478,25 @@ async def item_update(
     unit_price: str = Form(""),
     applies_to_all_parcels: str = Form(""),
     applies_to_members_without_parcel: str = Form(""),
+    parcel_ids: list[str] = Form([]),
     category_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Edits the simple fields of an item definition. Parcel scoping
-    (which specific parcels it applies to) is deliberately NOT editable
-    here -- re-create the item to change that -- keeping this form (and
-    the inline table row it's submitted from) to a manageable size.
+    Edits an item definition, including its specific-parcel scoping --
+    editable freely any time before the run is finalized (a member
+    asked for this explicitly: the parcel picker should stay open to
+    change up until the next invoice run actually happens, not be
+    locked in at creation). Once finalized, item definitions can't be
+    changed at all (see the run.status check below), matching how
+    every other field here already works.
     """
     await require_permission(request, db, "finances", "write")
 
     result = await db.execute(
-        select(InvoiceItemDefinition).where(
-            InvoiceItemDefinition.id == item_id, InvoiceItemDefinition.invoice_run_id == run_id,
-        )
+        select(InvoiceItemDefinition)
+        .options(selectinload(InvoiceItemDefinition.parcel_scopes))
+        .where(InvoiceItemDefinition.id == item_id, InvoiceItemDefinition.invoice_run_id == run_id)
     )
     item = result.scalar_one_or_none()
     if not item:
@@ -507,14 +511,25 @@ async def item_update(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid pricing_mode")
 
+    applies_all = applies_to_all_parcels == "on"
     item.order_number = order_number
     item.name = name.strip()
     item.description = description.strip() or None
     item.pricing_mode = mode
     item.unit_price = _parse_decimal(unit_price) if mode != InvoicePricingMode.INSURANCE_COST else None
-    item.applies_to_all_parcels = applies_to_all_parcels == "on"
+    item.applies_to_all_parcels = applies_all
     item.applies_to_members_without_parcel = applies_to_members_without_parcel == "on"
     item.category_id = category_id.strip() or None
+
+    # Always resync parcel_scopes to what was actually submitted --
+    # cleared when applies_all, replaced with the new selection
+    # otherwise, so stale choices never linger if scope changes back
+    # and forth before finalize.
+    for scope in list(item.parcel_scopes):
+        await db.delete(scope)
+    if not applies_all:
+        for parcel_id in parcel_ids:
+            db.add(InvoiceItemDefinitionParcel(invoice_item_definition_id=item.id, parcel_id=parcel_id))
 
     await db.commit()
     return RedirectResponse(f"/finances/runs/{run_id}", status_code=302)

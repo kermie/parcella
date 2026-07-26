@@ -11,7 +11,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import AsyncSessionLocal
-from app.models import Member, MemberEmail, MemberParcel, Parcel, Invoice, InvoiceItemTemplate, ClubSetting
+from app.models import (
+    Member, MemberEmail, MemberParcel, Parcel, Invoice, InvoiceItemDefinition, InvoiceItemTemplate, ClubSetting,
+)
 
 
 async def _enable_finances_module():
@@ -233,3 +235,74 @@ async def test_catalog_item_scoped_to_members_only_does_not_bill_parcel_tenants(
     assert invoices[0].member_id is not None
     assert invoices[0].parcel_id is None
     assert "Support NoParcelAtAll" in invoices[0].recipient_names
+
+
+async def test_item_parcel_scope_stays_editable_before_finalize(client, admin_user):
+    """A member asked explicitly: the specific-parcel picker on an
+    item must stay editable at any time before the run is finalized,
+    not just at creation. Covers: create scoped to one parcel, edit to
+    swap to a different parcel, then edit again to switch to "all
+    parcels" (which must clear the now-stale specific scope)."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    await _enable_finances_module()
+
+    async with AsyncSessionLocal() as session:
+        parcel_a = Parcel(plot_number="SCOPE-EDIT-A", area_sqm=100)
+        parcel_b = Parcel(plot_number="SCOPE-EDIT-B", area_sqm=100)
+        session.add_all([parcel_a, parcel_b])
+        await session.commit()
+        parcel_a_id, parcel_b_id = parcel_a.id, parcel_b.id
+
+    run_id = await _make_run(client, year="2030")
+    r_item = await client.post(f"/finances/runs/{run_id}/items", data={
+        "order_number": "10", "name": "Scoped fee", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "5.00",
+        "parcel_ids": [parcel_a_id],
+    })
+    assert r_item.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .options(selectinload(InvoiceItemDefinition.parcel_scopes))
+            .where(InvoiceItemDefinition.invoice_run_id == run_id)
+        )
+        item = result.scalars().one()
+    assert item.applies_to_all_parcels is False
+    assert {s.parcel_id for s in item.parcel_scopes} == {parcel_a_id}
+
+    # Edit: swap the scope from parcel A to parcel B.
+    r_edit1 = await client.post(f"/finances/runs/{run_id}/items/{item.id}/edit", data={
+        "order_number": "10", "name": "Scoped fee", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "5.00",
+        "parcel_ids": [parcel_b_id],
+    })
+    assert r_edit1.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .options(selectinload(InvoiceItemDefinition.parcel_scopes))
+            .where(InvoiceItemDefinition.id == item.id)
+        )
+        item = result.scalars().one()
+    assert {s.parcel_id for s in item.parcel_scopes} == {parcel_b_id}, "scope must be replaced, not merged"
+
+    # Edit again: switch to "all parcels" -- the stale specific scope
+    # must be cleared, not left lingering underneath.
+    r_edit2 = await client.post(f"/finances/runs/{run_id}/items/{item.id}/edit", data={
+        "order_number": "10", "name": "Scoped fee", "description": "",
+        "pricing_mode": "fixed_per_parcel", "unit_price": "5.00",
+        "applies_to_all_parcels": "on",
+    })
+    assert r_edit2.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemDefinition)
+            .options(selectinload(InvoiceItemDefinition.parcel_scopes))
+            .where(InvoiceItemDefinition.id == item.id)
+        )
+        item = result.scalars().one()
+    assert item.applies_to_all_parcels is True
+    assert item.parcel_scopes == []

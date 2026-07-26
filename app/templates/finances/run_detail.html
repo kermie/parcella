@@ -153,8 +153,10 @@
                                 <td class="text-nowrap">
                                     <div class="form-check form-switch mb-0">
                                         <input type="checkbox" name="applies_to_all_parcels" form="edit-item-{{ item.id }}"
-                                               class="form-check-input" {% if item.applies_to_all_parcels %}checked{% endif %}>
-                                        <label class="form-check-label" style="font-size: 0.8rem;">
+                                               class="form-check-input applies-all-toggle" id="applies-all-{{ item.id }}"
+                                               data-parcel-picker="parcel-picker-row-{{ item.id }}"
+                                               {% if item.applies_to_all_parcels %}checked{% endif %}>
+                                        <label class="form-check-label" for="applies-all-{{ item.id }}" style="font-size: 0.8rem;">
                                             {% if item.applies_to_all_parcels %}{{ t('finances.run_detail.scope_all') }}
                                             {% else %}{{ t('finances.run_detail.scope_n_parcels', n=item.parcel_scopes|length) }}{% endif %}
                                         </label>
@@ -206,6 +208,26 @@
                                 <td></td>
                                 {% endif %}
                             </tr>
+                            {% if has_perm(request, 'finances', 'write') %}
+                            <tr id="parcel-picker-row-{{ item.id }}" style="display: none;">
+                                <td colspan="7" class="bg-light">
+                                    <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_parcels') }}</label>
+                                    <div class="row" style="max-height: 220px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem;">
+                                        {% set scoped_parcel_ids = item.parcel_scopes|map(attribute='parcel_id')|list %}
+                                        {% for parcel in parcels %}
+                                        <div class="col-sm-3 col-6">
+                                            <div class="form-check">
+                                                <input type="checkbox" name="parcel_ids" value="{{ parcel.id }}" form="edit-item-{{ item.id }}"
+                                                       class="form-check-input" id="parcel-{{ item.id }}-{{ parcel.id }}"
+                                                       {% if parcel.id in scoped_parcel_ids %}checked{% endif %}>
+                                                <label class="form-check-label" style="font-size: 0.85rem;" for="parcel-{{ item.id }}-{{ parcel.id }}">{{ parcel.plot_number }}</label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% else %}
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-3">{{ t('finances.run_detail.no_items') }}</td>
@@ -373,6 +395,14 @@ document.addEventListener('DOMContentLoaded', function () {
         function syncRow() { wrap.style.display = select.value === 'fixed_per_person' ? 'flex' : 'none'; }
         select.addEventListener('change', syncRow);
         syncRow();
+    });
+
+    document.querySelectorAll('.applies-all-toggle').forEach(function (checkbox) {
+        var pickerRow = document.getElementById(checkbox.dataset.parcelPicker);
+        if (!pickerRow) return;
+        function syncPickerRow() { pickerRow.style.display = checkbox.checked ? 'none' : 'table-row'; }
+        checkbox.addEventListener('change', syncPickerRow);
+        syncPickerRow();
     });
 });
 </script>
