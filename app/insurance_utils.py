@@ -3,8 +3,9 @@ Helper functions for the insurance module: cost calculation and
 household detection (same address = automatically co-insured).
 """
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
+from app.i18n import translate
 from app.models import Member, MemberParcel, ParcelInsurance, InsuranceConfiguration
 
 
@@ -97,3 +98,34 @@ def calculate_insurance_cost(
         "accident_cost": accident_cost,
         "total": property_cost + accident_cost,
     }
+
+
+def insurance_cost_line_items(
+    pi: ParcelInsurance, configuration: Optional[InsuranceConfiguration], language: str
+) -> List[Tuple[str, Decimal]]:
+    """
+    Per-component breakdown of a parcel's insurance cost for a year, as
+    (label, amount) pairs -- one invoice line item per pair, so the
+    parcel member receiving the invoice sees the insurance type and fee
+    for each part instead of one opaque combined total (issue #93).
+    Mirrors calculate_insurance_cost's fields and skip-if-not-insured
+    logic exactly, just kept apart instead of summed into `total`.
+    """
+    items: List[Tuple[str, Decimal]] = []
+    if pi.has_property_insurance and pi.property_package:
+        items.append((
+            translate("finances.pdf.insurance_line_property", language, package=pi.property_package.name),
+            Decimal(str(pi.property_package.amount_eur)),
+        ))
+    if pi.has_accident_insurance and configuration:
+        items.append((
+            translate("finances.pdf.insurance_line_accident_household", language),
+            Decimal(str(configuration.accident_base_amount_eur)),
+        ))
+        additional_count = len(pi.additional_persons)
+        if additional_count:
+            items.append((
+                translate("finances.pdf.insurance_line_accident_additional", language, n=additional_count),
+                Decimal(str(configuration.accident_additional_amount_eur)) * additional_count,
+            ))
+    return items

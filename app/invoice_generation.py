@@ -27,7 +27,8 @@ from app.models import (
     ParcelInsurance, InsuranceConfiguration, ClubSetting, WorkHoursMode,
 )
 from app.database import active_member_filter
-from app.insurance_utils import calculate_insurance_cost, _normalized_address
+from app.i18n import load_current_language
+from app.insurance_utils import insurance_cost_line_items, _normalized_address
 from app.meter_utils import calculate_consumption
 from app.l10n import load_current_region, format_address
 from app.area_utils import compute_area_b_sqm
@@ -233,6 +234,7 @@ def _parcel_in_scope(definition, parcel: Parcel) -> bool:
 
 async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[ComputedInvoice]:
     region = await load_current_region(db)
+    language = await load_current_language(db)
 
     parcels_result = await db.execute(
         select(Parcel)
@@ -306,14 +308,6 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             if consumption is None:
                 return None, None
             return consumption, Decimal(str(definition.unit_price))
-        if mode == InvoicePricingMode.INSURANCE_COST:
-            pi = parcel_insurance.get(parcel.id)
-            if pi is None:
-                return None, None
-            cost = calculate_insurance_cost(pi, insurance_configuration)
-            if cost["total"] <= 0:
-                return None, None
-            return Decimal("1"), cost["total"]
         if mode == InvoicePricingMode.COMMUNAL_AREA_SHARE:
             if definition.unit_price is None:
                 return None, None
@@ -359,6 +353,21 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
 
         line_items = []
         for definition in sorted(applicable_defs, key=lambda d: d.order_number):
+            # Issue #93: insurance cost is broken into one line item per
+            # component (property / accident household / accident
+            # +N additional persons) instead of one combined lump sum,
+            # so the parcel member sees the type and fee for each part.
+            if definition.pricing_mode == InvoicePricingMode.INSURANCE_COST:
+                pi = parcel_insurance.get(parcel.id)
+                if pi is None:
+                    continue
+                for label, amount in insurance_cost_line_items(pi, insurance_configuration, language):
+                    line_items.append(ComputedLineItem(
+                        order_number=definition.order_number, name=label, description=None,
+                        quantity=Decimal("1"), unit_price=amount, line_total=amount.quantize(Decimal("0.01")),
+                    ))
+                continue
+
             quantity, unit_price = item_quantity_and_price(definition, parcel)
             if quantity is None or unit_price is None:
                 continue

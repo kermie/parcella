@@ -105,10 +105,23 @@ Per-parcel quantity/price resolution (`item_quantity_and_price`) pulls
 from other modules rather than storing its own numbers:
 `WATER_USAGE`/`ELECTRICITY_USAGE` read consumption via
 `app/meter_utils.py`'s `calculate_consumption()` but still need a
-manually entered `unit_price` (no tariff table exists anywhere else);
-`INSURANCE_COST` pulls its whole amount from
-`app/insurance_utils.py`'s `calculate_insurance_cost()` and ignores
-`unit_price` entirely.
+manually entered `unit_price` (no tariff table exists anywhere else).
+`INSURANCE_COST` ignores `unit_price` entirely and is handled outside
+`item_quantity_and_price` altogether: instead of one combined amount,
+`app/insurance_utils.py`'s `insurance_cost_line_items()` (issue #93)
+returns one `(label, amount)` pair per component actually owed --
+property insurance, accident insurance for the household, and a
+separate "+N additional persons" line when applicable -- and
+`compute_invoices_for_run` turns each pair into its own
+`ComputedLineItem`, all sharing the definition's `order_number`. This
+is deliberately not routed through the single-line-per-definition path
+every other pricing mode uses, since the invoice recipient is meant to
+see the insurance type and fee for each part, not one opaque total
+(a member with only property insurance gets one line, one with both
+gets two, +N additional persons adds a third). The labels come from
+`translate()` using the club's configured language (`ClubSetting
+"language"`), not the item definition's own name/description, since
+they're generated per parcel rather than typed once by an admin.
 
 Invoice numbering (`invoice_number_format` / `invoice_number_start`
 `ClubSetting`s, issue #65) is club-configurable

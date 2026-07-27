@@ -1941,7 +1941,10 @@
       "preview_banner": "Aperçu — pas encore finalisé ni envoyé",
       "account_holder": "Titulaire du compte : {name}",
       "page_label": "Page",
-      "of_label": "sur"
+      "of_label": "sur",
+      "insurance_line_property": "Assurance des biens ({package})",
+      "insurance_line_accident_household": "Assurance accidents (ménage)",
+      "insurance_line_accident_additional": "Assurance accidents (+{n} personne(s) supplémentaire(s))"
     },
     "reminder_pdf": {
       "heading": "Rappel de paiement n° {level}",

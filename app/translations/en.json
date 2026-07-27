@@ -1941,7 +1941,10 @@
       "preview_banner": "Preview — not yet finalized or sent",
       "account_holder": "Account holder: {name}",
       "page_label": "Page",
-      "of_label": "of"
+      "of_label": "of",
+      "insurance_line_property": "Property insurance ({package})",
+      "insurance_line_accident_household": "Accident insurance (household)",
+      "insurance_line_accident_additional": "Accident insurance (+{n} additional person(s))"
     },
     "reminder_pdf": {
       "heading": "Payment Reminder #{level}",
