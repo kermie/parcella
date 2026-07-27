@@ -1399,7 +1399,11 @@
       "col_turning": "Wordt",
       "round_badge": "Rond",
       "turning_label": "{age}",
-      "empty": "Geen aankomende verjaardagen bekend."
+      "empty": "Geen aankomende verjaardagen bekend.",
+      "pdf_button": "PDF afdrukken (hele jaar)",
+      "pdf_heading": "Verjaardagskalender {year}",
+      "pdf_col_day": "Dag",
+      "pdf_empty": "Geen verjaardagen bekend."
     },
     "council_presence": {
       "title": "Aanwezigheid bestuur",
@@ -1941,8 +1945,6 @@
       "subtotal": "Subtotaal",
       "preview_banner": "Voorbeeld — nog niet afgerond of verzonden",
       "account_holder": "Rekeninghouder: {name}",
-      "page_label": "Pagina",
-      "of_label": "van",
       "insurance_line_property": "Opstalverzekering ({package})",
       "insurance_line_accident_household": "Ongevallenverzekering (huishouden)",
       "insurance_line_accident_additional": "Ongevallenverzekering (+{n} extra perso(o)n(en))"
@@ -1957,5 +1959,9 @@
       "row_this_fee": "Kosten van deze herinnering",
       "closing": "Wij verzoeken u het openstaande bedrag zo spoedig mogelijk te voldoen. Heeft u al betaald, dan kunt u deze herinnering als niet verzonden beschouwen."
     }
+  },
+  "pdf": {
+    "page_label": "Pagina",
+    "of_label": "van"
   }
 }

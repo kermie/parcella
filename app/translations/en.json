@@ -1399,7 +1399,11 @@
       "col_turning": "Turning",
       "round_badge": "Milestone",
       "turning_label": "{age}",
-      "empty": "No upcoming birthdays on file."
+      "empty": "No upcoming birthdays on file.",
+      "pdf_button": "Print PDF (entire year)",
+      "pdf_heading": "Birthday Calendar {year}",
+      "pdf_col_day": "Day",
+      "pdf_empty": "No birthdays on file."
     },
     "council_presence": {
       "title": "Council Presence",
@@ -1941,8 +1945,6 @@
       "subtotal": "Subtotal",
       "preview_banner": "Preview — not yet finalized or sent",
       "account_holder": "Account holder: {name}",
-      "page_label": "Page",
-      "of_label": "of",
       "insurance_line_property": "Property insurance ({package})",
       "insurance_line_accident_household": "Accident insurance (household)",
       "insurance_line_accident_additional": "Accident insurance (+{n} additional person(s))"
@@ -1957,5 +1959,9 @@
       "row_this_fee": "This reminder's fee",
       "closing": "Please settle the outstanding amount as soon as possible. If you have already paid, please disregard this reminder."
     }
+  },
+  "pdf": {
+    "page_label": "Page",
+    "of_label": "of"
   }
 }
