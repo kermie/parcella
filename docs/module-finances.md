@@ -39,7 +39,7 @@ This is the module's central design decision -- see
 for the full history of why it ended up this shape:
 
 - **Plot-scoped** (`FIXED_PER_PARCEL`, `PER_SQM`, `WATER_USAGE`,
-  `ELECTRICITY_USAGE`, `INSURANCE_COST`): `applies_to_all_parcels`
+  `ELECTRICITY_USAGE`): `applies_to_all_parcels`
   (default `True`) with `parcel_scopes` listing specific parcels when
   `False`. Billed one `Invoice` per occupied parcel with an
   invoice-address resident.
@@ -49,12 +49,27 @@ for the full history of why it ended up this shape:
   whether that member currently has a parcel** -- this is what makes
   honorary/supporting memberships and dues for plot-less members
   possible at all.
+- **Automatically scoped** (`WORK_HOURS_SHORTFALL`, `INSURANCE_COST`):
+  neither field is honored for eligibility -- both `applies_to_all_parcels`
+  and `parcel_scopes` are still stored on the row (the form doesn't
+  special-case what it submits) but `compute_invoices_for_run`'s
+  parcel loop bypasses `_parcel_in_scope()` entirely for these two
+  modes, billing exactly whichever parcels the underlying module
+  computes a nonzero amount for. There is deliberately no manual
+  narrowing here: for insurance cost, the `ParcelInsurance` record
+  already *is* the scope (a parcel with no insurance, or a zero total,
+  is skipped by `item_quantity_and_price` regardless), so a separate
+  parcel picker could only be used to under-bill an insured parcel by
+  mistake, never to usefully restrict it. The item forms
+  (`run_detail.html`, `item_template_list.html`) hide the scope
+  picker for both and show a mode-specific "Automatic (... evaluation)"
+  note instead.
 
-These two fields/relationships are meaningless/ignored for the "wrong"
+These scope fields/relationships are meaningless/ignored for the "wrong"
 pricing mode -- a `PER_SQM` item's `member_scopes` is simply never
-read, and vice versa. The UI (`run_detail.html`,
-`item_template_list.html`) shows exactly one of the two pickers per
-item row, switched by the pricing-mode `<select>`, never both.
+read, and vice versa. The UI shows exactly one of the two pickers (or
+the automatic note) per item row, switched by the pricing-mode
+`<select>`, never more than one at a time.
 
 ### `Invoice`'s dual subject
 

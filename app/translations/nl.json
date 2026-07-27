@@ -1740,6 +1740,7 @@
       "picker_select_none": "Niets selecteren",
       "picker_no_matches": "Geen resultaten",
       "scope_automatic": "Automatisch (werkurenevaluatie)",
+      "scope_automatic_insurance": "Automatisch (verzekeringsevaluatie)",
       "computed_automatically": "Wordt automatisch berekend",
       "scope_all": "Alle percelen",
       "scope_all_members": "Alle leden",

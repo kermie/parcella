@@ -1740,6 +1740,7 @@
       "picker_select_none": "Zrušit výběr",
       "picker_no_matches": "Žádné výsledky",
       "scope_automatic": "Automaticky (na základě vyhodnocení pracovních hodin)",
+      "scope_automatic_insurance": "Automaticky (na základě vyhodnocení pojištění)",
       "computed_automatically": "Počítá se automaticky",
       "scope_all": "Všechny parcely",
       "scope_all_members": "Všichni členové",

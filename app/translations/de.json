@@ -1740,6 +1740,7 @@
       "picker_select_none": "Keine auswählen",
       "picker_no_matches": "Keine Treffer",
       "scope_automatic": "Automatisch (Pflichtstunden-Auswertung)",
+      "scope_automatic_insurance": "Automatisch (Versicherungsauswertung)",
       "computed_automatically": "Wird automatisch berechnet",
       "scope_all": "Alle Parzellen",
       "scope_all_members": "Alle Mitglieder",

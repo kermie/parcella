@@ -111,6 +111,9 @@
                     <div class="col-12 text-muted" id="new-template-scope-auto" style="display: none; font-size: 0.85rem;">
                         {{ t('finances.run_detail.scope_automatic') }}
                     </div>
+                    <div class="col-12 text-muted" id="new-template-scope-auto-insurance" style="display: none; font-size: 0.85rem;">
+                        {{ t('finances.run_detail.scope_automatic_insurance') }}
+                    </div>
                     <div class="col-12" id="new-template-parcel-picker" style="display: none;">
                         {{ scope_picker('newtemplate-parcel', t('finances.run_detail.label_parcels'), 'parcel_ids', parcels, 'plot_number', []) }}
                     </div>
@@ -199,6 +202,9 @@
                                     <div class="text-muted" id="scope-auto-{{ template.id }}" style="display: none; font-size: 0.8rem;">
                                         {{ t('finances.run_detail.scope_automatic') }}
                                     </div>
+                                    <div class="text-muted" id="scope-auto-insurance-{{ template.id }}" style="display: none; font-size: 0.8rem;">
+                                        {{ t('finances.run_detail.scope_automatic_insurance') }}
+                                    </div>
                                 </td>
                                 <td>
                                     <select name="category_id" form="edit-template-{{ template.id }}" class="form-select form-select-sm">
@@ -231,6 +237,8 @@
                                 <td>
                                     {% if template.pricing_mode.value == 'work_hours_shortfall' %}
                                     {{ t('finances.run_detail.scope_automatic') }}
+                                    {% elif template.pricing_mode.value == 'insurance_cost' %}
+                                    {{ t('finances.run_detail.scope_automatic_insurance') }}
                                     {% elif template.pricing_mode.value == 'fixed_per_person' %}
                                     {% if template.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
                                     {% else %}{{ t('finances.run_detail.scope_n_members', n=template.member_scopes|length) }}{% endif %}
@@ -282,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var parcelToggleWrap = document.getElementById('new-template-parcel-toggle-wrap');
         var memberToggleWrap = document.getElementById('new-template-member-toggle-wrap');
         var scopeAutoNote = document.getElementById('new-template-scope-auto');
+        var scopeAutoNoteInsurance = document.getElementById('new-template-scope-auto-insurance');
         var parcelPicker = document.getElementById('new-template-parcel-picker');
         var memberPicker = document.getElementById('new-template-member-picker');
         var parcelToggle = document.getElementById('new-template-all-parcels-check');
@@ -292,15 +301,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function sync() {
             var isPerson = select.value === 'fixed_per_person';
-            var isAutomatic = select.value === 'work_hours_shortfall';
-            var isAutomaticPrice = isAutomatic || select.value === 'insurance_cost';
+            var isWorkHoursAuto = select.value === 'work_hours_shortfall';
+            var isInsuranceAuto = select.value === 'insurance_cost';
+            var isAutomatic = isWorkHoursAuto || isInsuranceAuto;
             parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
             memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
-            if (scopeAutoNote) scopeAutoNote.style.display = isAutomatic ? 'block' : 'none';
+            if (scopeAutoNote) scopeAutoNote.style.display = isWorkHoursAuto ? 'block' : 'none';
+            if (scopeAutoNoteInsurance) scopeAutoNoteInsurance.style.display = isInsuranceAuto ? 'block' : 'none';
             parcelPicker.style.display = (!isPerson && !isAutomatic && !parcelToggle.checked) ? 'block' : 'none';
             memberPicker.style.display = (isPerson && !isAutomatic && !memberToggle.checked) ? 'block' : 'none';
-            if (unitPriceInput) unitPriceInput.style.display = isAutomaticPrice ? 'none' : '';
-            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomaticPrice ? 'block' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         parcelToggle.addEventListener('change', sync);
@@ -314,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var parcelToggleWrap = document.getElementById('parcel-toggle-wrap-' + itemId);
         var memberToggleWrap = document.getElementById('member-toggle-wrap-' + itemId);
         var scopeAutoNote = document.getElementById('scope-auto-' + itemId);
+        var scopeAutoNoteInsurance = document.getElementById('scope-auto-insurance-' + itemId);
         var pickerRow = document.getElementById('picker-row-' + itemId);
         var parcelPickerBlock = document.getElementById('parcel-picker-block-' + itemId);
         var memberPickerBlock = document.getElementById('member-picker-block-' + itemId);
@@ -325,18 +337,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function sync() {
             var isPerson = select.value === 'fixed_per_person';
-            var isAutomatic = select.value === 'work_hours_shortfall';
-            var isAutomaticPrice = isAutomatic || select.value === 'insurance_cost';
+            var isWorkHoursAuto = select.value === 'work_hours_shortfall';
+            var isInsuranceAuto = select.value === 'insurance_cost';
+            var isAutomatic = isWorkHoursAuto || isInsuranceAuto;
             parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
             memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
-            if (scopeAutoNote) scopeAutoNote.style.display = isAutomatic ? 'block' : 'none';
+            if (scopeAutoNote) scopeAutoNote.style.display = isWorkHoursAuto ? 'block' : 'none';
+            if (scopeAutoNoteInsurance) scopeAutoNoteInsurance.style.display = isInsuranceAuto ? 'block' : 'none';
             var showParcelPicker = !isPerson && !isAutomatic && parcelToggle && !parcelToggle.checked;
             var showMemberPicker = isPerson && !isAutomatic && memberToggle && !memberToggle.checked;
             parcelPickerBlock.style.display = showParcelPicker ? 'block' : 'none';
             memberPickerBlock.style.display = showMemberPicker ? 'block' : 'none';
             pickerRow.style.display = (showParcelPicker || showMemberPicker) ? 'table-row' : 'none';
-            if (unitPriceInput) unitPriceInput.style.display = isAutomaticPrice ? 'none' : '';
-            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomaticPrice ? 'block' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         if (parcelToggle) parcelToggle.addEventListener('change', sync);

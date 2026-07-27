@@ -333,7 +333,10 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
         applicable_defs = [
             d for d in run.item_definitions
             if _applies_to_parcel_loop(d)
-            and (d.pricing_mode == InvoicePricingMode.WORK_HOURS_SHORTFALL or _parcel_in_scope(d, parcel))
+            and (
+                d.pricing_mode in (InvoicePricingMode.WORK_HOURS_SHORTFALL, InvoicePricingMode.INSURANCE_COST)
+                or _parcel_in_scope(d, parcel)
+            )
         ]
         if not applicable_defs:
             continue
