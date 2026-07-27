@@ -23,3 +23,6 @@ venv/
 # Betriebssystem
 .DS_Store
 Thumbs.db
+
+# Claude Code worktrees (each has its own .git, never track as a subdirectory)
+.claude/worktrees/
