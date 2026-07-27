@@ -28,3 +28,30 @@ isn't guaranteed.
 `AKTIV`/`GEKUENDIGT`, templates use the Jinja filter `|lower`:
 `{{ p.status.value|lower }}`.
 
+**Correction (2026-07-27):** the mechanism described above is backwards.
+SQLAlchemy's `Enum` column type persists a Python `str, enum.Enum`
+member's **name**, not its `.value`, unless a `values_callable` override
+is configured (none is, anywhere in `app/models.py`) -- this is
+documented SQLAlchemy behavior, not specific to this project. The
+original bug report above likely conflated the two because, for the
+enums in question, name and value happened to differ in casing in a way
+that made either explanation *seem* to fit at the time.
+
+This surfaced again for real while adding `InvoicePricingMode.
+COMMUNAL_AREA_SHARE` (migration `0052_communal_area_share`, issue #82):
+the migration's `ALTER TYPE ... ADD VALUE` added the lowercase `.value`
+(`'communal_area_share'`), and the very first insert failed with
+`invalid input value for enum invoicepricingmode: "COMMUNAL_AREA_SHARE"`
+-- proving SQLAlchemy was sending the uppercase **name**, not the
+lowercase value. Fixed in the same migration file plus a corrected
+follow-up (`0053_work_hours_shortfall`), both adding the uppercase name.
+
+**The prescribed convention above is unaffected and still correct:**
+always define enum values in uppercase, identical to the member name.
+Making name and value the same string sidesteps the name-vs-value
+question entirely, regardless of which one SQLAlchemy actually uses --
+so nothing here needs to change, only the explanation of *why* it works.
+The practical rule for a **new** enum value added to an *existing*
+Postgres enum type via a raw migration: match the Python member's name
+(uppercase), not `.value`.
+
