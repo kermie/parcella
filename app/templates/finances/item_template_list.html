@@ -325,8 +325,8 @@ document.addEventListener('DOMContentLoaded', function () {
         function sync() {
             var isPerson = select.value === 'fixed_per_person';
             var isAutomatic = select.value === 'work_hours_shortfall';
-            parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'flex';
-            memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'flex' : 'none';
+            parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
+            memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
             if (scopeAutoNote) scopeAutoNote.style.display = isAutomatic ? 'block' : 'none';
             var showParcelPicker = !isPerson && !isAutomatic && parcelToggle && !parcelToggle.checked;
             var showMemberPicker = isPerson && !isAutomatic && memberToggle && !memberToggle.checked;
