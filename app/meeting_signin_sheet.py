@@ -3,11 +3,14 @@ Renders a general-meeting sign-in sheet: current members, grouped by
 parcel number, each with a blank signature line -- for printing and
 bringing to a physical meeting.
 
-Unlike the announcement flyer (app.print_publisher), this is
-deliberately NOT constrained to one page: a real member roster can run
-to several pages, and unlike a flyer there's no "shorten it" option for
-a list of people who need to sign in. Instead it's a normal multi-page
-document with a repeating header/footer and "Page X of Y" numbering.
+Shares its page chrome (header/footer/@page, "Page X of Y") with every
+other PDF in this app via app/pdf_chrome.py -- see that module's
+docstring for why. Unlike the announcement flyer (app.print_publisher),
+this is deliberately NOT constrained to one page: a real member roster
+can run to several pages, and unlike a flyer there's no "shorten it"
+option for a list of people who need to sign in. Instead it's a normal
+multi-page document with a repeating header/footer and "Page X of Y"
+numbering.
 """
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,24 +18,9 @@ from typing import List, Optional, Tuple
 
 from weasyprint import HTML
 
-from app.pdf_utils import file_to_data_uri
+from app.pdf_chrome import wrap_document
 
-PAGE_CSS = """
-@page {
-    size: A4;
-    margin: 2.2cm 1.5cm 2.2cm 1.5cm;
-    @top-center { content: element(header); }
-    @bottom-left { content: element(footer); }
-    @bottom-right {
-        content: "Page " counter(page) " of " counter(pages);
-        font-size: 8pt; color: #6b7280;
-    }
-}
-body { font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5pt; }
-#header { position: running(header); text-align: center; border-bottom: 2px solid #2f6f3e; padding-bottom: 8px; }
-#header img { max-height: 50px; margin-bottom: 4px; }
-#header .club-name { font-size: 13pt; font-weight: bold; color: #2f6f3e; }
-#footer { position: running(footer); font-size: 8pt; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 6px; }
+EXTRA_CSS = """
 h1 { font-size: 15pt; margin-top: 0.4cm; margin-bottom: 0.6cm; color: #1f2937; }
 table { width: 100%; border-collapse: collapse; }
 thead { display: table-header-group; } /* repeats on every page */
@@ -51,9 +39,7 @@ class ParcelGroup:
     member_names: List[str]
 
 
-def _build_html(headline: str, club_name: str, logo_data_uri: Optional[str], groups: List[ParcelGroup]) -> str:
-    logo_block = f'<img src="{logo_data_uri}">' if logo_data_uri else ""
-
+def _body_html(headline: str, groups: List[ParcelGroup]) -> str:
     rows_html = []
     for group in groups:
         for row_index, name in enumerate(group.member_names):
@@ -70,41 +56,30 @@ def _build_html(headline: str, club_name: str, logo_data_uri: Optional[str], gro
             )
 
     return f"""
-    <html>
-    <head><meta charset="utf-8"><style>{PAGE_CSS}</style></head>
-    <body>
-        <div id="header">
-            {logo_block}
-            <div class="club-name">{club_name}</div>
-        </div>
-        <div id="footer">{club_name}</div>
-        <h1>{headline}</h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>Parcel</th>
-                    <th>Name</th>
-                    <th>Signature</th>
-                </tr>
-            </thead>
-            <tbody>
-                {''.join(rows_html)}
-            </tbody>
-        </table>
-    </body>
-    </html>
+    <h1>{headline}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Parcel</th>
+                <th>Name</th>
+                <th>Signature</th>
+            </tr>
+        </thead>
+        <tbody>
+            {''.join(rows_html)}
+        </tbody>
+    </table>
     """
 
 
 def render_meeting_signin_sheet_pdf(
     headline: str, club_name: str, logo_path: Optional[Path],
-    parcel_members: List[Tuple[str, List[str]]],
+    parcel_members: List[Tuple[str, List[str]]], language: str = "en",
 ) -> bytes:
     """parcel_members: list of (plot_number, [member full names]),
     already sorted the way the caller wants them to appear -- this
     function doesn't re-sort, so grouping order is entirely the
     caller's responsibility."""
-    logo_data_uri = file_to_data_uri(logo_path, "image/png")
     groups = [ParcelGroup(plot_number=p, member_names=names) for p, names in parcel_members]
-    html_doc = _build_html(headline, club_name, logo_data_uri, groups)
+    html_doc = wrap_document(_body_html(headline, groups), club_name, logo_path, club_name, language, extra_css=EXTRA_CSS)
     return HTML(string=html_doc).write_pdf()

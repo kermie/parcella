@@ -1947,8 +1947,6 @@
       "subtotal": "Suma częściowa",
       "preview_banner": "Podgląd — jeszcze niesfinalizowane ani niewysłane",
       "account_holder": "Właściciel konta: {name}",
-      "page_label": "Strona",
-      "of_label": "z",
       "insurance_line_property": "Ubezpieczenie majątkowe ({package})",
       "insurance_line_accident_household": "Ubezpieczenie od następstw nieszczęśliwych wypadków (gospodarstwo domowe)",
       "insurance_line_accident_additional": "Ubezpieczenie NNW (+{n} dodatkowa osoba/osoby)"
@@ -1963,5 +1961,9 @@
       "row_this_fee": "Opłata za to upomnienie",
       "closing": "Prosimy o jak najszybsze uregulowanie zaległej kwoty. Jeśli płatność została już dokonana, prosimy zignorować to upomnienie."
     }
+  },
+  "pdf": {
+    "page_label": "Strona",
+    "of_label": "z"
   }
 }
