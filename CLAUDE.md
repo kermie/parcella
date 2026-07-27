@@ -9,8 +9,9 @@ Parcella: an open-source web app for allotment garden associations
 
 Stack: Python 3.12 + FastAPI, Jinja2 (server-rendered, Bootstrap 5), PostgreSQL 16 + SQLAlchemy (async) + Alembic, Docker Compose. Full table in [README.md](./README.md#tech-stack).
 
-## Before touching anything: find the relevant doc
+## Before touching anything: got to plan mode and find the relevant doc
 
+- offer to go to /plan mode first
 - **`docs/ADR/README.md`** - 40+ numbered Architecture Decision Records, "why things are built the way they are." Check here before assuming a design is accidental or before reverting something that looks odd - it's very likely a deliberate call with a documented reason.
 - **`docs/module-*.md`** -- one file per module (data model, key
   decisions, known gaps). If you're working in a module, read its doc first; if the module has no doc yet, that's a gap worth closing (see "Documentation expectations" below).
@@ -42,6 +43,8 @@ afterward if you were also using them for manual testing.
 Default admin login after first startup: `admin@parcella.local` /
 `admin1234` -- change it immediately on anything beyond a throwaway local
 instance.
+
+If a Github issue is declared as a bug, write a test for it so it never appears again.
 
 ## Architectural conventions (the load-bearing ones)
 
