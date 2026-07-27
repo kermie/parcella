@@ -30,7 +30,21 @@ invoice_runs               -- one "annual invoices" batch (e.g. "2026")
 identical (template is just "not yet attached to a run"); applying a
 catalog template to a run (`items_add_from_catalog` in
 `app/routers/finances.py`) copies every field, including scope rows,
-onto a new `InvoiceItemDefinition`.
+onto a new `InvoiceItemDefinition` -- there is no `template_id` FK
+recorded on the resulting definition, so nothing links it back to the
+template it came from.
+
+That absence of a link is why the "add from catalog" picker on a
+draft run (issue #94) filters out already-added templates **by name**
+(`run_detail`'s GET handler diffs the catalog against
+`{d.name for d in run.item_definitions}`) rather than by any stored
+relationship -- there wasn't one to check. This is recomputed on every
+page load, so renaming or deleting an item directly on the run makes
+its template reappear as available again; conversely, renaming the
+*template* after it was already added breaks the match and it
+reappears too, even though conceptually it's "already used" under its
+old name. Accepted as a known limitation rather than adding a
+template_id column for this alone.
 
 ### Two independent targeting mechanisms, routed by `pricing_mode`
 

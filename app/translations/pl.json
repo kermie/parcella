@@ -1768,6 +1768,7 @@
       "catalog_manage_link": "Zarządzaj katalogiem",
       "catalog_button": "Dodaj zaznaczone pozycje",
       "catalog_empty_hint": "Brak jeszcze pozycji w katalogu -- dodaj powtarzające się pozycje raz i wybieraj je tutaj co roku.",
+      "catalog_all_used_hint": "Wszystkie pozycje z katalogu zostały już dodane do tego przebiegu rozliczeniowego.",
       "col_category": "Kategoria",
       "label_category": "Kategoria"
     },

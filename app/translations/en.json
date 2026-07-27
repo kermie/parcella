@@ -1768,6 +1768,7 @@
       "catalog_manage_link": "Manage catalog",
       "catalog_button": "Add selected items",
       "catalog_empty_hint": "No catalog items yet -- add reusable items once and pick from them here every year.",
+      "catalog_all_used_hint": "Every catalog item has already been added to this run.",
       "col_category": "Category",
       "label_category": "Category"
     },

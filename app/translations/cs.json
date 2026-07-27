@@ -1768,6 +1768,7 @@
       "catalog_manage_link": "Spravovat katalog",
       "catalog_button": "Přidat vybrané položky",
       "catalog_empty_hint": "Zatím žádné položky v katalogu -- přidejte opakující se položky jednou a vybírejte je zde každý rok.",
+      "catalog_all_used_hint": "Všechny položky z katalogu už byly do tohoto běhu přidány.",
       "col_category": "Kategorie",
       "label_category": "Kategorie"
     },
