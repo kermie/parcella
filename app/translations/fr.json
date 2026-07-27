@@ -1399,7 +1399,13 @@
       "col_turning": "Fêtera ses",
       "round_badge": "Anniversaire rond",
       "turning_label": "{age}",
-      "empty": "Aucun anniversaire à venir enregistré."
+      "empty": "Aucun anniversaire à venir enregistré.",
+      "pdf_button": "Imprimer le PDF (année entière)",
+      "pdf_heading": "Calendrier des anniversaires {year}",
+      "pdf_col_day": "Jour",
+      "pdf_empty": "Aucun anniversaire enregistré.",
+      "pdf_page_label": "Page",
+      "pdf_of_label": "sur"
     },
     "council_presence": {
       "title": "Présence du conseil",

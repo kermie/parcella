@@ -1399,7 +1399,13 @@
       "col_turning": "Kończy",
       "round_badge": "Okrągłe",
       "turning_label": "{age}",
-      "empty": "Brak nadchodzących urodzin w systemie."
+      "empty": "Brak nadchodzących urodzin w systemie.",
+      "pdf_button": "Drukuj PDF (cały rok)",
+      "pdf_heading": "Kalendarz urodzin {year}",
+      "pdf_col_day": "Dzień",
+      "pdf_empty": "Brak urodzin w systemie.",
+      "pdf_page_label": "Strona",
+      "pdf_of_label": "z"
     },
     "council_presence": {
       "title": "Obecność zarządu",

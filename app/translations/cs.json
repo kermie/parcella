@@ -1399,7 +1399,13 @@
       "col_turning": "Oslaví",
       "round_badge": "Kulaté",
       "turning_label": "{age}",
-      "empty": "Žádné nadcházející narozeniny v systému."
+      "empty": "Žádné nadcházející narozeniny v systému.",
+      "pdf_button": "Tisk PDF (celý rok)",
+      "pdf_heading": "Kalendář narozenin {year}",
+      "pdf_col_day": "Den",
+      "pdf_empty": "Žádné narozeniny v systému.",
+      "pdf_page_label": "Strana",
+      "pdf_of_label": "z"
     },
     "council_presence": {
       "title": "Přítomnost výboru",

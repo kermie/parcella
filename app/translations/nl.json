@@ -1399,7 +1399,13 @@
       "col_turning": "Wordt",
       "round_badge": "Rond",
       "turning_label": "{age}",
-      "empty": "Geen aankomende verjaardagen bekend."
+      "empty": "Geen aankomende verjaardagen bekend.",
+      "pdf_button": "PDF afdrukken (hele jaar)",
+      "pdf_heading": "Verjaardagskalender {year}",
+      "pdf_col_day": "Dag",
+      "pdf_empty": "Geen verjaardagen bekend.",
+      "pdf_page_label": "Pagina",
+      "pdf_of_label": "van"
     },
     "council_presence": {
       "title": "Aanwezigheid bestuur",

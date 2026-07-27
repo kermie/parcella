@@ -65,6 +65,45 @@ This is `ROUND_BIRTHDAY_INTERVAL` in `app/birthdays.py` -- change that
 one constant if your association's convention differs (e.g. also
 highlighting 25/75-style anniversaries).
 
+**Two different birthday queries for two different purposes (issue
+#99).** `upcoming_birthdays()` (the web page, `within_days=90` rolling
+window from today) and `birthdays_for_year()` (the print PDF,
+`/calendar/birthdays/pdf`) are deliberately separate functions rather
+than one parameterized query: the web page is a "what's coming up"
+dashboard-style list where entries drop off once their birthday
+passes, while the PDF is a full-year reference meant to be printed once
+and consulted all year, so everyone appears exactly once regardless of
+today's date, grouped by (month, day) in calendar order (Jan-Dec), not
+`Member.date_of_birth`'s literal chronological order (which would sort
+by birth *year* first). `turning_age` in the PDF is "age reached in the
+requested year," not "next occurrence from today" -- a January birthday
+already past in a mid-year printout still correctly shows the age
+turned this year, not next year's.
+`app/birthday_calendar_pdf.py` renders it (WeasyPrint), grouped into
+one heading row per month using `babel.dates.get_month_names(...,
+context="stand-alone")` for the month name in the club's configured
+language -- `context="stand-alone"` matters for languages with
+grammatical case (Polish/Czech/Slovak's default "format" context
+returns the genitive form used in phrases like "5th of March", not the
+nominative name used for a standalone month heading).
+
+**Shares its visual template with the invoice PDF, not the other print
+sheets.** Requested explicitly: the header/footer chrome (DIN-style
+fixed header with the logo at the true page edge and the club name
+centered across the full sheet, the same color/font palette, and a
+localized "Page X of Y") matches `app/invoice_pdf.py`'s
+`_page_css`/header treatment rather than the plainer centered-header
+style `app/meeting_signin_sheet.py` and `app/session_attendee_sheet.py`
+use. Not extracted into a shared chrome module, though -- this
+codebase's PDF generators already each own their full CSS
+independently (no shared base template exists for any of them), so
+duplicating the relevant CSS into `birthday_calendar_pdf.py` follows
+that established convention rather than introducing a new
+cross-module dependency for one page's worth of styling. One real
+difference from the invoice template: no bank/register-court footer
+columns, since a birthday calendar has no financial/legal content to
+show there -- the footer is just the club name.
+
 **Two different privacy postures for the four ICS feeds, not one.**
 This was the single most important design decision in this module, so
 it gets its own ADR entry (see Architecture Decisions) -- summary: the
