@@ -1740,6 +1740,7 @@
       "picker_select_none": "Tout désélectionner",
       "picker_no_matches": "Aucun résultat",
       "scope_automatic": "Automatique (bilan des heures de travail)",
+      "scope_automatic_insurance": "Automatique (bilan des assurances)",
       "computed_automatically": "Calculé automatiquement",
       "scope_all": "Toutes les parcelles",
       "scope_all_members": "Tous les membres",

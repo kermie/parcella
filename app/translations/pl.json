@@ -1740,6 +1740,7 @@
       "picker_select_none": "Odznacz wszystko",
       "picker_no_matches": "Brak wyników",
       "scope_automatic": "Automatycznie (na podstawie ewaluacji godzin pracy)",
+      "scope_automatic_insurance": "Automatycznie (na podstawie ewaluacji ubezpieczenia)",
       "computed_automatically": "Obliczane automatycznie",
       "scope_all": "Wszystkie działki",
       "scope_all_members": "Wszyscy członkowie",

@@ -86,3 +86,14 @@ row than a single shared block would be, but it's the direct UI
 expression of "these are two unrelated questions" -- collapsing them
 back into one conditionally-relabeled block would reintroduce the exact
 ambiguity this ADR exists to resolve.
+
+**Update (issues #87/#89):** `INSURANCE_COST` is no longer "unchanged"
+plot-scoped as the bullet above still says -- it moved into a third
+category, "automatically scoped" (alongside `WORK_HOURS_SHORTFALL`,
+added after this ADR by issue #83), where `applies_to_all_parcels`/
+`parcel_scopes` are stored but never read for eligibility; billing is
+whichever parcels `app/insurance_utils.py`'s `calculate_insurance_cost()`
+returns a nonzero total for. See `docs/module-finances.md`'s
+"Automatically scoped" bullet for the current, maintained description
+-- left here as a historical record of the original three-mode split
+rather than rewritten, per this repo's ADR convention.

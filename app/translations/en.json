@@ -1740,6 +1740,7 @@
       "picker_select_none": "Select none",
       "picker_no_matches": "No matches",
       "scope_automatic": "Automatic (work-hours evaluation)",
+      "scope_automatic_insurance": "Automatic (insurance evaluation)",
       "computed_automatically": "Computed automatically",
       "scope_all": "All parcels",
       "scope_n_parcels": "{n} parcel(s)",
