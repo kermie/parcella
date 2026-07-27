@@ -433,13 +433,14 @@ document.addEventListener('DOMContentLoaded', function () {
         function sync() {
             var isPerson = select.value === 'fixed_per_person';
             var isAutomatic = select.value === 'work_hours_shortfall';
+            var isAutomaticPrice = isAutomatic || select.value === 'insurance_cost';
             parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
             memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
             if (scopeAutoNote) scopeAutoNote.style.display = isAutomatic ? 'block' : 'none';
             parcelPicker.style.display = (!isPerson && !isAutomatic && !parcelToggle.checked) ? 'block' : 'none';
             memberPicker.style.display = (isPerson && !isAutomatic && !memberToggle.checked) ? 'block' : 'none';
-            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
-            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomaticPrice ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomaticPrice ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         parcelToggle.addEventListener('change', sync);
@@ -466,6 +467,7 @@ document.addEventListener('DOMContentLoaded', function () {
         function sync() {
             var isPerson = select.value === 'fixed_per_person';
             var isAutomatic = select.value === 'work_hours_shortfall';
+            var isAutomaticPrice = isAutomatic || select.value === 'insurance_cost';
             parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
             memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
             if (scopeAutoNote) scopeAutoNote.style.display = isAutomatic ? 'block' : 'none';
@@ -474,8 +476,8 @@ document.addEventListener('DOMContentLoaded', function () {
             parcelPickerBlock.style.display = showParcelPicker ? 'block' : 'none';
             memberPickerBlock.style.display = showMemberPicker ? 'block' : 'none';
             pickerRow.style.display = (showParcelPicker || showMemberPicker) ? 'table-row' : 'none';
-            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
-            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomaticPrice ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomaticPrice ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         if (parcelToggle) parcelToggle.addEventListener('change', sync);
