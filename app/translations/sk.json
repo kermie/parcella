@@ -1615,14 +1615,16 @@
   "tasks": {
     "errors": {
       "task_not_found": "Úloha nenájdená.",
-      "invalid_move": "Neplatná požiadavka na presun."
+      "invalid_move": "Neplatná požiadavka na presun.",
+      "list_not_found": "Zoznam nenájdený.",
+      "delete_list_last_list": "Posledný zostávajúci zoznam nemožno odstrániť.",
+      "delete_list_missing_target": "Vyberte zoznam, do ktorého sa majú karty presunúť.",
+      "delete_list_target_not_found": "Vybraný cieľový zoznam sa nenašiel."
     },
     "board": {
       "title": "Nástenka úloh",
       "new_task_button": "Nová úloha",
-      "column_todo": "Na vybavenie",
-      "column_in_progress": "Prebieha",
-      "column_done": "Hotovo",
+      "add_list_button": "Pridať zoznam",
       "column_empty": "Žiadne úlohy"
     },
     "form": {
@@ -1636,12 +1638,28 @@
       "label_description": "Popis",
       "label_due_date": "Termín",
       "label_assigned_to": "Priradené komu",
+      "label_list": "Zoznam",
       "unassigned_option": "Nepridelené",
       "button_save_changes": "Uložiť zmeny",
       "button_create": "Vytvoriť",
       "danger_zone_header": "Nebezpečná zóna",
       "delete_confirm": "Odstrániť túto úlohu? Túto akciu nemožno vrátiť späť.",
       "button_delete": "Odstrániť úlohu"
+    },
+    "lists": {
+      "add_modal_title": "Pridať zoznam",
+      "label_name": "Názov",
+      "cancel": "Zrušiť",
+      "add_button": "Pridať",
+      "rename_action": "Premenovať",
+      "rename_modal_title": "Premenovať zoznam",
+      "button_save_changes": "Uložiť zmeny",
+      "delete_action": "Odstrániť",
+      "delete_modal_title": "Odstrániť zoznam",
+      "label_move_cards_to": "Presunúť karty do",
+      "delete_button": "Odstrániť zoznam",
+      "delete_confirm_empty": "Odstrániť zoznam „{name}“? Túto akciu nemožno vrátiť späť.",
+      "delete_confirm_with_cards": "Tento zoznam stále obsahuje karty. Pred odstránením vyberte iný zoznam, do ktorého sa majú presunúť."
     }
   },
   "email": {

@@ -1615,14 +1615,16 @@
   "tasks": {
     "errors": {
       "task_not_found": "Taak niet gevonden.",
-      "invalid_move": "Ongeldig verplaatsingsverzoek."
+      "invalid_move": "Ongeldig verplaatsingsverzoek.",
+      "list_not_found": "Lijst niet gevonden.",
+      "delete_list_last_list": "De laatste overgebleven lijst kan niet worden verwijderd.",
+      "delete_list_missing_target": "Kies een lijst waarnaar de kaarten moeten worden verplaatst.",
+      "delete_list_target_not_found": "De geselecteerde doellijst is niet gevonden."
     },
     "board": {
       "title": "Takenbord",
       "new_task_button": "Nieuwe taak",
-      "column_todo": "Te doen",
-      "column_in_progress": "Mee bezig",
-      "column_done": "Klaar",
+      "add_list_button": "Lijst toevoegen",
       "column_empty": "Geen taken"
     },
     "form": {
@@ -1636,12 +1638,28 @@
       "label_description": "Omschrijving",
       "label_due_date": "Deadline",
       "label_assigned_to": "Toegewezen aan",
+      "label_list": "Lijst",
       "unassigned_option": "Niet toegewezen",
       "button_save_changes": "Wijzigingen opslaan",
       "button_create": "Aanmaken",
       "danger_zone_header": "Gevarenzone",
       "delete_confirm": "Deze taak verwijderen? Dit kan niet ongedaan worden gemaakt.",
       "button_delete": "Taak verwijderen"
+    },
+    "lists": {
+      "add_modal_title": "Lijst toevoegen",
+      "label_name": "Naam",
+      "cancel": "Annuleren",
+      "add_button": "Toevoegen",
+      "rename_action": "Naam wijzigen",
+      "rename_modal_title": "Lijst hernoemen",
+      "button_save_changes": "Wijzigingen opslaan",
+      "delete_action": "Verwijderen",
+      "delete_modal_title": "Lijst verwijderen",
+      "label_move_cards_to": "Verplaats de kaarten naar",
+      "delete_button": "Lijst verwijderen",
+      "delete_confirm_empty": "Lijst \"{name}\" verwijderen? Dit kan niet ongedaan worden gemaakt.",
+      "delete_confirm_with_cards": "Deze lijst bevat nog kaarten. Kies een andere lijst om ze naartoe te verplaatsen voordat u verwijdert."
     }
   },
   "email": {

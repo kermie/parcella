@@ -1615,14 +1615,16 @@
   "tasks": {
     "errors": {
       "task_not_found": "Aufgabe nicht gefunden.",
-      "invalid_move": "Ungültige Verschiebeanfrage."
+      "invalid_move": "Ungültige Verschiebeanfrage.",
+      "list_not_found": "Liste nicht gefunden.",
+      "delete_list_last_list": "Die letzte verbleibende Liste kann nicht gelöscht werden.",
+      "delete_list_missing_target": "Wählen Sie eine Liste aus, in die die Karten verschoben werden sollen.",
+      "delete_list_target_not_found": "Die ausgewählte Zielliste wurde nicht gefunden."
     },
     "board": {
       "title": "Aufgabenboard",
       "new_task_button": "Neue Aufgabe",
-      "column_todo": "Zu erledigen",
-      "column_in_progress": "In Bearbeitung",
-      "column_done": "Erledigt",
+      "add_list_button": "Liste hinzufügen",
       "column_empty": "Keine Aufgaben"
     },
     "form": {
@@ -1636,12 +1638,28 @@
       "label_description": "Beschreibung",
       "label_due_date": "Fällig am",
       "label_assigned_to": "Zugewiesen an",
+      "label_list": "Liste",
       "unassigned_option": "Nicht zugewiesen",
       "button_save_changes": "Änderungen speichern",
       "button_create": "Erstellen",
       "danger_zone_header": "Gefahrenzone",
       "delete_confirm": "Diese Aufgabe löschen? Das kann nicht rückgängig gemacht werden.",
       "button_delete": "Aufgabe löschen"
+    },
+    "lists": {
+      "add_modal_title": "Liste hinzufügen",
+      "label_name": "Name",
+      "cancel": "Abbrechen",
+      "add_button": "Hinzufügen",
+      "rename_action": "Umbenennen",
+      "rename_modal_title": "Liste umbenennen",
+      "button_save_changes": "Änderungen speichern",
+      "delete_action": "Löschen",
+      "delete_modal_title": "Liste löschen",
+      "label_move_cards_to": "Karten verschieben nach",
+      "delete_button": "Liste löschen",
+      "delete_confirm_empty": "Liste \"{name}\" löschen? Das kann nicht rückgängig gemacht werden.",
+      "delete_confirm_with_cards": "Diese Liste enthält noch Karten. Wählen Sie eine andere Liste aus, in die sie vor dem Löschen verschoben werden sollen."
     }
   },
   "email": {

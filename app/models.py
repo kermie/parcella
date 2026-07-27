@@ -1733,20 +1733,40 @@ class ItemLoan(Base):
 # Task board: general-purpose kanban for club business (not tied to a work
 # session -- see WorkTask above for that). Admin/board only, per explicit
 # product decision -- this is internal club-business tracking, not
-# something every member needs visibility into. Fixed three-column
-# workflow (TODO/IN_PROGRESS/DONE); no per-club column configuration in v1.
+# something every member needs visibility into. Columns are user-configurable
+# `TaskList` rows (issue #100) -- v1 had a fixed TODO/IN_PROGRESS/DONE enum
+# (see ADR 0034), superseded by ADR 0043 once configurable columns were
+# actually requested.
 # ---------------------------------------------------------------------------
 
-class TaskStatus(str, enum.Enum):
-    TODO = "TODO"
-    IN_PROGRESS = "IN_PROGRESS"
-    DONE = "DONE"
+class TaskList(Base):
+    """
+    A kanban column. `position` orders columns on the board (0-based, no
+    gaps), same scheme as `Task.position` below. `name` is free text, like
+    `InventoryCategory.name` -- not translated per viewer once an admin can
+    rename/add columns (see docs/module-tasks.md).
+    """
+    __tablename__ = "task_lists"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    tasks: Mapped[List["Task"]] = relationship(
+        "Task", back_populates="list", order_by="Task.position"
+    )
+
+    def __repr__(self) -> str:
+        return f"<TaskList {self.name!r}>"
 
 
 class Task(Base):
     """
-    A single kanban card. `position` orders cards within their column
-    (0-based, no gaps) and is fully rewritten for the affected column(s)
+    A single kanban card. `position` orders cards within their list
+    (0-based, no gaps) and is fully rewritten for the affected list(s)
     on every create/move/delete -- simple and correct at the card counts
     a club's task board will ever realistically have, avoids the
     fractional-position bookkeeping a high-write-volume board would need.
@@ -1756,8 +1776,8 @@ class Task(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    status: Mapped[TaskStatus] = mapped_column(
-        SAEnum(TaskStatus), default=TaskStatus.TODO, nullable=False, index=True
+    list_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("task_lists.id"), nullable=False, index=True
     )
     position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     due_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -1776,11 +1796,12 @@ class Task(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
+    list: Mapped["TaskList"] = relationship("TaskList", back_populates="tasks", foreign_keys=[list_id])
     assigned_to: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_to_id])
     created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
 
     def __repr__(self) -> str:
-        return f"<Task {self.title!r} ({self.status.value})>"
+        return f"<Task {self.title!r} (list={self.list_id})>"
 
 
 # ---------------------------------------------------------------------------

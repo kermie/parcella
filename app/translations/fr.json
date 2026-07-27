@@ -1615,14 +1615,16 @@
   "tasks": {
     "errors": {
       "task_not_found": "Tâche introuvable.",
-      "invalid_move": "Demande de déplacement invalide."
+      "invalid_move": "Demande de déplacement invalide.",
+      "list_not_found": "Liste introuvable.",
+      "delete_list_last_list": "Impossible de supprimer la dernière liste restante.",
+      "delete_list_missing_target": "Choisissez une liste vers laquelle déplacer les cartes.",
+      "delete_list_target_not_found": "La liste de destination sélectionnée est introuvable."
     },
     "board": {
       "title": "Tableau des tâches",
       "new_task_button": "Nouvelle tâche",
-      "column_todo": "À faire",
-      "column_in_progress": "En cours",
-      "column_done": "Terminé",
+      "add_list_button": "Ajouter une liste",
       "column_empty": "Aucune tâche"
     },
     "form": {
@@ -1636,12 +1638,28 @@
       "label_description": "Description",
       "label_due_date": "Échéance",
       "label_assigned_to": "Assignée à",
+      "label_list": "Liste",
       "unassigned_option": "Non assignée",
       "button_save_changes": "Enregistrer les modifications",
       "button_create": "Créer",
       "danger_zone_header": "Zone de danger",
       "delete_confirm": "Supprimer cette tâche ? Cette action est irréversible.",
       "button_delete": "Supprimer la tâche"
+    },
+    "lists": {
+      "add_modal_title": "Ajouter une liste",
+      "label_name": "Nom",
+      "cancel": "Annuler",
+      "add_button": "Ajouter",
+      "rename_action": "Renommer",
+      "rename_modal_title": "Renommer la liste",
+      "button_save_changes": "Enregistrer les modifications",
+      "delete_action": "Supprimer",
+      "delete_modal_title": "Supprimer la liste",
+      "label_move_cards_to": "Déplacer ses cartes vers",
+      "delete_button": "Supprimer la liste",
+      "delete_confirm_empty": "Supprimer la liste « {name} » ? Cette action est irréversible.",
+      "delete_confirm_with_cards": "Cette liste contient encore des cartes. Choisissez une autre liste vers laquelle les déplacer avant de la supprimer."
     }
   },
   "email": {

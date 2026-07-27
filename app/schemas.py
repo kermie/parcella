@@ -806,7 +806,7 @@ class KanbanTaskBase(BaseModel):
 
 
 class KanbanTaskCreate(KanbanTaskBase):
-    status: str = Field("TODO", description="TODO, IN_PROGRESS or DONE")
+    list_id: Optional[str] = Field(None, description="Defaults to the first list on the board")
 
 
 class KanbanTaskUpdate(BaseModel):
@@ -817,8 +817,8 @@ class KanbanTaskUpdate(BaseModel):
 
 
 class KanbanTaskMove(BaseModel):
-    status: str = Field(..., description="TODO, IN_PROGRESS or DONE")
-    position: int = Field(..., ge=0, description="Target index within the column (0-based)")
+    list_id: str
+    position: int = Field(..., ge=0, description="Target index within the list (0-based)")
 
 
 class KanbanTaskOut(BaseModel):
@@ -826,10 +826,30 @@ class KanbanTaskOut(BaseModel):
     id: str
     title: str
     description: Optional[str] = None
-    status: str
+    list_id: str
     position: int
     due_date: Optional[date] = None
     assigned_to_id: Optional[str] = None
     created_by_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+
+
+class KanbanTaskListCreate(BaseModel):
+    name: str = Field(..., max_length=100)
+
+
+class KanbanTaskListUpdate(BaseModel):
+    name: str = Field(..., max_length=100)
+
+
+class KanbanTaskListMove(BaseModel):
+    position: int = Field(..., ge=0, description="Target index among all lists (0-based)")
+
+
+class KanbanTaskListOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    name: str
+    position: int
+    created_at: datetime
