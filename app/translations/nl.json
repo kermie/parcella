@@ -1941,7 +1941,10 @@
       "preview_banner": "Voorbeeld — nog niet afgerond of verzonden",
       "account_holder": "Rekeninghouder: {name}",
       "page_label": "Pagina",
-      "of_label": "van"
+      "of_label": "van",
+      "insurance_line_property": "Opstalverzekering ({package})",
+      "insurance_line_accident_household": "Ongevallenverzekering (huishouden)",
+      "insurance_line_accident_additional": "Ongevallenverzekering (+{n} extra perso(o)n(en))"
     },
     "reminder_pdf": {
       "heading": "Betalingsherinnering nr. {level}",
