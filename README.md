@@ -299,7 +299,7 @@ For an existing installation predating Alembic: see
 
 ---
 
-## Production (Hetzner)
+## Production
 
 For production, set `ENVIRONMENT=production`:
 

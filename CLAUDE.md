@@ -1,34 +1,19 @@
 # CLAUDE.md
 
-Guidance for Claude Code (or any AI coding agent) working in this repository.
-This file is a map to the *other* docs and a list of sharp edges specific to
-this codebase -- it doesn't replace [README.md](./README.md),
-[CONTRIBUTING.md](./CONTRIBUTING.md), or `docs/`. Read this first, then go
-to the linked doc for depth.
+Guidance for Claude Code (or any AI coding agent) working in this repository. This file is a map to the *other* docs and a list of sharp edges specific to this codebase -- it doesn't replace [README.md](./README.md),[CONTRIBUTING.md](./CONTRIBUTING.md), or `docs/`. Read this first, then go to the linked doc for depth.
 
 ## What this project is
 
 Parcella: an open-source web app for allotment garden associations
-("Kleingartenverein" / "Schrebergarten"). Members, parcels/leases, work
-hours, metering, insurance, tickets, purchase requests, finances/invoicing,
-and more, each as an independently toggleable module. AGPL-3.0-licensed,
-public repo -- see [CONTRIBUTING.md](./CONTRIBUTING.md) for the license
-implications before assuming anything here is private.
+("Kleingartenverein" / "Schrebergarten"). Members, parcels/leases, work hours, metering, insurance, tickets, purchase requests, finances/invoicing, and more, each as an independently toggleable module. AGPL-3.0-licensed, public repo - see [CONTRIBUTING.md](./CONTRIBUTING.md) for the license implications before assuming anything here is private.
 
-Stack: Python 3.12 + FastAPI, Jinja2 (server-rendered, Bootstrap 5),
-PostgreSQL 16 + SQLAlchemy (async) + Alembic, Docker Compose. Full table in
-[README.md](./README.md#tech-stack).
+Stack: Python 3.12 + FastAPI, Jinja2 (server-rendered, Bootstrap 5), PostgreSQL 16 + SQLAlchemy (async) + Alembic, Docker Compose. Full table in [README.md](./README.md#tech-stack).
 
 ## Before touching anything: find the relevant doc
 
-- **`docs/ADR/README.md`** -- 40+ numbered Architecture Decision Records,
-  "why things are built the way they are." Check here before assuming a
-  design is accidental or before reverting something that looks odd --
-  it's very likely a deliberate call with a documented reason.
+- **`docs/ADR/README.md`** - 40+ numbered Architecture Decision Records, "why things are built the way they are." Check here before assuming a design is accidental or before reverting something that looks odd - it's very likely a deliberate call with a documented reason.
 - **`docs/module-*.md`** -- one file per module (data model, key
-  decisions, known gaps). If you're working in a module, read its doc
-  first; if the module has no doc yet, that's a gap worth closing (see
-  "Documentation expectations" below).
+  decisions, known gaps). If you're working in a module, read its doc first; if the module has no doc yet, that's a gap worth closing (see "Documentation expectations" below).
 - **`docs/testing.md`**, **`docs/operations.md`**, **`docs/i18n-l10n.md`**,
   **`docs/responsive-design.md`** -- cross-cutting topics, not tied to one
   module.
