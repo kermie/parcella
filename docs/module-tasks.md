@@ -29,7 +29,7 @@ task_lists  -- one row per kanban column
 tasks       -- one row per kanban card
 ```
 
-**`TaskList`** (issue #100, [ADR 0043](./ADR/0043-task-board-configurable-lists.md))
+**`TaskList`** (issue #100, [ADR 0044](./ADR/0044-task-board-configurable-lists.md))
 is a column: `name` (free text -- see "Column labels are no longer
 translated" below) and `position` (a gapless 0-based index among all
 lists on the board). Originally (v1, [ADR 0034](./ADR/0034-task-board-a-separate-module-from-worktask-admin-board-only.md))

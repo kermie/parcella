@@ -46,4 +46,4 @@ in chronological order.
 40. [Hard-deleting a user: only when they have zero footprint anywhere](./0040-user-hard-delete-only-when-zero-footprint.md)
 41. [Groups supersede roles for new user access](./0041-groups-supersede-roles-for-new-user-access.md)
 42. [Invoice item targeting: plot-scoped vs. person-scoped, as two independent mechanisms](./0042-invoice-item-targeting-plot-scoped-vs-person-scoped.md)
-43. [Task board: configurable lists replace the fixed status enum](./0043-task-board-configurable-lists.md)
+44. [Task board: configurable lists replace the fixed status enum](./0044-task-board-configurable-lists.md)
