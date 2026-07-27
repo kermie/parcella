@@ -249,6 +249,7 @@
       "heading": "Verenigingsinstellingen",
       "saved_message": "Instellingen opgeslagen.",
       "language_header": "Taal",
+      "branding_header": "Huisstijl",
       "language_help": "Geldt voor de hele installatie (alle gebruikers zien dezelfde taal). Als een vertaling voor een bepaalde module ontbreekt, wordt automatisch de Duitse tekst getoond.",
       "module_header": "Functiegebieden",
       "module_help": "Niet elke vereniging gebruikt elk functiegebied. Uitgeschakelde modules verdwijnen uit de navigatie — de gegevens blijven behouden en verschijnen opnieuw zodra ze opnieuw worden ingeschakeld.",

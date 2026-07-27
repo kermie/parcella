@@ -94,6 +94,47 @@
 
     <div class="col-12">
         <div class="card">
+            <!-- Issue #101: the logo upload used to live buried inside the
+                 generic "Club Data" card below (collapsed by default, no
+                 mention of "logo" in its header) -- easy to never notice it
+                 exists at all. Its own clearly-labeled card, open by default
+                 like Language above, so scanning the section headers alone
+                 reveals it without needing to already know to expand
+                 something else or search for "logo". -->
+            <div class="card-header settings-card-toggle" role="button" data-bs-toggle="collapse"
+                 data-bs-target="#settings-card-branding" aria-expanded="true">
+                <span><i class="bi bi-image me-2"></i>{{ t('admin.settings.branding_header') }}</span>
+                <i class="bi bi-chevron-down settings-card-chevron"></i>
+            </div>
+            <div class="collapse show" id="settings-card-branding" data-bs-parent="#settings-accordion">
+            <div class="card-body">
+                <label class="form-label fw-semibold">{{ t('admin.settings.logo_label') }}</label>
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    {% if request.state.logo_url %}
+                    <img src="{{ request.state.logo_url }}" alt="{{ request.state.club_name }}"
+                         style="height: 48px; width: auto; max-width: 160px; border: 1px solid #dce8df; border-radius: 6px; padding: 4px;">
+                    {% else %}
+                    <div style="height: 48px; width: 48px; display: flex; align-items: center; justify-content: center;
+                                border: 1px solid #dce8df; border-radius: 6px; font-size: 1.5rem; color: var(--gv-gruen);">
+                        <i class="bi bi-tree"></i>
+                    </div>
+                    {% endif %}
+                    <span class="text-muted" style="font-size: 0.82rem;">{{ t('admin.settings.logo_help') }}</span>
+                </div>
+                <input type="file" name="logo" class="form-control form-control-sm" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+                {% if request.state.logo_url %}
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" name="remove_logo" id="remove-logo-check" value="true">
+                    <label class="form-check-label small" for="remove-logo-check">{{ t('admin.settings.logo_remove_label') }}</label>
+                </div>
+                {% endif %}
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
             <div class="card-header settings-card-toggle collapsed" role="button" data-bs-toggle="collapse"
                  data-bs-target="#settings-card-region" aria-expanded="false">
                 <span><i class="bi bi-globe2 me-2"></i>{{ t('admin.settings.region_header') }} &amp; {{ t('admin.settings.currency_header') }}</span>
@@ -230,28 +271,6 @@
             </div>
             <div class="collapse" id="settings-card-club-data" data-bs-parent="#settings-accordion">
             <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">{{ t('admin.settings.logo_label') }}</label>
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        {% if request.state.logo_url %}
-                        <img src="{{ request.state.logo_url }}" alt="{{ request.state.club_name }}"
-                             style="height: 48px; width: auto; max-width: 160px; border: 1px solid #dce8df; border-radius: 6px; padding: 4px;">
-                        {% else %}
-                        <div style="height: 48px; width: 48px; display: flex; align-items: center; justify-content: center;
-                                    border: 1px solid #dce8df; border-radius: 6px; font-size: 1.5rem; color: var(--gv-gruen);">
-                            <i class="bi bi-tree"></i>
-                        </div>
-                        {% endif %}
-                        <span class="text-muted" style="font-size: 0.82rem;">{{ t('admin.settings.logo_help') }}</span>
-                    </div>
-                    <input type="file" name="logo" class="form-control form-control-sm" accept="image/png,image/jpeg,image/webp,image/svg+xml">
-                    {% if request.state.logo_url %}
-                    <div class="form-check mt-2">
-                        <input class="form-check-input" type="checkbox" name="remove_logo" id="remove-logo-check" value="true">
-                        <label class="form-check-label small" for="remove-logo-check">{{ t('admin.settings.logo_remove_label') }}</label>
-                    </div>
-                    {% endif %}
-                </div>
                 {% for key, label in fields[:6] %}
                 <div class="mb-3">
                     <label class="form-label fw-semibold">{{ label }}</label>

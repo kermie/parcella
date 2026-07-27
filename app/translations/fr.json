@@ -249,6 +249,7 @@
       "heading": "Paramètres du club",
       "saved_message": "Paramètres enregistrés.",
       "language_header": "Langue",
+      "branding_header": "Image de marque",
       "language_help": "S'applique à toute l'installation (tous les utilisateurs voient la même langue). Si une traduction manque pour un module donné, le texte allemand s'affiche automatiquement.",
       "module_header": "Domaines fonctionnels",
       "module_help": "Tous les clubs n'utilisent pas tous les domaines fonctionnels. Les modules désactivés disparaissent de la navigation -- les données sont conservées et réapparaissent une fois réactivés.",

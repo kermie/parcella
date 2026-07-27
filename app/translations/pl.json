@@ -249,6 +249,7 @@
       "heading": "Ustawienia stowarzyszenia",
       "saved_message": "Ustawienia zapisane.",
       "language_header": "Język",
+      "branding_header": "Branding",
       "language_help": "Dotyczy całej instalacji (wszyscy użytkownicy widzą ten sam język). Jeśli tłumaczenie dla danego modułu nie istnieje, automatycznie wyświetlany jest tekst niemiecki.",
       "module_header": "Moduły funkcjonalne",
       "module_help": "Nie każde stowarzyszenie korzysta z każdego modułu. Wyłączone moduły znikają z nawigacji – dane pozostają zachowane i pojawiają się ponownie po ponownym włączeniu.",
