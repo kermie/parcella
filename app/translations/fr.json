@@ -1403,9 +1403,7 @@
       "pdf_button": "Imprimer le PDF (année entière)",
       "pdf_heading": "Calendrier des anniversaires {year}",
       "pdf_col_day": "Jour",
-      "pdf_empty": "Aucun anniversaire enregistré.",
-      "pdf_page_label": "Page",
-      "pdf_of_label": "sur"
+      "pdf_empty": "Aucun anniversaire enregistré."
     },
     "council_presence": {
       "title": "Présence du conseil",

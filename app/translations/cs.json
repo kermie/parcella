@@ -1403,9 +1403,7 @@
       "pdf_button": "Tisk PDF (celý rok)",
       "pdf_heading": "Kalendář narozenin {year}",
       "pdf_col_day": "Den",
-      "pdf_empty": "Žádné narozeniny v systému.",
-      "pdf_page_label": "Strana",
-      "pdf_of_label": "z"
+      "pdf_empty": "Žádné narozeniny v systému."
     },
     "council_presence": {
       "title": "Přítomnost výboru",

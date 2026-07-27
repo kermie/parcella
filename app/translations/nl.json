@@ -1403,9 +1403,7 @@
       "pdf_button": "PDF afdrukken (hele jaar)",
       "pdf_heading": "Verjaardagskalender {year}",
       "pdf_col_day": "Dag",
-      "pdf_empty": "Geen verjaardagen bekend.",
-      "pdf_page_label": "Pagina",
-      "pdf_of_label": "van"
+      "pdf_empty": "Geen verjaardagen bekend."
     },
     "council_presence": {
       "title": "Aanwezigheid bestuur",

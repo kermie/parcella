@@ -1403,9 +1403,7 @@
       "pdf_button": "Print PDF (entire year)",
       "pdf_heading": "Birthday Calendar {year}",
       "pdf_col_day": "Day",
-      "pdf_empty": "No birthdays on file.",
-      "pdf_page_label": "Page",
-      "pdf_of_label": "of"
+      "pdf_empty": "No birthdays on file."
     },
     "council_presence": {
       "title": "Council Presence",

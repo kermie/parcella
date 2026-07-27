@@ -1403,9 +1403,7 @@
       "pdf_button": "PDF drucken (ganzes Jahr)",
       "pdf_heading": "Geburtstagskalender {year}",
       "pdf_col_day": "Tag",
-      "pdf_empty": "Keine Geburtstage hinterlegt.",
-      "pdf_page_label": "Seite",
-      "pdf_of_label": "von"
+      "pdf_empty": "Keine Geburtstage hinterlegt."
     },
     "council_presence": {
       "title": "Vorstandspräsenz",

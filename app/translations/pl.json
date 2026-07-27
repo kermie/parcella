@@ -1403,9 +1403,7 @@
       "pdf_button": "Drukuj PDF (cały rok)",
       "pdf_heading": "Kalendarz urodzin {year}",
       "pdf_col_day": "Dzień",
-      "pdf_empty": "Brak urodzin w systemie.",
-      "pdf_page_label": "Strona",
-      "pdf_of_label": "z"
+      "pdf_empty": "Brak urodzin w systemie."
     },
     "council_presence": {
       "title": "Obecność zarządu",

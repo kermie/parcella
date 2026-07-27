@@ -87,22 +87,22 @@ grammatical case (Polish/Czech/Slovak's default "format" context
 returns the genitive form used in phrases like "5th of March", not the
 nominative name used for a standalone month heading).
 
-**Shares its visual template with the invoice PDF, not the other print
-sheets.** Requested explicitly: the header/footer chrome (DIN-style
-fixed header with the logo at the true page edge and the club name
-centered across the full sheet, the same color/font palette, and a
-localized "Page X of Y") matches `app/invoice_pdf.py`'s
-`_page_css`/header treatment rather than the plainer centered-header
-style `app/meeting_signin_sheet.py` and `app/session_attendee_sheet.py`
-use. Not extracted into a shared chrome module, though -- this
-codebase's PDF generators already each own their full CSS
-independently (no shared base template exists for any of them), so
-duplicating the relevant CSS into `birthday_calendar_pdf.py` follows
-that established convention rather than introducing a new
-cross-module dependency for one page's worth of styling. One real
-difference from the invoice template: no bank/register-court footer
-columns, since a birthday calendar has no financial/legal content to
-show there -- the footer is just the club name.
+**Shares its visual template with every other PDF in the app, via
+`app/pdf_chrome.py`.** Requested explicitly: the header/footer chrome
+(DIN-style fixed header with the logo at the true page edge and the
+club name centered across the full sheet, the same color/font palette,
+and a localized "Page X of Y") matches `app/invoice_pdf.py`'s
+original look. First implemented as a duplicated copy of that CSS
+directly in `birthday_calendar_pdf.py` (matching this codebase's
+then-established convention of each PDF generator owning its full CSS
+independently) -- then, once asked to apply the same treatment to the
+work-session attendee sheet and meeting sign-in sheet too "from now
+on," extracted into the shared `app/pdf_chrome.py` module instead (see
+docs/ADR/0043), and this file switched to use it rather than keep its
+own copy. One real difference from the invoice template: no
+bank/register-court footer columns, since a birthday calendar has no
+financial/legal content to show there -- the footer is just the club
+name.
 
 **Two different privacy postures for the four ICS feeds, not one.**
 This was the single most important design decision in this module, so
