@@ -369,8 +369,18 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
         invoices = list(result.scalars().all())
 
     item_templates = []
+    catalog_all_used = False
     if run.status == InvoiceRunStatus.DRAFT:
-        item_templates = await _item_templates(db)
+        all_item_templates = await _item_templates(db)
+        # Issue #94: don't offer a catalog item the run already has --
+        # matched by name, since applying a template copies its fields
+        # onto a brand new InvoiceItemDefinition with no stored link
+        # back to the template it came from (see items_add_from_catalog).
+        # Recomputed fresh on every load, so renaming/deleting an item
+        # directly on the run makes its template reappear here again.
+        used_names = {d.name for d in run.item_definitions}
+        item_templates = [t for t in all_item_templates if t.name not in used_names]
+        catalog_all_used = bool(all_item_templates) and not item_templates
 
     categories_result = await db.execute(select(FinanceCategory).order_by(FinanceCategory.code))
     categories = list(categories_result.scalars().all())
@@ -381,6 +391,7 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
         "next_order": next_order,
         "invoices": invoices,
         "item_templates": item_templates,
+        "catalog_all_used": catalog_all_used,
         "categories": categories,
     })
 

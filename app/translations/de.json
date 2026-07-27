@@ -1768,6 +1768,7 @@
       "catalog_manage_link": "Katalog verwalten",
       "catalog_button": "Ausgewählte Posten hinzufügen",
       "catalog_empty_hint": "Noch keine Katalogeinträge -- fügen Sie wiederkehrende Posten einmal hinzu und wählen Sie sie hier jedes Jahr aus.",
+      "catalog_all_used_hint": "Alle Katalogposten wurden diesem Rechnungslauf bereits hinzugefügt.",
       "col_category": "Kategorie",
       "label_category": "Kategorie"
     },

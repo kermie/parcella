@@ -328,7 +328,10 @@
     {% elif has_perm(request, 'finances', 'write') and run.status.value == 'draft' %}
     <div class="col-12">
         <div class="alert alert-light border d-flex justify-content-between align-items-center mb-0">
-            <span class="text-muted" style="font-size: 0.85rem;">{{ t('finances.run_detail.catalog_empty_hint') }}</span>
+            <span class="text-muted" style="font-size: 0.85rem;">
+                {% if catalog_all_used %}{{ t('finances.run_detail.catalog_all_used_hint') }}
+                {% else %}{{ t('finances.run_detail.catalog_empty_hint') }}{% endif %}
+            </span>
             <a href="/finances/item-templates" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-gear me-1"></i>{{ t('finances.run_detail.catalog_manage_link') }}
             </a>

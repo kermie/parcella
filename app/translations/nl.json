@@ -1768,6 +1768,7 @@
       "catalog_manage_link": "Catalogus beheren",
       "catalog_button": "Geselecteerde items toevoegen",
       "catalog_empty_hint": "Nog geen catalogusitems -- voeg terugkerende items eenmalig toe en selecteer ze hier elk jaar.",
+      "catalog_all_used_hint": "Alle catalogusitems zijn al aan deze factuurronde toegevoegd.",
       "col_category": "Categorie",
       "label_category": "Categorie"
     },

@@ -1768,6 +1768,7 @@
       "catalog_manage_link": "Spravovať katalóg",
       "catalog_button": "Pridať vybrané položky",
       "catalog_empty_hint": "Zatiaľ žiadne položky v katalógu -- pridajte opakujúce sa položky raz a vyberajte ich tu každý rok.",
+      "catalog_all_used_hint": "Všetky položky z katalógu už boli do tohto behu pridané.",
       "col_category": "Kategória",
       "label_category": "Kategória"
     },

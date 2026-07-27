@@ -1768,6 +1768,7 @@
       "catalog_manage_link": "Gérer le catalogue",
       "catalog_button": "Ajouter les articles sélectionnés",
       "catalog_empty_hint": "Aucun article dans le catalogue pour l'instant -- ajoutez les articles récurrents une fois et sélectionnez-les ici chaque année.",
+      "catalog_all_used_hint": "Tous les articles du catalogue ont déjà été ajoutés à cette campagne de facturation.",
       "col_category": "Catégorie",
       "label_category": "Catégorie"
     },
