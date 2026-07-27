@@ -1,8 +1,10 @@
 """
-Renders a single annual invoice as a PDF (issue #57) -- same WeasyPrint
-approach as app/meeting_signin_sheet.py and app/session_attendee_sheet.py
-(raw HTML string, @page running header/footer, "Page X of Y"), so it
-looks consistent with the rest of the app's printed output.
+Renders a single annual invoice as a PDF (issue #57) -- shares its page
+chrome (header/footer/@page, "Page X of Y") with every other PDF in
+this app via app/pdf_chrome.py, so it looks consistent with the rest
+of the app's printed output. Invoices originated this look; see
+app/pdf_chrome.py's module docstring for why it was later extracted
+into a shared module rather than left duplicated per generator.
 
 render_invoice_pdf() takes plain values rather than an Invoice ORM
 object so it works identically for a real, numbered, persisted invoice
@@ -18,90 +20,53 @@ from typing import List, Optional
 
 from weasyprint import HTML
 
-from app.pdf_utils import file_to_data_uri
+from app.pdf_chrome import wrap_document
 from app.l10n import format_money
 from app.i18n import translate
 
-def _page_css(language: str) -> str:
-    """@page CSS, with the "Page X of Y" page-numbering text localized.
-    A function (not a constant) because that's the one static PDF
-    string that can't be swapped via a running() element like the rest
-    of the footer (issue #74's 4th column) -- WeasyPrint only supports
-    page counters directly inside a margin box's own `content`
-    property, not inside the DOM of an element placed there via
-    `content: element(...)`, so it has to be baked into the CSS itself
-    per render rather than translated in the HTML body."""
-    page_word = translate("finances.pdf.page_label", language)
-    of_word = translate("finances.pdf.of_label", language)
-    return f"""
-@page {{
-    size: A4;
-    margin: 2.2cm 1.5cm 2.6cm 1.5cm;
-    @bottom-left {{ content: element(footer); width: 15.7cm; }}
-    @bottom-right {{
-        content: "{page_word} " counter(page) " {of_word} " counter(pages);
-        font-size: 8pt; color: #6b7280;
-    }}
-}}
-/* margin:0 -- the default UA body margin would otherwise throw off
-   the address-window's exact DIN 5008 positioning below. */
-body {{ margin: 0; font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 10.5pt; }}
-/* position:fixed on the page box itself (not the @top-center margin
-   box, which is only as wide as the printable area) so the logo can
-   sit at the true left edge of the A4 sheet and the club name can be
-   centered on the page as a whole -- an absolutely-positioned
-   full-width element for the name, independent of the logo's own
-   width, so it's always exactly page-centered and never wraps. */
-/* top/left are negative by exactly the @page margin (2.2cm/1.5cm) --
-   WeasyPrint's containing block for `position: fixed` here is the
-   page's own content box (inset by the @page margin), not the raw
-   sheet, so this cancels that inset back out to the true page corner. */
-#header {{ position: fixed; top: -2.2cm; left: -1.5cm; width: 21cm; height: 1.8cm; border-bottom: 2px solid #2f6f3e; }}
-#header .header-logo {{ position: absolute; left: 0.5cm; top: 0.3cm; }}
-#header .header-logo img {{ max-height: 50px; }}
-#header .club-name {{
-    position: absolute; left: 0; top: 0.65cm; width: 21cm; text-align: center;
-    font-size: 13pt; font-weight: bold; color: #2f6f3e; white-space: nowrap;
-}}
-#footer {{
-    position: running(footer); display: flex; gap: 0.6cm;
-    font-size: 7.5pt; line-height: 1.4; color: #6b7280;
-    border-top: 1px solid #d1d5db; padding-top: 6px;
-}}
-#footer .footer-col {{ flex: 1; min-width: 0; }}
-#footer .footer-col:nth-child(1) {{ flex: 0.85; }}
-#footer .footer-col:nth-child(3) {{ flex: 1.3; }}
-.meta-block {{ display: flex; justify-content: space-between; margin-bottom: 0.8cm; }}
+# Invoice/reminder-specific CSS, appended after app/pdf_chrome.py's
+# shared page chrome (@page, body, #header, #footer base rules).
+EXTRA_CSS = """
+/* Extends the shared #footer rule with the invoice-specific
+   three-column layout (organization/register/bank details, issue
+   #74) -- everything else here has no equivalent in the shared
+   chrome, since only invoices/reminders need an address window,
+   itemized table, or bank-details footer. */
+#footer { display: flex; gap: 0.6cm; line-height: 1.4; }
+#footer .footer-col { flex: 1; min-width: 0; }
+#footer .footer-col:nth-child(1) { flex: 0.85; }
+#footer .footer-col:nth-child(3) { flex: 1.3; }
+.meta-block { display: flex; justify-content: space-between; margin-bottom: 0.8cm; }
 /* DIN 5008 Form A address window: page margin-top is 2.2cm, so the
    0.5cm padding-top here lands the sender line at 2.7cm from the page
    edge and the 1.8cm sender-line box ends exactly at 4.5cm, where the
    Anschriftzone (recipient address) must start; padding-left 0.5cm
    plus the 1.5cm page margin lands the whole window's left edge at
    the standard 2.0cm. */
-.address-window {{ width: 8.5cm; padding-top: 0.5cm; padding-left: 0.5cm; box-sizing: content-box; }}
-.sender-line {{
+.address-window { width: 8.5cm; padding-top: 0.5cm; padding-left: 0.5cm; box-sizing: content-box; }
+.sender-line {
     height: 1.8cm; display: flex; align-items: flex-end;
     font-size: 7.5pt; color: #4b5563; border-bottom: 0.5pt solid #9ca3af;
     margin-bottom: 2pt;
-}}
-.recipient {{ white-space: pre-line; line-height: 1.5; }}
-.invoice-meta td {{ padding: 1px 6px; }}
-.invoice-meta td:first-child {{ color: #6b7280; }}
-.invoice-meta td:last-child {{ font-weight: bold; text-align: right; }}
-h1 {{ font-size: 14pt; margin-bottom: 0.1cm; color: #1f2937; }}
-.parcel-line {{ color: #6b7280; margin-bottom: 0.5cm; font-size: 9.5pt; }}
-table.items {{ width: 100%; border-collapse: collapse; margin-top: 0.3cm; }}
-table.items th {{ text-align: left; font-size: 9pt; text-transform: uppercase; color: #4b5563; border-bottom: 2px solid #2f6f3e; padding: 6px 8px; }}
-table.items td {{ padding: 7px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }}
-table.items td.num {{ text-align: right; white-space: nowrap; }}
-table.items small {{ color: #6b7280; }}
-table.items tfoot td {{ border-bottom: none; border-top: 2px solid #2f6f3e; font-weight: bold; padding-top: 8px; }}
-.footer-text {{ margin-top: 0.8cm; font-size: 9.5pt; color: #374151; white-space: pre-line; }}
-.preview-banner {{
+}
+.recipient { white-space: pre-line; line-height: 1.5; }
+.invoice-meta td { padding: 1px 6px; }
+.invoice-meta td:first-child { color: #6b7280; }
+.invoice-meta td:last-child { font-weight: bold; text-align: right; }
+h1 { font-size: 14pt; margin-bottom: 0.1cm; color: #1f2937; }
+.parcel-line { color: #6b7280; margin-bottom: 0.5cm; font-size: 9.5pt; }
+table.items { width: 100%; border-collapse: collapse; margin-top: 0.3cm; }
+table.items th { text-align: left; font-size: 9pt; text-transform: uppercase; color: #4b5563; border-bottom: 2px solid #2f6f3e; padding: 6px 8px; }
+table.items td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+table.items td.num { text-align: right; white-space: nowrap; }
+table.items small { color: #6b7280; }
+table.items tfoot td { border-bottom: none; border-top: 2px solid #2f6f3e; font-weight: bold; padding-top: 8px; }
+.footer-text { margin-top: 0.8cm; font-size: 9.5pt; color: #374151; white-space: pre-line; }
+.preview-banner {
     background: #fef3c7; color: #92400e; padding: 6px 10px; border-radius: 4px;
     font-size: 9pt; margin-bottom: 0.4cm; text-align: center;
-}}
-.invoice-block + .invoice-block {{ page-break-before: always; }}
+}
+.invoice-block + .invoice-block { page-break-before: always; }
 """
 
 
@@ -384,35 +349,18 @@ def _reminder_body_html(data: ReminderPdfData, region: str, currency: str, langu
     """
 
 
-def _wrap_document(body_html: str, club_name: str, logo_path: Optional[Path], footer_html: str, language: str) -> str:
-    logo_data_uri = file_to_data_uri(logo_path)
-    logo_block = f'<img src="{logo_data_uri}">' if logo_data_uri else ""
-    return f"""
-    <html>
-    <head><meta charset="utf-8"><style>{_page_css(language)}</style></head>
-    <body>
-        <div id="header">
-            <div class="header-logo">{logo_block}</div>
-            <div class="club-name">{club_name}</div>
-        </div>
-        <div id="footer">{footer_html}</div>
-        {body_html}
-    </body>
-    </html>
-    """
-
-
 def _footer_html(
     club_name: str, club_address_lines: List[str], register_court: str, register_number: str,
     bank_name: str, bank_iban: str, bank_bic: str, bank_account_owner: str, language: str,
 ) -> str:
     """Three-column footer content (issue #74): organization identity,
     register-court info, and bank details, laid out side by side via
-    the flex #footer running element. "Page X of Y" is the visual
-    fourth column, but lives in its own @bottom-right margin box (see
-    _page_css) rather than here, since WeasyPrint only resolves page
-    counters directly inside a margin box's own `content`, not inside
-    the DOM of an element placed there via `content: element(...)`."""
+    the flex #footer running element (extended for this in EXTRA_CSS
+    above). "Page X of Y" is the visual fourth column, but lives in its
+    own @bottom-right margin box (see app/pdf_chrome.py's page_css)
+    rather than here, since WeasyPrint only resolves page counters
+    directly inside a margin box's own `content`, not inside the DOM of
+    an element placed there via `content: element(...)`."""
     org_lines = [club_name, *club_address_lines]
 
     register_line = " ".join(filter(None, [register_court, register_number]))
@@ -442,8 +390,9 @@ def render_invoice_pdf(
         bank_name, bank_iban, bank_bic, bank_account_owner, language,
     )
     sender_line = _sender_line(club_name, club_address_lines)
-    html_doc = _wrap_document(
+    html_doc = wrap_document(
         _invoice_body_html(data, region, currency, language, sender_line), club_name, logo_path, footer_html, language,
+        extra_css=EXTRA_CSS, bottom_margin="2.6cm",
     )
     return HTML(string=html_doc).write_pdf()
 
@@ -466,7 +415,9 @@ def render_invoice_bundle_pdf(
     )
     sender_line = _sender_line(club_name, club_address_lines)
     body_html = "".join(_invoice_body_html(data, region, currency, language, sender_line) for data in items)
-    html_doc = _wrap_document(body_html, club_name, logo_path, footer_html, language)
+    html_doc = wrap_document(
+        body_html, club_name, logo_path, footer_html, language, extra_css=EXTRA_CSS, bottom_margin="2.6cm",
+    )
     return HTML(string=html_doc).write_pdf()
 
 
@@ -483,7 +434,8 @@ def render_reminder_pdf(
         bank_name, bank_iban, bank_bic, bank_account_owner, language,
     )
     sender_line = _sender_line(club_name, club_address_lines)
-    html_doc = _wrap_document(
+    html_doc = wrap_document(
         _reminder_body_html(data, region, currency, language, sender_line), club_name, logo_path, footer_html, language,
+        extra_css=EXTRA_CSS, bottom_margin="2.6cm",
     )
     return HTML(string=html_doc).write_pdf()

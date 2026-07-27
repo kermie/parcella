@@ -1941,8 +1941,6 @@
       "subtotal": "Medzisúčet",
       "preview_banner": "Náhľad — zatiaľ nedokončené ani neodoslané",
       "account_holder": "Majiteľ účtu: {name}",
-      "page_label": "Strana",
-      "of_label": "z",
       "insurance_line_property": "Poistenie majetku ({package})",
       "insurance_line_accident_household": "Úrazové poistenie (domácnosť)",
       "insurance_line_accident_additional": "Úrazové poistenie (+{n} ďalšia osoba/osoby)"
@@ -1957,5 +1955,9 @@
       "row_this_fee": "Poplatok za túto upomienku",
       "closing": "Uhraďte, prosím, dlžnú sumu čo najskôr. Ak ste už zaplatili, považujte túto upomienku za bezpredmetnú."
     }
+  },
+  "pdf": {
+    "page_label": "Strana",
+    "of_label": "z"
   }
 }
