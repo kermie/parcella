@@ -143,3 +143,45 @@ async def test_communal_area_share_scoped_to_subset_uses_subset_as_denominator(c
         line = inv.line_items[0]
         assert float(line.quantity) == 2000.0, "Area B (4000) split across the 2 SCOPED parcels is 2000 each"
         assert float(line.line_total) == 3000.0
+
+
+async def test_communal_area_share_quantity_rounds_to_one_decimal_place(client, admin_user):
+    """Issue #89: a split that doesn't come out even (here 9400/3)
+    used to leave the quantity as an un-rounded Decimal division,
+    expanding to the full 28-digit context precision (a real invoice
+    showed "36.74796747967479674796747967"). The computed quantity
+    must be cut off to one decimal place instead."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    await _enable_finances_module()
+
+    # Area A = 3 x 200 = 600. Total = 10000, Area C = 0. Area B = 9400.
+    # 9400 / 3 = 3133.333... -> must round to 3133.3, not the raw
+    # repeating decimal.
+    async with AsyncSessionLocal() as session:
+        billed_parcels = [await _occupied_parcel(session, f"COMMROUND-{i}", 200) for i in range(3)]
+        await session.commit()
+
+    await _set_area_settings("10000", "0")
+
+    run_id = await _make_run(client)
+    r_item = await client.post(f"/finances/runs/{run_id}/items", data={
+        "order_number": "10", "name": "Communal area share (rounding)", "description": "",
+        "pricing_mode": "communal_area_share", "unit_price": "1.00", "applies_to_all_parcels": "on",
+    })
+    assert r_item.status_code in (302, 303)
+
+    r_finalize = await client.post(f"/finances/runs/{run_id}/finalize")
+    assert r_finalize.status_code in (302, 303), r_finalize.headers.get("location")
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Invoice)
+            .options(selectinload(Invoice.line_items))
+            .where(Invoice.invoice_run_id == run_id)
+        )
+        invoices = list(result.scalars().unique().all())
+
+    assert len(invoices) == 3
+    for inv in invoices:
+        line = inv.line_items[0]
+        assert float(line.quantity) == 3133.3, "9400/3 must be cut off to one decimal place, not left as a repeating decimal"

@@ -320,7 +320,14 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             denom = communal_share_denominators.get(definition.id, 0)
             if denom == 0 or area_b_sqm is None or area_b_sqm <= 0:
                 return None, None
-            return Decimal(str(area_b_sqm)) / Decimal(denom), Decimal(str(definition.unit_price))
+            # The division rarely comes out even (e.g. 8000/3 sqm), and
+            # an un-rounded Decimal division keeps expanding to the
+            # context's full precision (issue #89: a real invoice
+            # showed "36.74796747967479674796747967"). Cut off to one
+            # decimal place here, at the source, so preview and PDF
+            # rendering never see the raw repeating fraction.
+            share = Decimal(str(area_b_sqm)) / Decimal(denom)
+            return share.quantize(Decimal("0.1")), Decimal(str(definition.unit_price))
         if mode == InvoicePricingMode.WORK_HOURS_SHORTFALL:
             amount = work_hours_by_parcel.get(parcel.id)
             if amount is None:
