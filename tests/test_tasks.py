@@ -159,6 +159,31 @@ async def test_task_priority_set_update_and_clear_via_api(client, admin_user):
     assert cleared["priority"] is None
 
 
+async def test_task_tags_set_update_and_clear_via_api(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    untagged = (await client.post("/api/v1/tasks", json={"title": "Untagged"}, headers=headers)).json()
+    assert untagged["tags"] == []
+
+    created = (await client.post(
+        "/api/v1/tasks", json={"title": "Fix the roof", "tags": ["urgent", "outdoor"]}, headers=headers,
+    )).json()
+    assert created["tags"] == ["urgent", "outdoor"]
+
+    updated = (await client.put(
+        f"/api/v1/tasks/{created['id']}", json={"tags": ["outdoor"]}, headers=headers,
+    )).json()
+    assert updated["tags"] == ["outdoor"]
+
+    cleared = (await client.put(
+        f"/api/v1/tasks/{created['id']}", json={"tags": []}, headers=headers,
+    )).json()
+    assert cleared["tags"] == []
+
+
 async def test_readonly_member_cannot_access_api(client, admin_user):
     from app.models import User, UserRole
     from app.auth import hash_password
@@ -228,7 +253,8 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
         "/tasks/new",
         data={
             "title": "Fix the gate lock", "description": "Squeaky hinge", "due_date": "2026-08-01",
-            "priority": "HIGH", "assigned_to_id": board_member.id,
+            "priority": "HIGH", "tags": "urgent, outdoor, urgent, ",
+            "assigned_to_id": board_member.id,
         },
     )
     assert create_response.status_code in (302, 303)
@@ -242,6 +268,10 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
     # substring check -- that also matches board.html's <style> block CSS
     # selector, which is always present regardless of any card's priority.
     assert 'class="kanban-card-priority kanban-card-priority-high"' in board_response.text
+    # "urgent" typed twice (with stray whitespace) collapses to one badge.
+    assert board_response.text.count('class="kanban-card-tag"') == 2
+    assert '<span class="kanban-card-tag">urgent</span>' in board_response.text
+    assert '<span class="kanban-card-tag">outdoor</span>' in board_response.text
 
     import re
     m = re.search(r'/tasks/([a-f0-9-]+)/edit', board_response.text)
@@ -251,6 +281,7 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
     edit_page = await client.get(f"/tasks/{task_id}/edit")
     assert edit_page.status_code == 200
     assert "Fix the gate lock" in edit_page.text
+    assert 'value="urgent, outdoor"' in edit_page.text
 
     edit_response = await client.post(
         f"/tasks/{task_id}/edit",
@@ -260,9 +291,10 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
 
     board_response2 = await client.get("/tasks/")
     assert "Fix the gate lock (urgent)" in board_response2.text
-    # Priority form field was omitted on the edit POST -- same "" default
-    # as an explicit clear, so the badge should be gone.
+    # Priority and tags form fields were both omitted on the edit POST --
+    # same "" default as an explicit clear, so both should be gone.
     assert 'class="kanban-card-priority kanban-card-priority-high"' not in board_response2.text
+    assert 'class="kanban-card-tag"' not in board_response2.text
 
     move_response = await client.post(
         f"/tasks/{task_id}/move",

@@ -57,6 +57,21 @@ create/edit form as due date and assignee; there's no separate
 priority -- `position` (drag-and-drop order) still governs ordering
 within a list.
 
+`tags` (issue #107, migration `0056_task_tags`) is a Postgres text array
+(`ARRAY(String)`), not a join table to a separate `Tag` entity: there's
+no cross-card vocabulary to enforce or reuse-by-reference here (unlike,
+say, `InventoryCategory`), just a per-card list of short free-text
+strings. `NOT NULL` with a `'{}'` server default -- an untagged card is
+an empty list, not `NULL`, so every consumer (board template, CSV/API
+iteration) can iterate `task.tags` unconditionally. The web form takes a
+single comma-separated text input (`app/templates/tasks/form.html`),
+split/stripped/deduped by `_parse_tags()` in `app/routers/tasks.py`; the
+API takes a plain `list[str]` (`KanbanTaskBase.tags`). Shown on the board
+as small pill badges under the card title/meta line, one per tag, in the
+same style family as the priority badge but a single neutral color
+(tags have no fixed small set of values to give distinct colors to,
+unlike priority's three).
+
 **Migration gotcha, the mirror image of the one in
 [docs/module-work-hours.md](./module-work-hours.md#known-pitfalls):**
 inside `op.create_table(...)`, an inline `sa.Enum(...)` column

@@ -1643,6 +1643,8 @@
       "label_description": "Beschreibung",
       "label_due_date": "Fällig am",
       "label_priority": "Priorität",
+      "label_tags": "Tags",
+      "tags_placeholder": "Kommagetrennt (z. B. dringend, draußen)",
       "label_assigned_to": "Zugewiesen an",
       "label_list": "Liste",
       "unassigned_option": "Nicht zugewiesen",

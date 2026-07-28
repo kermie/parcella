@@ -66,6 +66,16 @@ async def _active_users(db: AsyncSession):
     return result.scalars().all()
 
 
+def _parse_tags(raw: str) -> list[str]:
+    """Comma-separated free text -> a deduped, order-preserving tag list."""
+    seen: dict[str, None] = {}
+    for part in raw.split(","):
+        tag = part.strip()
+        if tag:
+            seen.setdefault(tag, None)
+    return list(seen)
+
+
 @router.get("/", response_class=HTMLResponse)
 async def board(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_admin(request, db)
@@ -103,6 +113,7 @@ async def task_create(
     description: str = Form(""),
     due_date: str = Form(""),
     priority: str = Form(""),
+    tags: str = Form(""),
     assigned_to_id: str = Form(""),
     list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -117,6 +128,7 @@ async def task_create(
         description=description.strip() or None,
         due_date=date.fromisoformat(due_date) if due_date.strip() else None,
         priority=TaskPriority(priority.strip()) if priority.strip() else None,
+        tags=_parse_tags(tags),
         assigned_to_id=assigned_to_id.strip() or None,
         list_id=target_list_id,
         position=await next_position(db, target_list_id),
@@ -199,6 +211,7 @@ async def task_update(
     description: str = Form(""),
     due_date: str = Form(""),
     priority: str = Form(""),
+    tags: str = Form(""),
     assigned_to_id: str = Form(""),
     list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -210,6 +223,7 @@ async def task_update(
     task.description = description.strip() or None
     task.due_date = date.fromisoformat(due_date) if due_date.strip() else None
     task.priority = TaskPriority(priority.strip()) if priority.strip() else None
+    task.tags = _parse_tags(tags)
     task.assigned_to_id = assigned_to_id.strip() or None
     if list_id.strip() and list_id.strip() != task.list_id:
         await move_task(db, task, list_id.strip(), await next_position(db, list_id.strip()))

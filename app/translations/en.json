@@ -1643,6 +1643,8 @@
       "label_description": "Description",
       "label_due_date": "Due date",
       "label_priority": "Priority",
+      "label_tags": "Tags",
+      "tags_placeholder": "Comma-separated (e.g. urgent, outdoor)",
       "label_assigned_to": "Assigned to",
       "label_list": "List",
       "unassigned_option": "Unassigned",
