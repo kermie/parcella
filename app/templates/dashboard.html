@@ -134,6 +134,27 @@
         </div>
     </div>
     {% endif %}
+
+    {% if request.state.module_flags.tasks %}
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div style="font-size: 2rem; color: #b91c1c; background: #fee2e2;
+                            width: 56px; height: 56px; border-radius: 12px;
+                            display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-alarm"></i>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;">{{ t('dashboard.tasks_overdue_label') }}</div>
+                    <div style="font-size: 1.8rem; font-weight: 700; color: #b91c1c;">{{ stats.tasks_overdue }}</div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top-0 pt-0">
+                <a href="/tasks/?overdue=1" class="btn btn-sm btn-outline-primary w-100">{{ t('dashboard.show_all') }}</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 {% if birthdays_this_week %}

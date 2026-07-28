@@ -232,6 +232,15 @@ why sorting doesn't persist and, like an active filter, disables card
 dragging while it's non-manual (there's no meaningful `position` to
 write while the board isn't showing manual order).
 
+## Dashboard overdue-tasks card (issue #127)
+
+The dashboard (`/`, `app/main.py`'s `startseite()`) shows an "Overdue
+Tasks" count (gated on `module_flags.tasks`) linking to
+`/tasks/?overdue=1`, which pre-checks the board's own "Overdue only"
+filter checkbox -- same `data-overdue="1"` attribute and definition of
+"overdue" (`due_date` in the past, any list) the board already used to
+color a card red. See [ADR 0051](./ADR/0051-dashboard-overdue-tasks-card.md).
+
 Create/edit (of a card) use the same separate-page pattern as the rest
 of the app (`/tasks/new`, `/tasks/{id}/edit`) rather than a modal, for
 consistency with Members/Parcels/Work Hours; lists themselves are

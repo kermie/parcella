@@ -54,3 +54,4 @@ in chronological order.
 48. [Board members join the universal PDF footer](./0048-board-members-join-the-universal-pdf-footer.md)
 49. [Task board search and filter: client-side, not a server round trip](./0049-task-board-search-and-filter-client-side.md)
 50. [Task board sort: client-side and purely visual, not a position rewrite](./0050-task-board-sort-client-side-visual-only.md)
+51. [Dashboard: overdue tasks card](./0051-dashboard-overdue-tasks-card.md)
