@@ -1640,7 +1640,17 @@
       "title": "Tablica zadań",
       "new_task_button": "Nowe zadanie",
       "add_list_button": "Dodaj listę",
-      "column_empty": "Brak zadań"
+      "column_empty": "Brak zadań",
+      "search_placeholder": "Szukaj w tytule, opisie, tagach, komentarzach…",
+      "filter_priority_label": "Filtruj według priorytetu",
+      "filter_priority_any": "Dowolny priorytet",
+      "filter_tag_label": "Filtruj według tagu",
+      "filter_tag_any": "Dowolny tag",
+      "filter_assignee_label": "Filtruj według osoby odpowiedzialnej",
+      "filter_assignee_any": "Dowolna osoba",
+      "filter_due_month_label": "Filtruj według miesiąca terminu",
+      "filter_clear": "Wyczyść filtry",
+      "filter_no_results": "Żadne zadania nie pasują do wyszukiwania/filtrów."
     },
     "form": {
       "title_new": "Nowe zadanie",

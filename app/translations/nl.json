@@ -1640,7 +1640,17 @@
       "title": "Takenbord",
       "new_task_button": "Nieuwe taak",
       "add_list_button": "Lijst toevoegen",
-      "column_empty": "Geen taken"
+      "column_empty": "Geen taken",
+      "search_placeholder": "Zoeken in titel, beschrijving, tags, reacties…",
+      "filter_priority_label": "Filteren op prioriteit",
+      "filter_priority_any": "Elke prioriteit",
+      "filter_tag_label": "Filteren op tag",
+      "filter_tag_any": "Elke tag",
+      "filter_assignee_label": "Filteren op eigenaar",
+      "filter_assignee_any": "Elke eigenaar",
+      "filter_due_month_label": "Filteren op vervalmaand",
+      "filter_clear": "Filters wissen",
+      "filter_no_results": "Geen taken komen overeen met je zoekopdracht/filters."
     },
     "form": {
       "title_new": "Nieuwe taak",

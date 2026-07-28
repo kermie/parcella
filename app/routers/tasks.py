@@ -99,16 +99,35 @@ async def board(request: Request, db: AsyncSession = Depends(get_db)):
 
     result = await db.execute(
         select(TaskList)
-        .options(selectinload(TaskList.tasks).selectinload(Task.assignees).selectinload(TaskAssignee.user))
+        .options(
+            selectinload(TaskList.tasks).selectinload(Task.assignees).selectinload(TaskAssignee.user),
+            selectinload(TaskList.tasks).selectinload(Task.comments),
+        )
         .order_by(TaskList.position)
     )
     lists = result.scalars().all()
+
+    # Search/filter (issue #119): filtering happens client-side (see
+    # board.html) over data attributes rendered on each card, so drag-
+    # and-drop keeps working without a round trip -- these two option
+    # lists just populate the tag/assignee dropdowns with what's
+    # actually on the board right now, not every tag/user that's ever
+    # existed.
+    assignee_options: dict[str, str] = {}
+    tag_options: set[str] = set()
+    for task_list in lists:
+        for task in task_list.tasks:
+            for assignee in task.assignees:
+                assignee_options[assignee.user_id] = assignee.user.name
+            tag_options.update(task.tags)
 
     return templates.TemplateResponse("tasks/board.html", {
         "request": request, "user": user,
         "lists": lists,
         "today": date.today(),
         "list_error": request.query_params.get("list_error"),
+        "assignee_options": sorted(assignee_options.items(), key=lambda kv: kv[1].lower()),
+        "tag_options": sorted(tag_options, key=str.lower),
     })
 
 

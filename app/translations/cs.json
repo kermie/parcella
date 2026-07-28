@@ -1640,7 +1640,17 @@
       "title": "Nástěnka úkolů",
       "new_task_button": "Nový úkol",
       "add_list_button": "Přidat seznam",
-      "column_empty": "Žádné úkoly"
+      "column_empty": "Žádné úkoly",
+      "search_placeholder": "Hledat v názvu, popisu, štítcích, komentářích…",
+      "filter_priority_label": "Filtrovat podle priority",
+      "filter_priority_any": "Libovolná priorita",
+      "filter_tag_label": "Filtrovat podle štítku",
+      "filter_tag_any": "Libovolný štítek",
+      "filter_assignee_label": "Filtrovat podle řešitele",
+      "filter_assignee_any": "Libovolný řešitel",
+      "filter_due_month_label": "Filtrovat podle měsíce splatnosti",
+      "filter_clear": "Zrušit filtry",
+      "filter_no_results": "Žádné úkoly neodpovídají vyhledávání/filtrům."
     },
     "form": {
       "title_new": "Nový úkol",

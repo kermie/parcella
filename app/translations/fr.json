@@ -1640,7 +1640,17 @@
       "title": "Tableau des tâches",
       "new_task_button": "Nouvelle tâche",
       "add_list_button": "Ajouter une liste",
-      "column_empty": "Aucune tâche"
+      "column_empty": "Aucune tâche",
+      "search_placeholder": "Rechercher dans le titre, la description, les tags, les commentaires…",
+      "filter_priority_label": "Filtrer par priorité",
+      "filter_priority_any": "Toutes priorités",
+      "filter_tag_label": "Filtrer par tag",
+      "filter_tag_any": "Tous les tags",
+      "filter_assignee_label": "Filtrer par responsable",
+      "filter_assignee_any": "Tous les responsables",
+      "filter_due_month_label": "Filtrer par mois d'échéance",
+      "filter_clear": "Réinitialiser les filtres",
+      "filter_no_results": "Aucune tâche ne correspond à votre recherche/vos filtres."
     },
     "form": {
       "title_new": "Nouvelle tâche",

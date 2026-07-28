@@ -1640,7 +1640,17 @@
       "title": "Aufgabenboard",
       "new_task_button": "Neue Aufgabe",
       "add_list_button": "Liste hinzufügen",
-      "column_empty": "Keine Aufgaben"
+      "column_empty": "Keine Aufgaben",
+      "search_placeholder": "Titel, Beschreibung, Tags, Kommentare durchsuchen…",
+      "filter_priority_label": "Nach Priorität filtern",
+      "filter_priority_any": "Alle Prioritäten",
+      "filter_tag_label": "Nach Tag filtern",
+      "filter_tag_any": "Alle Tags",
+      "filter_assignee_label": "Nach Zuständigem filtern",
+      "filter_assignee_any": "Alle Zuständigen",
+      "filter_due_month_label": "Nach Fälligkeitsmonat filtern",
+      "filter_clear": "Filter zurücksetzen",
+      "filter_no_results": "Keine Aufgaben entsprechen Ihrer Suche/Filtern."
     },
     "form": {
       "title_new": "Neue Aufgabe",
