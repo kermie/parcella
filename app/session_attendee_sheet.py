@@ -19,7 +19,7 @@ from typing import List, Optional
 
 from weasyprint import HTML
 
-from app.pdf_chrome import wrap_document
+from app.pdf_chrome import wrap_document, org_footer_html, OrgFooterContext
 
 EXTRA_CSS = """
 h1 { font-size: 15pt; margin-top: 0.4cm; margin-bottom: 0.1cm; color: #1f2937; }
@@ -75,12 +75,14 @@ def _body_html(headline: str, subtitle: str, rows: List[AttendeeRow]) -> str:
 
 
 def render_session_attendee_sheet_pdf(
-    headline: str, subtitle: str, club_name: str, logo_path: Optional[Path],
+    headline: str, subtitle: str, footer_context: OrgFooterContext, logo_path: Optional[Path],
     rows: List[AttendeeRow], language: str = "en",
 ) -> bytes:
     """rows should already be sorted the way the caller wants them to
     appear -- this function doesn't re-sort."""
     html_doc = wrap_document(
-        _body_html(headline, subtitle, rows), club_name, logo_path, club_name, language, extra_css=EXTRA_CSS,
+        _body_html(headline, subtitle, rows),
+        footer_context.club_name, logo_path, org_footer_html(footer_context, language), language,
+        extra_css=EXTRA_CSS,
     )
     return HTML(string=html_doc).write_pdf()

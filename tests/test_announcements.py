@@ -854,6 +854,51 @@ def _pdf_page_count(pdf_bytes: bytes) -> int:
     return len(PdfReader(io.BytesIO(pdf_bytes)).pages)
 
 
+def _pdf_text(pdf_bytes: bytes) -> str:
+    import io
+    from pypdf import PdfReader
+    reader = PdfReader(io.BytesIO(pdf_bytes))
+    return "\n".join(page.extract_text() for page in reader.pages)
+
+
+def _normalized(text: str) -> str:
+    """WeasyPrint's font subsetting can make pypdf's text extraction
+    insert stray spaces around certain letter pairs (see
+    tests/test_members_signin_sheet.py)."""
+    return "".join(text.split())
+
+
+async def test_generate_print_pdf_shows_the_universal_org_bank_footer(client, admin_user):
+    """The flyer now shares app/pdf_chrome.py's chrome like every other
+    PDF (docs/ADR/0045) -- it must show the same org/register/bank
+    footer, not just the club name."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    for key, value in [
+        ("bank_iban", "DE89370400440532013000"),
+        ("vereinsnummer", "VR 12345"),
+    ]:
+        response = await client.put(f"/api/v1/club-settings/{key}", json={"value": value}, headers=headers)
+        assert response.status_code == 200, response.text
+
+    await web_login(client, "admin@example.com")
+
+    create = await client.post(
+        "/announcements/new",
+        data={"title": "Kurze Mitteilung", "body_markdown": "Bitte am Samstag zum Arbeitseinsatz kommen."},
+    )
+    announcement_id = create.headers["location"].split("/")[2]
+
+    response = await client.post(f"/announcements/{announcement_id}/print")
+    assert response.status_code == 200
+    assert _pdf_page_count(response.content) == 1
+
+    normalized = _normalized(_pdf_text(response.content))
+    assert _normalized("IBAN DE89370400440532013000") in normalized
+    assert _normalized("VR 12345") in normalized
+
+
 async def test_generate_print_pdf_short_content_fits_without_shortening(client, admin_user):
     token = await login(client, "admin@example.com")
     await _enable_module(client, auth_header(token))

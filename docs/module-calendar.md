@@ -99,10 +99,11 @@ independently) -- then, once asked to apply the same treatment to the
 work-session attendee sheet and meeting sign-in sheet too "from now
 on," extracted into the shared `app/pdf_chrome.py` module instead (see
 docs/ADR/0043), and this file switched to use it rather than keep its
-own copy. One real difference from the invoice template: no
-bank/register-court footer columns, since a birthday calendar has no
-financial/legal content to show there -- the footer is just the club
-name.
+own copy. The footer is the same three-column organization/register-
+court/bank layout every other PDF now shows too (docs/ADR/0045) --
+built from `app/pdf_chrome.py`'s `OrgFooterContext`/
+`load_org_footer_context()`, loaded independently of the finances
+module since it's club-identity data, not finances-owned.
 
 **Two different privacy postures for the four ICS feeds, not one.**
 This was the single most important design decision in this module, so

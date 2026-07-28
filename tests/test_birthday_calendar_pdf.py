@@ -15,6 +15,7 @@ from pypdf import PdfReader
 
 from app.database import AsyncSessionLocal
 from app.models import Member
+from tests.conftest import login, auth_header
 
 
 async def web_login(client, email: str, password: str = "testpasswort123") -> None:
@@ -78,3 +79,29 @@ async def test_birthday_calendar_pdf_defaults_to_current_year_and_handles_empty(
     assert response.headers["content-type"] == "application/pdf"
     # No members with a birth date on file at all -- must render
     # without erroring rather than crash on an empty entries list.
+
+
+async def test_birthday_calendar_pdf_shows_the_universal_org_bank_footer(client, admin_user):
+    """The org/register/bank footer (docs/ADR/0045) is no longer
+    invoice-only -- a non-invoice, non-finances PDF must show it too,
+    proving load_org_footer_context() works independently of the
+    finances module."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    for key, value in [
+        ("bank_iban", "DE89370400440532013000"),
+        ("registergericht", "Amtsgericht Musterstadt"),
+        ("vereinsnummer", "VR 12345"),
+    ]:
+        response = await client.put(f"/api/v1/club-settings/{key}", json={"value": value}, headers=headers)
+        assert response.status_code == 200, response.text
+
+    await web_login(client, "admin@example.com")
+
+    response = await client.get("/calendar/birthdays/pdf")
+    assert response.status_code == 200
+
+    normalized = _normalized(_pdf_text(response.content))
+    assert _normalized("IBAN DE89370400440532013000") in normalized
+    assert _normalized("Amtsgericht Musterstadt") in normalized
+    assert _normalized("VR 12345") in normalized

@@ -178,11 +178,20 @@ a featured image rather than failing outright.
 ## Print channel (built)
 
 `app/print_publisher.py` renders a one-page, branded PDF via
-WeasyPrint (HTML/CSS -> PDF): a running header (club logo + name) and
-footer on an A4 page via `@top-center`/`@bottom-center`, the
-announcement's image, and the body text. Since the whole point is
-"fits on one page," there's no need for WeasyPrint's more elaborate
-multi-page repeating-header machinery beyond that.
+WeasyPrint (HTML/CSS -> PDF), sharing the exact same page chrome as
+every other PDF in the app (`app/pdf_chrome.py`'s `wrap_document()` --
+DIN-style fixed header, the three-column organization/register-court/
+bank footer, "Page X of Y") rather than its own bespoke
+`@top-center`/`@bottom-center` header/footer, which is how it worked
+originally (see docs/ADR/0045 for why it was brought in line -- it was
+deliberately left out of the initial shared-chrome extraction in ADR
+0043 as a differently-shaped single-page document, then asked to match
+anyway). It keeps its own larger body font (`extra_css`) since a
+pin-up notice still reads better with more generous type than the
+denser tabular documents sharing this chrome. Still always exactly one
+page -- adopting the shared chrome didn't change the fitting
+algorithm below, it just means the page now also shows "Page 1 of 1"
+and the full org/bank footer instead of just the club name.
 
 **The auto-shorten loop, exactly as originally scoped:**
 1. Render with the full text (the manual `print_text_override` if the

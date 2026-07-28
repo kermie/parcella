@@ -18,7 +18,7 @@ from typing import List, Optional, Tuple
 
 from weasyprint import HTML
 
-from app.pdf_chrome import wrap_document
+from app.pdf_chrome import wrap_document, org_footer_html, OrgFooterContext
 
 EXTRA_CSS = """
 h1 { font-size: 15pt; margin-top: 0.4cm; margin-bottom: 0.6cm; color: #1f2937; }
@@ -73,7 +73,7 @@ def _body_html(headline: str, groups: List[ParcelGroup]) -> str:
 
 
 def render_meeting_signin_sheet_pdf(
-    headline: str, club_name: str, logo_path: Optional[Path],
+    headline: str, footer_context: OrgFooterContext, logo_path: Optional[Path],
     parcel_members: List[Tuple[str, List[str]]], language: str = "en",
 ) -> bytes:
     """parcel_members: list of (plot_number, [member full names]),
@@ -81,5 +81,9 @@ def render_meeting_signin_sheet_pdf(
     function doesn't re-sort, so grouping order is entirely the
     caller's responsibility."""
     groups = [ParcelGroup(plot_number=p, member_names=names) for p, names in parcel_members]
-    html_doc = wrap_document(_body_html(headline, groups), club_name, logo_path, club_name, language, extra_css=EXTRA_CSS)
+    html_doc = wrap_document(
+        _body_html(headline, groups),
+        footer_context.club_name, logo_path, org_footer_html(footer_context, language), language,
+        extra_css=EXTRA_CSS,
+    )
     return HTML(string=html_doc).write_pdf()

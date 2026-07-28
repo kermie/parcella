@@ -1963,7 +1963,6 @@
       "col_total": "Celkem",
       "subtotal": "Mezisoučet",
       "preview_banner": "Náhled — zatím nedokončeno ani neodesláno",
-      "account_holder": "Majitel účtu: {name}",
       "insurance_line_property": "Pojištění majetku ({package})",
       "insurance_line_accident_household": "Úrazové pojištění (domácnost)",
       "insurance_line_accident_additional": "Úrazové pojištění (+{n} další osoba/osoby)"
@@ -1981,6 +1980,7 @@
   },
   "pdf": {
     "page_label": "Strana",
-    "of_label": "z"
+    "of_label": "z",
+    "account_holder": "Majitel účtu: {name}"
   }
 }

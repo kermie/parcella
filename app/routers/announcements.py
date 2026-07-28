@@ -40,6 +40,8 @@ from app.announcement_mailer import start_paced_email_send, run_paced_email_send
 from app.blog_publisher import get_wordpress_publisher, BlogPublishError
 from app.print_publisher import render_announcement_print_pdf, PrintTooLongError
 from app.branding import load_branding
+from app.pdf_chrome import load_org_footer_context
+from app.i18n import load_current_language
 from app.templating import templates
 
 router = APIRouter(
@@ -396,10 +398,12 @@ async def announcement_generate_print_pdf(
     logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
     image_path = UPLOAD_DIR / announcement.image_filename if announcement.image_filename else None
     public_blog_url = await _get_public_blog_url(db, announcement)
+    footer_context = await load_org_footer_context(db, branding["club_name"])
+    language = await load_current_language(db)
 
     try:
         result = render_announcement_print_pdf(
-            announcement, branding["club_name"], logo_path, image_path, public_blog_url,
+            announcement, footer_context, logo_path, image_path, public_blog_url, language,
         )
     except PrintTooLongError as e:
         delivery.status = AnnouncementDeliveryStatus.FAILED

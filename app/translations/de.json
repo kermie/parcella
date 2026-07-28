@@ -1963,7 +1963,6 @@
       "col_total": "Gesamt",
       "subtotal": "Zwischensumme",
       "preview_banner": "Vorschau — noch nicht abgeschlossen oder versendet",
-      "account_holder": "Kontoinhaber: {name}",
       "insurance_line_property": "Sachversicherung ({package})",
       "insurance_line_accident_household": "Unfallversicherung (Haushalt)",
       "insurance_line_accident_additional": "Unfallversicherung (+{n} zusätzliche Person(en))"
@@ -1981,6 +1980,7 @@
   },
   "pdf": {
     "page_label": "Seite",
-    "of_label": "von"
+    "of_label": "von",
+    "account_holder": "Kontoinhaber: {name}"
   }
 }

@@ -17,7 +17,7 @@ from weasyprint import HTML
 
 from app.birthdays import YearBirthdayEntry
 from app.i18n import translate
-from app.pdf_chrome import wrap_document
+from app.pdf_chrome import wrap_document, org_footer_html, OrgFooterContext
 
 EXTRA_CSS = """
 h1 { font-size: 14pt; margin-top: 0.4cm; margin-bottom: 0.6cm; color: #1f2937; }
@@ -82,7 +82,7 @@ def _body_html(
 
 
 def render_birthday_calendar_pdf(
-    year: int, club_name: str, logo_path: Optional[Path],
+    year: int, footer_context: OrgFooterContext, logo_path: Optional[Path],
     entries: List[YearBirthdayEntry], language: str,
 ) -> bytes:
     """entries should already be sorted by (month, day) -- see
@@ -90,7 +90,8 @@ def render_birthday_calendar_pdf(
     heading = translate("calendar.birthdays.pdf_heading", language, year=year)
     empty_text = translate("calendar.birthdays.pdf_empty", language)
     html_doc = wrap_document(
-        _body_html(heading, entries, language, empty_text), club_name, logo_path, club_name, language,
-        extra_css=EXTRA_CSS, bottom_margin="2.6cm",
+        _body_html(heading, entries, language, empty_text),
+        footer_context.club_name, logo_path, org_footer_html(footer_context, language), language,
+        extra_css=EXTRA_CSS,
     )
     return HTML(string=html_doc).write_pdf()

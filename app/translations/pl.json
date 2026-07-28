@@ -1963,7 +1963,6 @@
       "col_total": "Razem",
       "subtotal": "Suma częściowa",
       "preview_banner": "Podgląd — jeszcze niesfinalizowane ani niewysłane",
-      "account_holder": "Właściciel konta: {name}",
       "insurance_line_property": "Ubezpieczenie majątkowe ({package})",
       "insurance_line_accident_household": "Ubezpieczenie od następstw nieszczęśliwych wypadków (gospodarstwo domowe)",
       "insurance_line_accident_additional": "Ubezpieczenie NNW (+{n} dodatkowa osoba/osoby)"
@@ -1981,6 +1980,7 @@
   },
   "pdf": {
     "page_label": "Strona",
-    "of_label": "z"
+    "of_label": "z",
+    "account_holder": "Właściciel konta: {name}"
   }
 }

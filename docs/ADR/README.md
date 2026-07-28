@@ -48,3 +48,4 @@ in chronological order.
 42. [Invoice item targeting: plot-scoped vs. person-scoped, as two independent mechanisms](./0042-invoice-item-targeting-plot-scoped-vs-person-scoped.md)
 43. [Shared PDF page chrome (header/footer/@page) across every generator](./0043-shared-pdf-page-chrome.md)
 44. [Task board: configurable lists replace the fixed status enum](./0044-task-board-configurable-lists.md)
+45. [Universal PDF footer, and the flyer joins the shared chrome](./0045-universal-pdf-footer-and-flyer-chrome.md)

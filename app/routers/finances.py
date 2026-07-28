@@ -35,12 +35,13 @@ from app.i18n import t_for, load_current_language
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel, InvoiceItemDefinitionMember,
     InvoiceItemTemplate, InvoiceItemTemplateParcel, InvoiceItemTemplateMember,
-    InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, ClubSetting, Parcel, ParcelStatus, Member,
+    InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, Parcel, ParcelStatus, Member,
     FinanceCategory, FinanceCategoryGroup,
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
 from app.branding import load_branding
+from app.pdf_chrome import load_org_footer_context
 from app.l10n import load_current_region, load_current_currency
 from app.cloud_storage import get_nextcloud_provider
 from app.invoice_generation import compute_invoices_for_run, finalize_run, SequenceCollisionError
@@ -115,39 +116,17 @@ async def _active_members(db: AsyncSession) -> list:
 
 async def _pdf_context(db: AsyncSession) -> dict:
     """Everything render_invoice_pdf() needs beyond the invoice itself
-    -- club branding, address, bank details, and formatting locale.
-    Shared by the preview and the real/finalized PDF routes."""
+    -- club branding, footer context (address/register/bank, now shared
+    with every other PDF generator via app/pdf_chrome.py, not finances-
+    specific), and formatting locale. Shared by the preview and the
+    real/finalized PDF routes."""
     branding = await load_branding(db)
     logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
-
-    settings_result = await db.execute(
-        select(ClubSetting).where(ClubSetting.key.in_([
-            "verein_strasse", "verein_plz", "verein_ort",
-            "bank_name", "bank_iban", "bank_bic", "bank_account_owner",
-            "registergericht", "vereinsnummer",
-        ]))
-    )
-    settings_map = {e.key: e.value for e in settings_result.scalars().all()}
-    club_address_lines = [
-        line for line in [settings_map.get("verein_strasse"), " ".join(
-            filter(None, [settings_map.get("verein_plz"), settings_map.get("verein_ort")])
-        )] if line
-    ]
+    footer_context = await load_org_footer_context(db, branding["club_name"])
 
     return {
-        "club_name": branding["club_name"],
         "logo_path": logo_path,
-        "club_address_lines": club_address_lines,
-        "bank_name": settings_map.get("bank_name") or "",
-        "bank_iban": settings_map.get("bank_iban") or "",
-        "bank_bic": settings_map.get("bank_bic") or "",
-        "bank_account_owner": settings_map.get("bank_account_owner") or "",
-        # Issue #74's PDF-footer "register court + number" column reuses
-        # the club-data settings that already exist for this (see
-        # admin.py's SETTINGS_FIELDS: vereinsnummer/registergericht) --
-        # they were captured but never actually shown anywhere before.
-        "register_court": settings_map.get("registergericht") or "",
-        "register_number": settings_map.get("vereinsnummer") or "",
+        "footer_context": footer_context,
         "region": await load_current_region(db),
         "currency": await load_current_currency(db),
         "language": await load_current_language(db),
