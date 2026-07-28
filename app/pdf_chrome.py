@@ -36,8 +36,9 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import active_member_filter
 from app.i18n import translate
-from app.models import ClubSetting
+from app.models import ClubSetting, ClubBoardMember, Member
 from app.pdf_utils import file_to_data_uri
 
 
@@ -55,6 +56,7 @@ class OrgFooterContext:
     bank_iban: str = ""
     bank_bic: str = ""
     bank_account_owner: str = ""
+    board_members: List[str] = field(default_factory=list)
 
 
 async def load_org_footer_context(db: AsyncSession, club_name: str) -> OrgFooterContext:
@@ -74,6 +76,19 @@ async def load_org_footer_context(db: AsyncSession, club_name: str) -> OrgFooter
             filter(None, [settings_map.get("verein_plz"), settings_map.get("verein_ort")])
         )] if line
     ]
+
+    # Board members (issue #121): same active-member scoping and
+    # last_name/first_name ordering as their admin -> settings picker
+    # (app/routers/admin.py), so a member removed/deactivated after
+    # being listed doesn't keep showing up on printed documents.
+    board_result = await db.execute(
+        select(Member)
+        .join(ClubBoardMember, ClubBoardMember.member_id == Member.id)
+        .where(active_member_filter())
+        .order_by(Member.last_name, Member.first_name)
+    )
+    board_members = [m.full_name for m in board_result.scalars().all()]
+
     return OrgFooterContext(
         club_name=club_name,
         address_lines=address_lines,
@@ -83,6 +98,7 @@ async def load_org_footer_context(db: AsyncSession, club_name: str) -> OrgFooter
         bank_iban=settings_map.get("bank_iban") or "",
         bank_bic=settings_map.get("bank_bic") or "",
         bank_account_owner=settings_map.get("bank_account_owner") or "",
+        board_members=board_members,
     )
 
 
@@ -99,6 +115,8 @@ def org_footer_html(context: OrgFooterContext, language: str) -> str:
 
     register_line = " ".join(filter(None, [context.register_court, context.register_number]))
     register_lines = [register_line] if register_line else []
+    if context.board_members:
+        register_lines.append(translate("pdf.board_members", language, names=", ".join(context.board_members)))
 
     bank_line = " · ".join(filter(None, [context.bank_name, f"BIC {context.bank_bic}" if context.bank_bic else ""]))
     bank_lines = [b for b in [

@@ -2003,6 +2003,7 @@
   "pdf": {
     "page_label": "Strona",
     "of_label": "z",
-    "account_holder": "Właściciel konta: {name}"
+    "account_holder": "Właściciel konta: {name}",
+    "board_members": "Zarząd: {names}"
   }
 }
