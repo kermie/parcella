@@ -25,8 +25,9 @@ person requesting the feature before building it -- see
 ## Data model
 
 ```
-task_lists  -- one row per kanban column
-tasks       -- one row per kanban card
+task_lists     -- one row per kanban column
+tasks          -- one row per kanban card
+task_comments  -- one row per comment on a card (issue #108)
 ```
 
 **`TaskList`** (issue #100, [ADR 0044](./ADR/0044-task-board-configurable-lists.md))
@@ -101,6 +102,33 @@ Skipping it fails at `alembic upgrade head` with `type "taskpriority"
 does not exist` -- caught before merge because `run_tests.sh` runs
 migrations against the disposable web image entrypoint, not just
 `create_all` in the test suite itself.
+
+## Comments (issue #108)
+
+`TaskComment` is a simple append-only comment thread per card -- `task_id`
+(FK, `ON DELETE CASCADE` -- a comment can't outlive its task), `content`
+(plain text), `created_by_id` (FK to `User`, `ON DELETE SET NULL`), and
+`created_at`. Modeled after `TicketMessage`
+(`docs/module-tickets.md`) but without that model's
+email/direction/HTML-sanitization concerns, none of which apply to an
+internal task comment.
+
+Add and delete only, no edit -- an append-only log is enough for "leave a
+note for whoever picks this up next," and keeping it add/delete-only
+avoids a second write path and an audit-trail question (was this
+comment edited after someone read it?) that wasn't asked for. Delete is
+not restricted to the comment's own author: like the rest of this
+module, every admin/board user already has full read/write access to
+every card, so there is no finer-grained permission to enforce here
+either.
+
+Web: comments live on the task edit page (`/tasks/{id}/edit`,
+`app/templates/tasks/form.html`) since that's the only page a single
+card is ever shown on -- `POST /tasks/{id}/comments` to add, `POST
+/tasks/{id}/comments/{comment_id}/delete` to remove, both redirecting
+back to the edit page. API: `GET`/`POST /api/v1/tasks/{id}/comments` and
+`DELETE /api/v1/tasks/{id}/comments/{comment_id}`, same
+`require_admin_api` boundary as the rest of `/api/v1/tasks`.
 
 ## Card and list ordering: `app/task_board.py`
 
@@ -186,9 +214,11 @@ edit on a list besides its name.
 ## A full REST API, alongside the web UI
 
 `/api/v1/tasks` covers list (with an optional `list_id` filter),
-retrieve, create, update, delete, and a dedicated `POST .../move`
+retrieve, create, update, delete, a dedicated `POST .../move`
 endpoint that runs the same `move_task()` logic the web UI's
-drag-and-drop uses. `/api/v1/tasks/lists` (registered before the
+drag-and-drop uses, and `.../{id}/comments` (list/add) plus
+`.../{id}/comments/{comment_id}` (delete) for the comment thread (issue
+#108, see "Comments" above). `/api/v1/tasks/lists` (registered before the
 `/{task_id}` routes so a literal path like `/lists` is never captured by
 a `{task_id}` path parameter) covers the equivalent CRUD + move for
 columns, plus `DELETE .../lists/{id}?move_to_list_id=...` for the
@@ -235,11 +265,13 @@ both task and list endpoints), the full web create/edit/move/delete flow
 for both cards and lists, the module-disabled-returns-404 case,
 setting/updating/clearing `priority` via both the API and the web
 form (including that the priority badge disappears from the rendered
-board once cleared), and (issue #109) creating/reading a task with
+board once cleared), (issue #109) creating/reading a task with
 multiple assignees, resyncing the assignee set on update (including
 that omitting `assigned_to_ids` from a `PUT` body leaves existing
-assignees untouched), and the web form's checkbox grid pre-selecting
-existing assignees on edit.
+assignees untouched), the web form's checkbox grid pre-selecting
+existing assignees on edit, and (issue #108) adding/listing/deleting
+comments (both web and API, plus the 404s for a comment on a
+nonexistent task or a nonexistent comment id).
 
 **Test-DB sharp edge:** the test suite builds its schema from
 `app/models.py` via `Base.metadata.create_all` (see `tests/conftest.py`),

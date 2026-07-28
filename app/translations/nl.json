@@ -1624,7 +1624,8 @@
       "list_not_found": "Lijst niet gevonden.",
       "delete_list_last_list": "De laatste overgebleven lijst kan niet worden verwijderd.",
       "delete_list_missing_target": "Kies een lijst waarnaar de kaarten moeten worden verplaatst.",
-      "delete_list_target_not_found": "De geselecteerde doellijst is niet gevonden."
+      "delete_list_target_not_found": "De geselecteerde doellijst is niet gevonden.",
+      "comment_not_found": "Reactie niet gevonden."
     },
     "board": {
       "title": "Takenbord",
@@ -1652,6 +1653,12 @@
       "danger_zone_header": "Gevarenzone",
       "delete_confirm": "Deze taak verwijderen? Dit kan niet ongedaan worden gemaakt.",
       "button_delete": "Taak verwijderen",
+      "comments_header": "Reacties",
+      "no_comments": "Nog geen reacties.",
+      "label_new_comment": "Nieuwe reactie",
+      "button_add_comment": "Reactie toevoegen",
+      "unknown_author": "Onbekend",
+      "delete_comment_confirm": "Deze reactie verwijderen? Dit kan niet ongedaan worden gemaakt.",
       "priority_none": "Geen prioriteit",
       "priority_low": "Laag",
       "priority_medium": "Gemiddeld",

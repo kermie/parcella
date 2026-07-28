@@ -636,3 +636,124 @@ async def test_web_add_rename_delete_list_flow(client, admin_user):
 
     board_response3 = await client.get("/tasks/")
     assert "In Progress" not in board_response3.text
+
+
+async def test_add_and_list_comment(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    task = (await client.post("/api/v1/tasks", json={"title": "Task"}, headers=headers)).json()
+
+    created = await client.post(
+        f"/api/v1/tasks/{task['id']}/comments", json={"content": "Looking into it"}, headers=headers,
+    )
+    assert created.status_code == 201
+    comment = created.json()
+    assert comment["content"] == "Looking into it"
+    assert comment["task_id"] == task["id"]
+
+    listed = await client.get(f"/api/v1/tasks/{task['id']}/comments", headers=headers)
+    assert listed.status_code == 200
+    assert [c["id"] for c in listed.json()] == [comment["id"]]
+
+
+async def test_delete_comment(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    task = (await client.post("/api/v1/tasks", json={"title": "Task"}, headers=headers)).json()
+    comment = (await client.post(
+        f"/api/v1/tasks/{task['id']}/comments", json={"content": "Temporary"}, headers=headers,
+    )).json()
+
+    delete_response = await client.delete(
+        f"/api/v1/tasks/{task['id']}/comments/{comment['id']}", headers=headers,
+    )
+    assert delete_response.status_code == 204
+
+    listed = await client.get(f"/api/v1/tasks/{task['id']}/comments", headers=headers)
+    assert listed.json() == []
+
+
+async def test_comment_on_nonexistent_task_is_404(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+
+    response = await client.post(
+        "/api/v1/tasks/does-not-exist/comments", json={"content": "Hi"}, headers=headers,
+    )
+    assert response.status_code == 404
+
+
+async def test_delete_nonexistent_comment_is_404(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    task = (await client.post("/api/v1/tasks", json={"title": "Task"}, headers=headers)).json()
+
+    response = await client.delete(
+        f"/api/v1/tasks/{task['id']}/comments/does-not-exist", headers=headers,
+    )
+    assert response.status_code == 404
+
+
+async def test_readonly_member_cannot_manage_comments_via_api(client, admin_user):
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    task = (await client.post("/api/v1/tasks", json={"title": "Task"}, headers=headers)).json()
+
+    async with AsyncSessionLocal() as session:
+        session.add(User(
+            email="readonly4@example.com", name="Readonly Four",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        ))
+        await session.commit()
+
+    readonly_token = await login(client, "readonly4@example.com")
+    readonly_headers = auth_header(readonly_token)
+
+    response = await client.post(
+        f"/api/v1/tasks/{task['id']}/comments", json={"content": "Hi"}, headers=readonly_headers,
+    )
+    assert response.status_code == 403
+
+
+async def test_web_add_and_delete_comment_flow(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    task = (await client.post("/api/v1/tasks", json={"title": "Task"}, headers=headers)).json()
+
+    await web_login(client, "admin@example.com")
+
+    add_response = await client.post(
+        f"/tasks/{task['id']}/comments", data={"content": "Please review"},
+    )
+    assert add_response.status_code in (302, 303)
+
+    edit_page = await client.get(f"/tasks/{task['id']}/edit")
+    assert "Please review" in edit_page.text
+
+    listed = await client.get(f"/api/v1/tasks/{task['id']}/comments", headers=headers)
+    comment_id = listed.json()[0]["id"]
+
+    delete_response = await client.post(f"/tasks/{task['id']}/comments/{comment_id}/delete")
+    assert delete_response.status_code in (302, 303)
+
+    edit_page2 = await client.get(f"/tasks/{task['id']}/edit")
+    assert "Please review" not in edit_page2.text

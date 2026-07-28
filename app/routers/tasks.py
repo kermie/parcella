@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Task, TaskAssignee, TaskList, TaskPriority, User
+from app.models import Task, TaskAssignee, TaskComment, TaskList, TaskPriority, User
 from app.auth import require_admin
 from app.i18n import t_for
 from app.module_flags import require_module
@@ -42,12 +42,27 @@ _LIST_DELETE_ERROR_KEYS = {
 
 async def _get_task_or_404(db: AsyncSession, task_id: str, request: Request) -> Task:
     result = await db.execute(
-        select(Task).options(selectinload(Task.assignees)).where(Task.id == task_id)
+        select(Task)
+        .options(
+            selectinload(Task.assignees),
+            selectinload(Task.comments).selectinload(TaskComment.created_by),
+        )
+        .where(Task.id == task_id)
     )
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail=t_for(request, "tasks.errors.task_not_found"))
     return task
+
+
+async def _get_comment_or_404(db: AsyncSession, task_id: str, comment_id: str, request: Request) -> TaskComment:
+    result = await db.execute(
+        select(TaskComment).where(TaskComment.id == comment_id, TaskComment.task_id == task_id)
+    )
+    comment = result.scalar_one_or_none()
+    if not comment:
+        raise HTTPException(status_code=404, detail=t_for(request, "tasks.errors.comment_not_found"))
+    return comment
 
 
 async def _get_list_or_404(db: AsyncSession, list_id: str, request: Request) -> TaskList:
@@ -274,3 +289,31 @@ async def task_delete(task_id: str, request: Request, db: AsyncSession = Depends
     await close_gap_after_delete(db, list_id, position)
 
     return RedirectResponse("/tasks/", status_code=302)
+
+
+@router.post("/{task_id}/comments")
+async def comment_create(
+    task_id: str, request: Request, content: str = Form(...), db: AsyncSession = Depends(get_db),
+):
+    user = await require_admin(request, db)
+    task = await _get_task_or_404(db, task_id, request)
+
+    stripped = content.strip()
+    if stripped:
+        comment = TaskComment(task_id=task.id, content=stripped, created_by_id=user.id)
+        db.add(comment)
+        await db.commit()
+    return RedirectResponse(f"/tasks/{task_id}/edit", status_code=302)
+
+
+@router.post("/{task_id}/comments/{comment_id}/delete")
+async def comment_delete(
+    task_id: str, comment_id: str, request: Request, db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+    await _get_task_or_404(db, task_id, request)
+    comment = await _get_comment_or_404(db, task_id, comment_id, request)
+
+    await db.delete(comment)
+    await db.commit()
+    return RedirectResponse(f"/tasks/{task_id}/edit", status_code=302)

@@ -859,3 +859,16 @@ class KanbanTaskListOut(BaseModel):
     name: str
     position: int
     created_at: datetime
+
+
+class KanbanTaskCommentCreate(BaseModel):
+    content: str = Field(..., min_length=1)
+
+
+class KanbanTaskCommentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    task_id: str
+    content: str
+    created_by_id: Optional[str] = None
+    created_at: datetime
