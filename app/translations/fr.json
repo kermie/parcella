@@ -2003,6 +2003,7 @@
   "pdf": {
     "page_label": "Page",
     "of_label": "sur",
-    "account_holder": "Titulaire du compte : {name}"
+    "account_holder": "Titulaire du compte : {name}",
+    "board_members": "Membres du bureau : {names}"
   }
 }

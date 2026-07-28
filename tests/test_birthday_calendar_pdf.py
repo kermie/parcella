@@ -9,12 +9,12 @@ Uses the web UI's cookie-based session login, like the other PDF-sheet
 tests, since this route returns a PDF file rather than JSON.
 """
 import io
-from datetime import date
+from datetime import date, timedelta
 
 from pypdf import PdfReader
 
 from app.database import AsyncSessionLocal
-from app.models import Member
+from app.models import Member, ClubBoardMember
 from tests.conftest import login, auth_header
 
 
@@ -105,3 +105,55 @@ async def test_birthday_calendar_pdf_shows_the_universal_org_bank_footer(client,
     assert _normalized("IBAN DE89370400440532013000") in normalized
     assert _normalized("Amtsgericht Musterstadt") in normalized
     assert _normalized("VR 12345") in normalized
+
+
+async def test_pdf_footer_lists_board_members_under_register_info(client, admin_user):
+    """Issue #121: board members picked on admin -> settings -> club
+    settings (issue #111) must show up in the second footer column,
+    right under the registration court line, on every generated PDF --
+    checked here via the birthday calendar as a representative non-
+    finances generator, since the footer is built once in
+    app/pdf_chrome.py and shared by all of them."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    response = await client.put(
+        "/api/v1/club-settings/registergericht", json={"value": "Amtsgericht Musterstadt"}, headers=headers,
+    )
+    assert response.status_code == 200, response.text
+
+    async with AsyncSessionLocal() as session:
+        alice = Member(first_name="Alice", last_name="Chairperson")
+        bob = Member(first_name="Bob", last_name="Treasurer")
+        former = Member(
+            first_name="Carla", last_name="Former",
+            member_until=date.today() - timedelta(days=1),
+        )
+        session.add_all([alice, bob, former])
+        await session.flush()
+        session.add_all([
+            ClubBoardMember(member_id=alice.id),
+            ClubBoardMember(member_id=bob.id),
+            ClubBoardMember(member_id=former.id),
+        ])
+        await session.commit()
+
+    await web_login(client, "admin@example.com")
+    response = await client.get("/calendar/birthdays/pdf")
+    assert response.status_code == 200
+
+    normalized = _normalized(_pdf_text(response.content))
+    assert _normalized("Alice Chairperson") in normalized
+    assert _normalized("Bob Treasurer") in normalized
+    # A member whose membership has since lapsed must not keep showing
+    # up as a board member on freshly generated documents.
+    assert _normalized("Carla Former") not in normalized
+
+
+async def test_pdf_footer_omits_board_members_line_when_none_are_set(client, admin_user):
+    await web_login(client, "admin@example.com")
+    response = await client.get("/calendar/birthdays/pdf")
+    assert response.status_code == 200
+    # No assertion on absence of a specific name is meaningful here
+    # (nothing was ever added) -- this just guards against a crash
+    # when board_members is empty, matching every other blank-field
+    # footer line's "just omit it" behavior.

@@ -2003,6 +2003,7 @@
   "pdf": {
     "page_label": "Strana",
     "of_label": "z",
-    "account_holder": "Majitel účtu: {name}"
+    "account_holder": "Majitel účtu: {name}",
+    "board_members": "Výbor: {names}"
   }
 }

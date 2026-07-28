@@ -2003,6 +2003,7 @@
   "pdf": {
     "page_label": "Pagina",
     "of_label": "van",
-    "account_holder": "Rekeninghouder: {name}"
+    "account_holder": "Rekeninghouder: {name}",
+    "board_members": "Bestuursleden: {names}"
   }
 }
