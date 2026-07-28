@@ -84,6 +84,21 @@
     .kanban-card-priority-high { background: #f8d7da; color: #842029; }
     .kanban-card-priority-medium { background: #fff3cd; color: #664d03; }
     .kanban-card-priority-low { background: #e2e3e5; color: #41464b; }
+    .kanban-card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.35rem;
+    }
+    .kanban-card-tag {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 500;
+        padding: 0.1rem 0.5rem;
+        border-radius: 1rem;
+        background: #e7f0fd;
+        color: #1a4a8f;
+    }
     .kanban-empty {
         font-size: 0.8rem; color: #adb5bd; text-align: center; padding: 1rem 0;
     }
@@ -143,6 +158,13 @@
                         <i class="bi bi-calendar-event"></i> {{ task.due_date.strftime('%d.%m.%Y') }}
                     </span>
                     {% endif %}
+                </div>
+                {% endif %}
+                {% if task.tags %}
+                <div class="kanban-card-tags">
+                    {% for tag in task.tags %}
+                    <span class="kanban-card-tag">{{ tag }}</span>
+                    {% endfor %}
                 </div>
                 {% endif %}
             </div>

@@ -1643,6 +1643,8 @@
       "label_description": "Opis",
       "label_due_date": "Termin",
       "label_priority": "Priorytet",
+      "label_tags": "Tagi",
+      "tags_placeholder": "Rozdzielone przecinkami (np. pilne, zewnętrzne)",
       "label_assigned_to": "Przypisano do",
       "label_list": "Lista",
       "unassigned_option": "Nieprzypisane",

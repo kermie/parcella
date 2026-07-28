@@ -1643,6 +1643,8 @@
       "label_description": "Popis",
       "label_due_date": "Termín",
       "label_priority": "Priorita",
+      "label_tags": "Štítky",
+      "tags_placeholder": "Oddelené čiarkami (napr. naliehavé, vonkajšie)",
       "label_assigned_to": "Priradené komu",
       "label_list": "Zoznam",
       "unassigned_option": "Nepridelené",

@@ -42,6 +42,12 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_tags') }}</label>
+                        <input type="text" name="tags" class="form-control"
+                               placeholder="{{ t('tasks.form.tags_placeholder') }}"
+                               value="{{ task.tags | join(', ') if task and task.tags else '' }}">
+                    </div>
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold">{{ t('tasks.form.label_assigned_to') }}</label>
                         <select name="assigned_to_id" class="form-select">

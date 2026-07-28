@@ -803,6 +803,7 @@ class KanbanTaskBase(BaseModel):
     description: Optional[str] = None
     due_date: Optional[date] = None
     priority: Optional[TaskPriority] = None
+    tags: List[str] = Field(default_factory=list)
     assigned_to_id: Optional[str] = None
 
 
@@ -815,6 +816,7 @@ class KanbanTaskUpdate(BaseModel):
     description: Optional[str] = None
     due_date: Optional[date] = None
     priority: Optional[TaskPriority] = None
+    tags: Optional[List[str]] = None
     assigned_to_id: Optional[str] = None
 
 
@@ -832,6 +834,7 @@ class KanbanTaskOut(BaseModel):
     position: int
     due_date: Optional[date] = None
     priority: Optional[TaskPriority] = None
+    tags: List[str] = Field(default_factory=list)
     assigned_to_id: Optional[str] = None
     created_by_id: Optional[str] = None
     created_at: datetime

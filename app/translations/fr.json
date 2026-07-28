@@ -1643,6 +1643,8 @@
       "label_description": "Description",
       "label_due_date": "Échéance",
       "label_priority": "Priorité",
+      "label_tags": "Étiquettes",
+      "tags_placeholder": "Séparés par des virgules (ex. urgent, extérieur)",
       "label_assigned_to": "Assignée à",
       "label_list": "Liste",
       "unassigned_option": "Non assignée",

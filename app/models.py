@@ -15,7 +15,7 @@ from sqlalchemy import (
     ForeignKey, Enum as SAEnum, UniqueConstraint, Index, CheckConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.sql import func
 import enum
 
@@ -1788,6 +1788,7 @@ class Task(Base):
     position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     due_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     priority: Mapped[Optional[TaskPriority]] = mapped_column(SAEnum(TaskPriority), nullable=True)
+    tags: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False, default=list, server_default="{}")
 
     assigned_to_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
