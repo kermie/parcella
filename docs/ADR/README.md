@@ -50,3 +50,4 @@ in chronological order.
 44. [Task board: configurable lists replace the fixed status enum](./0044-task-board-configurable-lists.md)
 45. [Universal PDF footer, and the flyer joins the shared chrome](./0045-universal-pdf-footer-and-flyer-chrome.md)
 46. [Task board: multiple assignees per card](./0046-task-board-multiple-assignees-per-card.md)
+47. [Club settings: board members](./0047-club-settings-board-members.md)

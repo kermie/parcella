@@ -216,6 +216,16 @@ class ClubSettingUpdate(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# ClubBoardMember (issue #111)
+# ---------------------------------------------------------------------------
+
+class BoardMemberOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    member_id: str
+    full_name: str
+
+
+# ---------------------------------------------------------------------------
 # Generic list response (pagination-ready)
 # ---------------------------------------------------------------------------
 

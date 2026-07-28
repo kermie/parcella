@@ -495,6 +495,38 @@ class ClubSetting(Base):
     # vereinsnummer, registergericht
 
 
+class ClubBoardMember(Base):
+    """
+    Board members listed on admin -> settings -> club settings (issue
+    #111) -- a plain "who's currently on the board" display list, picked
+    from Member via a searchable multi-select. Deliberately separate from
+    ClubRole/MemberClubRole (app/routers/work_hours.py), which tracks
+    BOARD/EXTENDED_BOARD membership for annual work-hours exemption over
+    dated validity ranges -- a different concern with different lifetime
+    semantics, not something this reuses.
+    """
+    __tablename__ = "club_board_members"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    member_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    member: Mapped["Member"] = relationship("Member")
+
+    __table_args__ = (
+        UniqueConstraint("member_id", name="uq_club_board_member"),
+    )
+
+    @property
+    def full_name(self) -> str:
+        """For BoardMemberOut (API) -- requires `member` eagerly loaded (selectinload)."""
+        return self.member.full_name
+
+
 class SampleDataRecord(Base):
     """
     Tracks every row created by the admin "add sample data" feature

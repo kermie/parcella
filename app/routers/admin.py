@@ -11,14 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db
+from app.database import get_db, active_member_filter
 from app.models import (
     User, Invitation, InvitationStatus, UserRole, ClubSetting,
     Group, InvitationGroupTarget,
     GroupMembership, ParcelCloudFolder, WorkSession, WorkTask, ChangeHistory,
     MeterReading, Ticket, TicketMessage, PurchaseRequest, PurchaseRequestApproval,
     CalendarEvent, CouncilPresence, CouncilAbsence, Announcement, InventoryItem,
-    ItemLoan, Task, TaskAssignee,
+    ItemLoan, Task, TaskAssignee, Member, ClubBoardMember,
 )
 from app.auth import require_system_admin, create_invitation_token, hash_password
 from app.permissions import is_last_admin
@@ -638,6 +638,16 @@ async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
     area_a_sqm = await compute_area_a_sqm(db)
     area_b_sqm = await compute_area_b_sqm(db, area_a_sqm)
 
+    # Board members (issue #111): picked from active members via a
+    # searchable multi-select, same scope_picker pattern as finances'
+    # parcel/member scoping (ADR 0042).
+    result = await db.execute(
+        select(Member).where(active_member_filter()).order_by(Member.last_name, Member.first_name)
+    )
+    board_member_candidates = result.scalars().all()
+    result = await db.execute(select(ClubBoardMember))
+    board_member_ids = {bm.member_id for bm in result.scalars().all()}
+
     return templates.TemplateResponse(
         "admin/settings.html",
         {
@@ -656,6 +666,8 @@ async def settings_page(request: Request, db: AsyncSession = Depends(get_db)):
             "available_currencies": AVAILABLE_CURRENCIES,
             "area_a_sqm": area_a_sqm,
             "area_b_sqm": area_b_sqm,
+            "board_member_candidates": board_member_candidates,
+            "board_member_ids": board_member_ids,
         },
     )
 
@@ -833,6 +845,24 @@ async def settings_save(
             key="update_check_enabled", value=update_check_value,
             description="Whether to periodically check GitHub for a newer Parcella release",
         ))
+
+    # Board members (issue #111): full resync, not incremental add/remove
+    # -- same convention as finances.py's parcel_scopes/member_scopes and
+    # tasks.py's assignee resync (ADR 0046 point 4). Submitted ids are
+    # intersected with active members rather than trusted outright, since
+    # a stale form (a member deactivated between page load and submit)
+    # would otherwise trip the FK constraint.
+    result = await db.execute(select(Member.id).where(active_member_filter()))
+    valid_member_ids = {row[0] for row in result.all()}
+    submitted_board_member_ids = [
+        member_id for member_id in form.getlist("board_member_ids") if member_id in valid_member_ids
+    ]
+    result = await db.execute(select(ClubBoardMember))
+    for board_member in result.scalars().all():
+        await db.delete(board_member)
+    await db.flush()
+    for member_id in submitted_board_member_ids:
+        db.add(ClubBoardMember(member_id=member_id))
 
     await db.commit()
     if logo_error:
