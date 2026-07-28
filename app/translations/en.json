@@ -249,6 +249,7 @@
       "heading": "Club settings",
       "saved_message": "Settings saved.",
       "language_header": "Language",
+      "branding_header": "Branding",
       "language_help": "Applies to the whole installation (all users see the same language). If a translation is missing for a given module, the German text is shown automatically.",
       "module_header": "Feature areas",
       "module_help": "Not every club uses every feature area. Disabled modules disappear from the navigation -- the data is preserved and reappears once re-enabled.",

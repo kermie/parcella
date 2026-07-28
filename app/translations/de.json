@@ -249,6 +249,7 @@
       "heading": "Vereinseinstellungen",
       "saved_message": "Einstellungen gespeichert.",
       "language_header": "Sprache",
+      "branding_header": "Branding",
       "language_help": "Gilt für die gesamte Installation (alle Benutzer sehen dieselbe Sprache). Fehlt eine Übersetzung für ein bestimmtes Modul, wird automatisch die deutsche Zeichenkette angezeigt.",
       "module_header": "Funktionsbereiche",
       "module_help": "Nicht jeder Verein nutzt jeden Funktionsbereich. Deaktivierte Module verschwinden aus der Navigation – die Daten bleiben dabei erhalten und tauchen nach erneutem Aktivieren wieder auf.",

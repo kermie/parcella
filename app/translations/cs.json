@@ -249,6 +249,7 @@
       "heading": "Nastavení spolku",
       "saved_message": "Nastavení uložena.",
       "language_header": "Jazyk",
+      "branding_header": "Branding",
       "language_help": "Platí pro celou instalaci (všichni uživatelé vidí stejný jazyk). Pokud pro daný modul chybí překlad, automaticky se zobrazí německý text.",
       "module_header": "Funkční oblasti",
       "module_help": "Ne každý spolek používá každou funkční oblast. Vypnuté moduly zmizí z navigace -- data zůstávají zachována a po opětovném zapnutí se znovu objeví.",

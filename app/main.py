@@ -218,7 +218,13 @@ async def branding_middleware(request: Request, call_next):
     async with AsyncSessionLocal() as db:
         branding = await load_branding(db)
         request.state.club_name = branding["club_name"]
-        request.state.logo_url = branding["logo_url"]
+        # Cache-busting suffix so a re-uploaded logo is never served
+        # stale from a browser's cache of the old image at this same
+        # fixed URL -- see load_branding()'s docstring for why this is
+        # appended here rather than baked into logo_url itself.
+        request.state.logo_url = (
+            f"{branding['logo_url']}?v={branding['logo_version']}" if branding["logo_url"] else None
+        )
     response = await call_next(request)
     return response
 
