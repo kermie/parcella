@@ -1399,7 +1399,11 @@
       "col_turning": "Kończy",
       "round_badge": "Okrągłe",
       "turning_label": "{age}",
-      "empty": "Brak nadchodzących urodzin w systemie."
+      "empty": "Brak nadchodzących urodzin w systemie.",
+      "pdf_button": "Drukuj PDF (cały rok)",
+      "pdf_heading": "Kalendarz urodzin {year}",
+      "pdf_col_day": "Dzień",
+      "pdf_empty": "Brak urodzin w systemie."
     },
     "council_presence": {
       "title": "Obecność zarządu",
@@ -1959,8 +1963,6 @@
       "subtotal": "Suma częściowa",
       "preview_banner": "Podgląd — jeszcze niesfinalizowane ani niewysłane",
       "account_holder": "Właściciel konta: {name}",
-      "page_label": "Strona",
-      "of_label": "z",
       "insurance_line_property": "Ubezpieczenie majątkowe ({package})",
       "insurance_line_accident_household": "Ubezpieczenie od następstw nieszczęśliwych wypadków (gospodarstwo domowe)",
       "insurance_line_accident_additional": "Ubezpieczenie NNW (+{n} dodatkowa osoba/osoby)"
@@ -1975,5 +1977,9 @@
       "row_this_fee": "Opłata za to upomnienie",
       "closing": "Prosimy o jak najszybsze uregulowanie zaległej kwoty. Jeśli płatność została już dokonana, prosimy zignorować to upomnienie."
     }
+  },
+  "pdf": {
+    "page_label": "Strona",
+    "of_label": "z"
   }
 }

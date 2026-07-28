@@ -20,6 +20,7 @@ can't do session-cookie authentication either -- the token is the
 practical equivalent of a login for a subscription URL.
 """
 from datetime import date, datetime
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, Query
@@ -36,8 +37,10 @@ from app.models import (
 from app.auth import require_user
 from app.permissions import require_permission
 from app.module_flags import require_module
-from app.i18n import t_for
-from app.birthdays import upcoming_birthdays, all_birthdays_for_calendar, ROUND_BIRTHDAY_INTERVAL
+from app.i18n import t_for, load_current_language
+from app.branding import load_branding
+from app.birthdays import upcoming_birthdays, all_birthdays_for_calendar, birthdays_for_year, ROUND_BIRTHDAY_INTERVAL
+from app.birthday_calendar_pdf import render_birthday_calendar_pdf
 from app.ics_utils import (
     get_or_create_ics_token, verify_ics_token,
     build_community_calendar, build_birthday_calendar,
@@ -174,6 +177,31 @@ async def birthdays_overview(request: Request, db: AsyncSession = Depends(get_db
         "ROUND_BIRTHDAY_INTERVAL": ROUND_BIRTHDAY_INTERVAL,
         "ics_token": ics_token,
     })
+
+
+@router.get("/birthdays/pdf")
+async def birthdays_pdf(request: Request, year: Optional[int] = Query(None), db: AsyncSession = Depends(get_db)):
+    """Printable birthday calendar for a whole year (issue #99), grouped
+    by month -- unlike the web view above, which only lists the next 90
+    days. Behind the normal app login/permission check like the web
+    view, not the ICS feeds' separate secret-token scheme, since this
+    is reached from within the logged-in UI, not a calendar-app
+    subscription URL."""
+    await require_permission(request, db, "calendar", "read")
+    target_year = year or date.today().year
+    entries = await birthdays_for_year(db, year=target_year)
+
+    branding = await load_branding(db)
+    logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
+    language = await load_current_language(db)
+
+    pdf_bytes = render_birthday_calendar_pdf(target_year, branding["club_name"], logo_path, entries, language)
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="birthday-calendar-{target_year}.pdf"'},
+    )
 
 
 @router.get("/birthdays.ics")

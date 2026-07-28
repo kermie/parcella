@@ -81,3 +81,38 @@ async def all_birthdays_for_calendar(db: AsyncSession) -> List[Member]:
         .order_by(Member.date_of_birth)
     )
     return result.scalars().all()
+
+
+@dataclass
+class YearBirthdayEntry:
+    member: Member
+    month: int
+    day: int
+    turning_age: int
+    is_round: bool
+
+
+async def birthdays_for_year(db: AsyncSession, year: Optional[int] = None) -> List[YearBirthdayEntry]:
+    """Every active member with a birth date on file, one entry each,
+    sorted by (month, day) -- Jan 1 through Dec 31 -- for a print/PDF
+    birthday calendar covering the whole year (issue #99). Unlike
+    upcoming_birthdays()'s rolling "next N days from today" window,
+    this has no time-based cutoff: everyone appears exactly once,
+    regardless of whether their birthday this year has already passed.
+    turning_age is the age reached in `year` (defaults to the current
+    year) specifically, not "next occurrence from today"."""
+    year = year or date.today().year
+    result = await db.execute(
+        select(Member).where(active_member_filter(), Member.date_of_birth.is_not(None))
+    )
+    members = result.scalars().all()
+
+    entries = []
+    for m in members:
+        turning_age = year - m.date_of_birth.year
+        entries.append(YearBirthdayEntry(
+            member=m, month=m.date_of_birth.month, day=m.date_of_birth.day,
+            turning_age=turning_age, is_round=(turning_age % ROUND_BIRTHDAY_INTERVAL == 0),
+        ))
+    entries.sort(key=lambda e: (e.month, e.day, e.member.last_name, e.member.first_name))
+    return entries
