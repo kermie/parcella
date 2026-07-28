@@ -1651,7 +1651,11 @@
       "filter_due_month_label": "Filteren op vervalmaand",
       "filter_due_month_any": "Elke vervalmaand",
       "filter_clear": "Filters wissen",
-      "filter_no_results": "Geen taken komen overeen met je zoekopdracht/filters."
+      "filter_no_results": "Geen taken komen overeen met je zoekopdracht/filters.",
+      "sort_label": "Taken sorteren",
+      "sort_manual": "Handmatig (sleepvolgorde)",
+      "sort_due_date": "Vervaldatum",
+      "sort_priority": "Prioriteit"
     },
     "form": {
       "title_new": "Nieuwe taak",

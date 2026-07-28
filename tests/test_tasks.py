@@ -847,3 +847,26 @@ async def test_board_search_text_includes_comment_content(client, admin_user):
     board_response2 = await client.get("/tasks/")
     assert board_response2.status_code == 200
     assert "ask the neighbor about the broken post" in board_response2.text.lower()
+
+
+async def test_board_renders_sort_dropdown(client, admin_user):
+    """Issue #120: sort by due date / priority is purely client-side JS
+    reordering the same data-priority/data-due-month attributes the
+    search/filter feature (issue #119) already renders -- nothing new
+    to eager-load or compute server-side, so this just guards that the
+    <select id="task-sort"> and its three options are actually present
+    on the page (a template typo here would otherwise only surface as
+    a silent missing control, not an error)."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+    await web_login(client, "admin@example.com")
+
+    board_response = await client.get("/tasks/")
+    assert board_response.status_code == 200
+    html = board_response.text
+
+    assert 'id="task-sort"' in html
+    assert '<option value="due_date">' in html
+    assert '<option value="priority">' in html

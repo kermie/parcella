@@ -1651,7 +1651,11 @@
       "filter_due_month_label": "Filtrer par mois d'échéance",
       "filter_due_month_any": "Tous les mois d'échéance",
       "filter_clear": "Réinitialiser les filtres",
-      "filter_no_results": "Aucune tâche ne correspond à votre recherche/vos filtres."
+      "filter_no_results": "Aucune tâche ne correspond à votre recherche/vos filtres.",
+      "sort_label": "Trier les tâches",
+      "sort_manual": "Manuel (ordre de glisser-déposer)",
+      "sort_due_date": "Date d'échéance",
+      "sort_priority": "Priorité"
     },
     "form": {
       "title_new": "Nouvelle tâche",
