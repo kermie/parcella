@@ -1642,13 +1642,18 @@
       "label_title": "Titre",
       "label_description": "Description",
       "label_due_date": "Échéance",
+      "label_priority": "Priorité",
       "label_assigned_to": "Assignée à",
       "label_list": "Liste",
       "button_save_changes": "Enregistrer les modifications",
       "button_create": "Créer",
       "danger_zone_header": "Zone de danger",
       "delete_confirm": "Supprimer cette tâche ? Cette action est irréversible.",
-      "button_delete": "Supprimer la tâche"
+      "button_delete": "Supprimer la tâche",
+      "priority_none": "Aucune priorité",
+      "priority_low": "Basse",
+      "priority_medium": "Moyenne",
+      "priority_high": "Haute"
     },
     "lists": {
       "add_modal_title": "Ajouter une liste",

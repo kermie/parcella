@@ -1,7 +1,7 @@
 """Task board: multiple assignees per task (issue #109)
 
-Revision ID: 0055_task_multiple_assignees
-Revises: 0054_task_lists
+Revision ID: 0056_task_multiple_assignees
+Revises: 0055_task_priority
 Create Date: 2026-07-28
 
 `tasks.assigned_to_id` was a single nullable FK to `users.id`. Issue #109
@@ -31,8 +31,8 @@ import uuid
 from alembic import op
 import sqlalchemy as sa
 
-revision: str = "0055_task_multiple_assignees"
-down_revision: Union[str, None] = "0054_task_lists"
+revision: str = "0056_task_multiple_assignees"
+down_revision: Union[str, None] = "0055_task_priority"
 branch_labels = None
 depends_on = None
 

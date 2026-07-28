@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Task, TaskAssignee, TaskList, User
+from app.models import Task, TaskAssignee, TaskList, TaskPriority, User
 from app.auth import require_admin
 from app.i18n import t_for
 from app.module_flags import require_module
@@ -94,6 +94,7 @@ async def task_new_page(request: Request, db: AsyncSession = Depends(get_db)):
         "request": request, "user": user, "task": None,
         "active_users": await _active_users(db),
         "lists": await _all_lists(db),
+        "priorities": list(TaskPriority),
     })
 
 
@@ -103,6 +104,7 @@ async def task_create(
     title: str = Form(...),
     description: str = Form(""),
     due_date: str = Form(""),
+    priority: str = Form(""),
     assigned_to_ids: list[str] = Form([]),
     list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -116,6 +118,7 @@ async def task_create(
         title=title.strip(),
         description=description.strip() or None,
         due_date=date.fromisoformat(due_date) if due_date.strip() else None,
+        priority=TaskPriority(priority.strip()) if priority.strip() else None,
         list_id=target_list_id,
         position=await next_position(db, target_list_id),
     )
@@ -188,6 +191,7 @@ async def task_edit_page(task_id: str, request: Request, db: AsyncSession = Depe
         "request": request, "user": user, "task": task,
         "active_users": await _active_users(db),
         "lists": await _all_lists(db),
+        "priorities": list(TaskPriority),
     })
 
 
@@ -198,6 +202,7 @@ async def task_update(
     title: str = Form(...),
     description: str = Form(""),
     due_date: str = Form(""),
+    priority: str = Form(""),
     assigned_to_ids: list[str] = Form([]),
     list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
@@ -208,6 +213,7 @@ async def task_update(
     task.title = title.strip()
     task.description = description.strip() or None
     task.due_date = date.fromisoformat(due_date) if due_date.strip() else None
+    task.priority = TaskPriority(priority.strip()) if priority.strip() else None
     if list_id.strip() and list_id.strip() != task.list_id:
         await move_task(db, task, list_id.strip(), await next_position(db, list_id.strip()))
 

@@ -1642,13 +1642,18 @@
       "label_title": "Title",
       "label_description": "Description",
       "label_due_date": "Due date",
+      "label_priority": "Priority",
       "label_assigned_to": "Assigned to",
       "label_list": "List",
       "button_save_changes": "Save changes",
       "button_create": "Create",
       "danger_zone_header": "Danger zone",
       "delete_confirm": "Delete this task? This cannot be undone.",
-      "button_delete": "Delete task"
+      "button_delete": "Delete task",
+      "priority_none": "No priority",
+      "priority_low": "Low",
+      "priority_medium": "Medium",
+      "priority_high": "High"
     },
     "lists": {
       "add_modal_title": "Add list",
