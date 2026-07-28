@@ -1642,6 +1642,7 @@
       "label_title": "Názov",
       "label_description": "Popis",
       "label_due_date": "Termín",
+      "label_priority": "Priorita",
       "label_assigned_to": "Priradené komu",
       "label_list": "Zoznam",
       "unassigned_option": "Nepridelené",
@@ -1649,7 +1650,11 @@
       "button_create": "Vytvoriť",
       "danger_zone_header": "Nebezpečná zóna",
       "delete_confirm": "Odstrániť túto úlohu? Túto akciu nemožno vrátiť späť.",
-      "button_delete": "Odstrániť úlohu"
+      "button_delete": "Odstrániť úlohu",
+      "priority_none": "Bez priority",
+      "priority_low": "Nízka",
+      "priority_medium": "Stredná",
+      "priority_high": "Vysoká"
     },
     "lists": {
       "add_modal_title": "Pridať zoznam",

@@ -1642,6 +1642,7 @@
       "label_title": "Název",
       "label_description": "Popis",
       "label_due_date": "Termín",
+      "label_priority": "Priorita",
       "label_assigned_to": "Přiřazeno komu",
       "label_list": "Seznam",
       "unassigned_option": "Nepřiřazeno",
@@ -1649,7 +1650,11 @@
       "button_create": "Vytvořit",
       "danger_zone_header": "Nebezpečná zóna",
       "delete_confirm": "Smazat tento úkol? Tuto akci nelze vrátit zpět.",
-      "button_delete": "Smazat úkol"
+      "button_delete": "Smazat úkol",
+      "priority_none": "Bez priority",
+      "priority_low": "Nízká",
+      "priority_medium": "Střední",
+      "priority_high": "Vysoká"
     },
     "lists": {
       "add_modal_title": "Přidat seznam",

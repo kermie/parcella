@@ -1739,6 +1739,12 @@ class ItemLoan(Base):
 # actually requested.
 # ---------------------------------------------------------------------------
 
+class TaskPriority(str, enum.Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
 class TaskList(Base):
     """
     A kanban column. `position` orders columns on the board (0-based, no
@@ -1781,6 +1787,7 @@ class Task(Base):
     )
     position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     due_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    priority: Mapped[Optional[TaskPriority]] = mapped_column(SAEnum(TaskPriority), nullable=True)
 
     assigned_to_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True

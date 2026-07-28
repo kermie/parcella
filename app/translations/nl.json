@@ -1642,6 +1642,7 @@
       "label_title": "Titel",
       "label_description": "Omschrijving",
       "label_due_date": "Deadline",
+      "label_priority": "Prioriteit",
       "label_assigned_to": "Toegewezen aan",
       "label_list": "Lijst",
       "unassigned_option": "Niet toegewezen",
@@ -1649,7 +1650,11 @@
       "button_create": "Aanmaken",
       "danger_zone_header": "Gevarenzone",
       "delete_confirm": "Deze taak verwijderen? Dit kan niet ongedaan worden gemaakt.",
-      "button_delete": "Taak verwijderen"
+      "button_delete": "Taak verwijderen",
+      "priority_none": "Geen prioriteit",
+      "priority_low": "Laag",
+      "priority_medium": "Gemiddeld",
+      "priority_high": "Hoog"
     },
     "lists": {
       "add_modal_title": "Lijst toevoegen",

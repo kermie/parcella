@@ -134,6 +134,31 @@ async def test_update_task_fields(client, admin_user):
     assert updated["due_date"] == "2026-12-01"
 
 
+async def test_task_priority_set_update_and_clear_via_api(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    no_priority = (await client.post("/api/v1/tasks", json={"title": "Unprioritized"}, headers=headers)).json()
+    assert no_priority["priority"] is None
+
+    created = (await client.post(
+        "/api/v1/tasks", json={"title": "Fix the roof", "priority": "HIGH"}, headers=headers,
+    )).json()
+    assert created["priority"] == "HIGH"
+
+    updated = (await client.put(
+        f"/api/v1/tasks/{created['id']}", json={"priority": "LOW"}, headers=headers,
+    )).json()
+    assert updated["priority"] == "LOW"
+
+    cleared = (await client.put(
+        f"/api/v1/tasks/{created['id']}", json={"priority": None}, headers=headers,
+    )).json()
+    assert cleared["priority"] is None
+
+
 async def test_readonly_member_cannot_access_api(client, admin_user):
     from app.models import User, UserRole
     from app.auth import hash_password
@@ -203,7 +228,7 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
         "/tasks/new",
         data={
             "title": "Fix the gate lock", "description": "Squeaky hinge", "due_date": "2026-08-01",
-            "assigned_to_id": board_member.id,
+            "priority": "HIGH", "assigned_to_id": board_member.id,
         },
     )
     assert create_response.status_code in (302, 303)
@@ -213,6 +238,10 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
     assert "Fix the gate lock" in board_response.text
     assert "UndefinedError" not in board_response.text
     assert board_member.name in board_response.text
+    # The exact rendered badge markup, not a bare "kanban-card-priority-high"
+    # substring check -- that also matches board.html's <style> block CSS
+    # selector, which is always present regardless of any card's priority.
+    assert 'class="kanban-card-priority kanban-card-priority-high"' in board_response.text
 
     import re
     m = re.search(r'/tasks/([a-f0-9-]+)/edit', board_response.text)
@@ -231,6 +260,9 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
 
     board_response2 = await client.get("/tasks/")
     assert "Fix the gate lock (urgent)" in board_response2.text
+    # Priority form field was omitted on the edit POST -- same "" default
+    # as an explicit clear, so the badge should be gone.
+    assert 'class="kanban-card-priority kanban-card-priority-high"' not in board_response2.text
 
     move_response = await client.post(
         f"/tasks/{task_id}/move",
