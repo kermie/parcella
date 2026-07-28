@@ -1649,6 +1649,7 @@
       "filter_assignee_label": "Filtrovat podle řešitele",
       "filter_assignee_any": "Libovolný řešitel",
       "filter_due_month_label": "Filtrovat podle měsíce splatnosti",
+      "filter_due_month_any": "Libovolný měsíc splatnosti",
       "filter_clear": "Zrušit filtry",
       "filter_no_results": "Žádné úkoly neodpovídají vyhledávání/filtrům."
     },

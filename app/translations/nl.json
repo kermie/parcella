@@ -1649,6 +1649,7 @@
       "filter_assignee_label": "Filteren op eigenaar",
       "filter_assignee_any": "Elke eigenaar",
       "filter_due_month_label": "Filteren op vervalmaand",
+      "filter_due_month_any": "Elke vervalmaand",
       "filter_clear": "Filters wissen",
       "filter_no_results": "Geen taken komen overeen met je zoekopdracht/filters."
     },

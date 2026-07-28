@@ -765,8 +765,9 @@ async def test_board_renders_search_filter_data_attributes(client, admin_user):
     attributes are actually rendered correctly -- title, description,
     tags, and comment content folded into data-search-text (lowercased),
     plus data-priority/data-tags/data-assignee-ids/data-due-month, and
-    that the tag/assignee filter dropdowns are populated from what's
-    actually on the board. Also exercises the board query's
+    that the tag/assignee/due-month filter dropdowns are populated from
+    what's actually on the board (the due-month one as a localized
+    "Month YYYY" label, not a raw value). Also exercises the board query's
     selectinload(Task.comments) -- a missing eager-load here would trip
     an unawaited-lazy-load error under asyncpg (see CLAUDE.md's
     identity-map sharp edge), not just render an empty attribute."""
@@ -818,10 +819,12 @@ async def test_board_renders_search_filter_data_attributes(client, admin_user):
 
     # Filter dropdowns must be populated from what's actually on the
     # board (the tag/assignee added above), not every tag/user ever
-    # created.
+    # created. The due-month dropdown shows a human-readable "Month
+    # YYYY" label (localized -- English here), not a raw YYYY-MM value.
     assert '<option value="urgent">urgent</option>' in html
     assert '<option value="admin">admin</option>' in html
     assert f'<option value="{alice.id}">{alice.name}</option>' in html
+    assert '<option value="2026-11">November 2026</option>' in html
 
 
 async def test_board_search_text_includes_comment_content(client, admin_user):

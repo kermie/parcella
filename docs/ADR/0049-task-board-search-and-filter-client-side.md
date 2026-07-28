@@ -47,3 +47,18 @@ the task board.
    set. Column (list) drag/reorder is untouched -- it never depends on
    individual cards, so it stays available even while a filter narrows
    the board down.
+
+**Update, same issue -- due-month filter became a dropdown, not a
+native month picker:** the first version used a plain
+`<input type="month">`, which lets you pick *any* month/year, including
+ones nothing is due in. Asked to make it a dropdown scoped to only the
+months that actually have a due date, labeled human-readably (e.g.
+"July 2026" for a task due 30.07.2026), like the tag/owner dropdowns
+already are (point 3 above). `board()` now also collects the distinct
+`(year, month)` pairs across every loaded task's `due_date` and
+localizes the label via `babel.dates.get_month_names(locale=<viewer's
+language>)` -- the same library/call `app/birthday_calendar_pdf.py`
+already uses to name months on the birthday calendar PDF, so this
+doesn't introduce a second month-naming mechanism. The option `value`
+stays `YYYY-MM` (unchanged from the native input), so the existing
+`data-due-month` comparison in the filter JS needed no changes at all.
