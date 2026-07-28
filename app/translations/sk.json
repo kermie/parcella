@@ -1649,6 +1649,7 @@
       "filter_assignee_label": "Filtrovať podľa riešiteľa",
       "filter_assignee_any": "Ľubovoľný riešiteľ",
       "filter_due_month_label": "Filtrovať podľa mesiaca splatnosti",
+      "filter_due_month_any": "Ľubovoľný mesiac splatnosti",
       "filter_clear": "Zrušiť filtre",
       "filter_no_results": "Žiadne úlohy nezodpovedajú vyhľadávaniu/filtrom."
     },

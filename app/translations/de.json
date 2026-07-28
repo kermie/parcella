@@ -1649,6 +1649,7 @@
       "filter_assignee_label": "Nach Zuständigem filtern",
       "filter_assignee_any": "Alle Zuständigen",
       "filter_due_month_label": "Nach Fälligkeitsmonat filtern",
+      "filter_due_month_any": "Alle Fälligkeitsmonate",
       "filter_clear": "Filter zurücksetzen",
       "filter_no_results": "Keine Aufgaben entsprechen Ihrer Suche/Filtern."
     },

@@ -1649,6 +1649,7 @@
       "filter_assignee_label": "Filtruj według osoby odpowiedzialnej",
       "filter_assignee_any": "Dowolna osoba",
       "filter_due_month_label": "Filtruj według miesiąca terminu",
+      "filter_due_month_any": "Dowolny miesiąc terminu",
       "filter_clear": "Wyczyść filtry",
       "filter_no_results": "Żadne zadania nie pasują do wyszukiwania/filtrów."
     },

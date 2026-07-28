@@ -139,11 +139,12 @@
         <option value="{{ user_id }}">{{ name }}</option>
         {% endfor %}
     </select>
-    <div class="input-group input-group-sm" style="max-width: 190px;">
-        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
-        <input type="month" id="task-filter-due-month" class="form-control"
-               aria-label="{{ t('tasks.board.filter_due_month_label') }}">
-    </div>
+    <select id="task-filter-due-month" class="form-select form-select-sm" aria-label="{{ t('tasks.board.filter_due_month_label') }}">
+        <option value="">{{ t('tasks.board.filter_due_month_any') }}</option>
+        {% for value, label in due_month_options %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+    </select>
     <button type="button" id="task-filter-clear" class="btn btn-sm btn-outline-secondary">
         {{ t('tasks.board.filter_clear') }}
     </button>

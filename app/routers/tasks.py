@@ -9,6 +9,7 @@ managed here.
 from datetime import date
 from urllib.parse import quote as urlquote
 
+from babel.dates import get_month_names
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +19,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Task, TaskAssignee, TaskComment, TaskList, TaskPriority, User
 from app.auth import require_admin
-from app.i18n import t_for
+from app.i18n import t_for, DEFAULT_LANGUAGE
 from app.module_flags import require_module
 from app.task_board import (
     next_position, move_task, close_gap_after_delete,
@@ -115,11 +116,26 @@ async def board(request: Request, db: AsyncSession = Depends(get_db)):
     # existed.
     assignee_options: dict[str, str] = {}
     tag_options: set[str] = set()
+    due_year_months: set[tuple[int, int]] = set()
     for task_list in lists:
         for task in task_list.tasks:
             for assignee in task.assignees:
                 assignee_options[assignee.user_id] = assignee.user.name
             tag_options.update(task.tags)
+            if task.due_date:
+                due_year_months.add((task.due_date.year, task.due_date.month))
+
+    # Due month/year filter (issue #119): a dropdown of only the
+    # year/month combinations actually present among current due dates
+    # ("July 2026", not a raw month/year picker), localized to the
+    # viewer's language the same way the birthday calendar PDF names
+    # months (app/birthday_calendar_pdf.py).
+    language = getattr(request.state, "language", DEFAULT_LANGUAGE)
+    month_names = get_month_names("wide", context="stand-alone", locale=language)
+    due_month_options = [
+        (f"{year:04d}-{month:02d}", f"{month_names[month]} {year}")
+        for year, month in sorted(due_year_months)
+    ]
 
     return templates.TemplateResponse("tasks/board.html", {
         "request": request, "user": user,
@@ -128,6 +144,7 @@ async def board(request: Request, db: AsyncSession = Depends(get_db)):
         "list_error": request.query_params.get("list_error"),
         "assignee_options": sorted(assignee_options.items(), key=lambda kv: kv[1].lower()),
         "tag_options": sorted(tag_options, key=str.lower),
+        "due_month_options": due_month_options,
     })
 
 
