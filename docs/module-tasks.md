@@ -220,6 +220,18 @@ one server-side change this needed, since everything else the search/
 filter reads was already loaded for some other reason (assignees for
 the meta line, tags for the tag pills, etc.).
 
+## Sort (issue #120)
+
+A "Sort tasks" dropdown next to the filter bar reorders each column's
+cards by due date (`data-due-month`, month/year granularity -- same as
+the due-month filter, not exact day) or priority (High -> Medium ->
+Low, no-priority last), or back to "Manual" (drag order). Purely
+visual, client-side, and never touches `Task.position` -- see
+[ADR 0050](./ADR/0050-task-board-sort-client-side-visual-only.md) for
+why sorting doesn't persist and, like an active filter, disables card
+dragging while it's non-manual (there's no meaningful `position` to
+write while the board isn't showing manual order).
+
 Create/edit (of a card) use the same separate-page pattern as the rest
 of the app (`/tasks/new`, `/tasks/{id}/edit`) rather than a modal, for
 consistency with Members/Parcels/Work Hours; lists themselves are
@@ -290,9 +302,11 @@ nonexistent task or a nonexistent comment id), and (issue #119) that
 the board renders the right `data-search-text`/`data-priority`/
 `data-tags`/`data-assignee-ids`/`data-due-month` attributes (including
 comment content folded into the search text) and that the tag/owner
-filter dropdowns only offer options actually present on the board --
-the search/filter behavior itself is client-side JS, untestable via
-`pytest`, so these tests only cover the server-rendered data it reads.
+filter dropdowns only offer options actually present on the board, and
+(issue #120) that the sort dropdown and its options render -- the
+search/filter/sort behavior itself is client-side JS, untestable via
+`pytest`, so these tests only cover the server-rendered data/markup it
+reads.
 
 **Test-DB sharp edge:** the test suite builds its schema from
 `app/models.py` via `Base.metadata.create_all` (see `tests/conftest.py`),

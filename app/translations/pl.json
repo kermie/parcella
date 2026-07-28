@@ -1651,7 +1651,11 @@
       "filter_due_month_label": "Filtruj według miesiąca terminu",
       "filter_due_month_any": "Dowolny miesiąc terminu",
       "filter_clear": "Wyczyść filtry",
-      "filter_no_results": "Żadne zadania nie pasują do wyszukiwania/filtrów."
+      "filter_no_results": "Żadne zadania nie pasują do wyszukiwania/filtrów.",
+      "sort_label": "Sortuj zadania",
+      "sort_manual": "Ręcznie (kolejność przeciągania)",
+      "sort_due_date": "Termin",
+      "sort_priority": "Priorytet"
     },
     "form": {
       "title_new": "Nowe zadanie",

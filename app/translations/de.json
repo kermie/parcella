@@ -1651,7 +1651,11 @@
       "filter_due_month_label": "Nach Fälligkeitsmonat filtern",
       "filter_due_month_any": "Alle Fälligkeitsmonate",
       "filter_clear": "Filter zurücksetzen",
-      "filter_no_results": "Keine Aufgaben entsprechen Ihrer Suche/Filtern."
+      "filter_no_results": "Keine Aufgaben entsprechen Ihrer Suche/Filtern.",
+      "sort_label": "Aufgaben sortieren",
+      "sort_manual": "Manuell (Ziehreihenfolge)",
+      "sort_due_date": "Fälligkeitsdatum",
+      "sort_priority": "Priorität"
     },
     "form": {
       "title_new": "Neue Aufgabe",

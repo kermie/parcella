@@ -148,6 +148,15 @@
     <button type="button" id="task-filter-clear" class="btn btn-sm btn-outline-secondary">
         {{ t('tasks.board.filter_clear') }}
     </button>
+    <div class="vr mx-1 d-none d-md-block"></div>
+    <div class="input-group input-group-sm" style="max-width: 220px;">
+        <span class="input-group-text"><i class="bi bi-sort-down"></i></span>
+        <select id="task-sort" class="form-select" aria-label="{{ t('tasks.board.sort_label') }}">
+            <option value="">{{ t('tasks.board.sort_manual') }}</option>
+            <option value="due_date">{{ t('tasks.board.sort_due_date') }}</option>
+            <option value="priority">{{ t('tasks.board.sort_priority') }}</option>
+        </select>
+    </div>
 </div>
 <div id="task-filter-no-results" class="alert alert-light border text-muted text-center mb-3" style="display: none;">
     {{ t('tasks.board.filter_no_results') }}
@@ -311,10 +320,15 @@
     // so dragging could silently write a wrong position server-side.
     // Column drag/reorder is unaffected (it never depends on cards).
     let filtersActive = false;
+    // Sort (issue #120): same reasoning -- a non-manual sort order
+    // isn't stored as `position`, so dragging under it would just be
+    // silently undone (or worse, write a position that doesn't match
+    // what's on screen) the moment the sort re-applies.
+    let sortActive = false;
 
     document.querySelectorAll('.kanban-card').forEach(card => {
         card.addEventListener('dragstart', (event) => {
-            if (filtersActive) { event.preventDefault(); return; }
+            if (filtersActive || sortActive) { event.preventDefault(); return; }
             event.stopPropagation();
             draggedCard = card;
             card.classList.add('dragging');
@@ -494,6 +508,50 @@
         dueMonthFilter.value = '';
         applyTaskFilters();
     });
+
+    // Sort (issue #120): purely visual re-ordering of each column's
+    // cards, never touching the stored `position` -- "Manual" restores
+    // the original drag-order DOM sequence captured below at page load.
+    // Due date sorts by data-due-month (a "YYYY-MM" string, so plain
+    // string comparison is already chronological -- same granularity
+    // as the due-month filter dropdown's "Month YYYY" values, not exact
+    // day), undated tasks last. Priority sorts High -> Medium -> Low,
+    // no-priority last. Both use a stable sort over each column's
+    // ORIGINAL order (not whatever the DOM currently shows) as the
+    // tie-break, so re-sorting is deterministic regardless of what the
+    // board currently looks like.
+    const sortSelect = document.getElementById('task-sort');
+    const originalOrderByList = new Map();
+    document.querySelectorAll('.kanban-cards').forEach(function (container) {
+        originalOrderByList.set(container, Array.prototype.slice.call(container.querySelectorAll('.kanban-card')));
+    });
+
+    const PRIORITY_RANK = { high: 0, medium: 1, low: 2, '': 3 };
+
+    function applySort() {
+        const mode = sortSelect.value;
+        sortActive = !!mode;
+
+        originalOrderByList.forEach(function (originalCards, container) {
+            let ordered;
+            if (mode === 'due_date') {
+                ordered = originalCards.slice().sort(function (a, b) {
+                    const aMonth = a.dataset.dueMonth || '9999-99';
+                    const bMonth = b.dataset.dueMonth || '9999-99';
+                    return aMonth < bMonth ? -1 : aMonth > bMonth ? 1 : 0;
+                });
+            } else if (mode === 'priority') {
+                ordered = originalCards.slice().sort(function (a, b) {
+                    return PRIORITY_RANK[a.dataset.priority || ''] - PRIORITY_RANK[b.dataset.priority || ''];
+                });
+            } else {
+                ordered = originalCards;
+            }
+            ordered.forEach(function (card) { container.appendChild(card); });
+        });
+    }
+
+    sortSelect.addEventListener('change', applySort);
 
     // Rename/delete modals: populate from the clicked dropdown item's data-* attrs.
     document.getElementById('renameListModal').addEventListener('show.bs.modal', (event) => {
