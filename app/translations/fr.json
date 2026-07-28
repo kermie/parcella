@@ -1647,7 +1647,6 @@
       "tags_placeholder": "Séparés par des virgules (ex. urgent, extérieur)",
       "label_assigned_to": "Assignée à",
       "label_list": "Liste",
-      "unassigned_option": "Non assignée",
       "button_save_changes": "Enregistrer les modifications",
       "button_create": "Créer",
       "danger_zone_header": "Zone de danger",
