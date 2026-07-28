@@ -1624,7 +1624,8 @@
       "list_not_found": "Zoznam nenájdený.",
       "delete_list_last_list": "Posledný zostávajúci zoznam nemožno odstrániť.",
       "delete_list_missing_target": "Vyberte zoznam, do ktorého sa majú karty presunúť.",
-      "delete_list_target_not_found": "Vybraný cieľový zoznam sa nenašiel."
+      "delete_list_target_not_found": "Vybraný cieľový zoznam sa nenašiel.",
+      "comment_not_found": "Komentár sa nenašiel."
     },
     "board": {
       "title": "Nástenka úloh",
@@ -1652,6 +1653,12 @@
       "danger_zone_header": "Nebezpečná zóna",
       "delete_confirm": "Odstrániť túto úlohu? Túto akciu nemožno vrátiť späť.",
       "button_delete": "Odstrániť úlohu",
+      "comments_header": "Komentáre",
+      "no_comments": "Zatiaľ žiadne komentáre.",
+      "label_new_comment": "Nový komentár",
+      "button_add_comment": "Pridať komentár",
+      "unknown_author": "Neznámy",
+      "delete_comment_confirm": "Odstrániť tento komentár? Túto akciu nemožno vrátiť späť.",
       "priority_none": "Bez priority",
       "priority_low": "Nízka",
       "priority_medium": "Stredná",

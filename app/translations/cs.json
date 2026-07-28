@@ -1624,7 +1624,8 @@
       "list_not_found": "Seznam nenalezen.",
       "delete_list_last_list": "Poslední zbývající seznam nelze smazat.",
       "delete_list_missing_target": "Vyberte seznam, do kterého se mají karty přesunout.",
-      "delete_list_target_not_found": "Vybraný cílový seznam nebyl nalezen."
+      "delete_list_target_not_found": "Vybraný cílový seznam nebyl nalezen.",
+      "comment_not_found": "Komentář nebyl nalezen."
     },
     "board": {
       "title": "Nástěnka úkolů",
@@ -1652,6 +1653,12 @@
       "danger_zone_header": "Nebezpečná zóna",
       "delete_confirm": "Smazat tento úkol? Tuto akci nelze vrátit zpět.",
       "button_delete": "Smazat úkol",
+      "comments_header": "Komentáře",
+      "no_comments": "Zatím žádné komentáře.",
+      "label_new_comment": "Nový komentář",
+      "button_add_comment": "Přidat komentář",
+      "unknown_author": "Neznámý",
+      "delete_comment_confirm": "Smazat tento komentář? Tuto akci nelze vrátit zpět.",
       "priority_none": "Bez priority",
       "priority_low": "Nízká",
       "priority_medium": "Střední",

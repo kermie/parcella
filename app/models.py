@@ -1810,6 +1810,10 @@ class Task(Base):
         "TaskAssignee", back_populates="task", cascade="all, delete-orphan"
     )
     created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+    comments: Mapped[List["TaskComment"]] = relationship(
+        "TaskComment", back_populates="task", order_by="TaskComment.created_at",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def assigned_to_ids(self) -> List[str]:
@@ -1842,6 +1846,33 @@ class TaskAssignee(Base):
     __table_args__ = (
         UniqueConstraint("task_id", "user_id", name="uq_task_assignee"),
     )
+
+
+class TaskComment(Base):
+    """
+    A single comment on a task board card (issue #108). Append-only --
+    add/delete only, no edit, same shape as TicketMessage but without the
+    email/direction/HTML-sanitization complexity that doesn't apply here.
+    """
+    __tablename__ = "task_comments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    task_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    task: Mapped["Task"] = relationship("Task", back_populates="comments")
+    created_by: Mapped[Optional["User"]] = relationship("User")
+
+    def __repr__(self) -> str:
+        return f"<TaskComment task={self.task_id}>"
 
 
 # ---------------------------------------------------------------------------

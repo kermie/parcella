@@ -1624,7 +1624,8 @@
       "list_not_found": "Nie znaleziono listy.",
       "delete_list_last_list": "Nie można usunąć ostatniej pozostałej listy.",
       "delete_list_missing_target": "Wybierz listę, do której mają zostać przeniesione karty.",
-      "delete_list_target_not_found": "Nie znaleziono wybranej listy docelowej."
+      "delete_list_target_not_found": "Nie znaleziono wybranej listy docelowej.",
+      "comment_not_found": "Nie znaleziono komentarza."
     },
     "board": {
       "title": "Tablica zadań",
@@ -1652,6 +1653,12 @@
       "danger_zone_header": "Strefa zagrożenia",
       "delete_confirm": "Usunąć to zadanie? Tej operacji nie można cofnąć.",
       "button_delete": "Usuń zadanie",
+      "comments_header": "Komentarze",
+      "no_comments": "Brak komentarzy.",
+      "label_new_comment": "Nowy komentarz",
+      "button_add_comment": "Dodaj komentarz",
+      "unknown_author": "Nieznany",
+      "delete_comment_confirm": "Usunąć ten komentarz? Tej operacji nie można cofnąć.",
       "priority_none": "Brak priorytetu",
       "priority_low": "Niski",
       "priority_medium": "Średni",

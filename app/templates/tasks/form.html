@@ -94,6 +94,47 @@
 {% if task %}
 <div class="row g-3 mt-2" style="max-width: 640px;">
     <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-chat-left-text me-2"></i>{{ t('tasks.form.comments_header') }}</div>
+            <div class="card-body">
+                {% if task.comments %}
+                {% for comment in task.comments %}
+                <div class="mb-3 p-3 rounded" style="background: #f8faf9; border-left: 3px solid var(--gv-gruen);">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-semibold" style="font-size: 0.85rem;">
+                            {{ comment.created_by.name if comment.created_by else t('tasks.form.unknown_author') }}
+                        </span>
+                        <span class="text-muted" style="font-size: 0.78rem;">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    </div>
+                    <div style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content }}</div>
+                    <form method="post" action="/tasks/{{ task.id }}/comments/{{ comment.id }}/delete"
+                          onsubmit="return confirm('{{ t('tasks.form.delete_comment_confirm') }}')" class="mt-1">
+                        <button type="submit" class="btn btn-sm btn-link text-danger p-0" style="font-size: 0.78rem;">
+                            <i class="bi bi-trash me-1"></i>{{ t('tasks.form.button_delete') }}
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted mb-3">{{ t('tasks.form.no_comments') }}</p>
+                {% endif %}
+
+                <form method="post" action="/tasks/{{ task.id }}/comments">
+                    <label class="form-label fw-semibold">{{ t('tasks.form.label_new_comment') }}</label>
+                    <textarea name="content" class="form-control mb-2" rows="3" required></textarea>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>{{ t('tasks.form.button_add_comment') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if task %}
+<div class="row g-3 mt-2" style="max-width: 640px;">
+    <div class="col-12">
         <div class="card border-danger">
             <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('tasks.form.danger_zone_header') }}</div>
             <div class="card-body">

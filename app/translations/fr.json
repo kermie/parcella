@@ -1624,7 +1624,8 @@
       "list_not_found": "Liste introuvable.",
       "delete_list_last_list": "Impossible de supprimer la dernière liste restante.",
       "delete_list_missing_target": "Choisissez une liste vers laquelle déplacer les cartes.",
-      "delete_list_target_not_found": "La liste de destination sélectionnée est introuvable."
+      "delete_list_target_not_found": "La liste de destination sélectionnée est introuvable.",
+      "comment_not_found": "Commentaire introuvable."
     },
     "board": {
       "title": "Tableau des tâches",
@@ -1652,6 +1653,12 @@
       "danger_zone_header": "Zone de danger",
       "delete_confirm": "Supprimer cette tâche ? Cette action est irréversible.",
       "button_delete": "Supprimer la tâche",
+      "comments_header": "Commentaires",
+      "no_comments": "Aucun commentaire pour le moment.",
+      "label_new_comment": "Nouveau commentaire",
+      "button_add_comment": "Ajouter un commentaire",
+      "unknown_author": "Inconnu",
+      "delete_comment_confirm": "Supprimer ce commentaire ? Cette action est irréversible.",
       "priority_none": "Aucune priorité",
       "priority_low": "Basse",
       "priority_medium": "Moyenne",

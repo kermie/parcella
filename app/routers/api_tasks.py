@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Task, TaskAssignee, TaskList, User
+from app.models import Task, TaskAssignee, TaskComment, TaskList, User
 from app.api_auth import require_admin_api
 from app.module_flags import require_module
 from app.task_board import (
@@ -22,6 +22,7 @@ from app.task_board import (
 from app.schemas import (
     KanbanTaskCreate, KanbanTaskUpdate, KanbanTaskMove, KanbanTaskOut,
     KanbanTaskListCreate, KanbanTaskListUpdate, KanbanTaskListMove, KanbanTaskListOut,
+    KanbanTaskCommentCreate, KanbanTaskCommentOut,
 )
 
 router = APIRouter(
@@ -54,6 +55,16 @@ async def _get_list_or_404(db: AsyncSession, list_id: str) -> TaskList:
     if not task_list:
         raise HTTPException(status_code=404, detail="List not found")
     return task_list
+
+
+async def _get_comment_or_404(db: AsyncSession, task_id: str, comment_id: str) -> TaskComment:
+    result = await db.execute(
+        select(TaskComment).where(TaskComment.id == comment_id, TaskComment.task_id == task_id)
+    )
+    comment = result.scalar_one_or_none()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return comment
 
 
 # ---------------------------------------------------------------------------
@@ -253,3 +264,51 @@ async def task_delete(
     await db.delete(task)
     await db.commit()
     await close_gap_after_delete(db, list_id, position)
+
+
+# ---------------------------------------------------------------------------
+# Comments (issue #108)
+# ---------------------------------------------------------------------------
+
+@router.get("/{task_id}/comments", response_model=List[KanbanTaskCommentOut], summary="List a task's comments")
+async def comments_list(
+    task_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_admin_api),
+):
+    await _get_task_or_404(db, task_id)
+    result = await db.execute(
+        select(TaskComment).where(TaskComment.task_id == task_id).order_by(TaskComment.created_at)
+    )
+    return result.scalars().all()
+
+
+@router.post(
+    "/{task_id}/comments", response_model=KanbanTaskCommentOut, status_code=status.HTTP_201_CREATED,
+    summary="Add a comment to a task",
+)
+async def comment_create(
+    task_id: str,
+    data: KanbanTaskCommentCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_admin_api),
+):
+    await _get_task_or_404(db, task_id)
+    comment = TaskComment(task_id=task_id, content=data.content, created_by_id=user.id)
+    db.add(comment)
+    await db.commit()
+    await db.refresh(comment)
+    return comment
+
+
+@router.delete("/{task_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a comment")
+async def comment_delete(
+    task_id: str,
+    comment_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_admin_api),
+):
+    await _get_task_or_404(db, task_id)
+    comment = await _get_comment_or_404(db, task_id, comment_id)
+    await db.delete(comment)
+    await db.commit()
