@@ -145,6 +145,10 @@
         <option value="{{ value }}">{{ label }}</option>
         {% endfor %}
     </select>
+    <div class="form-check form-check-inline mb-0">
+        <input type="checkbox" class="form-check-input" id="task-filter-overdue" {% if overdue_prefilter %}checked{% endif %}>
+        <label class="form-check-label" for="task-filter-overdue" style="font-size: 0.85rem;">{{ t('tasks.board.filter_overdue_only') }}</label>
+    </div>
     <button type="button" id="task-filter-clear" class="btn btn-sm btn-outline-secondary">
         {{ t('tasks.board.filter_clear') }}
     </button>
@@ -199,7 +203,8 @@
                  data-priority="{{ task.priority.value.lower() if task.priority else '' }}"
                  data-tags="{{ task.tags|map('lower')|join(',') }}"
                  data-assignee-ids="{{ task.assignees|map(attribute='user_id')|join(',') }}"
-                 data-due-month="{{ task.due_date.strftime('%Y-%m') if task.due_date else '' }}">
+                 data-due-month="{{ task.due_date.strftime('%Y-%m') if task.due_date else '' }}"
+                 data-overdue="{{ '1' if task.due_date and task.due_date < today else '' }}">
                 {% if task.priority %}
                 <div class="kanban-card-priority kanban-card-priority-{{ task.priority.value.lower() }}">
                     {{ t('tasks.form.priority_' + task.priority.value.lower()) }}
@@ -468,6 +473,7 @@
     const tagFilter = document.getElementById('task-filter-tag');
     const assigneeFilter = document.getElementById('task-filter-assignee');
     const dueMonthFilter = document.getElementById('task-filter-due-month');
+    const overdueFilter = document.getElementById('task-filter-overdue');
     const clearButton = document.getElementById('task-filter-clear');
     const noResults = document.getElementById('task-filter-no-results');
 
@@ -477,7 +483,8 @@
         const tag = tagFilter.value;
         const assignee = assigneeFilter.value;
         const dueMonth = dueMonthFilter.value;
-        filtersActive = !!(term || priority || tag || assignee || dueMonth);
+        const overdueOnly = overdueFilter.checked;
+        filtersActive = !!(term || priority || tag || assignee || dueMonth || overdueOnly);
 
         let anyVisible = false;
         cards.forEach(function (card) {
@@ -488,7 +495,8 @@
                 (!priority || card.dataset.priority === priority) &&
                 (!tag || cardTags.indexOf(tag) !== -1) &&
                 (!assignee || cardAssignees.indexOf(assignee) !== -1) &&
-                (!dueMonth || card.dataset.dueMonth === dueMonth)
+                (!dueMonth || card.dataset.dueMonth === dueMonth) &&
+                (!overdueOnly || card.dataset.overdue === '1')
             );
             card.style.display = matches ? '' : 'none';
             if (matches) anyVisible = true;
@@ -500,14 +508,22 @@
     [priorityFilter, tagFilter, assigneeFilter, dueMonthFilter].forEach(function (el) {
         el.addEventListener('change', applyTaskFilters);
     });
+    overdueFilter.addEventListener('change', applyTaskFilters);
     clearButton.addEventListener('click', function () {
         searchInput.value = '';
         priorityFilter.value = '';
         tagFilter.value = '';
         assigneeFilter.value = '';
         dueMonthFilter.value = '';
+        overdueFilter.checked = false;
         applyTaskFilters();
     });
+
+    // Dashboard "Overdue Tasks" card (issue #127) links here with
+    // ?overdue=1, pre-checking the checkbox above server-side -- apply
+    // the filter immediately on load rather than waiting for the user
+    // to interact with a control that's already checked.
+    if (overdueFilter.checked) { applyTaskFilters(); }
 
     // Sort (issue #120): purely visual re-ordering of each column's
     // cards, never touching the stored `position` -- "Manual" restores

@@ -18,6 +18,7 @@ from app.database import get_db, AsyncSessionLocal, active_member_filter
 from app.models import User, UserRole, Member, Parcel, ParcelStatus, MemberParcel
 from app.models import PurchaseRequest, PurchaseRequestStatus
 from app.models import Ticket, TicketStatus
+from app.models import Task
 from app.birthdays import upcoming_birthdays
 from app.auth import hash_password, get_current_user
 from app.module_flags import load_module_flags
@@ -347,6 +348,16 @@ async def startseite(request: Request):
             )
         )
 
+        # For the dashboard tile "Overdue tasks" (issue #127) -- "overdue"
+        # here means exactly what the board already shows in red
+        # (app/templates/tasks/board.html's kanban-card-overdue class):
+        # a due_date in the past, regardless of which list the card is
+        # currently in (there's no separate "done" flag to exclude by,
+        # see docs/module-tasks.md -- lists are just free-text columns).
+        tasks_overdue_count = await db.scalar(
+            select(func.count()).select_from(Task).where(Task.due_date < date.today())
+        )
+
     # Dashboard tile "Birthdays this week" -- independent of the Calendar
     # module flag, since birthdays are shown here purely for information
     # (no link/dependency on the calendar routes).
@@ -362,6 +373,7 @@ async def startseite(request: Request):
         "purchase_requests_open": purchase_requests_open_count or 0,
         "tickets_open": tickets_open_count or 0,
         "tickets_spam": tickets_spam_count or 0,
+        "tasks_overdue": tasks_overdue_count or 0,
     }
 
     return templates.TemplateResponse(

@@ -145,6 +145,13 @@ async def board(request: Request, db: AsyncSession = Depends(get_db)):
         "assignee_options": sorted(assignee_options.items(), key=lambda kv: kv[1].lower()),
         "tag_options": sorted(tag_options, key=str.lower),
         "due_month_options": due_month_options,
+        # Dashboard "Overdue Tasks" card (issue #127) links here with
+        # ?overdue=1 -- pre-checks the board's own "Overdue only" filter
+        # checkbox rather than being a separate one-off code path, so
+        # the dashboard count and what you land on are the same filter
+        # (see docs/ADR/0019's "stat query must match the list page's
+        # own default filter" rule).
+        "overdue_prefilter": request.query_params.get("overdue") == "1",
     })
 
 

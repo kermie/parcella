@@ -870,3 +870,43 @@ async def test_board_renders_sort_dropdown(client, admin_user):
     assert 'id="task-sort"' in html
     assert '<option value="due_date">' in html
     assert '<option value="priority">' in html
+
+
+async def test_dashboard_overdue_tasks_card_and_board_prefilter(client, admin_user):
+    """Issue #127: dashboard gets an "Overdue Tasks" card counting tasks
+    whose due_date is in the past (across every list -- there's no
+    "done" flag to exclude by, see docs/module-tasks.md), linking to
+    /tasks/?overdue=1. The board pre-checks its own "Overdue only"
+    filter checkbox from that query param (ADR 0019: the stat and the
+    view it links to must use the exact same definition of the count)."""
+    from datetime import date, timedelta
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+    await web_login(client, "admin@example.com")
+
+    past = (date.today() - timedelta(days=5)).isoformat()
+    future = (date.today() + timedelta(days=5)).isoformat()
+
+    await client.post("/tasks/new", data={"title": "Overdue task", "due_date": past})
+    await client.post("/tasks/new", data={"title": "Future task", "due_date": future})
+    await client.post("/tasks/new", data={"title": "Undated task"})
+
+    dashboard_response = await client.get("/")
+    assert dashboard_response.status_code == 200
+    assert 'href="/tasks/?overdue=1"' in dashboard_response.text
+
+    import re
+    m = re.search(r'Overdue Tasks.*?font-weight: 700; color: #b91c1c;">(\d+)<', dashboard_response.text, re.S)
+    assert m, "expected an Overdue Tasks stat block on the dashboard"
+    assert m.group(1) == "1"
+
+    board_response = await client.get("/tasks/")
+    assert board_response.status_code == 200
+    assert board_response.text.count('data-overdue="1"') == 1
+
+    prefiltered_response = await client.get("/tasks/?overdue=1")
+    assert prefiltered_response.status_code == 200
+    assert 'id="task-filter-overdue" checked' in prefiltered_response.text
