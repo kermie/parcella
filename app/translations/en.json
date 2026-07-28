@@ -1619,14 +1619,16 @@
   "tasks": {
     "errors": {
       "task_not_found": "Task not found.",
-      "invalid_move": "Invalid move request."
+      "invalid_move": "Invalid move request.",
+      "list_not_found": "List not found.",
+      "delete_list_last_list": "Cannot delete the only remaining list.",
+      "delete_list_missing_target": "Choose a list to move the cards to.",
+      "delete_list_target_not_found": "The selected destination list could not be found."
     },
     "board": {
       "title": "Task Board",
       "new_task_button": "New task",
-      "column_todo": "To Do",
-      "column_in_progress": "In Progress",
-      "column_done": "Done",
+      "add_list_button": "Add list",
       "column_empty": "No tasks"
     },
     "form": {
@@ -1640,12 +1642,28 @@
       "label_description": "Description",
       "label_due_date": "Due date",
       "label_assigned_to": "Assigned to",
+      "label_list": "List",
       "unassigned_option": "Unassigned",
       "button_save_changes": "Save changes",
       "button_create": "Create",
       "danger_zone_header": "Danger zone",
       "delete_confirm": "Delete this task? This cannot be undone.",
       "button_delete": "Delete task"
+    },
+    "lists": {
+      "add_modal_title": "Add list",
+      "label_name": "Name",
+      "cancel": "Cancel",
+      "add_button": "Add",
+      "rename_action": "Rename",
+      "rename_modal_title": "Rename list",
+      "button_save_changes": "Save changes",
+      "delete_action": "Delete",
+      "delete_modal_title": "Delete list",
+      "label_move_cards_to": "Move its cards to",
+      "delete_button": "Delete list",
+      "delete_confirm_empty": "Delete the list \"{name}\"? This cannot be undone.",
+      "delete_confirm_with_cards": "This list still has cards. Choose another list to move them to before deleting it."
     }
   },
   "email": {

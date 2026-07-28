@@ -1,9 +1,13 @@
 """
 Tests for the task board module. Focus: the card-ordering algorithm
-(app/task_board.py) -- cross-column moves, same-column reordering, and
-that deleting a card doesn't leave a gap in `position` -- and the
-admin/board-only permission boundary on both the web UI and the API.
+(app/task_board.py) -- cross-list moves, same-list reordering, and that
+deleting a card doesn't leave a gap in `position` -- list (column)
+management (create/rename/reorder/delete-with-reassignment, issue #100)
+-- and the admin/board-only permission boundary on both the web UI and
+the API.
 """
+from app.database import AsyncSessionLocal
+from app.models import TaskList
 from tests.conftest import login, auth_header
 
 
@@ -14,67 +18,89 @@ async def _enable_module(client, headers):
     assert response.status_code == 200, response.text
 
 
+async def _seed_lists(names=("To Do", "In Progress", "Done")):
+    """Mirrors migration 0054_task_lists's seed data -- the test DB is
+    built straight from models via create_all (see conftest.py), not
+    Alembic, so tests seed their own lists. Returns {name: id}."""
+    ids = {}
+    async with AsyncSessionLocal() as session:
+        for position, name in enumerate(names):
+            task_list = TaskList(name=name, position=position)
+            session.add(task_list)
+            await session.flush()
+            ids[name] = task_list.id
+        await session.commit()
+    return ids
+
+
 async def web_login(client, email: str, password: str = "testpasswort123") -> None:
     response = await client.post("/auth/login", data={"email": email, "password": password})
     assert response.status_code in (302, 303)
 
 
-async def test_create_defaults_to_todo_column_at_end(client, admin_user):
+async def test_create_defaults_to_first_list_at_end(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
     await _enable_module(client, headers)
+    lists = await _seed_lists()
 
     first = (await client.post("/api/v1/tasks", json={"title": "First"}, headers=headers)).json()
     second = (await client.post("/api/v1/tasks", json={"title": "Second"}, headers=headers)).json()
 
-    assert first["status"] == "TODO"
+    assert first["list_id"] == lists["To Do"]
     assert first["position"] == 0
-    assert second["status"] == "TODO"
+    assert second["list_id"] == lists["To Do"]
     assert second["position"] == 1
 
 
-async def test_move_to_different_column_appends_and_compacts_old_column(client, admin_user):
+async def test_move_to_different_list_appends_and_compacts_old_list(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
     await _enable_module(client, headers)
+    lists = await _seed_lists()
 
     a = (await client.post("/api/v1/tasks", json={"title": "A"}, headers=headers)).json()
     b = (await client.post("/api/v1/tasks", json={"title": "B"}, headers=headers)).json()
     c = (await client.post("/api/v1/tasks", json={"title": "C"}, headers=headers)).json()
 
     moved = (await client.post(
-        f"/api/v1/tasks/{a['id']}/move", json={"status": "IN_PROGRESS", "position": 0}, headers=headers,
+        f"/api/v1/tasks/{a['id']}/move",
+        json={"list_id": lists["In Progress"], "position": 0}, headers=headers,
     )).json()
-    assert moved["status"] == "IN_PROGRESS"
+    assert moved["list_id"] == lists["In Progress"]
     assert moved["position"] == 0
 
-    todo = (await client.get("/api/v1/tasks", params={"status": "TODO"}, headers=headers)).json()
+    todo = (await client.get("/api/v1/tasks", params={"list_id": lists["To Do"]}, headers=headers)).json()
     todo_ids_in_order = [t["id"] for t in sorted(todo, key=lambda t: t["position"])]
     assert todo_ids_in_order == [b["id"], c["id"]]
     assert [t["position"] for t in sorted(todo, key=lambda t: t["position"])] == [0, 1]
 
 
-async def test_reorder_within_same_column(client, admin_user):
+async def test_reorder_within_same_list(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
     await _enable_module(client, headers)
+    lists = await _seed_lists()
 
     a = (await client.post("/api/v1/tasks", json={"title": "A"}, headers=headers)).json()
     b = (await client.post("/api/v1/tasks", json={"title": "B"}, headers=headers)).json()
     c = (await client.post("/api/v1/tasks", json={"title": "C"}, headers=headers)).json()
 
-    # Move C (currently position 2) to the front of TODO
-    await client.post(f"/api/v1/tasks/{c['id']}/move", json={"status": "TODO", "position": 0}, headers=headers)
+    # Move C (currently position 2) to the front of "To Do"
+    await client.post(
+        f"/api/v1/tasks/{c['id']}/move", json={"list_id": lists["To Do"], "position": 0}, headers=headers,
+    )
 
-    todo = (await client.get("/api/v1/tasks", params={"status": "TODO"}, headers=headers)).json()
+    todo = (await client.get("/api/v1/tasks", params={"list_id": lists["To Do"]}, headers=headers)).json()
     ordered = [t["id"] for t in sorted(todo, key=lambda t: t["position"])]
     assert ordered == [c["id"], a["id"], b["id"]]
 
 
-async def test_delete_closes_gap_in_remaining_column(client, admin_user):
+async def test_delete_closes_gap_in_remaining_list(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
     await _enable_module(client, headers)
+    lists = await _seed_lists()
 
     a = (await client.post("/api/v1/tasks", json={"title": "A"}, headers=headers)).json()
     b = (await client.post("/api/v1/tasks", json={"title": "B"}, headers=headers)).json()
@@ -83,7 +109,7 @@ async def test_delete_closes_gap_in_remaining_column(client, admin_user):
     delete_response = await client.delete(f"/api/v1/tasks/{b['id']}", headers=headers)
     assert delete_response.status_code == 204
 
-    todo = (await client.get("/api/v1/tasks", params={"status": "TODO"}, headers=headers)).json()
+    todo = (await client.get("/api/v1/tasks", params={"list_id": lists["To Do"]}, headers=headers)).json()
     ordered = sorted(todo, key=lambda t: t["position"])
     assert [t["id"] for t in ordered] == [a["id"], c["id"]]
     assert [t["position"] for t in ordered] == [0, 1]
@@ -93,6 +119,7 @@ async def test_update_task_fields(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
     await _enable_module(client, headers)
+    await _seed_lists()
 
     task = (await client.post("/api/v1/tasks", json={"title": "Original"}, headers=headers)).json()
 
@@ -110,7 +137,6 @@ async def test_update_task_fields(client, admin_user):
 async def test_readonly_member_cannot_access_api(client, admin_user):
     from app.models import User, UserRole
     from app.auth import hash_password
-    from app.database import AsyncSessionLocal
 
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -131,7 +157,6 @@ async def test_readonly_member_cannot_access_api(client, admin_user):
 async def test_readonly_member_gets_403_on_web_board(client, admin_user):
     from app.models import User, UserRole
     from app.auth import hash_password
-    from app.database import AsyncSessionLocal
 
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -152,11 +177,11 @@ async def test_readonly_member_gets_403_on_web_board(client, admin_user):
 async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user):
     from app.models import User, UserRole
     from app.auth import hash_password
-    from app.database import AsyncSessionLocal
 
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
     await _enable_module(client, headers)
+    lists = await _seed_lists()
 
     # Assigned to a *different* user than the logged-in one on purpose: if
     # it were the same user, SQLAlchemy could resolve the relationship from
@@ -209,7 +234,7 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
 
     move_response = await client.post(
         f"/tasks/{task_id}/move",
-        json={"status": "DONE", "position": 0},
+        json={"list_id": lists["Done"], "position": 0},
     )
     assert move_response.status_code == 200
     assert move_response.json()["ok"] is True
@@ -236,3 +261,173 @@ async def test_module_disabled_returns_404(client, admin_user):
 
     api_response = await client.get("/api/v1/tasks", headers=headers)
     assert api_response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# List (column) management -- issue #100
+# ---------------------------------------------------------------------------
+
+async def test_create_list_appends_at_end(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    created = (await client.post("/api/v1/tasks/lists", json={"name": "Blocked"}, headers=headers)).json()
+    assert created["name"] == "Blocked"
+    assert created["position"] == 3
+
+    all_lists = (await client.get("/api/v1/tasks/lists", headers=headers)).json()
+    assert [l["name"] for l in sorted(all_lists, key=lambda l: l["position"])] == \
+        ["To Do", "In Progress", "Done", "Blocked"]
+
+
+async def test_rename_list(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    lists = await _seed_lists()
+
+    renamed = (await client.put(
+        f"/api/v1/tasks/lists/{lists['To Do']}", json={"name": "Backlog"}, headers=headers,
+    )).json()
+    assert renamed["name"] == "Backlog"
+
+
+async def test_reorder_lists(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    lists = await _seed_lists()
+
+    await client.post(
+        f"/api/v1/tasks/lists/{lists['Done']}/move", json={"position": 0}, headers=headers,
+    )
+
+    all_lists = (await client.get("/api/v1/tasks/lists", headers=headers)).json()
+    ordered_names = [l["name"] for l in sorted(all_lists, key=lambda l: l["position"])]
+    assert ordered_names == ["Done", "To Do", "In Progress"]
+
+
+async def test_delete_empty_list(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    lists = await _seed_lists()
+
+    response = await client.delete(
+        f"/api/v1/tasks/lists/{lists['Done']}", headers=headers,
+    )
+    assert response.status_code == 204
+
+    all_lists = (await client.get("/api/v1/tasks/lists", headers=headers)).json()
+    assert sorted(l["name"] for l in all_lists) == ["In Progress", "To Do"]
+
+
+async def test_delete_list_with_cards_reassigns_them(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    lists = await _seed_lists()
+
+    existing = (await client.post(
+        "/api/v1/tasks", json={"title": "Already in progress", "list_id": lists["In Progress"]}, headers=headers,
+    )).json()
+    a = (await client.post(
+        "/api/v1/tasks", json={"title": "A", "list_id": lists["To Do"]}, headers=headers,
+    )).json()
+    b = (await client.post(
+        "/api/v1/tasks", json={"title": "B", "list_id": lists["To Do"]}, headers=headers,
+    )).json()
+
+    response = await client.delete(
+        f"/api/v1/tasks/lists/{lists['To Do']}",
+        params={"move_to_list_id": lists["In Progress"]}, headers=headers,
+    )
+    assert response.status_code == 204
+
+    remaining = (await client.get(
+        "/api/v1/tasks", params={"list_id": lists["In Progress"]}, headers=headers,
+    )).json()
+    ordered = sorted(remaining, key=lambda t: t["position"])
+    assert [t["id"] for t in ordered] == [existing["id"], a["id"], b["id"]]
+    assert [t["position"] for t in ordered] == [0, 1, 2]
+    assert all(t["list_id"] == lists["In Progress"] for t in ordered)
+
+
+async def test_delete_only_remaining_list_is_rejected(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+
+    only_list = (await client.post("/api/v1/tasks/lists", json={"name": "Solo"}, headers=headers)).json()
+
+    response = await client.delete(f"/api/v1/tasks/lists/{only_list['id']}", headers=headers)
+    assert response.status_code == 400
+
+
+async def test_delete_nonempty_list_without_target_is_rejected(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    lists = await _seed_lists()
+
+    await client.post("/api/v1/tasks", json={"title": "A", "list_id": lists["To Do"]}, headers=headers)
+
+    response = await client.delete(f"/api/v1/tasks/lists/{lists['To Do']}", headers=headers)
+    assert response.status_code == 400
+
+
+async def test_readonly_member_cannot_manage_lists_via_api(client, admin_user):
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    async with AsyncSessionLocal() as session:
+        session.add(User(
+            email="readonly3@example.com", name="Readonly Three",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        ))
+        await session.commit()
+
+    readonly_token = await login(client, "readonly3@example.com")
+    response = await client.get("/api/v1/tasks/lists", headers=auth_header(readonly_token))
+    assert response.status_code == 403
+
+
+async def test_web_add_rename_delete_list_flow(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    lists = await _seed_lists()
+
+    await web_login(client, "admin@example.com")
+
+    add_response = await client.post("/tasks/lists/new", data={"name": "Blocked"})
+    assert add_response.status_code in (302, 303)
+
+    board_response = await client.get("/tasks/")
+    assert "Blocked" in board_response.text
+    # The rename/delete URLs are assembled by JS from data-list-id on the
+    # dropdown items (one shared modal per action), not rendered as a
+    # literal href/action per list -- see app/templates/tasks/board.html.
+    assert f'data-list-id="{lists["Done"]}"' in board_response.text
+
+    rename_response = await client.post(
+        f"/tasks/lists/{lists['Done']}/edit", data={"name": "Finished"},
+    )
+    assert rename_response.status_code in (302, 303)
+
+    board_response2 = await client.get("/tasks/")
+    assert "Finished" in board_response2.text
+    assert ">Done<" not in board_response2.text
+
+    delete_response = await client.post(f"/tasks/lists/{lists['In Progress']}/delete")
+    assert delete_response.status_code in (302, 303)
+
+    board_response3 = await client.get("/tasks/")
+    assert "In Progress" not in board_response3.text

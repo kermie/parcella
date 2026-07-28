@@ -58,7 +58,7 @@ from app.models import (
     SessionParticipation,
     ParticipationStatus,
     Task,
-    TaskStatus,
+    TaskList,
     TaskWorkload,
     Ticket,
     TicketMessage,
@@ -580,16 +580,25 @@ async def _seed_inventory(db: AsyncSession, members: list) -> None:
 
 
 async def _seed_tasks(db: AsyncSession) -> None:
+    # The migration seeds "To Do"/"In Progress"/"Done" as the default
+    # lists -- looked up by name here since sample data always runs
+    # after migrations.
+    result = await db.execute(
+        select(TaskList).where(TaskList.name.in_(["To Do", "In Progress", "Done"]))
+    )
+    list_ids = {task_list.name: task_list.id for task_list in result.scalars().all()}
+
     cards = [
-        (TaskStatus.TODO, "Order new signage for the entrance"),
-        (TaskStatus.TODO, "Schedule tree trimming with contractor"),
-        (TaskStatus.IN_PROGRESS, "Repair clubhouse roof leak"),
-        (TaskStatus.DONE, "Renew public liability insurance"),
-        (TaskStatus.DONE, "Update website contact page"),
+        ("To Do", "Order new signage for the entrance"),
+        ("To Do", "Schedule tree trimming with contractor"),
+        ("In Progress", "Repair clubhouse roof leak"),
+        ("Done", "Renew public liability insurance"),
+        ("Done", "Update website contact page"),
     ]
-    for status, title in cards:
-        position = await next_position(db, status)
-        task = Task(id=new_uuid(), title=title, status=status, position=position)
+    for list_name, title in cards:
+        list_id = list_ids[list_name]
+        position = await next_position(db, list_id)
+        task = Task(id=new_uuid(), title=title, list_id=list_id, position=position)
         db.add(task)
         _track(db, "tasks", task)
 

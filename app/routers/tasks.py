@@ -2,9 +2,12 @@
 Task board router (web UI): a general-purpose kanban board for club
 business that isn't tied to a work session (see app/models.py for the
 distinction from WorkTask). Admin/board only for both viewing and
-editing, per explicit product decision.
+editing, per explicit product decision. Columns are user-configurable
+`TaskList` rows (issue #100, see ADR 0043) -- both cards and lists are
+managed here.
 """
 from datetime import date
+from urllib.parse import quote as urlquote
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -13,11 +16,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Task, TaskStatus, User
+from app.models import Task, TaskList, User
 from app.auth import require_admin
 from app.i18n import t_for
 from app.module_flags import require_module
-from app.task_board import next_position, move_task, close_gap_after_delete
+from app.task_board import (
+    next_position, move_task, close_gap_after_delete,
+    next_list_position, move_list, delete_list,
+)
 
 router = APIRouter(
     prefix="/tasks",
@@ -26,6 +32,13 @@ router = APIRouter(
 )
 from app.templating import templates
 
+# Maps task_board.delete_list()'s short ValueError codes to translation keys.
+_LIST_DELETE_ERROR_KEYS = {
+    "last_list": "tasks.errors.delete_list_last_list",
+    "missing_target": "tasks.errors.delete_list_missing_target",
+    "target_not_found": "tasks.errors.delete_list_target_not_found",
+}
+
 
 async def _get_task_or_404(db: AsyncSession, task_id: str, request: Request) -> Task:
     result = await db.execute(select(Task).where(Task.id == task_id))
@@ -33,6 +46,19 @@ async def _get_task_or_404(db: AsyncSession, task_id: str, request: Request) -> 
     if not task:
         raise HTTPException(status_code=404, detail=t_for(request, "tasks.errors.task_not_found"))
     return task
+
+
+async def _get_list_or_404(db: AsyncSession, list_id: str, request: Request) -> TaskList:
+    result = await db.execute(select(TaskList).where(TaskList.id == list_id))
+    task_list = result.scalar_one_or_none()
+    if not task_list:
+        raise HTTPException(status_code=404, detail=t_for(request, "tasks.errors.list_not_found"))
+    return task_list
+
+
+async def _all_lists(db: AsyncSession):
+    result = await db.execute(select(TaskList).order_by(TaskList.position))
+    return result.scalars().all()
 
 
 async def _active_users(db: AsyncSession):
@@ -45,23 +71,17 @@ async def board(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_admin(request, db)
 
     result = await db.execute(
-        select(Task)
-        .options(selectinload(Task.assigned_to))
-        .order_by(Task.status, Task.position)
+        select(TaskList)
+        .options(selectinload(TaskList.tasks).selectinload(Task.assigned_to))
+        .order_by(TaskList.position)
     )
-    all_tasks = result.scalars().all()
-
-    columns = {status: [] for status in TaskStatus}
-    for task in all_tasks:
-        columns[task.status].append(task)
+    lists = result.scalars().all()
 
     return templates.TemplateResponse("tasks/board.html", {
         "request": request, "user": user,
-        "todo_tasks": columns[TaskStatus.TODO],
-        "in_progress_tasks": columns[TaskStatus.IN_PROGRESS],
-        "done_tasks": columns[TaskStatus.DONE],
+        "lists": lists,
         "today": date.today(),
-        "TaskStatus": TaskStatus,
+        "list_error": request.query_params.get("list_error"),
     })
 
 
@@ -71,6 +91,7 @@ async def task_new_page(request: Request, db: AsyncSession = Depends(get_db)):
     return templates.TemplateResponse("tasks/form.html", {
         "request": request, "user": user, "task": None,
         "active_users": await _active_users(db),
+        "lists": await _all_lists(db),
     })
 
 
@@ -81,20 +102,77 @@ async def task_create(
     description: str = Form(""),
     due_date: str = Form(""),
     assigned_to_id: str = Form(""),
+    list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await require_admin(request, db)
+
+    lists = await _all_lists(db)
+    target_list_id = list_id.strip() or lists[0].id
 
     task = Task(
         title=title.strip(),
         description=description.strip() or None,
         due_date=date.fromisoformat(due_date) if due_date.strip() else None,
         assigned_to_id=assigned_to_id.strip() or None,
-        status=TaskStatus.TODO,
-        position=await next_position(db, TaskStatus.TODO),
+        list_id=target_list_id,
+        position=await next_position(db, target_list_id),
     )
     db.add(task)
     await db.commit()
+    return RedirectResponse("/tasks/", status_code=302)
+
+
+@router.post("/lists/new")
+async def list_create(request: Request, name: str = Form(...), db: AsyncSession = Depends(get_db)):
+    await require_admin(request, db)
+
+    task_list = TaskList(name=name.strip(), position=await next_list_position(db))
+    db.add(task_list)
+    await db.commit()
+    return RedirectResponse("/tasks/", status_code=302)
+
+
+@router.post("/lists/{list_id}/move")
+async def list_move(list_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_admin(request, db)
+    task_list = await _get_list_or_404(db, list_id, request)
+
+    body = await request.json()
+    try:
+        new_position = int(body["position"])
+    except (KeyError, ValueError):
+        raise HTTPException(status_code=400, detail=t_for(request, "tasks.errors.invalid_move"))
+
+    await move_list(db, task_list, new_position)
+    return JSONResponse({"ok": True})
+
+
+@router.post("/lists/{list_id}/edit")
+async def list_rename(list_id: str, request: Request, name: str = Form(...), db: AsyncSession = Depends(get_db)):
+    await require_admin(request, db)
+    task_list = await _get_list_or_404(db, list_id, request)
+
+    task_list.name = name.strip()
+    await db.commit()
+    return RedirectResponse("/tasks/", status_code=302)
+
+
+@router.post("/lists/{list_id}/delete")
+async def list_delete(
+    list_id: str, request: Request,
+    move_to_list_id: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+    task_list = await _get_list_or_404(db, list_id, request)
+
+    try:
+        await delete_list(db, task_list, move_to_list_id.strip() or None)
+    except ValueError as e:
+        message = urlquote(t_for(request, _LIST_DELETE_ERROR_KEYS[str(e)]))
+        return RedirectResponse(f"/tasks/?list_error={message}", status_code=303)
+
     return RedirectResponse("/tasks/", status_code=302)
 
 
@@ -105,6 +183,7 @@ async def task_edit_page(task_id: str, request: Request, db: AsyncSession = Depe
     return templates.TemplateResponse("tasks/form.html", {
         "request": request, "user": user, "task": task,
         "active_users": await _active_users(db),
+        "lists": await _all_lists(db),
     })
 
 
@@ -116,6 +195,7 @@ async def task_update(
     description: str = Form(""),
     due_date: str = Form(""),
     assigned_to_id: str = Form(""),
+    list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await require_admin(request, db)
@@ -125,6 +205,8 @@ async def task_update(
     task.description = description.strip() or None
     task.due_date = date.fromisoformat(due_date) if due_date.strip() else None
     task.assigned_to_id = assigned_to_id.strip() or None
+    if list_id.strip() and list_id.strip() != task.list_id:
+        await move_task(db, task, list_id.strip(), await next_position(db, list_id.strip()))
 
     await db.commit()
     return RedirectResponse("/tasks/", status_code=302)
@@ -137,12 +219,12 @@ async def task_move(task_id: str, request: Request, db: AsyncSession = Depends(g
 
     body = await request.json()
     try:
-        new_status = TaskStatus(body["status"])
+        new_list_id = str(body["list_id"])
         new_position = int(body["position"])
     except (KeyError, ValueError):
         raise HTTPException(status_code=400, detail=t_for(request, "tasks.errors.invalid_move"))
 
-    await move_task(db, task, new_status, new_position)
+    await move_task(db, task, new_list_id, new_position)
     return JSONResponse({"ok": True})
 
 
@@ -151,9 +233,9 @@ async def task_delete(task_id: str, request: Request, db: AsyncSession = Depends
     await require_admin(request, db)
     task = await _get_task_or_404(db, task_id, request)
 
-    status_value, position = task.status, task.position
+    list_id, position = task.list_id, task.position
     await db.delete(task)
     await db.commit()
-    await close_gap_after_delete(db, status_value, position)
+    await close_gap_after_delete(db, list_id, position)
 
     return RedirectResponse("/tasks/", status_code=302)

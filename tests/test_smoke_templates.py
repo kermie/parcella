@@ -122,6 +122,18 @@ async def test_smoke_admin_pages_render_without_jinja_errors(client, admin_user)
 
 
 async def test_smoke_sample_data_page_add_and_remove_cycle(client, admin_user):
+    # add_sample_data() seeds task-board cards into the "To Do"/"In
+    # Progress"/"Done" lists by name -- normally seeded by migration
+    # 0054_task_lists, but the test DB is built via create_all (see
+    # tests/conftest.py), not Alembic, so tests seed them manually.
+    from app.database import AsyncSessionLocal
+    from app.models import TaskList
+
+    async with AsyncSessionLocal() as session:
+        for position, name in enumerate(["To Do", "In Progress", "Done"]):
+            session.add(TaskList(name=name, position=position))
+        await session.commit()
+
     response = await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     assert response.status_code in (302, 303)
 

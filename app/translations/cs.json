@@ -1619,14 +1619,16 @@
   "tasks": {
     "errors": {
       "task_not_found": "Úkol nenalezen.",
-      "invalid_move": "Neplatný požadavek na přesun."
+      "invalid_move": "Neplatný požadavek na přesun.",
+      "list_not_found": "Seznam nenalezen.",
+      "delete_list_last_list": "Poslední zbývající seznam nelze smazat.",
+      "delete_list_missing_target": "Vyberte seznam, do kterého se mají karty přesunout.",
+      "delete_list_target_not_found": "Vybraný cílový seznam nebyl nalezen."
     },
     "board": {
       "title": "Nástěnka úkolů",
       "new_task_button": "Nový úkol",
-      "column_todo": "K vyřízení",
-      "column_in_progress": "Probíhá",
-      "column_done": "Hotovo",
+      "add_list_button": "Přidat seznam",
       "column_empty": "Žádné úkoly"
     },
     "form": {
@@ -1640,12 +1642,28 @@
       "label_description": "Popis",
       "label_due_date": "Termín",
       "label_assigned_to": "Přiřazeno komu",
+      "label_list": "Seznam",
       "unassigned_option": "Nepřiřazeno",
       "button_save_changes": "Uložit změny",
       "button_create": "Vytvořit",
       "danger_zone_header": "Nebezpečná zóna",
       "delete_confirm": "Smazat tento úkol? Tuto akci nelze vrátit zpět.",
       "button_delete": "Smazat úkol"
+    },
+    "lists": {
+      "add_modal_title": "Přidat seznam",
+      "label_name": "Název",
+      "cancel": "Zrušit",
+      "add_button": "Přidat",
+      "rename_action": "Přejmenovat",
+      "rename_modal_title": "Přejmenovat seznam",
+      "button_save_changes": "Uložit změny",
+      "delete_action": "Smazat",
+      "delete_modal_title": "Smazat seznam",
+      "label_move_cards_to": "Přesunout karty do",
+      "delete_button": "Smazat seznam",
+      "delete_confirm_empty": "Smazat seznam „{name}“? Tuto akci nelze vrátit zpět.",
+      "delete_confirm_with_cards": "Tento seznam stále obsahuje karty. Před smazáním vyberte jiný seznam, do kterého se mají přesunout."
     }
   },
   "email": {

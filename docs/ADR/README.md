@@ -47,3 +47,4 @@ in chronological order.
 41. [Groups supersede roles for new user access](./0041-groups-supersede-roles-for-new-user-access.md)
 42. [Invoice item targeting: plot-scoped vs. person-scoped, as two independent mechanisms](./0042-invoice-item-targeting-plot-scoped-vs-person-scoped.md)
 43. [Shared PDF page chrome (header/footer/@page) across every generator](./0043-shared-pdf-page-chrome.md)
+44. [Task board: configurable lists replace the fixed status enum](./0044-task-board-configurable-lists.md)

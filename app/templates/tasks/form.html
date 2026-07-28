@@ -40,6 +40,17 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_list') }}</label>
+                        <select name="list_id" class="form-select">
+                            {% for list in lists %}
+                            <option value="{{ list.id }}"
+                                    {% if (task and task.list_id == list.id) or (not task and loop.first) %}selected{% endif %}>
+                                {{ list.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>

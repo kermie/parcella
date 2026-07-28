@@ -3,6 +3,9 @@
 {% block page_title %}{{ t('tasks.board.title') }}{% endblock %}
 
 {% block topbar_actions %}
+<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addListModal">
+    <i class="bi bi-layout-three-columns me-1"></i>{{ t('tasks.board.add_list_button') }}
+</button>
 <a href="/tasks/new" class="btn btn-sm btn-primary">
     <i class="bi bi-plus-lg me-1"></i>{{ t('tasks.board.new_task_button') }}
 </a>
@@ -29,6 +32,7 @@
         outline: 2px dashed var(--gv-gruen, #2d6a4f);
         outline-offset: -2px;
     }
+    .kanban-column.column-dragging { opacity: 0.4; }
     .kanban-column-header {
         font-weight: 600;
         font-size: 0.85rem;
@@ -39,6 +43,19 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        cursor: grab;
+    }
+    .kanban-column-header:active { cursor: grabbing; }
+    .kanban-column-header-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .kanban-column-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-shrink: 0;
     }
     .kanban-card {
         background: #fff;
@@ -59,19 +76,42 @@
     }
 </style>
 
+{% if list_error %}
+<div class="alert alert-danger">{{ list_error }}</div>
+{% endif %}
+
 <div class="kanban-scroll">
-    {% for status, tasks, label_key in [
-        ('TODO', todo_tasks, 'tasks.board.column_todo'),
-        ('IN_PROGRESS', in_progress_tasks, 'tasks.board.column_in_progress'),
-        ('DONE', done_tasks, 'tasks.board.column_done'),
-    ] %}
-    <div class="kanban-column" data-status="{{ status }}">
-        <div class="kanban-column-header">
-            <span>{{ t(label_key) }}</span>
-            <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ tasks | length }}</span>
+    {% for list in lists %}
+    <div class="kanban-column" data-list-id="{{ list.id }}">
+        <div class="kanban-column-header" draggable="true">
+            <span class="kanban-column-header-title">{{ list.name }}</span>
+            <div class="kanban-column-header-actions">
+                <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ list.tasks | length }}</span>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-secondary p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#renameListModal"
+                               data-list-id="{{ list.id }}" data-list-name="{{ list.name }}">
+                                <i class="bi bi-pencil me-2"></i>{{ t('tasks.lists.rename_action') }}
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item text-danger {% if lists | length <= 1 %}disabled{% endif %}" href="#"
+                               data-bs-toggle="modal" data-bs-target="#deleteListModal"
+                               data-list-id="{{ list.id }}" data-list-name="{{ list.name }}"
+                               data-list-has-cards="{{ '1' if list.tasks else '0' }}">
+                                <i class="bi bi-trash me-2"></i>{{ t('tasks.lists.delete_action') }}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <div class="kanban-cards" data-status="{{ status }}">
-            {% for task in tasks %}
+        <div class="kanban-cards" data-list-id="{{ list.id }}">
+            {% for task in list.tasks %}
             <div class="kanban-card" draggable="true" data-task-id="{{ task.id }}">
                 <div class="kanban-card-title">
                     <a href="/tasks/{{ task.id }}/edit" class="text-decoration-none text-body">{{ task.title }}</a>
@@ -81,7 +121,7 @@
                     {% if task.assigned_to %}<i class="bi bi-person-fill"></i> {{ task.assigned_to.name }}{% endif %}
                     {% if task.assigned_to and task.due_date %} &middot; {% endif %}
                     {% if task.due_date %}
-                    <span class="{% if task.due_date < today and status != 'DONE' %}kanban-card-overdue{% endif %}">
+                    <span class="{% if task.due_date < today %}kanban-card-overdue{% endif %}">
                         <i class="bi bi-calendar-event"></i> {{ task.due_date.strftime('%d.%m.%Y') }}
                     </span>
                     {% endif %}
@@ -96,12 +136,88 @@
     {% endfor %}
 </div>
 
+<!-- Add list modal -->
+<div class="modal fade" id="addListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/tasks/lists/new">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-layout-three-columns me-2"></i>{{ t('tasks.lists.add_modal_title') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">{{ t('tasks.lists.label_name') }}</label>
+                    <input type="text" name="name" class="form-control" required autofocus maxlength="100">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ t('tasks.lists.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ t('tasks.lists.add_button') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Rename list modal -->
+<div class="modal fade" id="renameListModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="renameListForm" action="/tasks/lists/placeholder/edit">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>{{ t('tasks.lists.rename_modal_title') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label fw-semibold">{{ t('tasks.lists.label_name') }}</label>
+                    <input type="text" name="name" id="renameListInput" class="form-control" required maxlength="100">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ t('tasks.lists.cancel') }}</button>
+                    <button type="submit" class="btn btn-primary">{{ t('tasks.lists.button_save_changes') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete list modal -->
+<div class="modal fade" id="deleteListModal" tabindex="-1" aria-hidden="true"
+     data-msg-empty="{{ t('tasks.lists.delete_confirm_empty') }}"
+     data-msg-with-cards="{{ t('tasks.lists.delete_confirm_with_cards') }}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="deleteListForm" action="/tasks/lists/placeholder/delete">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('tasks.lists.delete_modal_title') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteListMessage"></p>
+                    <div id="deleteListMoveTo" class="d-none">
+                        <label class="form-label fw-semibold">{{ t('tasks.lists.label_move_cards_to') }}</label>
+                        <select name="move_to_list_id" class="form-select">
+                            {% for list in lists %}
+                            <option value="{{ list.id }}" data-list-id="{{ list.id }}">{{ list.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ t('tasks.lists.cancel') }}</button>
+                    <button type="submit" class="btn btn-danger">{{ t('tasks.lists.delete_button') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 (function () {
     let draggedCard = null;
 
     document.querySelectorAll('.kanban-card').forEach(card => {
-        card.addEventListener('dragstart', () => {
+        card.addEventListener('dragstart', (event) => {
+            event.stopPropagation();
             draggedCard = card;
             card.classList.add('dragging');
         });
@@ -127,8 +243,8 @@
         const cardsContainer = column.querySelector('.kanban-cards');
 
         column.addEventListener('dragover', (event) => {
-            event.preventDefault();
             if (!draggedCard) return;
+            event.preventDefault();
             column.classList.add('drag-over');
             const after = cardAfterPointer(cardsContainer, event.clientY);
             if (after == null) {
@@ -145,14 +261,14 @@
         });
 
         column.addEventListener('drop', async (event) => {
+            if (!draggedCard) return;
             event.preventDefault();
             column.classList.remove('drag-over');
-            if (!draggedCard) return;
 
             const emptyHint = cardsContainer.querySelector('.kanban-empty');
             if (emptyHint) emptyHint.remove();
 
-            const newStatus = column.dataset.status;
+            const newListId = column.dataset.listId;
             const cardIds = [...cardsContainer.querySelectorAll('.kanban-card')].map(c => c.dataset.taskId);
             const newPosition = cardIds.indexOf(draggedCard.dataset.taskId);
 
@@ -160,13 +276,103 @@
                 const response = await fetch(`/tasks/${draggedCard.dataset.taskId}/move`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: newStatus, position: newPosition }),
+                    body: JSON.stringify({ list_id: newListId, position: newPosition }),
                 });
                 if (!response.ok) throw new Error('move failed');
             } catch (e) {
                 location.reload();
             }
         });
+    });
+
+    // Column (list) reordering -- same insertion-point technique as the
+    // card drag above, kept in a separate state variable so the two
+    // drag gestures never interfere with each other.
+    let draggedColumn = null;
+    const scroll = document.querySelector('.kanban-scroll');
+
+    document.querySelectorAll('.kanban-column-header').forEach(header => {
+        header.addEventListener('dragstart', () => {
+            draggedColumn = header.closest('.kanban-column');
+            draggedColumn.classList.add('column-dragging');
+        });
+        header.addEventListener('dragend', () => {
+            if (draggedColumn) draggedColumn.classList.remove('column-dragging');
+            draggedColumn = null;
+        });
+    });
+
+    function columnAfterPointer(x) {
+        const columns = [...scroll.querySelectorAll('.kanban-column:not(.column-dragging)')];
+        return columns.reduce((closest, column) => {
+            const box = column.getBoundingClientRect();
+            const offset = x - box.left - box.width / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: column };
+            }
+            return closest;
+        }, { offset: -Infinity, element: null }).element;
+    }
+
+    scroll.addEventListener('dragover', (event) => {
+        if (!draggedColumn) return;
+        event.preventDefault();
+        const after = columnAfterPointer(event.clientX);
+        if (after == null) {
+            scroll.appendChild(draggedColumn);
+        } else {
+            scroll.insertBefore(draggedColumn, after);
+        }
+    });
+
+    scroll.addEventListener('drop', async (event) => {
+        if (!draggedColumn) return;
+        event.preventDefault();
+
+        const listId = draggedColumn.dataset.listId;
+        const columnIds = [...scroll.querySelectorAll('.kanban-column')].map(c => c.dataset.listId);
+        const newPosition = columnIds.indexOf(listId);
+
+        try {
+            const response = await fetch(`/tasks/lists/${listId}/move`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ position: newPosition }),
+            });
+            if (!response.ok) throw new Error('move failed');
+        } catch (e) {
+            location.reload();
+        }
+    });
+
+    // Rename/delete modals: populate from the clicked dropdown item's data-* attrs.
+    document.getElementById('renameListModal').addEventListener('show.bs.modal', (event) => {
+        const trigger = event.relatedTarget;
+        const listId = trigger.dataset.listId;
+        document.getElementById('renameListForm').action = `/tasks/lists/${listId}/edit`;
+        document.getElementById('renameListInput').value = trigger.dataset.listName;
+    });
+
+    const deleteModal = document.getElementById('deleteListModal');
+    deleteModal.addEventListener('show.bs.modal', (event) => {
+        const trigger = event.relatedTarget;
+        const listId = trigger.dataset.listId;
+        const hasCards = trigger.dataset.listHasCards === '1';
+        document.getElementById('deleteListForm').action = `/tasks/lists/${listId}/delete`;
+
+        const template = hasCards ? deleteModal.dataset.msgWithCards : deleteModal.dataset.msgEmpty;
+        document.getElementById('deleteListMessage').textContent = template.replace('{name}', trigger.dataset.listName);
+
+        const moveTo = document.getElementById('deleteListMoveTo');
+        moveTo.classList.toggle('d-none', !hasCards);
+        const select = moveTo.querySelector('select');
+        select.querySelectorAll('option').forEach(option => {
+            option.disabled = option.dataset.listId === listId;
+        });
+        if (hasCards) {
+            const firstEnabled = [...select.options].find(o => !o.disabled);
+            if (firstEnabled) select.value = firstEnabled.value;
+        }
     });
 })();
 </script>

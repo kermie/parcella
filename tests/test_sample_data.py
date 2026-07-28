@@ -4,7 +4,7 @@ from app.database import AsyncSessionLocal
 from app.models import (
     Member, Parcel, MemberParcel, SampleDataRecord,
     Ticket, TicketStatus, PurchaseRequest, PurchaseRequestStatus,
-    Task, TaskStatus, User,
+    Task, TaskList, User,
 )
 from app.sample_data import (
     add_sample_data, remove_sample_data, has_real_core_data,
@@ -17,8 +17,19 @@ def test_deletion_order_covers_every_registered_entity_type():
     assert set(_DELETION_ORDER) == set(_MODEL_BY_ENTITY_TYPE.keys())
 
 
+async def _seed_task_lists(db):
+    """Mirrors migration 0054_task_lists's seed data -- the test DB is
+    built straight from models via create_all (see conftest.py), not
+    Alembic, so tests seed their own lists before _seed_tasks() (which
+    looks them up by name) runs."""
+    for position, name in enumerate(["To Do", "In Progress", "Done"]):
+        db.add(TaskList(name=name, position=position))
+    await db.commit()
+
+
 async def test_add_sample_data_populates_every_module(board_user, second_board_user):
     async with AsyncSessionLocal() as db:
+        await _seed_task_lists(db)
         counts = await add_sample_data(db)
 
         assert all(count > 0 for count in counts.values()), counts
@@ -61,13 +72,14 @@ async def test_add_sample_data_populates_every_module(board_user, second_board_u
         assert PurchaseRequestStatus.REJECTED in pr_statuses
         assert PurchaseRequestStatus.APPROVED in pr_statuses
 
-        # Task board: positions must be a gapless 0..n-1 sequence per column.
-        for status in (TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE):
+        # Task board: positions must be a gapless 0..n-1 sequence per list.
+        result = await db.execute(select(TaskList.id))
+        for (list_id,) in result.all():
             result = await db.execute(
-                select(Task.position).where(Task.status == status).order_by(Task.position)
+                select(Task.position).where(Task.list_id == list_id).order_by(Task.position)
             )
             positions = [row[0] for row in result.all()]
-            assert positions == list(range(len(positions))), (status, positions)
+            assert positions == list(range(len(positions))), (list_id, positions)
 
         assert await has_sample_data(db) is True
 
@@ -102,6 +114,7 @@ async def test_add_sample_data_blocked_when_real_parcel_exists():
 
 async def test_remove_sample_data_deletes_everything_and_only_that(admin_user):
     async with AsyncSessionLocal() as db:
+        await _seed_task_lists(db)
         await add_sample_data(db)
 
         removed = await remove_sample_data(db)
