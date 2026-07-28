@@ -20,22 +20,14 @@ from typing import List, Optional
 
 from weasyprint import HTML
 
-from app.pdf_chrome import wrap_document
+from app.pdf_chrome import wrap_document, org_footer_html, OrgFooterContext
 from app.l10n import format_money
 from app.i18n import translate
 
 # Invoice/reminder-specific CSS, appended after app/pdf_chrome.py's
-# shared page chrome (@page, body, #header, #footer base rules).
+# shared page chrome (@page, body, #header, #footer base rules -- the
+# three-column footer layout itself is shared now, not invoice-only).
 EXTRA_CSS = """
-/* Extends the shared #footer rule with the invoice-specific
-   three-column layout (organization/register/bank details, issue
-   #74) -- everything else here has no equivalent in the shared
-   chrome, since only invoices/reminders need an address window,
-   itemized table, or bank-details footer. */
-#footer { display: flex; gap: 0.6cm; line-height: 1.4; }
-#footer .footer-col { flex: 1; min-width: 0; }
-#footer .footer-col:nth-child(1) { flex: 0.85; }
-#footer .footer-col:nth-child(3) { flex: 1.3; }
 .meta-block { display: flex; justify-content: space-between; margin-bottom: 0.8cm; }
 /* DIN 5008 Form A address window: page margin-top is 2.2cm, so the
    0.5cm padding-top here lands the sender line at 2.7cm from the page
@@ -349,59 +341,22 @@ def _reminder_body_html(data: ReminderPdfData, region: str, currency: str, langu
     """
 
 
-def _footer_html(
-    club_name: str, club_address_lines: List[str], register_court: str, register_number: str,
-    bank_name: str, bank_iban: str, bank_bic: str, bank_account_owner: str, language: str,
-) -> str:
-    """Three-column footer content (issue #74): organization identity,
-    register-court info, and bank details, laid out side by side via
-    the flex #footer running element (extended for this in EXTRA_CSS
-    above). "Page X of Y" is the visual fourth column, but lives in its
-    own @bottom-right margin box (see app/pdf_chrome.py's page_css)
-    rather than here, since WeasyPrint only resolves page counters
-    directly inside a margin box's own `content`, not inside the DOM of
-    an element placed there via `content: element(...)`."""
-    org_lines = [club_name, *club_address_lines]
-
-    register_line = " ".join(filter(None, [register_court, register_number]))
-    register_lines = [register_line] if register_line else []
-
-    bank_line = " · ".join(filter(None, [bank_name, f"BIC {bank_bic}" if bank_bic else ""]))
-    bank_lines = [b for b in [
-        bank_line,
-        f"IBAN {bank_iban}" if bank_iban else "",
-        translate("finances.pdf.account_holder", language, name=bank_account_owner) if bank_account_owner else "",
-    ] if b]
-
-    def column(lines: List[str]) -> str:
-        return f'<div class="footer-col">{"".join(f"<div>{line}</div>" for line in lines)}</div>'
-
-    return column(org_lines) + column(register_lines) + column(bank_lines)
-
-
 def render_invoice_pdf(
-    data: InvoicePdfData, club_name: str, logo_path: Optional[Path],
-    club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
-    region: str, currency: str, bank_account_owner: str = "", language: str = "en",
-    register_court: str = "", register_number: str = "",
+    data: InvoicePdfData, footer_context: OrgFooterContext, logo_path: Optional[Path],
+    region: str, currency: str, language: str = "en",
 ) -> bytes:
-    footer_html = _footer_html(
-        club_name, club_address_lines, register_court, register_number,
-        bank_name, bank_iban, bank_bic, bank_account_owner, language,
-    )
-    sender_line = _sender_line(club_name, club_address_lines)
+    footer_html = org_footer_html(footer_context, language)
+    sender_line = _sender_line(footer_context.club_name, footer_context.address_lines)
     html_doc = wrap_document(
-        _invoice_body_html(data, region, currency, language, sender_line), club_name, logo_path, footer_html, language,
-        extra_css=EXTRA_CSS, bottom_margin="2.6cm",
+        _invoice_body_html(data, region, currency, language, sender_line),
+        footer_context.club_name, logo_path, footer_html, language, extra_css=EXTRA_CSS,
     )
     return HTML(string=html_doc).write_pdf()
 
 
 def render_invoice_bundle_pdf(
-    items: List[InvoicePdfData], club_name: str, logo_path: Optional[Path],
-    club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
-    region: str, currency: str, bank_account_owner: str = "", language: str = "en",
-    register_court: str = "", register_number: str = "",
+    items: List[InvoicePdfData], footer_context: OrgFooterContext, logo_path: Optional[Path],
+    region: str, currency: str, language: str = "en",
 ) -> bytes:
     """Same rendering as render_invoice_pdf, but for many invoices in
     one PDF (issue #58's "merge PDFs to one big one so we can print
@@ -409,33 +364,25 @@ def render_invoice_bundle_pdf(
     one @page header/footer/page-numbering across the whole bundle
     rather than resetting per invoice, since it's meant to be printed
     and handled as a single stack."""
-    footer_html = _footer_html(
-        club_name, club_address_lines, register_court, register_number,
-        bank_name, bank_iban, bank_bic, bank_account_owner, language,
-    )
-    sender_line = _sender_line(club_name, club_address_lines)
+    footer_html = org_footer_html(footer_context, language)
+    sender_line = _sender_line(footer_context.club_name, footer_context.address_lines)
     body_html = "".join(_invoice_body_html(data, region, currency, language, sender_line) for data in items)
     html_doc = wrap_document(
-        body_html, club_name, logo_path, footer_html, language, extra_css=EXTRA_CSS, bottom_margin="2.6cm",
+        body_html, footer_context.club_name, logo_path, footer_html, language, extra_css=EXTRA_CSS,
     )
     return HTML(string=html_doc).write_pdf()
 
 
 def render_reminder_pdf(
-    data: ReminderPdfData, club_name: str, logo_path: Optional[Path],
-    club_address_lines: List[str], bank_name: str, bank_iban: str, bank_bic: str,
-    region: str, currency: str, bank_account_owner: str = "", language: str = "en",
-    register_court: str = "", register_number: str = "",
+    data: ReminderPdfData, footer_context: OrgFooterContext, logo_path: Optional[Path],
+    region: str, currency: str, language: str = "en",
 ) -> bytes:
     """Same page chrome as render_invoice_pdf (issue #59) -- header,
-    four-column footer, page numbering -- with a reminder-specific body."""
-    footer_html = _footer_html(
-        club_name, club_address_lines, register_court, register_number,
-        bank_name, bank_iban, bank_bic, bank_account_owner, language,
-    )
-    sender_line = _sender_line(club_name, club_address_lines)
+    three-column footer, page numbering -- with a reminder-specific body."""
+    footer_html = org_footer_html(footer_context, language)
+    sender_line = _sender_line(footer_context.club_name, footer_context.address_lines)
     html_doc = wrap_document(
-        _reminder_body_html(data, region, currency, language, sender_line), club_name, logo_path, footer_html, language,
-        extra_css=EXTRA_CSS, bottom_margin="2.6cm",
+        _reminder_body_html(data, region, currency, language, sender_line),
+        footer_context.club_name, logo_path, footer_html, language, extra_css=EXTRA_CSS,
     )
     return HTML(string=html_doc).write_pdf()

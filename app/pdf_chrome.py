@@ -1,48 +1,126 @@
 """
-Shared PDF page chrome for every "formal document" PDF in this app:
+Shared PDF page chrome for every "formal document" PDF in this app --
 invoices/reminders, the birthday calendar, the work-session attendee
-sheet, and the meeting sign-in sheet all use this SAME visual
-template -- a DIN-style fixed header (club logo at the true physical
-page edge, club name centered across the full sheet), the same
-color/font palette, a running footer, and localized "Page X of Y"
-page numbering.
+sheet, the meeting sign-in sheet, and the announcement flyer all use
+this SAME visual template: a DIN-style fixed header (club logo at the
+true physical page edge, club name centered across the full sheet),
+the same color/font palette, a running footer, and localized
+"Page X of Y" page numbering. The flyer still always renders as exactly
+one page (see app/print_publisher.py's shortening loop) -- it just also
+shows "Page 1 of 1" now rather than no page number at all.
 
 Deliberately the one shared source now, not independently duplicated
 per generator: this app's invoice PDF originated the look, and each
-later document (birthday calendar, then this refactor) was asked to
-match it "from now on" -- see docs/ADR/0043 for the decision to
-extract this rather than keep copy-pasting the same CSS block into
-every new generator, which had been this codebase's pattern up to that
-point.
+later document was asked to match it "from now on" -- see docs/ADR/0043
+for the decision to extract this rather than keep copy-pasting the same
+CSS block into every new generator, and docs/ADR/0045 for later folding
+the flyer in too and making the footer content itself (not just its
+styling) universal.
 
-NOT used by app/print_publisher.py (the announcement flyer): that one
-is deliberately single-page with a different, centered header and no
-page numbering (see its own module docstring) -- a physical notice
-meant to be pinned up, not a multi-page administrative document, so it
-was never meant to look like these.
-
-Each document still supplies its own BODY content (table columns,
-address blocks, whatever's specific to it) and its own footer content
--- invoices show a three-column bank/register/organization footer;
-everything else here just shows the club name -- only the chrome
-around that content is shared.
+Every document supplies its own BODY content (table columns, address
+blocks, whatever's specific to it), but the FOOTER content is now
+shared as well via `OrgFooterContext`/`org_footer_html()` below: club
+identity, register-court/number, and bank details on every document,
+not just invoices -- an explicit choice (issue: "streamline the footer
+across all PDFs, bank details included") over showing bank details on
+invoices only. `load_org_footer_context()` reads straight from
+`ClubSetting` rather than going through the finances module: this data
+is club-identity/legal info, not finances-owned, and every PDF-
+producing router needs it regardless of which optional modules a club
+has enabled.
 """
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.i18n import translate
+from app.models import ClubSetting
 from app.pdf_utils import file_to_data_uri
 
 
-def page_css(language: str, bottom_margin: str = "2.2cm", extra_css: str = "") -> str:
+@dataclass
+class OrgFooterContext:
+    """Everything the shared footer shows: club identity/address,
+    register-court disclosure, and bank details. Any field left blank
+    (e.g. a club that hasn't entered bank details yet) simply omits
+    that line -- see org_footer_html()."""
+    club_name: str
+    address_lines: List[str] = field(default_factory=list)
+    register_court: str = ""
+    register_number: str = ""
+    bank_name: str = ""
+    bank_iban: str = ""
+    bank_bic: str = ""
+    bank_account_owner: str = ""
+
+
+async def load_org_footer_context(db: AsyncSession, club_name: str) -> OrgFooterContext:
+    """Loads the address/register/bank ClubSettings every PDF footer
+    needs. `club_name` is passed in rather than reloaded here since
+    every caller already has it from load_branding() for the header."""
+    result = await db.execute(
+        select(ClubSetting).where(ClubSetting.key.in_([
+            "verein_strasse", "verein_plz", "verein_ort",
+            "bank_name", "bank_iban", "bank_bic", "bank_account_owner",
+            "registergericht", "vereinsnummer",
+        ]))
+    )
+    settings_map = {e.key: e.value for e in result.scalars().all()}
+    address_lines = [
+        line for line in [settings_map.get("verein_strasse"), " ".join(
+            filter(None, [settings_map.get("verein_plz"), settings_map.get("verein_ort")])
+        )] if line
+    ]
+    return OrgFooterContext(
+        club_name=club_name,
+        address_lines=address_lines,
+        register_court=settings_map.get("registergericht") or "",
+        register_number=settings_map.get("vereinsnummer") or "",
+        bank_name=settings_map.get("bank_name") or "",
+        bank_iban=settings_map.get("bank_iban") or "",
+        bank_bic=settings_map.get("bank_bic") or "",
+        bank_account_owner=settings_map.get("bank_account_owner") or "",
+    )
+
+
+def org_footer_html(context: OrgFooterContext, language: str) -> str:
+    """Three-column footer content (issue #74, later made universal):
+    organization identity, register-court info, and bank details, laid
+    out side by side via the shared flex #footer rule in page_css().
+    "Page X of Y" is the visual fourth column, but lives in its own
+    @bottom-right margin box (see page_css() below) rather than here,
+    since WeasyPrint only resolves page counters directly inside a
+    margin box's own `content`, not inside the DOM of an element placed
+    there via `content: element(...)`."""
+    org_lines = [context.club_name, *context.address_lines]
+
+    register_line = " ".join(filter(None, [context.register_court, context.register_number]))
+    register_lines = [register_line] if register_line else []
+
+    bank_line = " · ".join(filter(None, [context.bank_name, f"BIC {context.bank_bic}" if context.bank_bic else ""]))
+    bank_lines = [b for b in [
+        bank_line,
+        f"IBAN {context.bank_iban}" if context.bank_iban else "",
+        translate("pdf.account_holder", language, name=context.bank_account_owner) if context.bank_account_owner else "",
+    ] if b]
+
+    def column(lines: List[str]) -> str:
+        return f'<div class="footer-col">{"".join(f"<div>{line}</div>" for line in lines)}</div>'
+
+    return column(org_lines) + column(register_lines) + column(bank_lines)
+
+
+def page_css(language: str, bottom_margin: str = "2.6cm", extra_css: str = "") -> str:
     """@page CSS with localized "Page X of Y" page numbering (baked
     into the CSS itself, not translated in the HTML body, since
     WeasyPrint only resolves page counters directly inside a margin
     box's own `content` property -- see app/invoice_pdf.py's original
     _page_css docstring for the full explanation, still accurate here).
-    `bottom_margin` leaves room for a taller footer than the default
-    one-line club-name footer (invoices' three-column bank/register
-    footer needs more vertical space)."""
+    `bottom_margin` defaults to the height every document's three-column
+    org/register/bank footer needs now that it's universal."""
     page_word = translate("pdf.page_label", language)
     of_word = translate("pdf.of_label", language)
     return f"""
@@ -73,7 +151,11 @@ body {{ margin: 0; font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-
 #footer {{
     position: running(footer); font-size: 7.5pt; color: #6b7280;
     border-top: 1px solid #d1d5db; padding-top: 6px;
+    display: flex; gap: 0.6cm; line-height: 1.4;
 }}
+#footer .footer-col {{ flex: 1; min-width: 0; }}
+#footer .footer-col:nth-child(1) {{ flex: 0.85; }}
+#footer .footer-col:nth-child(3) {{ flex: 1.3; }}
 {extra_css}
 """
 
@@ -89,7 +171,7 @@ def header_html(club_name: str, logo_path: Optional[Path]) -> str:
 
 def wrap_document(
     body_html: str, club_name: str, logo_path: Optional[Path], footer_html: str,
-    language: str, extra_css: str = "", bottom_margin: str = "2.2cm",
+    language: str, extra_css: str = "", bottom_margin: str = "2.6cm",
 ) -> str:
     """Wraps `body_html` in the shared page chrome (header/footer/@page
     rules); `extra_css` is appended after the shared CSS so a document

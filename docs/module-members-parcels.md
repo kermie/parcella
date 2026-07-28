@@ -97,10 +97,11 @@ behind it.
 **Deliberately not constrained to one page**, unlike the announcement
 flyer (`app/print_publisher.py`): a real roster can run to several
 pages, and there's no "shorten it" option for a list of people who need
-to physically sign something. It's a normal multi-page document with a
-repeating header/footer (same `@top-center`/`@bottom-center` running-
-element technique as the flyer) and "Page X of Y" numbering via
-`counter(page)`/`counter(pages)`.
+to physically sign something. It's a normal multi-page document
+sharing the same chrome as every other PDF in the app
+(`app/pdf_chrome.py`'s `wrap_document()` -- DIN-style fixed header, the
+three-column organization/register-court/bank footer, "Page X of Y" via
+`counter(page)`/`counter(pages)`; see docs/ADR/0043 and docs/ADR/0045).
 
 **The headline is a plain editable text field, not a template with
 placeholders.** The original ask included an example like "General

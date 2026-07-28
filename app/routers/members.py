@@ -19,6 +19,7 @@ from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
 from app.permissions import require_permission
 from app.i18n import t_for, load_current_language
 from app.branding import load_branding
+from app.pdf_chrome import load_org_footer_context
 from app.meeting_signin_sheet import render_meeting_signin_sheet_pdf
 
 router = APIRouter(prefix="/members", tags=["members"])
@@ -150,8 +151,9 @@ async def signin_sheet_generate(request: Request, db: AsyncSession = Depends(get
     branding = await load_branding(db)
     logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
     language = await load_current_language(db)
+    footer_context = await load_org_footer_context(db, branding["club_name"])
 
-    pdf_bytes = render_meeting_signin_sheet_pdf(headline, branding["club_name"], logo_path, parcel_members, language)
+    pdf_bytes = render_meeting_signin_sheet_pdf(headline, footer_context, logo_path, parcel_members, language)
 
     return Response(
         content=pdf_bytes,

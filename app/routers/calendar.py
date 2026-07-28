@@ -39,6 +39,7 @@ from app.permissions import require_permission
 from app.module_flags import require_module
 from app.i18n import t_for, load_current_language
 from app.branding import load_branding
+from app.pdf_chrome import load_org_footer_context
 from app.birthdays import upcoming_birthdays, all_birthdays_for_calendar, birthdays_for_year, ROUND_BIRTHDAY_INTERVAL
 from app.birthday_calendar_pdf import render_birthday_calendar_pdf
 from app.ics_utils import (
@@ -194,8 +195,9 @@ async def birthdays_pdf(request: Request, year: Optional[int] = Query(None), db:
     branding = await load_branding(db)
     logo_path = Path("app" + branding["logo_url"]) if branding["logo_url"] else None
     language = await load_current_language(db)
+    footer_context = await load_org_footer_context(db, branding["club_name"])
 
-    pdf_bytes = render_birthday_calendar_pdf(target_year, branding["club_name"], logo_path, entries, language)
+    pdf_bytes = render_birthday_calendar_pdf(target_year, footer_context, logo_path, entries, language)
 
     return Response(
         content=pdf_bytes,

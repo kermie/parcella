@@ -88,11 +88,11 @@ async def send_invoice_email(
     data = invoice_pdf_data_from_invoice(invoice, run)
     pdf_bytes = render_invoice_pdf(data, **pdf_context)
 
-    subject = t_for(request, "email.invoice_delivery.subject", invoice_number=invoice.invoice_number, club_name=pdf_context["club_name"])
+    subject = t_for(request, "email.invoice_delivery.subject", invoice_number=invoice.invoice_number, club_name=pdf_context["footer_context"].club_name)
     body = (
-        t_for(request, "email.invoice_delivery.body", club_name=pdf_context["club_name"], parcel_number=invoice.parcel.plot_number, due_date=run.due_date.strftime("%d.%m.%Y"))
+        t_for(request, "email.invoice_delivery.body", club_name=pdf_context["footer_context"].club_name, parcel_number=invoice.parcel.plot_number, due_date=run.due_date.strftime("%d.%m.%Y"))
         if invoice.parcel else
-        t_for(request, "email.invoice_delivery.body_member", club_name=pdf_context["club_name"], due_date=run.due_date.strftime("%d.%m.%Y"))
+        t_for(request, "email.invoice_delivery.body_member", club_name=pdf_context["footer_context"].club_name, due_date=run.due_date.strftime("%d.%m.%Y"))
     )
     html = f"""
     <html><body style="font-family: sans-serif;">
@@ -138,12 +138,12 @@ async def deliver_reminder(
         member, email_address = recipient
         subject = t_for(
             request, "email.reminder_delivery.subject",
-            invoice_number=invoice.invoice_number, level=next_level, club_name=pdf_context["club_name"],
+            invoice_number=invoice.invoice_number, level=next_level, club_name=pdf_context["footer_context"].club_name,
         )
         html = f"""
         <html><body style="font-family: sans-serif;">
         <p>{t_for(request, "email.reminder_delivery.greeting", name=member.full_name)}</p>
-        <p>{t_for(request, "email.reminder_delivery.body", club_name=pdf_context["club_name"], invoice_number=invoice.invoice_number)}</p>
+        <p>{t_for(request, "email.reminder_delivery.body", club_name=pdf_context["footer_context"].club_name, invoice_number=invoice.invoice_number)}</p>
         </body></html>
         """
         filename = reminder_pdf_filename(reminder, invoice, run)

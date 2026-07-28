@@ -3,6 +3,14 @@ Print channel for the announcements module: renders a one-page,
 branded PDF notice from an Announcement, meant for physical posting
 on the allotment grounds.
 
+Shares its page chrome (header/footer/@page, "Page X of Y") with every
+other PDF in this app via app/pdf_chrome.py -- see that module's
+docstring and docs/ADR/0045 for why (it was originally left out as a
+differently-shaped single-page document, then brought in line on
+request). Still always exactly one page -- the shortening loop below is
+unaffected, it just now also shows "Page 1 of 1" like every other
+document instead of no page number at all.
+
 Renders once with the full text (the manual print_text_override if the
 admin set one, otherwise the full body). If that fits on one page,
 done. If not, shortens paragraph-by-paragraph and re-renders each
@@ -36,25 +44,16 @@ from weasyprint import HTML
 
 from app.models import Announcement
 from app.announcement_utils import render_markdown_to_html
+from app.pdf_chrome import wrap_document, org_footer_html, OrgFooterContext
 from app.pdf_utils import file_to_data_uri
 
-# A4, single page, with running header/footer boxes -- see the @page
-# rule below. Since the whole point of this channel is "fits on one
-# page", there's no need for WeasyPrint's more elaborate multi-page
-# running-header machinery beyond what @top-center/@bottom-center
-# already gives for free.
-PAGE_CSS = """
-@page {
-    size: A4;
-    margin: 2cm 1.5cm 2.2cm 1.5cm;
-    @top-center { content: element(header); }
-    @bottom-center { content: element(footer); }
-}
-body { font-family: 'DejaVu Sans', sans-serif; color: #1f2937; font-size: 11pt; line-height: 1.45; }
-#header { position: running(header); text-align: center; border-bottom: 2px solid #2f6f3e; padding-bottom: 8px; }
-#header img { max-height: 60px; margin-bottom: 4px; }
-#header .club-name { font-size: 14pt; font-weight: bold; color: #2f6f3e; }
-#footer { position: running(footer); text-align: center; font-size: 8pt; color: #6b7280; border-top: 1px solid #d1d5db; padding-top: 6px; }
+# Flyer-specific rules only -- @page/body/#header/#footer chrome now
+# comes from app/pdf_chrome.py's page_css(). font-size/line-height stay
+# a deliberate override: a physical notice meant to be read from a
+# pinboard wants larger, airier text than the denser 10.5pt used by the
+# tabular administrative documents sharing this chrome.
+EXTRA_CSS = """
+body { font-size: 11pt; line-height: 1.45; }
 h1 { font-size: 18pt; margin-top: 0.6cm; margin-bottom: 0.4cm; color: #1f2937; }
 .announcement-image { max-width: 100%; max-height: 7cm; display: block; margin: 0.3cm auto; }
 .online-note { margin-top: 0.6cm; padding-top: 0.3cm; border-top: 1px dashed #9ca3af; font-size: 9pt; color: #4b5563; display: flex; align-items: center; gap: 0.4cm; }
@@ -92,32 +91,25 @@ def _split_paragraphs(markdown_text: str) -> List[str]:
 
 def _build_html(
     title: str, body_html: str, image_data_uri: Optional[str],
-    logo_data_uri: Optional[str], club_name: str, online_note_html: str,
+    logo_path: Optional[Path], footer_context: OrgFooterContext, language: str, online_note_html: str,
 ) -> str:
     image_block = f'<img class="announcement-image" src="{image_data_uri}">' if image_data_uri else ""
-    logo_block = f'<img src="{logo_data_uri}">' if logo_data_uri else ""
-    return f"""
-    <html>
-    <head><meta charset="utf-8"><style>{PAGE_CSS}</style></head>
-    <body>
-        <div id="header">
-            {logo_block}
-            <div class="club-name">{club_name}</div>
-        </div>
-        <div id="footer">{club_name}</div>
+    body = f"""
         <h1>{title}</h1>
         {image_block}
         <div>{body_html}</div>
         {online_note_html}
-    </body>
-    </html>
     """
+    return wrap_document(
+        body, footer_context.club_name, logo_path, org_footer_html(footer_context, language), language,
+        extra_css=EXTRA_CSS,
+    )
 
 
 def render_announcement_print_pdf(
-    announcement: Announcement, club_name: str,
+    announcement: Announcement, footer_context: OrgFooterContext,
     logo_path: Optional[Path], image_path: Optional[Path],
-    public_blog_url: Optional[str],
+    public_blog_url: Optional[str], language: str = "en",
 ) -> PrintRenderResult:
     """Renders the announcement as a one-page PDF, shortening the text
     if needed. Mutates announcement.print_text_override if shortening
@@ -126,7 +118,6 @@ def render_announcement_print_pdf(
     shortest attempt -- callers should not catch this to try again
     with different parameters; it means a human needs to shorten the
     source text."""
-    logo_data_uri = file_to_data_uri(logo_path, "image/png")
     image_data_uri = None
     if image_path is not None and image_path.exists():
         image_data_uri = file_to_data_uri(image_path)
@@ -141,7 +132,7 @@ def render_announcement_print_pdf(
             )
         html_doc = _build_html(
             announcement.title, render_markdown_to_html(body_markdown),
-            image_data_uri, logo_data_uri, club_name, online_note_html,
+            image_data_uri, logo_path, footer_context, language, online_note_html,
         )
         return HTML(string=html_doc).render()
 
