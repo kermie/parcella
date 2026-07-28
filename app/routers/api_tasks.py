@@ -170,6 +170,7 @@ async def task_create(
         title=data.title,
         description=data.description,
         due_date=data.due_date,
+        priority=data.priority,
         assigned_to_id=data.assigned_to_id,
         list_id=target_list_id,
         position=await next_position(db, target_list_id),

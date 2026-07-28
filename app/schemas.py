@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 
-from app.models import ParcelStatus, UserRole
+from app.models import ParcelStatus, UserRole, TaskPriority
 
 
 # ---------------------------------------------------------------------------
@@ -802,6 +802,7 @@ class KanbanTaskBase(BaseModel):
     title: str = Field(..., max_length=255)
     description: Optional[str] = None
     due_date: Optional[date] = None
+    priority: Optional[TaskPriority] = None
     assigned_to_id: Optional[str] = None
 
 
@@ -813,6 +814,7 @@ class KanbanTaskUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
     due_date: Optional[date] = None
+    priority: Optional[TaskPriority] = None
     assigned_to_id: Optional[str] = None
 
 
@@ -829,6 +831,7 @@ class KanbanTaskOut(BaseModel):
     list_id: str
     position: int
     due_date: Optional[date] = None
+    priority: Optional[TaskPriority] = None
     assigned_to_id: Optional[str] = None
     created_by_id: Optional[str] = None
     created_at: datetime

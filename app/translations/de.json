@@ -1642,6 +1642,7 @@
       "label_title": "Titel",
       "label_description": "Beschreibung",
       "label_due_date": "Fällig am",
+      "label_priority": "Priorität",
       "label_assigned_to": "Zugewiesen an",
       "label_list": "Liste",
       "unassigned_option": "Nicht zugewiesen",
@@ -1649,7 +1650,11 @@
       "button_create": "Erstellen",
       "danger_zone_header": "Gefahrenzone",
       "delete_confirm": "Diese Aufgabe löschen? Das kann nicht rückgängig gemacht werden.",
-      "button_delete": "Aufgabe löschen"
+      "button_delete": "Aufgabe löschen",
+      "priority_none": "Keine Priorität",
+      "priority_low": "Niedrig",
+      "priority_medium": "Mittel",
+      "priority_high": "Hoch"
     },
     "lists": {
       "add_modal_title": "Liste hinzufügen",

@@ -46,6 +46,31 @@ used for both drag-and-drop ordering and the CSV/API iteration order).
 not member-facing club business (compare `ChangeHistory.changed_by_id`,
 `WorkSession.created_by_id`).
 
+`priority` (issue #106, migration `0055_task_priority`) is an optional
+`TaskPriority` enum (`LOW`/`MEDIUM`/`HIGH`). Nullable with no default --
+unset means "no priority" rather than implicitly `MEDIUM`, since every
+card that existed before this migration has no real basis for a guessed
+priority. Shown on the board as a small colored badge on the card
+(`app/templates/tasks/board.html`) and editable from the same
+create/edit form as due date and assignee; there's no separate
+"priority" column or swimlane, and cards aren't auto-sorted by
+priority -- `position` (drag-and-drop order) still governs ordering
+within a list.
+
+**Migration gotcha, the mirror image of the one in
+[docs/module-work-hours.md](./module-work-hours.md#known-pitfalls):**
+inside `op.create_table(...)`, an inline `sa.Enum(...)` column
+auto-creates the Postgres type as a side effect -- but a standalone
+`op.add_column(...)` on an *existing* table does not. `0055_task_priority`
+needs an explicit `op.execute("CREATE TYPE taskpriority AS ENUM (...)")`
+before the `add_column` call (with `create_type=False` on the column's
+`sa.Enum(...)` to stop SQLAlchemy from trying a second, redundant
+`CREATE TYPE`), same pattern as `0008_zaehlerwesen`'s `medium` column.
+Skipping it fails at `alembic upgrade head` with `type "taskpriority"
+does not exist` -- caught before merge because `run_tests.sh` runs
+migrations against the disposable web image entrypoint, not just
+`create_all` in the test suite itself.
+
 ## Card and list ordering: `app/task_board.py`
 
 Shared between the web router and the REST API so both move cards/lists
@@ -171,7 +196,10 @@ renumbered), the "can't delete the last list" and
 "non-empty delete needs a target" 400s, the admin/board-only permission
 boundary on both the web UI and the API (403 for a readonly member, on
 both task and list endpoints), the full web create/edit/move/delete flow
-for both cards and lists, and the module-disabled-returns-404 case.
+for both cards and lists, the module-disabled-returns-404 case, and
+setting/updating/clearing `priority` via both the API and the web
+form (including that the priority badge disappears from the rendered
+board once cleared).
 
 **Test-DB sharp edge:** the test suite builds its schema from
 `app/models.py` via `Base.metadata.create_all` (see `tests/conftest.py`),

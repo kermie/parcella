@@ -71,6 +71,19 @@
     .kanban-card-title { font-weight: 600; font-size: 0.92rem; }
     .kanban-card-meta { font-size: 0.75rem; color: #6c757d; margin-top: 0.35rem; }
     .kanban-card-overdue { color: #b91c1c; font-weight: 600; }
+    .kanban-card-priority {
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        padding: 0.1rem 0.45rem;
+        border-radius: 1rem;
+        margin-bottom: 0.35rem;
+    }
+    .kanban-card-priority-high { background: #f8d7da; color: #842029; }
+    .kanban-card-priority-medium { background: #fff3cd; color: #664d03; }
+    .kanban-card-priority-low { background: #e2e3e5; color: #41464b; }
     .kanban-empty {
         font-size: 0.8rem; color: #adb5bd; text-align: center; padding: 1rem 0;
     }
@@ -113,6 +126,11 @@
         <div class="kanban-cards" data-list-id="{{ list.id }}">
             {% for task in list.tasks %}
             <div class="kanban-card" draggable="true" data-task-id="{{ task.id }}">
+                {% if task.priority %}
+                <div class="kanban-card-priority kanban-card-priority-{{ task.priority.value.lower() }}">
+                    {{ t('tasks.form.priority_' + task.priority.value.lower()) }}
+                </div>
+                {% endif %}
                 <div class="kanban-card-title">
                     <a href="/tasks/{{ task.id }}/edit" class="text-decoration-none text-body">{{ task.title }}</a>
                 </div>

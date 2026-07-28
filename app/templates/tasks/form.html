@@ -32,6 +32,17 @@
                                value="{{ task.due_date.isoformat() if task and task.due_date else '' }}">
                     </div>
                     <div class="col-sm-6">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_priority') }}</label>
+                        <select name="priority" class="form-select">
+                            <option value="">{{ t('tasks.form.priority_none') }}</option>
+                            {% for p in priorities %}
+                            <option value="{{ p.value }}" {% if task and task.priority == p %}selected{% endif %}>
+                                {{ t('tasks.form.priority_' + p.value.lower()) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
                         <label class="form-label fw-semibold">{{ t('tasks.form.label_assigned_to') }}</label>
                         <select name="assigned_to_id" class="form-select">
                             <option value="">{{ t('tasks.form.unassigned_option') }}</option>
