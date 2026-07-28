@@ -1640,7 +1640,17 @@
       "title": "Nástenka úloh",
       "new_task_button": "Nová úloha",
       "add_list_button": "Pridať zoznam",
-      "column_empty": "Žiadne úlohy"
+      "column_empty": "Žiadne úlohy",
+      "search_placeholder": "Hľadať v názve, popise, štítkoch, komentároch…",
+      "filter_priority_label": "Filtrovať podľa priority",
+      "filter_priority_any": "Ľubovoľná priorita",
+      "filter_tag_label": "Filtrovať podľa štítku",
+      "filter_tag_any": "Ľubovoľný štítok",
+      "filter_assignee_label": "Filtrovať podľa riešiteľa",
+      "filter_assignee_any": "Ľubovoľný riešiteľ",
+      "filter_due_month_label": "Filtrovať podľa mesiaca splatnosti",
+      "filter_clear": "Zrušiť filtre",
+      "filter_no_results": "Žiadne úlohy nezodpovedajú vyhľadávaniu/filtrom."
     },
     "form": {
       "title_new": "Nová úloha",

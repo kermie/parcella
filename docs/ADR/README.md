@@ -52,3 +52,4 @@ in chronological order.
 46. [Task board: multiple assignees per card](./0046-task-board-multiple-assignees-per-card.md)
 47. [Club settings: board members](./0047-club-settings-board-members.md)
 48. [Board members join the universal PDF footer](./0048-board-members-join-the-universal-pdf-footer.md)
+49. [Task board search and filter: client-side, not a server round trip](./0049-task-board-search-and-filter-client-side.md)

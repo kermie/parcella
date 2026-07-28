@@ -102,11 +102,55 @@
     .kanban-empty {
         font-size: 0.8rem; color: #adb5bd; text-align: center; padding: 1rem 0;
     }
+    .task-filter-bar {
+        display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+    }
+    .task-filter-bar .form-select, .task-filter-bar .form-control {
+        max-width: 190px;
+    }
 </style>
 
 {% if list_error %}
 <div class="alert alert-danger">{{ list_error }}</div>
 {% endif %}
+
+<div class="task-filter-bar mb-3">
+    <div class="input-group input-group-sm" style="max-width: 240px;">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="search" id="task-search" class="form-control"
+               placeholder="{{ t('tasks.board.search_placeholder') }}"
+               aria-label="{{ t('tasks.board.search_placeholder') }}">
+    </div>
+    <select id="task-filter-priority" class="form-select form-select-sm" aria-label="{{ t('tasks.board.filter_priority_label') }}">
+        <option value="">{{ t('tasks.board.filter_priority_any') }}</option>
+        <option value="high">{{ t('tasks.form.priority_high') }}</option>
+        <option value="medium">{{ t('tasks.form.priority_medium') }}</option>
+        <option value="low">{{ t('tasks.form.priority_low') }}</option>
+    </select>
+    <select id="task-filter-tag" class="form-select form-select-sm" aria-label="{{ t('tasks.board.filter_tag_label') }}">
+        <option value="">{{ t('tasks.board.filter_tag_any') }}</option>
+        {% for tag in tag_options %}
+        <option value="{{ tag|lower }}">{{ tag }}</option>
+        {% endfor %}
+    </select>
+    <select id="task-filter-assignee" class="form-select form-select-sm" aria-label="{{ t('tasks.board.filter_assignee_label') }}">
+        <option value="">{{ t('tasks.board.filter_assignee_any') }}</option>
+        {% for user_id, name in assignee_options %}
+        <option value="{{ user_id }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+    <div class="input-group input-group-sm" style="max-width: 190px;">
+        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+        <input type="month" id="task-filter-due-month" class="form-control"
+               aria-label="{{ t('tasks.board.filter_due_month_label') }}">
+    </div>
+    <button type="button" id="task-filter-clear" class="btn btn-sm btn-outline-secondary">
+        {{ t('tasks.board.filter_clear') }}
+    </button>
+</div>
+<div id="task-filter-no-results" class="alert alert-light border text-muted text-center mb-3" style="display: none;">
+    {{ t('tasks.board.filter_no_results') }}
+</div>
 
 <div class="kanban-scroll">
     {% for list in lists %}
@@ -140,7 +184,12 @@
         </div>
         <div class="kanban-cards" data-list-id="{{ list.id }}">
             {% for task in list.tasks %}
-            <div class="kanban-card" draggable="true" data-task-id="{{ task.id }}">
+            <div class="kanban-card" draggable="true" data-task-id="{{ task.id }}"
+                 data-search-text="{{ ([task.title, task.description or '', task.tags|join(' '), task.comments|map(attribute='content')|join(' ')]|join(' '))|lower }}"
+                 data-priority="{{ task.priority.value.lower() if task.priority else '' }}"
+                 data-tags="{{ task.tags|map('lower')|join(',') }}"
+                 data-assignee-ids="{{ task.assignees|map(attribute='user_id')|join(',') }}"
+                 data-due-month="{{ task.due_date.strftime('%Y-%m') if task.due_date else '' }}">
                 {% if task.priority %}
                 <div class="kanban-card-priority kanban-card-priority-{{ task.priority.value.lower() }}">
                     {{ t('tasks.form.priority_' + task.priority.value.lower()) }}
@@ -254,9 +303,17 @@
 <script>
 (function () {
     let draggedCard = null;
+    // Search/filter (issue #119): while any filter is active, card
+    // reordering is disabled rather than attempted -- with some cards
+    // hidden, "insert before this visible card" has no single correct
+    // absolute position among the full (including hidden) sibling set,
+    // so dragging could silently write a wrong position server-side.
+    // Column drag/reorder is unaffected (it never depends on cards).
+    let filtersActive = false;
 
     document.querySelectorAll('.kanban-card').forEach(card => {
         card.addEventListener('dragstart', (event) => {
+            if (filtersActive) { event.preventDefault(); return; }
             event.stopPropagation();
             draggedCard = card;
             card.classList.add('dragging');
@@ -383,6 +440,58 @@
         } catch (e) {
             location.reload();
         }
+    });
+
+    // Search/filter (issue #119): purely client-side over data-*
+    // attributes already rendered on each card (title/description/tags/
+    // comments for search; priority/tags/assignees/due-month for the
+    // filters) -- no round trip, and the board stays fully usable while
+    // a filter narrows it down.
+    const cards = Array.prototype.slice.call(document.querySelectorAll('.kanban-card'));
+    const searchInput = document.getElementById('task-search');
+    const priorityFilter = document.getElementById('task-filter-priority');
+    const tagFilter = document.getElementById('task-filter-tag');
+    const assigneeFilter = document.getElementById('task-filter-assignee');
+    const dueMonthFilter = document.getElementById('task-filter-due-month');
+    const clearButton = document.getElementById('task-filter-clear');
+    const noResults = document.getElementById('task-filter-no-results');
+
+    function applyTaskFilters() {
+        const term = searchInput.value.trim().toLowerCase();
+        const priority = priorityFilter.value;
+        const tag = tagFilter.value;
+        const assignee = assigneeFilter.value;
+        const dueMonth = dueMonthFilter.value;
+        filtersActive = !!(term || priority || tag || assignee || dueMonth);
+
+        let anyVisible = false;
+        cards.forEach(function (card) {
+            const cardTags = card.dataset.tags ? card.dataset.tags.split(',') : [];
+            const cardAssignees = card.dataset.assigneeIds ? card.dataset.assigneeIds.split(',') : [];
+            const matches = (
+                (!term || card.dataset.searchText.indexOf(term) !== -1) &&
+                (!priority || card.dataset.priority === priority) &&
+                (!tag || cardTags.indexOf(tag) !== -1) &&
+                (!assignee || cardAssignees.indexOf(assignee) !== -1) &&
+                (!dueMonth || card.dataset.dueMonth === dueMonth)
+            );
+            card.style.display = matches ? '' : 'none';
+            if (matches) anyVisible = true;
+        });
+        noResults.style.display = (cards.length > 0 && !anyVisible) ? '' : 'none';
+    }
+
+    searchInput.addEventListener('input', applyTaskFilters);
+    [priorityFilter, tagFilter, assigneeFilter, dueMonthFilter].forEach(function (el) {
+        el.addEventListener('change', applyTaskFilters);
+    });
+    clearButton.addEventListener('click', function () {
+        searchInput.value = '';
+        priorityFilter.value = '';
+        tagFilter.value = '';
+        assigneeFilter.value = '';
+        dueMonthFilter.value = '';
+        applyTaskFilters();
     });
 
     // Rename/delete modals: populate from the clicked dropdown item's data-* attrs.

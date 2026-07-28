@@ -205,6 +205,21 @@ populated from the clicked column's `data-*` attributes), following the
 same `data-bs-toggle="modal"` pattern as the CSV-import modal in
 `app/templates/members/list.html`, rather than one modal per column.
 
+## Search and filter (issue #119)
+
+A search box (title, description, tags, comment content) plus filters
+for priority, tag, owner (assignee), and due month/year sit above the
+board. All of it is client-side JS over `data-*` attributes already
+rendered on each card -- see [ADR 0049](./ADR/0049-task-board-search-and-filter-client-side.md)
+for why (the board is a single all-at-once page, same as admin
+settings' own card search) and for why card dragging is disabled while
+any filter is active (position ambiguity among hidden siblings) while
+column/list dragging stays unaffected. `board()`'s query gained
+`selectinload(Task.comments)` to make comment text searchable -- the
+one server-side change this needed, since everything else the search/
+filter reads was already loaded for some other reason (assignees for
+the meta line, tags for the tag pills, etc.).
+
 Create/edit (of a card) use the same separate-page pattern as the rest
 of the app (`/tasks/new`, `/tasks/{id}/edit`) rather than a modal, for
 consistency with Members/Parcels/Work Hours; lists themselves are
@@ -269,9 +284,15 @@ board once cleared), (issue #109) creating/reading a task with
 multiple assignees, resyncing the assignee set on update (including
 that omitting `assigned_to_ids` from a `PUT` body leaves existing
 assignees untouched), the web form's checkbox grid pre-selecting
-existing assignees on edit, and (issue #108) adding/listing/deleting
+existing assignees on edit, (issue #108) adding/listing/deleting
 comments (both web and API, plus the 404s for a comment on a
-nonexistent task or a nonexistent comment id).
+nonexistent task or a nonexistent comment id), and (issue #119) that
+the board renders the right `data-search-text`/`data-priority`/
+`data-tags`/`data-assignee-ids`/`data-due-month` attributes (including
+comment content folded into the search text) and that the tag/owner
+filter dropdowns only offer options actually present on the board --
+the search/filter behavior itself is client-side JS, untestable via
+`pytest`, so these tests only cover the server-rendered data it reads.
 
 **Test-DB sharp edge:** the test suite builds its schema from
 `app/models.py` via `Base.metadata.create_all` (see `tests/conftest.py`),

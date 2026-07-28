@@ -757,3 +757,90 @@ async def test_web_add_and_delete_comment_flow(client, admin_user):
 
     edit_page2 = await client.get(f"/tasks/{task['id']}/edit")
     assert "Please review" not in edit_page2.text
+
+
+async def test_board_renders_search_filter_data_attributes(client, admin_user):
+    """Issue #119: the board's search/filter is client-side JS over
+    data-* attributes on each card, so this only has to verify those
+    attributes are actually rendered correctly -- title, description,
+    tags, and comment content folded into data-search-text (lowercased),
+    plus data-priority/data-tags/data-assignee-ids/data-due-month, and
+    that the tag/assignee filter dropdowns are populated from what's
+    actually on the board. Also exercises the board query's
+    selectinload(Task.comments) -- a missing eager-load here would trip
+    an unawaited-lazy-load error under asyncpg (see CLAUDE.md's
+    identity-map sharp edge), not just render an empty attribute."""
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    async with AsyncSessionLocal() as session:
+        alice = User(
+            email="alice-filter@example.com", name="Alice Filterby",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        session.add(alice)
+        await session.commit()
+        await session.refresh(alice)
+
+    await web_login(client, "admin@example.com")
+
+    create_response = await client.post(
+        "/tasks/new",
+        data={
+            "title": "Renew the insurance policy",
+            "description": "Talk to the broker about the annual renewal",
+            "due_date": "2026-11-15",
+            "priority": "HIGH",
+            "tags": "urgent, admin",
+            "assigned_to_ids": [alice.id],
+        },
+    )
+    assert create_response.status_code in (302, 303)
+
+    await client.post(
+        "/tasks/new", data={"title": "Untagged task with no extras"},
+    )
+
+    board_response = await client.get("/tasks/")
+    assert board_response.status_code == 200
+    html = board_response.text
+
+    assert 'data-search-text="renew the insurance policy talk to the broker' in html
+    assert 'data-priority="high"' in html
+    assert 'data-tags="urgent,admin"' in html
+    assert f'data-assignee-ids="{alice.id}"' in html
+    assert 'data-due-month="2026-11"' in html
+
+    # Filter dropdowns must be populated from what's actually on the
+    # board (the tag/assignee added above), not every tag/user ever
+    # created.
+    assert '<option value="urgent">urgent</option>' in html
+    assert '<option value="admin">admin</option>' in html
+    assert f'<option value="{alice.id}">{alice.name}</option>' in html
+
+
+async def test_board_search_text_includes_comment_content(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+    await web_login(client, "admin@example.com")
+
+    create_response = await client.post("/tasks/new", data={"title": "Fix the fence"})
+    assert create_response.status_code in (302, 303)
+
+    board_response = await client.get("/tasks/")
+    import re
+    m = re.search(r'data-task-id="([a-f0-9-]+)"', board_response.text)
+    task_id = m.group(1)
+
+    await client.post(f"/tasks/{task_id}/comments", data={"content": "Ask the neighbor about the broken post"})
+
+    board_response2 = await client.get("/tasks/")
+    assert board_response2.status_code == 200
+    assert "ask the neighbor about the broken post" in board_response2.text.lower()
