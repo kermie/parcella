@@ -1644,7 +1644,6 @@
       "label_due_date": "Fällig am",
       "label_assigned_to": "Zugewiesen an",
       "label_list": "Liste",
-      "unassigned_option": "Nicht zugewiesen",
       "button_save_changes": "Änderungen speichern",
       "button_create": "Erstellen",
       "danger_zone_header": "Gefahrenzone",

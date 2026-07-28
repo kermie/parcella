@@ -1644,7 +1644,6 @@
       "label_due_date": "Deadline",
       "label_assigned_to": "Toegewezen aan",
       "label_list": "Lijst",
-      "unassigned_option": "Niet toegewezen",
       "button_save_changes": "Wijzigingen opslaan",
       "button_create": "Aanmaken",
       "danger_zone_header": "Gevarenzone",

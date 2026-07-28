@@ -1644,7 +1644,6 @@
       "label_due_date": "Termin",
       "label_assigned_to": "Przypisano do",
       "label_list": "Lista",
-      "unassigned_option": "Nieprzypisane",
       "button_save_changes": "Zapisz zmiany",
       "button_create": "Utwórz",
       "danger_zone_header": "Strefa zagrożenia",

@@ -32,15 +32,6 @@
                                value="{{ task.due_date.isoformat() if task and task.due_date else '' }}">
                     </div>
                     <div class="col-sm-6">
-                        <label class="form-label fw-semibold">{{ t('tasks.form.label_assigned_to') }}</label>
-                        <select name="assigned_to_id" class="form-select">
-                            <option value="">{{ t('tasks.form.unassigned_option') }}</option>
-                            {% for u in active_users %}
-                            <option value="{{ u.id }}" {% if task and task.assigned_to_id == u.id %}selected{% endif %}>{{ u.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-sm-6">
                         <label class="form-label fw-semibold">{{ t('tasks.form.label_list') }}</label>
                         <select name="list_id" class="form-select">
                             {% for list in lists %}
@@ -50,6 +41,20 @@
                             </option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ t('tasks.form.label_assigned_to') }}</label>
+                        {% set assigned_ids = task.assigned_to_ids if task else [] %}
+                        <div class="row" style="max-height: 200px; overflow-y: auto; border: 1px solid #dce8df; border-radius: 6px; padding: 0.5rem; margin: 0;">
+                            {% for u in active_users %}
+                            <div class="col-sm-6 form-check">
+                                <input type="checkbox" name="assigned_to_ids" value="{{ u.id }}"
+                                       class="form-check-input" id="assignee-{{ u.id }}"
+                                       {% if u.id in assigned_ids %}checked{% endif %}>
+                                <label class="form-check-label" for="assignee-{{ u.id }}">{{ u.name }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

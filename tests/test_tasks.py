@@ -134,6 +134,87 @@ async def test_update_task_fields(client, admin_user):
     assert updated["due_date"] == "2026-12-01"
 
 
+async def test_create_task_with_multiple_assignees(client, admin_user):
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    async with AsyncSessionLocal() as session:
+        alice = User(
+            email="alice@example.com", name="Alice",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        bob = User(
+            email="bob@example.com", name="Bob",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        session.add_all([alice, bob])
+        await session.commit()
+        await session.refresh(alice)
+        await session.refresh(bob)
+
+    created = (await client.post(
+        "/api/v1/tasks",
+        json={"title": "Repaint the fence", "assigned_to_ids": [alice.id, bob.id]},
+        headers=headers,
+    )).json()
+    assert sorted(created["assigned_to_ids"]) == sorted([alice.id, bob.id])
+
+    fetched = (await client.get(f"/api/v1/tasks/{created['id']}", headers=headers)).json()
+    assert sorted(fetched["assigned_to_ids"]) == sorted([alice.id, bob.id])
+
+
+async def test_update_task_resyncs_assignees(client, admin_user):
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    async with AsyncSessionLocal() as session:
+        alice = User(
+            email="alice2@example.com", name="Alice Two",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        bob = User(
+            email="bob2@example.com", name="Bob Two",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        session.add_all([alice, bob])
+        await session.commit()
+        await session.refresh(alice)
+        await session.refresh(bob)
+
+    created = (await client.post(
+        "/api/v1/tasks", json={"title": "Order supplies", "assigned_to_ids": [alice.id]}, headers=headers,
+    )).json()
+    assert created["assigned_to_ids"] == [alice.id]
+
+    updated = (await client.put(
+        f"/api/v1/tasks/{created['id']}", json={"assigned_to_ids": [bob.id]}, headers=headers,
+    )).json()
+    assert updated["assigned_to_ids"] == [bob.id]
+
+    # Omitting assigned_to_ids entirely from the PUT body leaves the
+    # existing assignees untouched (exclude_unset semantics, same as
+    # every other partial-update field on this endpoint).
+    untouched = (await client.put(
+        f"/api/v1/tasks/{created['id']}", json={"description": "Restocked"}, headers=headers,
+    )).json()
+    assert untouched["assigned_to_ids"] == [bob.id]
+
+    cleared = (await client.put(
+        f"/api/v1/tasks/{created['id']}", json={"assigned_to_ids": []}, headers=headers,
+    )).json()
+    assert cleared["assigned_to_ids"] == []
+
+
 async def test_readonly_member_cannot_access_api(client, admin_user):
     from app.models import User, UserRole
     from app.auth import hash_password
@@ -203,7 +284,7 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
         "/tasks/new",
         data={
             "title": "Fix the gate lock", "description": "Squeaky hinge", "due_date": "2026-08-01",
-            "assigned_to_id": board_member.id,
+            "assigned_to_ids": [board_member.id],
         },
     )
     assert create_response.status_code in (302, 303)
@@ -244,6 +325,63 @@ async def test_web_board_renders_and_create_edit_delete_flow(client, admin_user)
 
     board_response3 = await client.get("/tasks/")
     assert "Fix the gate lock" not in board_response3.text
+
+
+async def test_web_form_supports_multiple_assignees(client, admin_user):
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _enable_module(client, headers)
+    await _seed_lists()
+
+    async with AsyncSessionLocal() as session:
+        alice = User(
+            email="alice3@example.com", name="Alice Three",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        bob = User(
+            email="bob3@example.com", name="Bob Three",
+            password_hash=hash_password("testpasswort123"), role=UserRole.BOARD,
+        )
+        session.add_all([alice, bob])
+        await session.commit()
+        await session.refresh(alice)
+        await session.refresh(bob)
+
+    await web_login(client, "admin@example.com")
+
+    create_response = await client.post(
+        "/tasks/new",
+        data={"title": "Water the new trees", "assigned_to_ids": [alice.id, bob.id]},
+    )
+    assert create_response.status_code in (302, 303)
+
+    board_response = await client.get("/tasks/")
+    assert alice.name in board_response.text
+    assert bob.name in board_response.text
+
+    import re
+    m = re.search(r'/tasks/([a-f0-9-]+)/edit', board_response.text)
+    assert m, "no edit link found on board"
+    task_id = m.group(1)
+
+    edit_page = await client.get(f"/tasks/{task_id}/edit")
+    assert edit_page.status_code == 200
+    assert f'id="assignee-{alice.id}"' in edit_page.text
+    assert f'id="assignee-{bob.id}"' in edit_page.text
+
+    # Resync down to a single assignee on edit.
+    edit_response = await client.post(
+        f"/tasks/{task_id}/edit",
+        data={"title": "Water the new trees", "due_date": "", "assigned_to_ids": [bob.id]},
+    )
+    assert edit_response.status_code in (302, 303)
+
+    board_response2 = await client.get("/tasks/")
+    assert alice.name not in board_response2.text
+    assert bob.name in board_response2.text
 
 
 async def test_module_disabled_returns_404(client, admin_user):

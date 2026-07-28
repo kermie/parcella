@@ -18,7 +18,7 @@ from app.models import (
     GroupMembership, ParcelCloudFolder, WorkSession, WorkTask, ChangeHistory,
     MeterReading, Ticket, TicketMessage, PurchaseRequest, PurchaseRequestApproval,
     CalendarEvent, CouncilPresence, CouncilAbsence, Announcement, InventoryItem,
-    ItemLoan, Task,
+    ItemLoan, Task, TaskAssignee,
 )
 from app.auth import require_system_admin, create_invitation_token, hash_password
 from app.permissions import is_last_admin
@@ -71,7 +71,7 @@ _USER_REFERENCE_CHECKS = [
     (Announcement, Announcement.created_by_id),
     (InventoryItem, InventoryItem.created_by_id),
     (ItemLoan, ItemLoan.created_by_id),
-    (Task, Task.assigned_to_id),
+    (TaskAssignee, TaskAssignee.user_id),
     (Task, Task.created_by_id),
 ]
 

@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Task, TaskList, User
+from app.models import Task, TaskAssignee, TaskList, User
 from app.auth import require_admin
 from app.i18n import t_for
 from app.module_flags import require_module
@@ -41,7 +41,9 @@ _LIST_DELETE_ERROR_KEYS = {
 
 
 async def _get_task_or_404(db: AsyncSession, task_id: str, request: Request) -> Task:
-    result = await db.execute(select(Task).where(Task.id == task_id))
+    result = await db.execute(
+        select(Task).options(selectinload(Task.assignees)).where(Task.id == task_id)
+    )
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail=t_for(request, "tasks.errors.task_not_found"))
@@ -72,7 +74,7 @@ async def board(request: Request, db: AsyncSession = Depends(get_db)):
 
     result = await db.execute(
         select(TaskList)
-        .options(selectinload(TaskList.tasks).selectinload(Task.assigned_to))
+        .options(selectinload(TaskList.tasks).selectinload(Task.assignees).selectinload(TaskAssignee.user))
         .order_by(TaskList.position)
     )
     lists = result.scalars().all()
@@ -101,7 +103,7 @@ async def task_create(
     title: str = Form(...),
     description: str = Form(""),
     due_date: str = Form(""),
-    assigned_to_id: str = Form(""),
+    assigned_to_ids: list[str] = Form([]),
     list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -114,11 +116,13 @@ async def task_create(
         title=title.strip(),
         description=description.strip() or None,
         due_date=date.fromisoformat(due_date) if due_date.strip() else None,
-        assigned_to_id=assigned_to_id.strip() or None,
         list_id=target_list_id,
         position=await next_position(db, target_list_id),
     )
     db.add(task)
+    await db.flush()
+    for user_id in assigned_to_ids:
+        db.add(TaskAssignee(task_id=task.id, user_id=user_id))
     await db.commit()
     return RedirectResponse("/tasks/", status_code=302)
 
@@ -194,7 +198,7 @@ async def task_update(
     title: str = Form(...),
     description: str = Form(""),
     due_date: str = Form(""),
-    assigned_to_id: str = Form(""),
+    assigned_to_ids: list[str] = Form([]),
     list_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
@@ -204,9 +208,20 @@ async def task_update(
     task.title = title.strip()
     task.description = description.strip() or None
     task.due_date = date.fromisoformat(due_date) if due_date.strip() else None
-    task.assigned_to_id = assigned_to_id.strip() or None
     if list_id.strip() and list_id.strip() != task.list_id:
         await move_task(db, task, list_id.strip(), await next_position(db, list_id.strip()))
+
+    # Always resync assignees to what was actually submitted, same as
+    # finances.py's parcel_scopes/member_scopes resync. Unlike those scope
+    # tables, task_assignees has a uq_task_assignee unique constraint, so
+    # the deletes must flush before re-adding -- otherwise re-selecting an
+    # already-assigned user inserts before the matching delete lands and
+    # trips the constraint.
+    for assignee in list(task.assignees):
+        await db.delete(assignee)
+    await db.flush()
+    for user_id in assigned_to_ids:
+        db.add(TaskAssignee(task_id=task.id, user_id=user_id))
 
     await db.commit()
     return RedirectResponse("/tasks/", status_code=302)

@@ -1770,6 +1770,10 @@ class Task(Base):
     on every create/move/delete -- simple and correct at the card counts
     a club's task board will ever realistically have, avoids the
     fractional-position bookkeeping a high-write-volume board would need.
+
+    A card can have any number of assignees (issue #109) via the
+    `TaskAssignee` join table below -- replaced the original single
+    `assigned_to_id` FK, see ADR 0046.
     """
     __tablename__ = "tasks"
 
@@ -1782,9 +1786,6 @@ class Task(Base):
     position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     due_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
-    assigned_to_id: Mapped[Optional[str]] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
-    )
     created_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -1797,11 +1798,42 @@ class Task(Base):
     )
 
     list: Mapped["TaskList"] = relationship("TaskList", back_populates="tasks", foreign_keys=[list_id])
-    assigned_to: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_to_id])
+    assignees: Mapped[List["TaskAssignee"]] = relationship(
+        "TaskAssignee", back_populates="task", cascade="all, delete-orphan"
+    )
     created_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by_id])
+
+    @property
+    def assigned_to_ids(self) -> List[str]:
+        return [assignee.user_id for assignee in self.assignees]
 
     def __repr__(self) -> str:
         return f"<Task {self.title!r} (list={self.list_id})>"
+
+
+class TaskAssignee(Base):
+    """A user assigned to a kanban task (m:n -- issue #109 replaced the
+    original single `assigned_to_id` FK on Task). Mirrors GroupMembership's
+    shape."""
+    __tablename__ = "task_assignees"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    task_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    task: Mapped["Task"] = relationship("Task", back_populates="assignees")
+    user: Mapped["User"] = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("task_id", "user_id", name="uq_task_assignee"),
+    )
 
 
 # ---------------------------------------------------------------------------

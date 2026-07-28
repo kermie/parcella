@@ -1644,7 +1644,6 @@
       "label_due_date": "Due date",
       "label_assigned_to": "Assigned to",
       "label_list": "List",
-      "unassigned_option": "Unassigned",
       "button_save_changes": "Save changes",
       "button_create": "Create",
       "danger_zone_header": "Danger zone",

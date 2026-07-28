@@ -802,7 +802,7 @@ class KanbanTaskBase(BaseModel):
     title: str = Field(..., max_length=255)
     description: Optional[str] = None
     due_date: Optional[date] = None
-    assigned_to_id: Optional[str] = None
+    assigned_to_ids: List[str] = Field(default_factory=list)
 
 
 class KanbanTaskCreate(KanbanTaskBase):
@@ -813,7 +813,7 @@ class KanbanTaskUpdate(BaseModel):
     title: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
     due_date: Optional[date] = None
-    assigned_to_id: Optional[str] = None
+    assigned_to_ids: Optional[List[str]] = None
 
 
 class KanbanTaskMove(BaseModel):
@@ -829,7 +829,7 @@ class KanbanTaskOut(BaseModel):
     list_id: str
     position: int
     due_date: Optional[date] = None
-    assigned_to_id: Optional[str] = None
+    assigned_to_ids: List[str] = Field(default_factory=list)
     created_by_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime

@@ -116,10 +116,10 @@
                 <div class="kanban-card-title">
                     <a href="/tasks/{{ task.id }}/edit" class="text-decoration-none text-body">{{ task.title }}</a>
                 </div>
-                {% if task.assigned_to or task.due_date %}
+                {% if task.assignees or task.due_date %}
                 <div class="kanban-card-meta">
-                    {% if task.assigned_to %}<i class="bi bi-person-fill"></i> {{ task.assigned_to.name }}{% endif %}
-                    {% if task.assigned_to and task.due_date %} &middot; {% endif %}
+                    {% if task.assignees %}<i class="bi bi-person-fill"></i> {{ task.assignees|map(attribute='user.name')|join(', ') }}{% endif %}
+                    {% if task.assignees and task.due_date %} &middot; {% endif %}
                     {% if task.due_date %}
                     <span class="{% if task.due_date < today %}kanban-card-overdue{% endif %}">
                         <i class="bi bi-calendar-event"></i> {{ task.due_date.strftime('%d.%m.%Y') }}

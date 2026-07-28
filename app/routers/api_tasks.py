@@ -9,9 +9,10 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Task, TaskList, User
+from app.models import Task, TaskAssignee, TaskList, User
 from app.api_auth import require_admin_api
 from app.module_flags import require_module
 from app.task_board import (
@@ -38,7 +39,9 @@ _LIST_DELETE_ERROR_MESSAGES = {
 
 
 async def _get_task_or_404(db: AsyncSession, task_id: str) -> Task:
-    result = await db.execute(select(Task).where(Task.id == task_id))
+    result = await db.execute(
+        select(Task).options(selectinload(Task.assignees)).where(Task.id == task_id)
+    )
     task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -134,7 +137,7 @@ async def tasks_list(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_admin_api),
 ):
-    query = select(Task).order_by(Task.list_id, Task.position)
+    query = select(Task).options(selectinload(Task.assignees)).order_by(Task.list_id, Task.position)
     if list_id:
         query = query.where(Task.list_id == list_id)
     result = await db.execute(query)
@@ -170,13 +173,18 @@ async def task_create(
         title=data.title,
         description=data.description,
         due_date=data.due_date,
-        assigned_to_id=data.assigned_to_id,
         list_id=target_list_id,
         position=await next_position(db, target_list_id),
     )
     db.add(task)
+    await db.flush()
+    for user_id in data.assigned_to_ids:
+        db.add(TaskAssignee(task_id=task.id, user_id=user_id))
     await db.commit()
-    await db.refresh(task)
+    # created_at/updated_at are server-side defaults, and assignees was
+    # populated via separately-added rows -- both need a DB round-trip
+    # (see CLAUDE.md's identity-map sharp edge).
+    await db.refresh(task, attribute_names=["created_at", "updated_at", "assignees"])
     return task
 
 
@@ -189,11 +197,24 @@ async def task_update(
 ):
     task = await _get_task_or_404(db, task_id)
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    fields = data.model_dump(exclude_unset=True)
+    assigned_to_ids = fields.pop("assigned_to_ids", None)
+    for field, value in fields.items():
         setattr(task, field, value)
 
+    if assigned_to_ids is not None:
+        # uq_task_assignee is a unique constraint, so the deletes must
+        # flush before re-adding -- otherwise re-selecting an already-
+        # assigned user inserts before the matching delete lands and
+        # trips the constraint.
+        for assignee in list(task.assignees):
+            await db.delete(assignee)
+        await db.flush()
+        for user_id in assigned_to_ids:
+            db.add(TaskAssignee(task_id=task.id, user_id=user_id))
+
     await db.commit()
-    await db.refresh(task)
+    await db.refresh(task, attribute_names=["updated_at", "assignees"])
     return task
 
 
@@ -211,7 +232,11 @@ async def task_move(
     task = await _get_task_or_404(db, task_id)
     await _get_list_or_404(db, data.list_id)
     await move_task(db, task, data.list_id, data.position)
-    await db.refresh(task)
+    # Only updated_at needs a DB round-trip (server-side onupdate) --
+    # list_id/position are already correct in-memory, and refreshing
+    # without attribute_names would expire (and require a lazy-load of)
+    # the assignees relationship already loaded by _get_task_or_404.
+    await db.refresh(task, attribute_names=["updated_at"])
     return task
 
 
