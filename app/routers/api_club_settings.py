@@ -6,11 +6,12 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import ClubSetting, User
+from app.models import ClubSetting, ClubBoardMember, User
 from app.api_auth import get_current_api_user, require_admin_api
-from app.schemas import ClubSettingOut, ClubSettingUpdate
+from app.schemas import ClubSettingOut, ClubSettingUpdate, BoardMemberOut
 
 router = APIRouter(prefix="/api/v1/club-settings", tags=["API: Club Settings"])
 
@@ -29,6 +30,25 @@ async def settings_list(
     return result.scalars().all()
 
 
+@router.get(
+    "/board-members",
+    response_model=List[BoardMemberOut],
+    summary="Retrieve board members",
+    description="Returns the members currently listed as board members on admin -> settings -> club settings (issue #111). Read/write of the list itself happens via that admin page, not this API.",
+)
+async def board_members_list(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_api_user),
+):
+    result = await db.execute(
+        select(ClubBoardMember).options(selectinload(ClubBoardMember.member))
+    )
+    return result.scalars().all()
+
+
+# NOTE: /board-members must stay registered above /{key} -- a dynamic
+# single-segment path pattern registered first would otherwise shadow it
+# (FastAPI matches routes in registration order).
 @router.get(
     "/{key}",
     response_model=ClubSettingOut,
