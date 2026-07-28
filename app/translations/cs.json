@@ -1647,7 +1647,6 @@
       "tags_placeholder": "Oddělené čárkami (např. naléhavé, venkovní)",
       "label_assigned_to": "Přiřazeno komu",
       "label_list": "Seznam",
-      "unassigned_option": "Nepřiřazeno",
       "button_save_changes": "Uložit změny",
       "button_create": "Vytvořit",
       "danger_zone_header": "Nebezpečná zóna",

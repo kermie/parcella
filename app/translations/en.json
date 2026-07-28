@@ -1647,7 +1647,6 @@
       "tags_placeholder": "Comma-separated (e.g. urgent, outdoor)",
       "label_assigned_to": "Assigned to",
       "label_list": "List",
-      "unassigned_option": "Unassigned",
       "button_save_changes": "Save changes",
       "button_create": "Create",
       "danger_zone_header": "Danger zone",

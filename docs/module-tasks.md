@@ -41,10 +41,26 @@ unchanged right after the upgrade.
 **`Task`** has `list_id` (FK to `TaskList`, replacing the old `status`
 enum column) and `position` (a gapless 0-based index within its list,
 used for both drag-and-drop ordering and the CSV/API iteration order).
-`assigned_to_id` and `created_by_id` both reference `User` (not
-`Member`) -- consistent with this being an internal admin/board tool,
-not member-facing club business (compare `ChangeHistory.changed_by_id`,
-`WorkSession.created_by_id`).
+`created_by_id` references `User` (not `Member`) -- consistent with this
+being an internal admin/board tool, not member-facing club business
+(compare `ChangeHistory.changed_by_id`, `WorkSession.created_by_id`).
+
+**`TaskAssignee`** (issue #109, [ADR 0046](./ADR/0046-task-board-multiple-assignees-per-card.md))
+is a card's assignment to a `User` -- a card can have any number of
+assignees. Migration `0057_task_multiple_assignees` replaced the original
+single `Task.assigned_to_id` FK with this join table, mirroring
+`GroupMembership`'s shape (own `id`, `UniqueConstraint` on the
+task_id/user_id pair). `Task.assigned_to_ids` is a Python `@property`
+(`[a.user_id for a in self.assignees]`), not a mapped column, so callers
+must eager-load `Task.assignees` before reading it or serializing a
+`KanbanTaskOut` -- see the routers for the `selectinload(Task.assignees)`
+call on every fetch, and note that a write there refreshes only the
+specific attributes touched (`attribute_names=[...]`) rather than a
+blanket `db.refresh()`, since that would expire the already-loaded
+`assignees` collection (see CLAUDE.md's identity-map sharp edge).
+Web-form and API updates fully resync the assignee set on every write
+(delete what's no longer submitted, add what's new), the same pattern
+`finances.py` already uses for `parcel_scopes`/`member_scopes`.
 
 `priority` (issue #106, migration `0055_task_priority`) is an optional
 `TaskPriority` enum (`LOW`/`MEDIUM`/`HIGH`). Nullable with no default --
@@ -186,6 +202,11 @@ scheme in this API to preserve the old shape alongside the new one, and
 once lists are user-renameable/addable, "status" has no stable meaning
 left to preserve.
 
+**Breaking change (issue #109):** `assigned_to_id` (a single, optional
+user id) was replaced by `assigned_to_ids` (a list) on
+`KanbanTaskCreate`/`KanbanTaskUpdate`/`KanbanTaskOut`, same
+no-versioning rationale as the `status` -> `list_id` change above.
+
 ## A naming collision found while building this
 
 `app/schemas.py` already defined `TaskBase`/`TaskCreate`/`TaskUpdate`/
@@ -211,10 +232,14 @@ renumbered), the "can't delete the last list" and
 "non-empty delete needs a target" 400s, the admin/board-only permission
 boundary on both the web UI and the API (403 for a readonly member, on
 both task and list endpoints), the full web create/edit/move/delete flow
-for both cards and lists, the module-disabled-returns-404 case, and
+for both cards and lists, the module-disabled-returns-404 case,
 setting/updating/clearing `priority` via both the API and the web
 form (including that the priority badge disappears from the rendered
-board once cleared).
+board once cleared), and (issue #109) creating/reading a task with
+multiple assignees, resyncing the assignee set on update (including
+that omitting `assigned_to_ids` from a `PUT` body leaves existing
+assignees untouched), and the web form's checkbox grid pre-selecting
+existing assignees on edit.
 
 **Test-DB sharp edge:** the test suite builds its schema from
 `app/models.py` via `Base.metadata.create_all` (see `tests/conftest.py`),
