@@ -58,3 +58,4 @@ in chronological order.
 52. [MemberParcel.is_current: a future-dated termination isn't in effect yet](./0052-member-parcel-is-current-property.md)
 53. [Admin backup: on-demand download only, no server-side storage](./0053-admin-backup-download-only.md)
 54. [Admin restore from backup: reversing ADR 0053's "no restore-from-UI"](./0054-admin-restore-from-backup.md)
+55. [Scheduled cloud backups: reversing the cloud-storage connector's no-delete stance](./0055-scheduled-cloud-backups.md)

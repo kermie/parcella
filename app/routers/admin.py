@@ -1,13 +1,7 @@
 """
 Admin router: user management, invitations, club settings.
 """
-import asyncio
-import io
-import os
-import shutil
-import zipfile
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Optional
 import urllib.parse
 
@@ -31,10 +25,10 @@ from app.permissions import is_last_admin
 from app.email_service import send_email
 from app.crypto_utils import encrypt
 from app.blog_publisher import load_wordpress_configuration, WordPressPublisher, BlogPublishError
-from app.cloud_storage import load_nextcloud_configuration, NextcloudProvider, CloudStorageError
+from app.cloud_storage import load_nextcloud_configuration, get_nextcloud_provider, NextcloudProvider, CloudStorageError
 from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
-from app.branding import save_logo_upload, remove_logo_file, UPLOAD_DIR
+from app.branding import save_logo_upload, remove_logo_file
 from app.nav_order import NAV_ORDER_DEFAULTS
 from app.area_utils import compute_area_a_sqm, compute_area_b_sqm
 from app.invoice_generation import (
@@ -46,6 +40,15 @@ from app.update_check import get_update_status, refresh_update_check_cache
 from app.sample_data import (
     add_sample_data, remove_sample_data, sample_data_counts,
     has_real_core_data, has_sample_data, SampleDataBlockedError, MODULES,
+)
+from app.backup import (
+    build_backup_zip, restore_from_zip_bytes, BackupError, RestoreZipError,
+    RESTORE_CONFIRM_PHRASE, MAX_RESTORE_UPLOAD_BYTES,
+)
+from app.parcel_cloud_folders import sanitize_relative_path, InvalidCloudPathError
+from app.cloud_backup import (
+    get_cloud_backup_settings, save_cloud_backup_settings, run_cloud_backup_now,
+    is_backup_filename, FREQUENCY_CHOICES,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -162,161 +165,32 @@ async def update_check_now(request: Request, db: AsyncSession = Depends(get_db))
 
 
 # ---------------------------------------------------------------------------
-# Backup: one-click pg_dump + uploaded files, zipped and streamed straight
-# to the browser as a download. Nothing is ever written to server disk --
-# see ADR 0053.
+# Backup/restore: thin HTTP wrappers around app/backup.py's shared core
+# (also used by the scheduled cloud-backup feature, app/cloud_backup.py --
+# see ADR 0053/0054/0055). Nothing is ever written to server disk.
 # ---------------------------------------------------------------------------
-
-PG_DUMP_BINARY = "pg_dump"  # module-level constant so tests can monkeypatch it
 
 
 @router.post("/backup/download")
 async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
     """One-click pg_dump of the whole database, bundled together with
-    app/static/uploads/ (the branding logo, announcement images -- files
-    referenced by filename from DB rows but not themselves part of the
-    dump) into a single zip, returned straight to the browser as a
-    download -- nothing is ever written to server disk (see ADR 0053).
-    Plain SQL format (pg_dump's default) so the dump is readable text,
-    restorable with a plain `psql`, rather than requiring pg_restore.
-    --clean --if-exists embeds DROP ... IF EXISTS statements ahead of
-    each CREATE, so the script can be restored directly into a database
-    that already has the same objects in it."""
+    app/static/uploads/ into a single zip, returned straight to the
+    browser as a download. See ADR 0053."""
     await require_system_admin(request, db)
 
-    db_url = urllib.parse.urlsplit(settings.database_url)
-    env = {**os.environ, "PGPASSWORD": db_url.password or ""}
-    cmd = [
-        PG_DUMP_BINARY,
-        "-h", db_url.hostname or "localhost",
-        "-p", str(db_url.port or 5432),
-        "-U", db_url.username or "",
-        "-F", "p",
-        "--clean", "--if-exists",
-        db_url.path.lstrip("/"),
-    ]
-
     try:
-        process = await asyncio.create_subprocess_exec(
-            *cmd, env=env,
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=300)
-    except (OSError, asyncio.TimeoutError) as e:
-        detail = str(e)[:500]
+        filename, content = await build_backup_zip()
+    except BackupError as e:
         return RedirectResponse(
-            f"/admin/system?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
+            f"/admin/system?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=str(e)))}",
             status_code=302,
         )
 
-    if process.returncode != 0:
-        detail = stderr.decode("utf-8", errors="replace").strip()[:500]
-        return RedirectResponse(
-            f"/admin/system?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
-            status_code=302,
-        )
-
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr(f"parcella-backup-{timestamp}.sql", stdout)
-        if UPLOAD_DIR.is_dir():
-            for file_path in sorted(UPLOAD_DIR.rglob("*")):
-                if file_path.is_file():
-                    zf.write(file_path, arcname=f"uploads/{file_path.relative_to(UPLOAD_DIR)}")
-
-    filename = f"parcella-backup-{timestamp}.zip"
     return Response(
-        content=zip_buffer.getvalue(),
+        content=content,
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
-
-
-# ---------------------------------------------------------------------------
-# Restore: upload a backup zip (the same shape backup_download produces)
-# and restore both the database and app/static/uploads/ from it. See ADR
-# 0054 for why this reverses ADR 0053's original "no restore-from-UI"
-# stance, and for the two non-obvious risks (self-deadlock via our own
-# session's open transaction, and stale prepared-statement caches after
-# --clean replaces every table) that this handler works around.
-# ---------------------------------------------------------------------------
-
-PSQL_BINARY = "psql"  # module-level constant so tests can monkeypatch it
-RESTORE_CONFIRM_PHRASE = "RESTORE"
-MAX_RESTORE_UPLOAD_BYTES = 200 * 1024 * 1024
-MAX_RESTORE_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024
-
-
-class RestoreZipError(ValueError):
-    pass
-
-
-def _assert_within_upload_dir(relative: str, base: Path) -> Path:
-    """Zip-slip guard: rejects any member whose resolved path would
-    land outside `base`, however it got there."""
-    base_resolved = base.resolve()
-    target = (base / relative).resolve()
-    if target != base_resolved and base_resolved not in target.parents:
-        raise RestoreZipError(f"path escapes upload directory: {relative!r}")
-    return target
-
-
-def _validate_restore_zip(zf: zipfile.ZipFile):
-    """Exactly one top-level *.sql member; every other member must
-    start with 'uploads/' and resolve inside UPLOAD_DIR. Hand-rolled
-    rather than ZipFile.extractall(): Python's extractall silently
-    rewrites a '..'-containing name instead of rejecting it, and we
-    want fail-closed rejection of a malformed backup, not silent
-    reinterpretation. Writing bytes ourselves via open()/write() (not
-    extract()) also means a crafted symlink-type zip entry can never
-    become an actual symlink on disk."""
-    total = 0
-    sql_members = []
-    upload_entries = []
-    for info in zf.infolist():
-        if info.is_dir():
-            continue
-        name = info.filename
-        if "\x00" in name or name.startswith("/") or name.startswith("\\"):
-            raise RestoreZipError(f"unsafe member name: {name!r}")
-        total += info.file_size
-        if total > MAX_RESTORE_UNCOMPRESSED_BYTES:
-            raise RestoreZipError("zip expands too large")
-        if "/" not in name and name.endswith(".sql"):
-            sql_members.append(name)
-        elif name.startswith("uploads/"):
-            relative = name[len("uploads/"):]
-            _assert_within_upload_dir(relative, UPLOAD_DIR)
-            upload_entries.append((relative, info))
-        else:
-            raise RestoreZipError(f"unexpected member: {name!r}")
-    if len(sql_members) != 1:
-        raise RestoreZipError(f"expected exactly one top-level .sql file, found {len(sql_members)}")
-    return zf.read(sql_members[0]), upload_entries
-
-
-def _mirror_replace_uploads(zf: zipfile.ZipFile, upload_entries) -> None:
-    """Wholesale mirror-replace of UPLOAD_DIR from the zip's uploads/
-    entries -- nothing not in the backup survives, since once the DB
-    is rolled back, any file not referenced by it is an orphan by
-    definition. Builds the new tree in a sibling temp directory first
-    and swaps it in via rename(), so the window where UPLOAD_DIR is
-    missing/partial is a single syscall, not "however long the copy
-    takes"."""
-    tmp_dir = UPLOAD_DIR.with_name(UPLOAD_DIR.name + ".restore-tmp")
-    if tmp_dir.exists():
-        shutil.rmtree(tmp_dir)
-    tmp_dir.mkdir(parents=True)
-    for relative, info in upload_entries:
-        dest = _assert_within_upload_dir(relative, tmp_dir)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        with zf.open(info) as src, open(dest, "wb") as out:
-            shutil.copyfileobj(src, out)
-    if UPLOAD_DIR.exists():
-        shutil.rmtree(UPLOAD_DIR)
-    tmp_dir.rename(UPLOAD_DIR)
 
 
 @router.get("/backup/restore", response_class=HTMLResponse)
@@ -332,10 +206,9 @@ async def backup_restore(
     request: Request, db: AsyncSession = Depends(get_db),
     confirm_phrase: str = Form(...), backup_zip: UploadFile = File(...),
 ):
-    """Restores both the database (via psql, --single-transaction so a
-    failure rolls back cleanly) and app/static/uploads/ (full mirror)
-    from an uploaded backup zip -- the same shape backup_download
-    produces. See ADR 0054."""
+    """Restores both the database and app/static/uploads/ from an
+    uploaded backup zip -- the same shape backup_download produces.
+    See ADR 0054."""
     await require_system_admin(request, db)
 
     def _err(key: str, **kwargs) -> RedirectResponse:
@@ -349,60 +222,163 @@ async def backup_restore(
     if len(contents) > MAX_RESTORE_UPLOAD_BYTES:
         return _err("admin.restore.error_too_large")
 
-    try:
-        zf = zipfile.ZipFile(io.BytesIO(contents))
-    except zipfile.BadZipFile:
-        return _err("admin.restore.error_not_a_zip")
-
-    try:
-        sql_bytes, upload_entries = _validate_restore_zip(zf)
-    except RestoreZipError as e:
-        return _err("admin.restore.error_invalid_zip", detail=str(e))
-
     # Release our own session's open transaction before the destructive
-    # DDL below -- otherwise DROP TABLE deadlocks against the ACCESS
-    # SHARE lock require_system_admin's own SELECT is still holding.
+    # DDL restore_from_zip_bytes runs -- otherwise DROP TABLE deadlocks
+    # against the ACCESS SHARE lock require_system_admin's own SELECT
+    # is still holding.
     await db.close()
 
-    db_url = urllib.parse.urlsplit(settings.database_url)
-    env = {**os.environ, "PGPASSWORD": db_url.password or ""}
-    cmd = [
-        PSQL_BINARY,
-        "-h", db_url.hostname or "localhost",
-        "-p", str(db_url.port or 5432),
-        "-U", db_url.username or "",
-        "-d", db_url.path.lstrip("/"),
-        "-v", "ON_ERROR_STOP=1",
-        "--single-transaction",
-    ]
-
     try:
-        process = await asyncio.create_subprocess_exec(
-            *cmd, env=env,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, stderr = await asyncio.wait_for(process.communicate(input=sql_bytes), timeout=300)
-    except (OSError, asyncio.TimeoutError) as e:
-        return _err("admin.restore.error_restore_failed", detail=str(e)[:500])
-
-    if process.returncode != 0:
-        detail = stderr.decode("utf-8", errors="replace").strip()[:500]
-        return _err("admin.restore.error_restore_failed", detail=detail)
-
-    # The DDL above dropped and recreated every table -- drop pooled
-    # connections so nobody reuses a prepared-statement cache from
-    # before the schema was replaced (asyncpg: "cached plan must not
-    # change result type").
-    from app.database import engine
-    await engine.dispose()
-
-    try:
-        _mirror_replace_uploads(zf, upload_entries)
+        await restore_from_zip_bytes(contents)
+    except RestoreZipError as e:
+        return _err("admin.restore.error_invalid_zip", detail=str(e))
+    except BackupError as e:
+        return _err("admin.restore.error_restore_failed", detail=str(e))
     except OSError as e:
         return _err("admin.restore.error_uploads_failed", detail=str(e)[:500])
 
     return RedirectResponse("/admin/backup/restore?success=1", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# Cloud backups: scheduled uploads of backup_download's zip to the club's
+# connected Nextcloud folder, with retention pruning and a restore-from-
+# cloud picker. See app/cloud_backup.py and docs/ADR/0055-scheduled-cloud-backups.md.
+# ---------------------------------------------------------------------------
+
+async def _list_cloud_backups(provider, folder: str):
+    """Returns cloud backup entries (name/size/last_modified), newest
+    first, or an empty list if the folder doesn't exist yet or a
+    transient error occurs -- a listing failure here shouldn't block
+    rendering the settings page itself."""
+    if not folder:
+        return []
+    try:
+        entries = await provider.list_files(folder)
+    except CloudStorageError:
+        return []
+    return sorted(
+        (e for e in entries if not e.is_directory and is_backup_filename(e.name)),
+        key=lambda e: e.name, reverse=True,
+    )
+
+
+@router.get("/backup/cloud", response_class=HTMLResponse)
+async def backup_cloud_page(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_system_admin(request, db)
+    module_enabled = request.state.module_flags.get("cloud_storage", False)
+    cfg = await get_cloud_backup_settings(db)
+
+    provider = await get_nextcloud_provider(db) if module_enabled else None
+    backups = []
+    if provider is not None:
+        backups = await _list_cloud_backups(provider, cfg.folder)
+        await provider.aclose()
+
+    return templates.TemplateResponse("admin/backup_cloud.html", {
+        "request": request, "user": user,
+        "module_enabled": module_enabled, "nextcloud_configured": provider is not None,
+        "cfg": cfg, "backups": backups,
+        "frequency_choices": FREQUENCY_CHOICES,
+        "confirm_phrase": RESTORE_CONFIRM_PHRASE,
+    })
+
+
+@router.post("/backup/cloud/settings")
+async def backup_cloud_save_settings(request: Request, db: AsyncSession = Depends(get_db)):
+    await require_system_admin(request, db)
+    form = await request.form()
+
+    def _err(key: str, **kwargs) -> RedirectResponse:
+        return RedirectResponse(
+            f"/admin/backup/cloud?error={urllib.parse.quote(t_for(request, key, **kwargs))}", status_code=302,
+        )
+
+    try:
+        folder = sanitize_relative_path(form.get("folder", ""))
+    except InvalidCloudPathError as e:
+        return _err("admin.cloud_backup.error_invalid_folder", detail=str(e))
+
+    frequency = form.get("frequency", "")
+    if frequency not in FREQUENCY_CHOICES:
+        return _err("admin.cloud_backup.error_invalid_frequency")
+
+    try:
+        retention_count = int(form.get("retention_count", ""))
+        if retention_count < 1:
+            raise ValueError
+    except ValueError:
+        return _err("admin.cloud_backup.error_invalid_retention")
+
+    # Unchecked checkbox sends no value at all, same convention as
+    # MODULE_FIELDS above.
+    enabled = "enabled" in form
+
+    await save_cloud_backup_settings(
+        db, enabled=enabled, folder=folder, frequency=frequency, retention_count=retention_count,
+    )
+    return RedirectResponse("/admin/backup/cloud?success=1", status_code=302)
+
+
+@router.post("/backup/cloud/run-now")
+async def backup_cloud_run_now(request: Request, db: AsyncSession = Depends(get_db)):
+    await require_system_admin(request, db)
+    await run_cloud_backup_now(db)
+    cfg = await get_cloud_backup_settings(db)
+    if cfg.last_run_status == "error":
+        return RedirectResponse(
+            f"/admin/backup/cloud?error={urllib.parse.quote(cfg.last_run_error or '')}", status_code=302,
+        )
+    return RedirectResponse("/admin/backup/cloud?success=1", status_code=302)
+
+
+@router.post("/backup/restore-from-cloud")
+async def backup_restore_from_cloud(
+    request: Request, db: AsyncSession = Depends(get_db),
+    confirm_phrase: str = Form(...), filename: str = Form(...),
+):
+    """Downloads a chosen backup from the connected cloud storage and
+    restores it -- same destructive-restore safeguards as the manual-
+    upload restore (type-to-confirm, restore_from_zip_bytes). See ADR 0055."""
+    await require_system_admin(request, db)
+
+    def _err(key: str, **kwargs) -> RedirectResponse:
+        return RedirectResponse(
+            f"/admin/backup/cloud?error={urllib.parse.quote(t_for(request, key, **kwargs))}", status_code=302,
+        )
+
+    if confirm_phrase.strip() != RESTORE_CONFIRM_PHRASE:
+        return _err("admin.restore.error_wrong_phrase")
+    if not is_backup_filename(filename):
+        return _err("admin.cloud_backup.error_invalid_filename")
+
+    cfg = await get_cloud_backup_settings(db)
+    provider = await get_nextcloud_provider(db)
+    if provider is None:
+        return _err("admin.cloud_backup.error_not_configured")
+
+    try:
+        zip_bytes = await provider.download_file(cfg.folder, filename)
+    except CloudStorageError as e:
+        return _err("admin.restore.error_restore_failed", detail=str(e)[:500])
+    finally:
+        await provider.aclose()
+
+    # Same self-deadlock guard as the manual-upload restore -- this
+    # handler holds the session (needed it above for get_nextcloud_provider),
+    # restore_from_zip_bytes doesn't take one at all.
+    await db.close()
+
+    try:
+        await restore_from_zip_bytes(zip_bytes)
+    except RestoreZipError as e:
+        return _err("admin.restore.error_invalid_zip", detail=str(e))
+    except BackupError as e:
+        return _err("admin.restore.error_restore_failed", detail=str(e))
+    except OSError as e:
+        return _err("admin.restore.error_uploads_failed", detail=str(e)[:500])
+
+    return RedirectResponse("/admin/backup/cloud?success=1", status_code=302)
 
 
 # ---------------------------------------------------------------------------
