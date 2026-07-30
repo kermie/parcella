@@ -28,6 +28,7 @@
     "system": "System",
     "settings": "Settings",
     "logout": "Log Out",
+    "change_password": "Change password",
     "menu_open_aria": "Open Menu",
     "work_hours_tasks": "Tasks",
     "calendar_group": "Calendar",
@@ -54,6 +55,7 @@
     "account_deactivated": "Your account has been deactivated.",
     "passwords_do_not_match": "Passwords do not match.",
     "password_too_short": "Password must be at least 8 characters.",
+    "current_password_incorrect": "Current password is incorrect.",
     "email_already_registered": "Email already registered",
     "invitation_sent": "Invitation sent",
     "invitation_resent": "Invitation resent",
@@ -165,6 +167,15 @@
       "label_password": "Password",
       "button_submit": "Sign in",
       "no_account_notice": "No account? An invitation is required. Please talk to your board members."
+    },
+    "change_password": {
+      "page_title": "Change password",
+      "heading": "Change password",
+      "label_current_password": "Current password",
+      "label_new_password": "New password",
+      "label_new_password_confirm": "Confirm new password",
+      "button_save": "Change password",
+      "success_message": "Password changed successfully."
     },
     "invitation": {
       "title": "Accept invitation",

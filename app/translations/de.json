@@ -28,6 +28,7 @@
     "system": "System",
     "settings": "Einstellungen",
     "logout": "Abmelden",
+    "change_password": "Passwort ändern",
     "menu_open_aria": "Menü öffnen",
     "work_hours_tasks": "Aufgaben",
     "calendar_group": "Kalender",
@@ -54,6 +55,7 @@
     "account_deactivated": "Ihr Konto ist deaktiviert.",
     "passwords_do_not_match": "Passwörter stimmen nicht überein.",
     "password_too_short": "Passwort muss mindestens 8 Zeichen haben.",
+    "current_password_incorrect": "Aktuelles Passwort ist falsch.",
     "email_already_registered": "E-Mail bereits registriert",
     "invitation_sent": "Einladung gesendet",
     "invitation_resent": "Einladung erneut gesendet",
@@ -165,6 +167,15 @@
       "label_password": "Passwort",
       "button_submit": "Anmelden",
       "no_account_notice": "Kein Konto? Eine Einladung ist erforderlich. Bitte wenden Sie sich an Ihre Vorstandsmitglieder."
+    },
+    "change_password": {
+      "page_title": "Passwort ändern",
+      "heading": "Passwort ändern",
+      "label_current_password": "Aktuelles Passwort",
+      "label_new_password": "Neues Passwort",
+      "label_new_password_confirm": "Neues Passwort bestätigen",
+      "button_save": "Passwort ändern",
+      "success_message": "Passwort erfolgreich geändert."
     },
     "invitation": {
       "title": "Einladung annehmen",

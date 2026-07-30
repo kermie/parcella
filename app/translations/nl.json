@@ -28,6 +28,7 @@
     "system": "Systeem",
     "settings": "Instellingen",
     "logout": "Uitloggen",
+    "change_password": "Wachtwoord wijzigen",
     "menu_open_aria": "Open menu",
     "work_hours_tasks": "Taken",
     "calendar_group": "Kalender",
@@ -54,6 +55,7 @@
     "account_deactivated": "Uw account is gedeactiveerd.",
     "passwords_do_not_match": "Wachtwoorden komen niet overeen.",
     "password_too_short": "Wachtwoord moet minimaal 8 tekens bevatten.",
+    "current_password_incorrect": "Huidig wachtwoord is onjuist.",
     "email_already_registered": "E-mailadres al geregistreerd",
     "invitation_sent": "Uitnodiging verzonden",
     "invitation_resent": "Uitnodiging opnieuw verzonden",
@@ -165,6 +167,15 @@
       "label_password": "Wachtwoord",
       "button_submit": "Inloggen",
       "no_account_notice": "Geen account? Een uitnodiging is vereist. Neem contact op met uw bestuursleden."
+    },
+    "change_password": {
+      "page_title": "Wachtwoord wijzigen",
+      "heading": "Wachtwoord wijzigen",
+      "label_current_password": "Huidig wachtwoord",
+      "label_new_password": "Nieuw wachtwoord",
+      "label_new_password_confirm": "Bevestig nieuw wachtwoord",
+      "button_save": "Wachtwoord wijzigen",
+      "success_message": "Wachtwoord succesvol gewijzigd."
     },
     "invitation": {
       "title": "Uitnodiging accepteren",
