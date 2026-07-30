@@ -1,12 +1,14 @@
 """
 Admin router: user management, invitations, club settings.
 """
+import asyncio
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import urllib.parse
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -128,6 +130,62 @@ async def update_check_now(request: Request, db: AsyncSession = Depends(get_db))
     await require_system_admin(request, db)
     await refresh_update_check_cache(db)
     return RedirectResponse("/admin/", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# Backup: one-click pg_dump, streamed straight to the browser as a download.
+# Nothing is ever written to server disk -- see ADR 0053.
+# ---------------------------------------------------------------------------
+
+PG_DUMP_BINARY = "pg_dump"  # module-level constant so tests can monkeypatch it
+
+
+@router.post("/backup/download")
+async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
+    """One-click pg_dump of the whole database, returned straight to the
+    browser as a download -- nothing is ever written to server disk (see
+    ADR 0053). Custom format (-F c) so it's restorable selectively via
+    pg_restore, not just eyeballable SQL text."""
+    await require_system_admin(request, db)
+
+    db_url = urllib.parse.urlsplit(settings.database_url)
+    env = {**os.environ, "PGPASSWORD": db_url.password or ""}
+    cmd = [
+        PG_DUMP_BINARY,
+        "-h", db_url.hostname or "localhost",
+        "-p", str(db_url.port or 5432),
+        "-U", db_url.username or "",
+        "-F", "c",
+        db_url.path.lstrip("/"),
+    ]
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd, env=env,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=300)
+    except (OSError, asyncio.TimeoutError) as e:
+        detail = str(e)[:500]
+        return RedirectResponse(
+            f"/admin/?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
+            status_code=302,
+        )
+
+    if process.returncode != 0:
+        detail = stderr.decode("utf-8", errors="replace").strip()[:500]
+        return RedirectResponse(
+            f"/admin/?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
+            status_code=302,
+        )
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    filename = f"parcella-backup-{timestamp}.dump"
+    return Response(
+        content=stdout,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ---------------------------------------------------------------------------
