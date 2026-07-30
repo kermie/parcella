@@ -196,7 +196,7 @@
       "update_up_to_date": "Running v{version} -- up to date (last checked {checked_at})",
       "update_not_checked_yet": "Running v{version} -- not checked for updates yet",
       "backup_header": "Backup",
-      "backup_description": "Download a full database backup right now. Nothing is stored on the server -- save the file somewhere safe yourself.",
+      "backup_description": "Download a full backup right now (database + uploaded files, e.g. logo and announcement images, as a zip). Nothing is stored on the server -- save the file somewhere safe yourself.",
       "backup_button": "Download backup",
       "backup_error": "Backup failed: {detail}",
       "invite_header": "Invite user",

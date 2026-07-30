@@ -73,27 +73,58 @@ reached.
 
 ## Backups & restore
 
-A system admin can download a full database backup on demand from
-`/admin/` ("Download backup" -- see
-[ADR 0053](./ADR/0053-admin-backup-download-only.md)). It's a one-click
-`pg_dump` (plain SQL, readable text) streamed straight to the browser --
-nothing is ever written to server disk, so there's no backup file to
-find or clean up on the server itself; the downloaded `.sql` file is the
-only copy, and it's the admin's responsibility to store it somewhere
-safe.
+A system admin can download a full backup on demand from `/admin/`
+("Download backup" -- see
+[ADR 0053](./ADR/0053-admin-backup-download-only.md)). It's a zip
+containing a one-click `pg_dump` (plain SQL, readable text) plus
+everything under `app/static/uploads/` (the branding logo, announcement
+images) -- nothing is ever written to server disk, so there's no backup
+file to find or clean up on the server itself; the downloaded `.zip` is
+the only copy, and it's the admin's responsibility to store it
+somewhere safe.
 
 To restore a downloaded backup, e.g. into a fresh/empty instance:
 
 ```bash
-docker compose exec -T db psql -U parcella -d parcella < parcella-backup-20260730-143000.sql
+unzip parcella-backup-20260730-143000.zip -d restore/
+docker compose exec -T db psql -U parcella -d parcella < restore/parcella-backup-20260730-143000.sql
+cp -r restore/uploads/. app/static/uploads/
 ```
 
 **Warning:** the backup was generated with `--clean --if-exists`, so the
-script itself contains `DROP ... IF EXISTS` statements ahead of each
+SQL script itself contains `DROP ... IF EXISTS` statements ahead of each
 `CREATE` -- restoring it drops existing objects before recreating them.
 Never run this against a live database whose current data you still
 need -- restore into an empty database (or a throwaway one) instead,
 then swap it in deliberately.
+
+**What the backup does *not* cover -- read this before relying on one:**
+
+- **Encrypted fields don't travel.** SMTP/WordPress/Nextcloud
+  credentials are stored encrypted with a key derived from `SECRET_KEY`
+  (`app/crypto_utils.py`), which lives only in `.env`, deliberately
+  outside the database and outside this backup. Restore a dump into an
+  instance whose `SECRET_KEY` differs from the one that created it, and
+  those fields decrypt to garbage -- you'll need to re-enter that
+  handful of credentials by hand afterward. Keep a copy of `.env`
+  (or at least `SECRET_KEY`) alongside your backups if you ever expect
+  to restore onto different infrastructure.
+- **Restoring an older backup into a newer Parcella version:** should
+  work, but isn't automatic. Restore the dump, then run
+  `docker compose run --rm --entrypoint alembic web upgrade head` --
+  migrations are additive and forward-only, so as long as no migration
+  file has been rewritten after release (this project never does that),
+  Alembic will bring the restored schema up to whatever version you're
+  currently running. The one sharp edge: a migration that does a raw
+  `ALTER TYPE ... ADD VALUE` for an enum has to get the value's *name*
+  casing exactly right (see the enum sharp edge in
+  [CLAUDE.md](../CLAUDE.md)) -- this has been gotten wrong once in this
+  codebase's history, and Postgres has no way to undo a bad
+  `ADD VALUE` afterward.
+- **Test the restore path itself, occasionally, on a throwaway
+  database** -- rather than assuming a backup is good just because the
+  download succeeded. A backup you've never restored is a hypothesis,
+  not a guarantee.
 
 ## First login
 

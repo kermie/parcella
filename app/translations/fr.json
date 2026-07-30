@@ -196,7 +196,7 @@
       "update_up_to_date": "Version v{version} -- à jour (dernière vérification : {checked_at})",
       "update_not_checked_yet": "Version v{version} -- pas encore vérifié",
       "backup_header": "Sauvegarde",
-      "backup_description": "Téléchargez maintenant une sauvegarde complète de la base de données. Rien n'est stocké sur le serveur -- conservez le fichier vous-même en lieu sûr.",
+      "backup_description": "Téléchargez maintenant une sauvegarde complète (base de données + fichiers téléversés, ex. logo et images d'annonces, sous forme de ZIP). Rien n'est stocké sur le serveur -- conservez le fichier vous-même en lieu sûr.",
       "backup_button": "Télécharger la sauvegarde",
       "backup_error": "Échec de la sauvegarde : {detail}",
       "invite_header": "Inviter un utilisateur",
