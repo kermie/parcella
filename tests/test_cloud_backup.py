@@ -247,21 +247,43 @@ async def test_run_cloud_backup_now_records_error_when_upload_fails(monkeypatch)
     assert cfg.last_run_error
 
 
-async def test_run_cloud_backup_now_noop_when_disabled(monkeypatch):
+async def test_run_cloud_backup_now_still_works_when_automatic_schedule_disabled(monkeypatch):
+    """Regression test for a real bug: cloud_backup_enabled only gates
+    the automatic scheduler (is_backup_due), not a manual "back up to
+    cloud now" click. run_cloud_backup_now must still actually back up
+    (and record success) even when the schedule is off -- it must not
+    silently no-op, which previously also meant the HTTP handler
+    reported a false "success" since last_run_status was never touched."""
     await _set_setting("cloud_backup_enabled", "false")
+    await _set_setting("cloud_backup_folder", "backups")
 
     called = False
 
-    async def fake_get_nextcloud_provider(db, client=None):
+    def handler(request: httpx_module.Request) -> httpx_module.Response:
         nonlocal called
         called = True
+        if request.method == "MKCOL":
+            return httpx_module.Response(201)
+        if request.method == "PUT":
+            return httpx_module.Response(201)
+        if request.method == "PROPFIND":
+            return httpx_module.Response(207, text=_listing_with())
+        return httpx_module.Response(404)
+
+    provider = _provider(transport=httpx_module.MockTransport(handler))
+
+    async def fake_get_nextcloud_provider(db, client=None):
+        return provider
 
     monkeypatch.setattr("app.cloud_backup.get_nextcloud_provider", fake_get_nextcloud_provider)
 
     async with AsyncSessionLocal() as db:
         await run_cloud_backup_now(db)
 
-    assert called is False
+    assert called is True
+    async with AsyncSessionLocal() as db:
+        cfg = await get_cloud_backup_settings(db)
+    assert cfg.last_run_status == "success"
 
 
 async def test_run_cloud_backup_now_records_error_when_not_configured(monkeypatch):

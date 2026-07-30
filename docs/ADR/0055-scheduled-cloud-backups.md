@@ -79,6 +79,21 @@ always tells the admin why nothing happened. One source of truth, read
 back by whichever caller needs to react to it, rather than two
 error-reporting paths that could disagree.
 
+**Bug found and fixed: `run_cloud_backup_now` must not check
+`cfg.enabled`.** The first version did -- reasoning (wrongly) that
+"disabled" should mean "don't back up." But `enabled` only means "the
+automatic scheduler may trigger this" (`is_backup_due` already checks
+it, before the polling loop ever calls `run_cloud_backup_now`). With
+the check duplicated inside `run_cloud_backup_now` itself, clicking
+"back up to cloud now" while the schedule happened to be off silently
+did nothing -- worse, since the early return skipped `_record_run`
+entirely, the HTTP handler's `last_run_status == "error"` check saw
+whatever status was already there from before (or `None`) and reported
+a false "success" for a backup that never ran. Fixed by removing the
+`enabled` check from `run_cloud_backup_now` entirely -- a manual
+trigger always attempts the backup and always records the real
+outcome, regardless of the automatic schedule's on/off state.
+
 **Settings storage:** plain `ClubSetting` rows
 (`cloud_backup_enabled`/`_folder`/`_frequency`/`_retention_count`/
 `_last_run_at`/`_last_run_status`/`_last_run_error`), matching the

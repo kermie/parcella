@@ -167,14 +167,21 @@ async def run_cloud_backup_now(db: AsyncSession) -> None:
     prunes old backups beyond the retention count, and always records
     last_run_at/last_run_status/last_run_error -- even on failure.
 
+    Deliberately does NOT check cfg.enabled -- that flag only gates
+    whether the *automatic scheduler* triggers this (see is_backup_due,
+    called by the polling loop before this function). The manual "back
+    up to cloud now" button must work regardless of whether automatic
+    scheduling is turned on; a bug once had this function silently
+    no-op (and the HTTP handler then reported a false "success", since
+    last_run_status was simply never touched) whenever the schedule
+    happened to be off.
+
     Never raises: both the unattended scheduler loop and the manual
     "back up now" HTTP handler call this exact function, then re-read
     get_cloud_backup_settings(db) to learn what happened. One source
     of truth (ClubSettings), read back by whoever needs to react,
     rather than two error-reporting paths that could disagree."""
     cfg = await get_cloud_backup_settings(db)
-    if not cfg.enabled:
-        return
 
     provider = await get_nextcloud_provider(db)
     if provider is None:
