@@ -157,9 +157,11 @@ docker compose up -d</pre>
                             <td class="fw-semibold">{{ b.name }}</td>
                             <td class="text-muted">{{ b.email }}</td>
                             <td>
+                                {% if b.role in (UserRole.ADMIN, UserRole.BOARD) %}
                                 <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
-                                    {{ b.role.value }}
+                                    {{ t('admin.dashboard.role_admin') if b.role == UserRole.ADMIN else t('admin.dashboard.role_board') }}
                                 </span>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if b.is_active %}
