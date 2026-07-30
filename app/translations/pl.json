@@ -220,7 +220,7 @@
       "users_header": "Zarejestrowani użytkownicy",
       "col_name": "Imię i nazwisko",
       "col_email": "E-mail",
-      "col_role": "Rola",
+      "col_groups": "Grupy",
       "col_status": "Status",
       "status_active": "aktywny",
       "status_inactive": "nieaktywny",

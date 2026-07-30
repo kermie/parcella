@@ -220,7 +220,7 @@
       "users_header": "Registrovaní uživatelé",
       "col_name": "Jméno",
       "col_email": "E-mail",
-      "col_role": "Role",
+      "col_groups": "Skupiny",
       "col_status": "Stav",
       "status_active": "aktivní",
       "status_inactive": "neaktivní",
