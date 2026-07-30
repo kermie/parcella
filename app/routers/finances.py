@@ -561,13 +561,25 @@ async def item_update(
     # when applies_all, replaced with the new selection otherwise, so
     # stale choices never linger if scope changes back and forth
     # before finalize.
+    #
+    # The flush() right after each delete loop is required, not
+    # cosmetic: SQLAlchemy's unit of work flushes INSERTs before
+    # DELETEs for a given table within a single flush, so re-adding a
+    # scope row that's unchanged from before (same parcel/member kept
+    # selected) would otherwise try to INSERT the new row while the
+    # identical old row is still physically present, tripping the
+    # (definition_id, parcel_id)/(definition_id, member_id) unique
+    # constraint -- found via a real 500 on re-saving an item whose
+    # scope didn't change.
     for scope in list(item.parcel_scopes):
         await db.delete(scope)
+    await db.flush()
     if not applies_all_parcels:
         for parcel_id in _dedupe_ids(parcel_ids):
             db.add(InvoiceItemDefinitionParcel(invoice_item_definition_id=item.id, parcel_id=parcel_id))
     for scope in list(item.member_scopes):
         await db.delete(scope)
+    await db.flush()
     if not applies_all_members:
         for member_id in _dedupe_ids(member_ids):
             db.add(InvoiceItemDefinitionMember(invoice_item_definition_id=item.id, member_id=member_id))
@@ -1172,13 +1184,18 @@ async def item_template_update(
     template.applies_to_all_members = applies_all_members
     template.category_id = category_id.strip() or None
 
+    # See item_update's identical comment above -- the flush() between
+    # delete and re-add is required to avoid a transient unique-
+    # constraint violation when a scope is unchanged from before.
     for scope in list(template.parcel_scopes):
         await db.delete(scope)
+    await db.flush()
     if not applies_all_parcels:
         for parcel_id in _dedupe_ids(parcel_ids):
             db.add(InvoiceItemTemplateParcel(invoice_item_template_id=template.id, parcel_id=parcel_id))
     for scope in list(template.member_scopes):
         await db.delete(scope)
+    await db.flush()
     if not applies_all_members:
         for member_id in _dedupe_ids(member_ids):
             db.add(InvoiceItemTemplateMember(invoice_item_template_id=template.id, member_id=member_id))
