@@ -100,12 +100,12 @@
 
     <div class="col-12">
         <div class="card">
-            <div class="card-header settings-card-toggle" role="button" data-bs-toggle="collapse"
-                 data-bs-target="#settings-card-language" aria-expanded="true">
+            <div class="card-header settings-card-toggle collapsed" role="button" data-bs-toggle="collapse"
+                 data-bs-target="#settings-card-language" aria-expanded="false">
                 <span><i class="bi bi-translate me-2"></i>{{ t('admin.settings.language_header') }}</span>
                 <i class="bi bi-chevron-down settings-card-chevron"></i>
             </div>
-            <div class="collapse show" id="settings-card-language" data-bs-parent="#settings-accordion">
+            <div class="collapse" id="settings-card-language" data-bs-parent="#settings-accordion">
             <div class="card-body">
                 <p class="text-muted" style="font-size: 0.85rem;">
                     {{ t('admin.settings.language_help') }}
@@ -127,16 +127,15 @@
             <!-- Issue #101: the logo upload used to live buried inside the
                  generic "Club Data" card below (collapsed by default, no
                  mention of "logo" in its header) -- easy to never notice it
-                 exists at all. Its own clearly-labeled card, open by default
-                 like Language above, so scanning the section headers alone
-                 reveals it without needing to already know to expand
-                 something else or search for "logo". -->
-            <div class="card-header settings-card-toggle" role="button" data-bs-toggle="collapse"
-                 data-bs-target="#settings-card-branding" aria-expanded="true">
+                 exists at all. Its own clearly-labeled card, so scanning the
+                 section headers alone reveals it without needing to already
+                 know to expand something else or search for "logo". -->
+            <div class="card-header settings-card-toggle collapsed" role="button" data-bs-toggle="collapse"
+                 data-bs-target="#settings-card-branding" aria-expanded="false">
                 <span><i class="bi bi-image me-2"></i>{{ t('admin.settings.branding_header') }}</span>
                 <i class="bi bi-chevron-down settings-card-chevron"></i>
             </div>
-            <div class="collapse show" id="settings-card-branding" data-bs-parent="#settings-accordion">
+            <div class="collapse" id="settings-card-branding" data-bs-parent="#settings-accordion">
             <div class="card-body">
                 <label class="form-label fw-semibold">{{ t('admin.settings.logo_label') }}</label>
                 <div class="d-flex align-items-center gap-3 mb-2">

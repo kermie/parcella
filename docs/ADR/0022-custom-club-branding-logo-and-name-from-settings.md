@@ -62,3 +62,9 @@ on disk, by contrast, is unconditionally rewritten every time
 regardless of extension, so its mtime is the value that actually
 changes on every real re-upload.
 
+**Update:** "open by default" (part 1, and the same treatment "Language"
+got) was later reversed -- no `/admin/settings` card, including
+Branding, expands on a fresh page load anymore. The discoverability fix
+that matters (its own clearly-labeled card, not buried inside "Club
+Data") is unaffected.
+

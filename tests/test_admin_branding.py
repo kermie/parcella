@@ -6,8 +6,9 @@ functional -- verified here with real round-trip tests, since none
 existed before. The actual problem was discoverability: the file input
 lived inside the generic "Club Data" accordion card, collapsed by
 default, with no mention of "logo" in its header, so it was easy to
-never notice it exists. Fixed by giving it its own "Branding" card,
-open by default like "Language".
+never notice it exists. Fixed by giving it its own clearly-labeled
+"Branding" card (later changed to collapsed by default, like every
+other settings card, so a fresh page load never expands anything).
 
 Logo uploads always save under a FIXED filename (logo.<ext>) at the
 real, git-tracked app/static/uploads/logo.png -- not a per-test mock
@@ -169,29 +170,32 @@ def _logo_img_src(html: str) -> str:
     return html[value_start:value_end]
 
 
-async def test_branding_card_is_expanded_by_default_and_holds_the_only_logo_input(client, admin_user):
+async def test_branding_card_is_collapsed_by_default_and_holds_the_only_logo_input(client, admin_user):
     """The fix for issue #101: logo upload gets its own always-visible
     card, and the old duplicate copy inside "Club Data" is gone (so
-    there's exactly one `name="logo"` file input on the whole page)."""
+    there's exactly one `name="logo"` file input on the whole page).
+
+    No settings card is expanded on a fresh page load (later request) --
+    every card, including this one, starts collapsed."""
     await web_login(client, "admin@example.com")
     page = await client.get("/admin/settings")
     assert page.status_code == 200
 
     assert page.text.count('name="logo"') == 1, "the logo file input must not be duplicated across cards"
 
-    # The Branding card must be open (not collapsed) on initial load --
-    # find its toggle/collapse pair and check neither carries the
-    # "collapsed"/hidden markers.
+    # The Branding card must be collapsed on initial load -- find its
+    # toggle/collapse pair and check both carry the "collapsed"/hidden
+    # markers.
     branding_toggle_start = page.text.find('data-bs-target="#settings-card-branding"')
     assert branding_toggle_start != -1, "expected a dedicated #settings-card-branding toggle"
     toggle_tag_start = page.text.rfind("<div", 0, branding_toggle_start)
     toggle_tag_end = page.text.find(">", branding_toggle_start)
     toggle_tag = page.text[toggle_tag_start:toggle_tag_end]
-    assert "collapsed" not in toggle_tag
-    assert 'aria-expanded="true"' in toggle_tag
+    assert "collapsed" in toggle_tag
+    assert 'aria-expanded="false"' in toggle_tag
 
     body_start = page.text.find('id="settings-card-branding"')
     body_tag_start = page.text.rfind("<div", 0, body_start)
     body_tag_end = page.text.find(">", body_start)
     body_tag = page.text[body_tag_start:body_tag_end]
-    assert "collapse show" in body_tag
+    assert "collapse show" not in body_tag
