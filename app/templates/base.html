@@ -194,6 +194,16 @@
             .page-body { padding: 1rem; }
             .topbar { padding: 0.6rem 1rem; }
         }
+
+        /* Foldable admin cards (issue #68, extended to Groups/Integrations
+           by issues #143/#144): same accordion idea as the sidebar's
+           module groups, reused across every admin sub-page that has
+           more than a couple of cards. */
+        .settings-card-toggle {
+            cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+        }
+        .settings-card-chevron { transition: transform 0.2s; }
+        .settings-card-toggle.collapsed .settings-card-chevron { transform: rotate(-90deg); }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -435,7 +445,7 @@
             </button>
             <div class="collapse nav-group-body" id="nav-group-administration" data-bs-parent="#nav-accordion">
                 <a href="/admin/system" class="{% if '/admin/system' in request.url.path or '/admin/backup' in request.url.path %}aktiv{% endif %}">{{ t('nav.system') }}</a>
-                <a href="/admin/" class="{% if '/admin/' == request.url.path %}aktiv{% endif %}">{{ t('nav.users') }}</a>
+                <a href="/admin/users/" class="{% if '/admin/users' in request.url.path %}aktiv{% endif %}">{{ t('nav.users') }}</a>
                 <a href="/admin/groups/" class="{% if '/admin/groups' in request.url.path %}aktiv{% endif %}">{{ t('nav.groups') }}</a>
                 <a href="/admin/settings" class="{% if '/admin/settings' in request.url.path %}aktiv{% endif %}">{{ t('nav.settings') }}</a>
                 <a href="/admin/integrations" class="{% if '/admin/integrations' in request.url.path %}aktiv{% endif %}">{{ t('nav.integrations') }}</a>

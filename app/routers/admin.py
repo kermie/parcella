@@ -93,7 +93,16 @@ async def _user_has_history(db: AsyncSession, user_id: str) -> bool:
     return False
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/")
+async def admin_root_redirect():
+    """Issue #145: the user-management page moved from the bare /admin/
+    to /admin/users/, matching every other admin sub-page's own path
+    (Groups, Settings, Integrations, ...). Kept as a redirect so old
+    bookmarks/links still land somewhere sensible."""
+    return RedirectResponse("/admin/users/", status_code=302)
+
+
+@router.get("/users/", response_class=HTMLResponse)
 async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_system_admin(request, db)
 
@@ -487,7 +496,7 @@ async def user_invite(
     existing = await db.execute(select(User).where(User.email == email))
     if existing.scalar_one_or_none():
         return RedirectResponse(
-            f"/admin/?error={urllib.parse.quote(t_for(request, 'errors.email_already_registered'))}",
+            f"/admin/users/?error={urllib.parse.quote(t_for(request, 'errors.email_already_registered'))}",
             status_code=302,
         )
 
@@ -533,11 +542,11 @@ async def user_invite(
         base_url = str(request.base_url).rstrip("/")
         invitation_link = f"{base_url}/auth/invitation/{token}"
         return RedirectResponse(
-            f"/admin/?info=Invitation+link+%28Dev%29%3A+{invitation_link}", status_code=302
+            f"/admin/users/?info=Invitation+link+%28Dev%29%3A+{invitation_link}", status_code=302
         )
 
     return RedirectResponse(
-        f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.invitation_sent'))}",
+        f"/admin/users/?success={urllib.parse.quote(t_for(request, 'errors.invitation_sent'))}",
         status_code=302,
     )
 
@@ -564,7 +573,7 @@ async def invitation_resend(
     invitation = result.scalar_one_or_none()
     if not invitation:
         return RedirectResponse(
-            f"/admin/?error={urllib.parse.quote(t_for(request, 'errors.invitation_not_found'))}",
+            f"/admin/users/?error={urllib.parse.quote(t_for(request, 'errors.invitation_not_found'))}",
             status_code=302,
         )
 
@@ -577,11 +586,11 @@ async def invitation_resend(
         base_url = str(request.base_url).rstrip("/")
         invitation_link = f"{base_url}/auth/invitation/{invitation.token}"
         return RedirectResponse(
-            f"/admin/?info=Invitation+link+%28Dev%29%3A+{invitation_link}", status_code=302
+            f"/admin/users/?info=Invitation+link+%28Dev%29%3A+{invitation_link}", status_code=302
         )
 
     return RedirectResponse(
-        f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.invitation_resent'))}",
+        f"/admin/users/?success={urllib.parse.quote(t_for(request, 'errors.invitation_resent'))}",
         status_code=302,
     )
 
@@ -601,7 +610,7 @@ async def invitation_delete(
         await db.commit()
 
     return RedirectResponse(
-        f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.invitation_deleted'))}",
+        f"/admin/users/?success={urllib.parse.quote(t_for(request, 'errors.invitation_deleted'))}",
         status_code=302,
     )
 
@@ -616,7 +625,7 @@ async def user_deactivate(
 
     if user_id == admin.id:
         return RedirectResponse(
-            f"/admin/?error={urllib.parse.quote(t_for(request, 'errors.own_account_cannot_deactivate'))}",
+            f"/admin/users/?error={urllib.parse.quote(t_for(request, 'errors.own_account_cannot_deactivate'))}",
             status_code=302,
         )
 
@@ -629,13 +638,13 @@ async def user_deactivate(
             and await is_last_admin(db, target.id)
         ):
             return RedirectResponse(
-                f"/admin/?error={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
+                f"/admin/users/?error={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
                 status_code=302,
             )
         target.is_active = not target.is_active
         await db.commit()
 
-    return RedirectResponse("/admin/", status_code=302)
+    return RedirectResponse("/admin/users/", status_code=302)
 
 
 @router.get("/users/{user_id}/edit", response_class=HTMLResponse)
@@ -736,7 +745,7 @@ async def user_edit(
     await db.commit()
 
     return RedirectResponse(
-        f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.user_updated'))}",
+        f"/admin/users/?success={urllib.parse.quote(t_for(request, 'errors.user_updated'))}",
         status_code=302,
     )
 
@@ -751,14 +760,14 @@ async def user_delete(
 
     if user_id == admin.id:
         return RedirectResponse(
-            f"/admin/?error={urllib.parse.quote(t_for(request, 'errors.own_account_cannot_deactivate'))}",
+            f"/admin/users/?error={urllib.parse.quote(t_for(request, 'errors.own_account_cannot_deactivate'))}",
             status_code=302,
         )
 
     result = await db.execute(select(User).where(User.id == user_id))
     target = result.scalar_one_or_none()
     if not target:
-        return RedirectResponse("/admin/", status_code=302)
+        return RedirectResponse("/admin/users/", status_code=302)
 
     if (
         target.role == UserRole.ADMIN
@@ -766,7 +775,7 @@ async def user_delete(
         and await is_last_admin(db, target.id)
     ):
         return RedirectResponse(
-            f"/admin/?error={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
+            f"/admin/users/?error={urllib.parse.quote(t_for(request, 'errors.cannot_remove_last_admin'))}",
             status_code=302,
         )
 
@@ -780,7 +789,7 @@ async def user_delete(
     await db.commit()
 
     return RedirectResponse(
-        f"/admin/?success={urllib.parse.quote(t_for(request, 'errors.user_deleted'))}",
+        f"/admin/users/?success={urllib.parse.quote(t_for(request, 'errors.user_deleted'))}",
         status_code=302,
     )
 

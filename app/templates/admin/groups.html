@@ -48,11 +48,13 @@
     </div>
 </div>
 
+<div id="groups-accordion">
 {% for group in groups %}
 {% set permissions_by_module = {} %}
 {% for p in group.permissions %}{% set _ = permissions_by_module.update({p.module: p}) %}{% endfor %}
 <div class="card mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header settings-card-toggle collapsed d-flex justify-content-between align-items-center"
+         role="button" data-bs-toggle="collapse" data-bs-target="#group-card-{{ group.id }}" aria-expanded="false">
         <span>
             <i class="bi bi-people-fill me-2"></i>{{ group.name }}
             {% if group.grants_system_admin %}
@@ -61,13 +63,17 @@
             <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">{{ t('admin.groups.badge_full_access') }}</span>
             {% endif %}
         </span>
-        <form method="post" action="/admin/groups/{{ group.id }}/delete" class="d-inline"
-              onsubmit="return confirm('{{ t('admin.groups.delete_confirm') }}')">
-            <button type="submit" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-trash"></i>
-            </button>
-        </form>
+        <div class="d-flex align-items-center gap-2">
+            <form method="post" action="/admin/groups/{{ group.id }}/delete" class="d-inline" onclick="event.stopPropagation()"
+                  onsubmit="return confirm('{{ t('admin.groups.delete_confirm') }}')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </form>
+            <i class="bi bi-chevron-down settings-card-chevron"></i>
+        </div>
     </div>
+    <div class="collapse" id="group-card-{{ group.id }}" data-bs-parent="#groups-accordion">
     <div class="card-body">
         <form method="post" action="/admin/groups/{{ group.id }}/update">
             <div class="row g-3 mb-3">
@@ -178,14 +184,16 @@
         {% else %}
         <p class="text-muted small mb-0">
             {{ t('admin.groups.no_assignable_users') }}
-            <a href="/admin/">{{ t('admin.groups.no_assignable_users_link') }}</a>
+            <a href="/admin/users/">{{ t('admin.groups.no_assignable_users_link') }}</a>
         </p>
         {% endif %}
+    </div>
     </div>
 </div>
 {% else %}
 <p class="text-muted">{{ t('admin.groups.no_groups') }}</p>
 {% endfor %}
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

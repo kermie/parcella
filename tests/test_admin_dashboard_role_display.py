@@ -40,7 +40,7 @@ async def test_dashboard_hides_role_badge_for_non_legacy_user(client, admin_user
     await web_login(client, "admin@example.com")
     await _create_readonly_user("member@example.com", "Group Managed User")
 
-    page = await client.get("/admin/")
+    page = await client.get("/admin/users/")
     assert page.status_code == 200
     assert "Group Managed User" in page.text
     assert "readonly" not in page.text.lower()
@@ -49,7 +49,7 @@ async def test_dashboard_hides_role_badge_for_non_legacy_user(client, admin_user
 async def test_dashboard_shows_role_badge_for_legacy_admin_user(client, admin_user):
     await web_login(client, "admin@example.com")
 
-    page = await client.get("/admin/")
+    page = await client.get("/admin/users/")
     assert page.status_code == 200
     assert "Test-Admin" in page.text
     assert "Administrator" in page.text
@@ -69,7 +69,7 @@ async def test_dashboard_shows_group_names_instead_of_role_for_group_member(clie
         session.add(GroupMembership(user_id=member.id, group_id=group.id))
         await session.commit()
 
-    page = await client.get("/admin/")
+    page = await client.get("/admin/users/")
     assert page.status_code == 200
     assert "Wasserwart User" in page.text
     assert "Wasserwarte" in page.text

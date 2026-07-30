@@ -15,8 +15,15 @@
 </div>
 {% endif %}
 
+<div id="integrations-accordion">
+
 <div class="card mb-3">
-    <div class="card-header"><i class="bi bi-plug me-2"></i>{{ t('admin.integrations.public_signup_api_title') }}</div>
+    <div class="card-header settings-card-toggle collapsed" role="button" data-bs-toggle="collapse"
+         data-bs-target="#integration-card-public-signup" aria-expanded="false">
+        <span><i class="bi bi-plug me-2"></i>{{ t('admin.integrations.public_signup_api_title') }}</span>
+        <i class="bi bi-chevron-down settings-card-chevron"></i>
+    </div>
+    <div class="collapse" id="integration-card-public-signup" data-bs-parent="#integrations-accordion">
     <div class="card-body">
         <p class="text-muted">{{ t('admin.integrations.public_signup_api_desc') }}</p>
 
@@ -62,10 +69,16 @@
             {{ t('admin.integrations.wordpress_hint') }}
         </p>
     </div>
+    </div>
 </div>
 
 <div class="card mb-3">
-    <div class="card-header"><i class="bi bi-wordpress me-2"></i>{{ t('admin.integrations.wordpress_blog_title') }}</div>
+    <div class="card-header settings-card-toggle collapsed" role="button" data-bs-toggle="collapse"
+         data-bs-target="#integration-card-wordpress" aria-expanded="false">
+        <span><i class="bi bi-wordpress me-2"></i>{{ t('admin.integrations.wordpress_blog_title') }}</span>
+        <i class="bi bi-chevron-down settings-card-chevron"></i>
+    </div>
+    <div class="collapse" id="integration-card-wordpress" data-bs-parent="#integrations-accordion">
     <div class="card-body">
         <p class="text-muted">{{ t('admin.integrations.wordpress_blog_desc') }}</p>
 
@@ -103,10 +116,16 @@
             {% endif %}
         </form>
     </div>
+    </div>
 </div>
 
 <div class="card mb-3">
-    <div class="card-header"><i class="bi bi-cloud me-2"></i>{{ t('admin.integrations.nextcloud_title') }}</div>
+    <div class="card-header settings-card-toggle collapsed" role="button" data-bs-toggle="collapse"
+         data-bs-target="#integration-card-nextcloud" aria-expanded="false">
+        <span><i class="bi bi-cloud me-2"></i>{{ t('admin.integrations.nextcloud_title') }}</span>
+        <i class="bi bi-chevron-down settings-card-chevron"></i>
+    </div>
+    <div class="collapse" id="integration-card-nextcloud" data-bs-parent="#integrations-accordion">
     <div class="card-body">
         <p class="text-muted">{{ t('admin.integrations.nextcloud_desc') }}</p>
 
@@ -144,6 +163,9 @@
             {% endif %}
         </form>
     </div>
+    </div>
+</div>
+
 </div>
 
 {% endblock %}
