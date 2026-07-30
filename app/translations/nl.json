@@ -25,6 +25,7 @@
     "configuration": "Configuratie",
     "administration": "Administratie",
     "users": "Gebruikers",
+    "system": "Systeem",
     "settings": "Instellingen",
     "logout": "Uitloggen",
     "menu_open_aria": "Open menu",
@@ -400,6 +401,10 @@
       "nextcloud_save_button": "Opslaan",
       "nextcloud_test_button": "Verbinding testen",
       "nextcloud_test_success": "Verbinding geslaagd"
+    },
+    "system": {
+      "page_title": "Systeem",
+      "heading": "Systeem"
     },
     "restore": {
       "title": "Herstellen vanaf back-up",
