@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{{ ticket.subject }}{% endblock %}
 {% block page_title %}{{ ticket.subject }}{% endblock %}
 
@@ -44,9 +45,13 @@
                             {% if n.direction.value == 'INCOMING' %}
                             <i class="bi bi-arrow-down-left-circle me-1"></i>{{ ticket.sender_name or ticket.sender_email }}
                             {% elif n.direction.value == 'INTERNAL' %}
-                            <i class="bi bi-sticky me-1"></i>{{ t('tickets.detail.internal_note_prefix') }}{{ n.authored_by.name if n.authored_by else t('tickets.detail.unknown_author') }}
+                            <i class="bi bi-sticky me-1"></i>{{ t('tickets.detail.internal_note_prefix') }}
+                            {% if n.authored_by %}{{ user_avatar(n.authored_by, size=18) }}{% endif %}
+                            {{ n.authored_by.name if n.authored_by else t('tickets.detail.unknown_author') }}
                             {% else %}
-                            <i class="bi bi-arrow-up-right-circle me-1"></i>{{ n.authored_by.name if n.authored_by else t('tickets.detail.unknown_author') }}
+                            <i class="bi bi-arrow-up-right-circle me-1"></i>
+                            {% if n.authored_by %}{{ user_avatar(n.authored_by, size=18) }}{% endif %}
+                            {{ n.authored_by.name if n.authored_by else t('tickets.detail.unknown_author') }}
                             {% endif %}
                         </span>
                         <span class="text-muted" style="font-size: 0.78rem;">{{ n.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
@@ -166,7 +171,10 @@
                     {{ t('tickets.detail.assignment_help_text') }}
                 </div>
                 {% else %}
-                <p class="mb-0">{{ ticket.assigned_to.name if ticket.assigned_to else t('tickets.detail.assignment_unassigned_option') }}</p>
+                <p class="mb-0 d-flex align-items-center gap-1">
+                    {% if ticket.assigned_to %}{{ user_avatar(ticket.assigned_to, size=20) }}{{ ticket.assigned_to.name }}
+                    {% else %}{{ t('tickets.detail.assignment_unassigned_option') }}{% endif %}
+                </p>
                 {% endif %}
             </div>
         </div>

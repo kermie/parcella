@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{{ t('admin.groups.page_title') }}{% endblock %}
 {% block page_title %}{{ t('admin.groups.heading') }}{% endblock %}
 
@@ -149,9 +150,12 @@
         <ul class="list-group list-group-flush mb-3">
             {% for membership in group.memberships %}
             <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <div>
+                <div class="d-flex align-items-center gap-2">
+                    {{ user_avatar(membership.user, size=24) }}
+                    <span>
                     {{ membership.user.name }}
                     <small class="text-muted">({{ membership.user.email }})</small>
+                    </span>
                 </div>
                 <form method="post" action="/admin/groups/{{ group.id }}/members/{{ membership.id }}/remove">
                     <button type="submit" class="btn btn-sm btn-outline-secondary">

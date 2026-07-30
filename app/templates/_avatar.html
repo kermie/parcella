@@ -1,0 +1,12 @@
+{# Shared avatar rendering (issue #150) -- used everywhere a system
+   User's name appears, so the image (or fallback icon) stays visually
+   consistent app-wide. `u` may be None (e.g. an external purchase
+   request requester with no User account) -- falls back to the icon. #}
+{% macro user_avatar(u, size=28) %}
+{% if u and u.avatar_filename and avatar_url(u.avatar_filename) %}
+<img src="{{ avatar_url(u.avatar_filename) }}" alt="" class="rounded-circle flex-shrink-0"
+     style="width: {{ size }}px; height: {{ size }}px; object-fit: cover;">
+{% else %}
+<i class="bi bi-person-circle flex-shrink-0" style="font-size: {{ size }}px; line-height: 1;"></i>
+{% endif %}
+{% endmacro %}

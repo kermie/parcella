@@ -177,6 +177,14 @@
       "button_save": "Zmeniť heslo",
       "success_message": "Heslo bolo úspešne zmenené."
     },
+    "avatar": {
+      "heading": "Avatar",
+      "button_upload": "Nahrať",
+      "button_remove": "Odstrániť avatar",
+      "success_message": "Avatar bol úspešne nahraný.",
+      "error_type": "Neplatný typ súboru. Nahrajte prosím PNG, JPEG alebo WebP.",
+      "error_size": "Súbor je príliš veľký (maximálne 2 MB)."
+    },
     "invitation": {
       "title": "Prijať pozvánku",
       "heading": "Nastavte si svoj účet",

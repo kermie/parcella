@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{{ t('calendar.council_absence.title') }}{% endblock %}
 {% block page_title %}{{ t('calendar.council_absence.title') }}{% endblock %}
 
@@ -64,7 +65,11 @@
                         <tbody>
                             {% for e in entries %}
                             <tr>
-                                <td class="fw-semibold">{{ e.user.name if e.user else '–' }}</td>
+                                <td class="fw-semibold">
+                                    {% if e.user %}
+                                    <span class="d-inline-flex align-items-center gap-1">{{ user_avatar(e.user, size=20) }}{{ e.user.name }}</span>
+                                    {% else %}–{% endif %}
+                                </td>
                                 <td>{{ e.start_date.strftime('%d.%m.%Y') }} - {{ e.end_date.strftime('%d.%m.%Y') }}</td>
                                 <td class="text-muted" style="font-size: 0.85rem;">{{ e.note or '' }}</td>
                                 <td class="text-end">

@@ -69,6 +69,10 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Just the filename under app/static/uploads/avatars/, not the image
+    # itself -- same "store filename, not URL" convention as ClubSetting's
+    # logo_filename (app/branding.py). See app/avatars.py.
+    avatar_filename: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{% if task %}{{ t('tasks.form.title_edit') }}{% else %}{{ t('tasks.form.title_new') }}{% endif %}{% endblock %}
 {% block page_title %}{% if task %}{{ t('tasks.form.heading_edit') }}{% else %}{{ t('tasks.form.heading_new') }}{% endif %}{% endblock %}
 
@@ -68,7 +69,7 @@
                                 <input type="checkbox" name="assigned_to_ids" value="{{ u.id }}"
                                        class="form-check-input" id="assignee-{{ u.id }}"
                                        {% if u.id in assigned_ids %}checked{% endif %}>
-                                <label class="form-check-label" for="assignee-{{ u.id }}">{{ u.name }}</label>
+                                <label class="form-check-label d-inline-flex align-items-center gap-1" for="assignee-{{ u.id }}">{{ user_avatar(u, size=18) }}{{ u.name }}</label>
                             </div>
                             {% endfor %}
                         </div>
@@ -101,7 +102,8 @@
                 {% for comment in task.comments %}
                 <div class="mb-3 p-3 rounded" style="background: #f8faf9; border-left: 3px solid var(--gv-gruen);">
                     <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-semibold" style="font-size: 0.85rem;">
+                        <span class="fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.85rem;">
+                            {% if comment.created_by %}{{ user_avatar(comment.created_by, size=18) }}{% endif %}
                             {{ comment.created_by.name if comment.created_by else t('tasks.form.unknown_author') }}
                         </span>
                         <span class="text-muted" style="font-size: 0.78rem;">{{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</span>

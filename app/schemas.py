@@ -36,6 +36,7 @@ class UserOut(BaseModel):
     name: str
     role: UserRole
     is_active: bool
+    avatar_filename: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

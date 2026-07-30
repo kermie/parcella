@@ -177,6 +177,14 @@
       "button_save": "Wachtwoord wijzigen",
       "success_message": "Wachtwoord succesvol gewijzigd."
     },
+    "avatar": {
+      "heading": "Avatar",
+      "button_upload": "Uploaden",
+      "button_remove": "Avatar verwijderen",
+      "success_message": "Avatar succesvol geüpload.",
+      "error_type": "Ongeldig bestandstype. Upload een PNG, JPEG of WebP.",
+      "error_size": "Het bestand is te groot (maximaal 2 MB)."
+    },
     "invitation": {
       "title": "Uitnodiging accepteren",
       "heading": "Stel uw account in",

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{{ t('tasks.board.title') }}{% endblock %}
 {% block page_title %}{{ t('tasks.board.title') }}{% endblock %}
 
@@ -215,7 +216,11 @@
                 </div>
                 {% if task.assignees or task.due_date %}
                 <div class="kanban-card-meta">
-                    {% if task.assignees %}<i class="bi bi-person-fill"></i> {{ task.assignees|map(attribute='user.name')|join(', ') }}{% endif %}
+                    {% if task.assignees %}
+                    <span class="d-inline-flex align-items-center gap-1">
+                        {% for a in task.assignees %}{{ user_avatar(a.user, size=16) }}{{ a.user.name }}{% if not loop.last %},{% endif %}{% endfor %}
+                    </span>
+                    {% endif %}
                     {% if task.assignees and task.due_date %} &middot; {% endif %}
                     {% if task.due_date %}
                     <span class="{% if task.due_date < today %}kanban-card-overdue{% endif %}">
