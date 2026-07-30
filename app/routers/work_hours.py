@@ -504,7 +504,7 @@ async def session_attendee_sheet_pdf(
     region = await load_current_region(db)
 
     def current_parcel_numbers(member: Member) -> str:
-        current = [pa.parcel.plot_number for pa in member.parcel_assignments if pa.assigned_until is None]
+        current = [pa.parcel.plot_number for pa in member.parcel_assignments if pa.is_current]
         return "; ".join(current)
 
     def sort_key(participation: SessionParticipation):

@@ -127,6 +127,41 @@ async def test_attendee_sheet_leaves_tasks_blank_when_none_assigned(client, admi
     assert _normalized("Carla Ohne-Aufgabe") in normalized
 
 
+async def test_attendee_sheet_shows_parcel_for_future_dated_termination(client, admin_user):
+    """Issue #130: a parcel assignment terminated with a future end date
+    hasn't taken effect yet -- the parcel number must still show up on
+    the attendee sheet, not be silently dropped."""
+    await web_login(client, "admin@example.com")
+
+    from datetime import timedelta
+    from app.database import AsyncSessionLocal
+    from app.models import Member, Parcel, MemberParcel, WorkSession, SessionParticipation, SessionType
+
+    async with AsyncSessionLocal() as session:
+        work_session = WorkSession(title="Fruehjahrsputz", type=SessionType.STANDARD, date=date(2026, 4, 1))
+        session.add(work_session)
+        member = Member(first_name="Dana", last_name="Notice-Given")
+        parcel = Parcel(plot_number="04")
+        session.add_all([member, parcel])
+        await session.flush()
+        session.add(MemberParcel(
+            member_id=member.id, parcel_id=parcel.id,
+            assigned_until=date.today() + timedelta(days=30), is_invoice_address=False,
+        ))
+        await session.flush()
+        session.add(SessionParticipation(session_id=work_session.id, member_id=member.id))
+        await session.commit()
+        session_id = work_session.id
+
+    response = await client.get(f"/work-hours/sessions/{session_id}/attendee-sheet")
+    assert response.status_code == 200
+
+    text = _pdf_text(response.content)
+    normalized = _normalized(text)
+    assert _normalized("Dana Notice-Given") in normalized
+    assert "04" in text
+
+
 async def test_attendee_sheet_404_for_unknown_session(client, admin_user):
     await web_login(client, "admin@example.com")
     response = await client.get("/work-hours/sessions/00000000-0000-0000-0000-000000000000/attendee-sheet")

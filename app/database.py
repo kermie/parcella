@@ -51,3 +51,19 @@ def active_member_filter():
         Member.deleted_at.is_(None),
         (Member.member_until.is_(None)) | (Member.member_until >= _date.today())
     )
+
+
+def current_tenant_filter():
+    """
+    Default filter for current MemberParcel tenancy rows:
+    - never terminated (assigned_until IS NULL), or
+    - terminated with a future end date (assigned_until in the future --
+      the termination hasn't taken effect yet, see issue #130)
+
+    Strict ">" (not ">="), matching MemberParcel.is_current: a tenancy
+    becomes former on its assigned_until date itself, not the day before.
+
+    Usage: .where(current_tenant_filter())
+    """
+    from app.models import MemberParcel
+    return (MemberParcel.assigned_until.is_(None)) | (MemberParcel.assigned_until > _date.today())

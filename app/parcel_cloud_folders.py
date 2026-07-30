@@ -17,6 +17,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import current_tenant_filter
 from app.models import MemberParcel, ParcelCloudFolder
 
 
@@ -79,12 +80,12 @@ async def set_active_folder(
 
 async def deactivate_if_vacant(db: AsyncSession, parcel_id: str) -> None:
     """Call this after any change that can end a MemberParcel
-    assignment. If the parcel now has no resident with
-    assigned_until IS NULL, its active cloud folder (if any) is
+    assignment. If the parcel now has no current resident (assigned_until
+    IS NULL or still in the future), its active cloud folder (if any) is
     deactivated -- see module docstring."""
     result = await db.execute(
         select(MemberParcel.id).where(
-            MemberParcel.parcel_id == parcel_id, MemberParcel.assigned_until.is_(None),
+            MemberParcel.parcel_id == parcel_id, current_tenant_filter(),
         )
     )
     still_has_active_resident = result.first() is not None
