@@ -22,10 +22,13 @@ async def test_backup_download_returns_a_valid_pg_dump_file(client, admin_user):
     assert resp.status_code == 200
     content_disposition = resp.headers["content-disposition"]
     assert "attachment" in content_disposition
-    assert ".dump" in content_disposition
-    # Custom-format pg_dump magic header -- proves this is a real,
+    assert ".sql" in content_disposition
+    # Plain-format pg_dump's standard preamble -- proves this is a real,
     # structurally valid dump, not just "some bytes came back".
-    assert resp.content.startswith(b"PGDMP")
+    assert b"PostgreSQL database dump" in resp.content
+    # --clean --if-exists must have embedded DROP statements, so the
+    # script is restorable directly into a database with existing objects.
+    assert b"DROP TABLE IF EXISTS" in resp.content
 
 
 async def test_backup_download_requires_admin(client):
