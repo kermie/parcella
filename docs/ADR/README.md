@@ -56,3 +56,4 @@ in chronological order.
 50. [Task board sort: client-side and purely visual, not a position rewrite](./0050-task-board-sort-client-side-visual-only.md)
 51. [Dashboard: overdue tasks card](./0051-dashboard-overdue-tasks-card.md)
 52. [MemberParcel.is_current: a future-dated termination isn't in effect yet](./0052-member-parcel-is-current-property.md)
+53. [Admin backup: on-demand download only, no server-side storage](./0053-admin-backup-download-only.md)
