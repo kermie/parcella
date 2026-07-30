@@ -199,6 +199,7 @@
       "backup_description": "Teraz stiahnuť úplnú zálohu (databáza + nahrané súbory, napr. logo a obrázky oznámení, ako ZIP). Na serveri sa nič neukladá -- súbor si bezpečne uložte sami.",
       "backup_button": "Stiahnuť zálohu",
       "backup_error": "Zálohovanie zlyhalo: {detail}",
+      "restore_link": "Obnoviť zo zálohy",
       "invite_header": "Pozvať používateľa",
       "label_email": "E-mailová adresa",
       "label_role": "Rola",
@@ -399,6 +400,24 @@
       "nextcloud_save_button": "Uložiť",
       "nextcloud_test_button": "Otestovať pripojenie",
       "nextcloud_test_success": "Pripojenie úspešné"
+    },
+    "restore": {
+      "title": "Obnoviť zo zálohy",
+      "success_message": "Obnovenie bolo úspešne dokončené.",
+      "warning_header": "Týmto sa prepíšu všetky aktuálne dáta",
+      "warning_text": "Obnovenie nahradí celú databázu a všetky nahrané súbory (logo, obrázky oznámení) obsahom nahraného súboru ZIP so zálohou. Túto akciu nemožno vrátiť späť.",
+      "warning_hint": "Ak chcete mať možnosť túto akciu vrátiť späť, najprv si stiahnite novú zálohu aktuálneho stavu.",
+      "form_header": "Nahrať zálohu",
+      "label_file": "Súbor zálohy (.zip)",
+      "label_confirm_phrase": "Napíšte {phrase} na potvrdenie",
+      "submit_button": "Obnoviť",
+      "submit_confirm": "Ste si úplne istí? Týmto prepíšete celú aktuálnu databázu a všetky nahrané súbory.",
+      "error_wrong_phrase": "Potvrdzovacia fráza sa nezhodovala -- nič sa nezmenilo.",
+      "error_too_large": "Súbor je príliš veľký.",
+      "error_not_a_zip": "Nahraný súbor nie je platný zip archív.",
+      "error_invalid_zip": "Súbor zálohy má neočakávanú štruktúru: {detail}",
+      "error_restore_failed": "Obnovenie zlyhalo, nič sa nezmenilo: {detail}",
+      "error_uploads_failed": "Databáza bola úspešne obnovená, ale obnovenie nahraných súborov zlyhalo: {detail}. Opätovné spustenie obnovenia je bezpečné -- krok databázy netreba opakovať."
     },
     "sample_data": {
       "title": "Ukážkové dáta",

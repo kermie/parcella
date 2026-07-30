@@ -77,12 +77,20 @@ those credentials after a restore onto new infrastructure.
 **Mechanics, for completeness:** `pg_dump` runs from inside the `web`
 container against the `db` service over the network (same pattern as
 Alembic migrations already running from `web`), using connection details
-parsed from `settings.database_url`. The `postgresql-client` package is
-installed via the Dockerfile's own Debian (trixie) repo -- its `pg_dump`
-(v17) dumping the `db`/`db_test` services' PostgreSQL 16 is a standard,
-fully-supported combination, since `pg_dump` is backward-compatible with
-older servers; no separate PGDG apt source was needed. The database
-password is passed to the subprocess via its environment (`PGPASSWORD`),
+parsed from `settings.database_url`. The `postgresql-client-16` package
+is installed via the PGDG apt repository, pinned to the exact same major
+version as the `db`/`db_test` services' PostgreSQL 16.
+
+**Correction (added when building restore, ADR 0054):** this originally
+installed the plain `postgresql-client` meta-package from Debian
+trixie's own repo (v17), reasoning that `pg_dump` is backward-compatible
+with older servers -- true for *dumping*, but not sufficient once
+restore existed too: a v17 `pg_dump` embeds a `SET transaction_timeout
+= 0;` preamble line (a v17-only GUC) that a v16 server's `psql` rejects
+outright. Pinning to the exact matching version via PGDG avoids this
+whole class of version-skew issue rather than special-casing one
+symptom of it. The database password is passed to the subprocess via
+its environment (`PGPASSWORD`),
 never as a CLI argument or connection-string URI, so it never appears in
 a process listing. The full dump is buffered in memory
 (`process.communicate()`) and only returned once `pg_dump` has exited
@@ -97,3 +105,9 @@ building a restore-from-upload feature would mean accepting an arbitrary
 SQL/binary file from an admin's browser and feeding it to `psql`/
 `pg_restore` against the live database, a much larger blast-radius
 feature than this issue asked for.
+
+**Update:** superseded for restore specifically by
+[ADR 0054](./0054-admin-restore-from-backup.md), which reverses this one
+paragraph (and only this paragraph) after the user weighed the tradeoff
+directly -- see that ADR for the safeguards judged sufficient to accept
+it. Everything else in this ADR still stands.

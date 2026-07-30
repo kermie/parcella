@@ -4,12 +4,14 @@ Admin router: user management, invitations, club settings.
 import asyncio
 import io
 import os
+import shutil
 import zipfile
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional
 import urllib.parse
 
-from fastapi import APIRouter, Request, Form, Depends, HTTPException
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -216,6 +218,177 @@ async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# Restore: upload a backup zip (the same shape backup_download produces)
+# and restore both the database and app/static/uploads/ from it. See ADR
+# 0054 for why this reverses ADR 0053's original "no restore-from-UI"
+# stance, and for the two non-obvious risks (self-deadlock via our own
+# session's open transaction, and stale prepared-statement caches after
+# --clean replaces every table) that this handler works around.
+# ---------------------------------------------------------------------------
+
+PSQL_BINARY = "psql"  # module-level constant so tests can monkeypatch it
+RESTORE_CONFIRM_PHRASE = "RESTORE"
+MAX_RESTORE_UPLOAD_BYTES = 200 * 1024 * 1024
+MAX_RESTORE_UNCOMPRESSED_BYTES = 2 * 1024 * 1024 * 1024
+
+
+class RestoreZipError(ValueError):
+    pass
+
+
+def _assert_within_upload_dir(relative: str, base: Path) -> Path:
+    """Zip-slip guard: rejects any member whose resolved path would
+    land outside `base`, however it got there."""
+    base_resolved = base.resolve()
+    target = (base / relative).resolve()
+    if target != base_resolved and base_resolved not in target.parents:
+        raise RestoreZipError(f"path escapes upload directory: {relative!r}")
+    return target
+
+
+def _validate_restore_zip(zf: zipfile.ZipFile):
+    """Exactly one top-level *.sql member; every other member must
+    start with 'uploads/' and resolve inside UPLOAD_DIR. Hand-rolled
+    rather than ZipFile.extractall(): Python's extractall silently
+    rewrites a '..'-containing name instead of rejecting it, and we
+    want fail-closed rejection of a malformed backup, not silent
+    reinterpretation. Writing bytes ourselves via open()/write() (not
+    extract()) also means a crafted symlink-type zip entry can never
+    become an actual symlink on disk."""
+    total = 0
+    sql_members = []
+    upload_entries = []
+    for info in zf.infolist():
+        if info.is_dir():
+            continue
+        name = info.filename
+        if "\x00" in name or name.startswith("/") or name.startswith("\\"):
+            raise RestoreZipError(f"unsafe member name: {name!r}")
+        total += info.file_size
+        if total > MAX_RESTORE_UNCOMPRESSED_BYTES:
+            raise RestoreZipError("zip expands too large")
+        if "/" not in name and name.endswith(".sql"):
+            sql_members.append(name)
+        elif name.startswith("uploads/"):
+            relative = name[len("uploads/"):]
+            _assert_within_upload_dir(relative, UPLOAD_DIR)
+            upload_entries.append((relative, info))
+        else:
+            raise RestoreZipError(f"unexpected member: {name!r}")
+    if len(sql_members) != 1:
+        raise RestoreZipError(f"expected exactly one top-level .sql file, found {len(sql_members)}")
+    return zf.read(sql_members[0]), upload_entries
+
+
+def _mirror_replace_uploads(zf: zipfile.ZipFile, upload_entries) -> None:
+    """Wholesale mirror-replace of UPLOAD_DIR from the zip's uploads/
+    entries -- nothing not in the backup survives, since once the DB
+    is rolled back, any file not referenced by it is an orphan by
+    definition. Builds the new tree in a sibling temp directory first
+    and swaps it in via rename(), so the window where UPLOAD_DIR is
+    missing/partial is a single syscall, not "however long the copy
+    takes"."""
+    tmp_dir = UPLOAD_DIR.with_name(UPLOAD_DIR.name + ".restore-tmp")
+    if tmp_dir.exists():
+        shutil.rmtree(tmp_dir)
+    tmp_dir.mkdir(parents=True)
+    for relative, info in upload_entries:
+        dest = _assert_within_upload_dir(relative, tmp_dir)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with zf.open(info) as src, open(dest, "wb") as out:
+            shutil.copyfileobj(src, out)
+    if UPLOAD_DIR.exists():
+        shutil.rmtree(UPLOAD_DIR)
+    tmp_dir.rename(UPLOAD_DIR)
+
+
+@router.get("/backup/restore", response_class=HTMLResponse)
+async def backup_restore_page(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_system_admin(request, db)
+    return templates.TemplateResponse("admin/backup_restore.html", {
+        "request": request, "user": user, "confirm_phrase": RESTORE_CONFIRM_PHRASE,
+    })
+
+
+@router.post("/backup/restore")
+async def backup_restore(
+    request: Request, db: AsyncSession = Depends(get_db),
+    confirm_phrase: str = Form(...), backup_zip: UploadFile = File(...),
+):
+    """Restores both the database (via psql, --single-transaction so a
+    failure rolls back cleanly) and app/static/uploads/ (full mirror)
+    from an uploaded backup zip -- the same shape backup_download
+    produces. See ADR 0054."""
+    await require_system_admin(request, db)
+
+    def _err(key: str, **kwargs) -> RedirectResponse:
+        msg = t_for(request, key, **kwargs)
+        return RedirectResponse(f"/admin/backup/restore?error={urllib.parse.quote(msg)}", status_code=302)
+
+    if confirm_phrase.strip() != RESTORE_CONFIRM_PHRASE:
+        return _err("admin.restore.error_wrong_phrase")
+
+    contents = await backup_zip.read(MAX_RESTORE_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_RESTORE_UPLOAD_BYTES:
+        return _err("admin.restore.error_too_large")
+
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(contents))
+    except zipfile.BadZipFile:
+        return _err("admin.restore.error_not_a_zip")
+
+    try:
+        sql_bytes, upload_entries = _validate_restore_zip(zf)
+    except RestoreZipError as e:
+        return _err("admin.restore.error_invalid_zip", detail=str(e))
+
+    # Release our own session's open transaction before the destructive
+    # DDL below -- otherwise DROP TABLE deadlocks against the ACCESS
+    # SHARE lock require_system_admin's own SELECT is still holding.
+    await db.close()
+
+    db_url = urllib.parse.urlsplit(settings.database_url)
+    env = {**os.environ, "PGPASSWORD": db_url.password or ""}
+    cmd = [
+        PSQL_BINARY,
+        "-h", db_url.hostname or "localhost",
+        "-p", str(db_url.port or 5432),
+        "-U", db_url.username or "",
+        "-d", db_url.path.lstrip("/"),
+        "-v", "ON_ERROR_STOP=1",
+        "--single-transaction",
+    ]
+
+    try:
+        process = await asyncio.create_subprocess_exec(
+            *cmd, env=env,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await asyncio.wait_for(process.communicate(input=sql_bytes), timeout=300)
+    except (OSError, asyncio.TimeoutError) as e:
+        return _err("admin.restore.error_restore_failed", detail=str(e)[:500])
+
+    if process.returncode != 0:
+        detail = stderr.decode("utf-8", errors="replace").strip()[:500]
+        return _err("admin.restore.error_restore_failed", detail=detail)
+
+    # The DDL above dropped and recreated every table -- drop pooled
+    # connections so nobody reuses a prepared-statement cache from
+    # before the schema was replaced (asyncpg: "cached plan must not
+    # change result type").
+    from app.database import engine
+    await engine.dispose()
+
+    try:
+        _mirror_replace_uploads(zf, upload_entries)
+    except OSError as e:
+        return _err("admin.restore.error_uploads_failed", detail=str(e)[:500])
+
+    return RedirectResponse("/admin/backup/restore?success=1", status_code=302)
 
 
 # ---------------------------------------------------------------------------

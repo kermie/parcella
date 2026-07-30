@@ -199,6 +199,7 @@
       "backup_description": "Pobierz teraz pełną kopię zapasową (baza danych + przesłane pliki, np. logo i obrazy ogłoszeń, jako ZIP). Na serwerze nic nie jest przechowywane -- zapisz plik samodzielnie w bezpiecznym miejscu.",
       "backup_button": "Pobierz kopię zapasową",
       "backup_error": "Kopia zapasowa nie powiodła się: {detail}",
+      "restore_link": "Przywróć z kopii zapasowej",
       "invite_header": "Zaproś użytkownika",
       "label_email": "Adres e-mail",
       "label_role": "Rola",
@@ -399,6 +400,24 @@
       "nextcloud_save_button": "Zapisz",
       "nextcloud_test_button": "Testuj połączenie",
       "nextcloud_test_success": "Połączenie udane"
+    },
+    "restore": {
+      "title": "Przywróć z kopii zapasowej",
+      "success_message": "Przywracanie zakończone pomyślnie.",
+      "warning_header": "To nadpisze wszystkie bieżące dane",
+      "warning_text": "Przywracanie zastępuje całą bazę danych i wszystkie przesłane pliki (logo, obrazy ogłoszeń) zawartością przesłanego pliku ZIP kopii zapasowej. Tej operacji nie można cofnąć.",
+      "warning_hint": "Jeśli chcesz mieć możliwość cofnięcia tej operacji, najpierw pobierz świeżą kopię zapasową bieżącego stanu.",
+      "form_header": "Prześlij kopię zapasową",
+      "label_file": "Plik kopii zapasowej (.zip)",
+      "label_confirm_phrase": "Wpisz {phrase}, aby potwierdzić",
+      "submit_button": "Przywróć",
+      "submit_confirm": "Czy na pewno? To nadpisze całą bieżącą bazę danych i wszystkie przesłane pliki.",
+      "error_wrong_phrase": "Fraza potwierdzająca nie zgadza się -- nic nie zostało zmienione.",
+      "error_too_large": "Plik jest zbyt duży.",
+      "error_not_a_zip": "Przesłany plik nie jest prawidłowym archiwum zip.",
+      "error_invalid_zip": "Plik kopii zapasowej ma nieoczekiwaną strukturę: {detail}",
+      "error_restore_failed": "Przywracanie nie powiodło się, nic nie zostało zmienione: {detail}",
+      "error_uploads_failed": "Baza danych została pomyślnie przywrócona, ale przywracanie przesłanych plików nie powiodło się: {detail}. Ponowne uruchomienie przywracania jest bezpieczne -- krok bazy danych nie musi być powtarzany."
     },
     "sample_data": {
       "title": "Dane przykładowe",

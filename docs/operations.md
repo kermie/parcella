@@ -83,7 +83,18 @@ file to find or clean up on the server itself; the downloaded `.zip` is
 the only copy, and it's the admin's responsibility to store it
 somewhere safe.
 
-To restore a downloaded backup, e.g. into a fresh/empty instance:
+**Restoring, the normal way:** a system admin can also upload that same
+zip back through `/admin/backup/restore` ("Restore from backup" -- see
+[ADR 0054](./ADR/0054-admin-restore-from-backup.md)) and restore both
+the database and `app/static/uploads/` in one step. This is a
+destructive, irreversible action -- it replaces the entire current
+database and every uploaded file with the backup's contents -- so the
+page requires typing the literal confirmation phrase `RESTORE` before
+it runs anything. If you want to be able to undo a restore, download a
+fresh backup of the current state *first*.
+
+**Restoring manually, e.g. when the app itself is unreachable** (container
+won't start, admin panel broken) and the UI isn't an option:
 
 ```bash
 unzip parcella-backup-20260730-143000.zip -d restore/
@@ -96,7 +107,12 @@ SQL script itself contains `DROP ... IF EXISTS` statements ahead of each
 `CREATE` -- restoring it drops existing objects before recreating them.
 Never run this against a live database whose current data you still
 need -- restore into an empty database (or a throwaway one) instead,
-then swap it in deliberately.
+then swap it in deliberately. The in-app restore path guards against
+this with the confirmation phrase; the manual command above has no such
+guard, so treat it with the same care.
+
+Neither restore path runs `alembic upgrade head` for you -- see the next
+point, which applies identically whichever path you use.
 
 **What the backup does *not* cover -- read this before relying on one:**
 
