@@ -196,7 +196,7 @@
       "update_up_to_date": "Verze v{version} -- aktuální (naposledy zkontrolováno: {checked_at})",
       "update_not_checked_yet": "Verze v{version} -- aktualizace zatím nebyly zkontrolovány",
       "backup_header": "Záloha",
-      "backup_description": "Nyní stáhnout úplnou zálohu databáze. Na serveru se nic neukládá -- soubor si bezpečně uložte sami.",
+      "backup_description": "Nyní stáhnout úplnou zálohu (databáze + nahrané soubory, např. logo a obrázky oznámení, jako ZIP). Na serveru se nic neukládá -- soubor si bezpečně uložte sami.",
       "backup_button": "Stáhnout zálohu",
       "backup_error": "Zálohování se nezdařilo: {detail}",
       "invite_header": "Pozvat uživatele",

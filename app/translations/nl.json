@@ -196,7 +196,7 @@
       "update_up_to_date": "Versie v{version} -- up-to-date (laatst gecontroleerd: {checked_at})",
       "update_not_checked_yet": "Versie v{version} -- nog niet op updates gecontroleerd",
       "backup_header": "Back-up",
-      "backup_description": "Download nu een volledige databaseback-up. Er wordt niets op de server opgeslagen -- bewaar het bestand zelf op een veilige plek.",
+      "backup_description": "Download nu een volledige back-up (database + geüploade bestanden, bijv. logo en aankondigingsafbeeldingen, als ZIP). Er wordt niets op de server opgeslagen -- bewaar het bestand zelf op een veilige plek.",
       "backup_button": "Back-up downloaden",
       "backup_error": "Back-up mislukt: {detail}",
       "invite_header": "Gebruiker uitnodigen",

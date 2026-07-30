@@ -47,6 +47,33 @@ restorable directly into a database that already has the same objects
 (the equivalent of `pg_restore --clean --if-exists`, but embedded in the
 script itself since plain SQL has no separate restore-time flags).
 
+**Decision 4: the download bundles `app/static/uploads/` alongside the
+SQL dump, as a zip.** A DB-only backup leaves dangling references: the
+branding logo and announcement images are stored as files under
+`app/static/uploads/`, referenced by filename from `ClubSetting`/
+`Announcement` rows, but the file bytes themselves aren't in the
+database. Restoring the DB alone into a fresh instance would show
+broken images. `backup_download` walks `UPLOAD_DIR` (reused from
+`app/branding.py`, not redefined) and adds every file it finds under an
+`uploads/` prefix in the zip -- generic by construction, so any future
+upload directory added under that same tree is included automatically
+without this endpoint needing to know about it by name. Still fully
+in-memory (`io.BytesIO` + `zipfile`), preserving Decision 1.
+
+**Known limitation, not solved by this feature: encrypted fields don't
+travel.** SMTP/WordPress/Nextcloud credentials are stored encrypted
+with a key derived from `SECRET_KEY` (`app/crypto_utils.py`), which is
+`.env`-only, deliberately outside the database and outside this backup.
+Restoring a dump into an instance with a *different* `SECRET_KEY`
+leaves those fields undecryptable garbage -- see
+[Operations](../operations.md#backups--restore) for what that means in
+practice. This wasn't solved here because bundling `SECRET_KEY` into an
+otherwise access-controlled-only-by-`require_system_admin` download
+would hand out the one secret that makes every other encrypted value
+recoverable, in the same file people are told to "store somewhere
+safe" -- a materially bigger risk than the inconvenience of re-entering
+those credentials after a restore onto new infrastructure.
+
 **Mechanics, for completeness:** `pg_dump` runs from inside the `web`
 container against the `db` service over the network (same pattern as
 Alembic migrations already running from `web`), using connection details

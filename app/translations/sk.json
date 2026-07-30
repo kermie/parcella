@@ -196,7 +196,7 @@
       "update_up_to_date": "Verzia v{version} -- aktuálna (naposledy skontrolované: {checked_at})",
       "update_not_checked_yet": "Verzia v{version} -- aktualizácie zatiaľ neboli skontrolované",
       "backup_header": "Záloha",
-      "backup_description": "Teraz stiahnuť úplnú zálohu databázy. Na serveri sa nič neukladá -- súbor si bezpečne uložte sami.",
+      "backup_description": "Teraz stiahnuť úplnú zálohu (databáza + nahrané súbory, napr. logo a obrázky oznámení, ako ZIP). Na serveri sa nič neukladá -- súbor si bezpečne uložte sami.",
       "backup_button": "Stiahnuť zálohu",
       "backup_error": "Zálohovanie zlyhalo: {detail}",
       "invite_header": "Pozvať používateľa",

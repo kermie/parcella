@@ -196,7 +196,7 @@
       "update_up_to_date": "Wersja v{version} -- aktualna (ostatnio sprawdzono: {checked_at})",
       "update_not_checked_yet": "Wersja v{version} -- jeszcze nie sprawdzono aktualizacji",
       "backup_header": "Kopia zapasowa",
-      "backup_description": "Pobierz teraz pełną kopię zapasową bazy danych. Na serwerze nic nie jest przechowywane -- zapisz plik samodzielnie w bezpiecznym miejscu.",
+      "backup_description": "Pobierz teraz pełną kopię zapasową (baza danych + przesłane pliki, np. logo i obrazy ogłoszeń, jako ZIP). Na serwerze nic nie jest przechowywane -- zapisz plik samodzielnie w bezpiecznym miejscu.",
       "backup_button": "Pobierz kopię zapasową",
       "backup_error": "Kopia zapasowa nie powiodła się: {detail}",
       "invite_header": "Zaproś użytkownika",

@@ -2,7 +2,9 @@
 Admin router: user management, invitations, club settings.
 """
 import asyncio
+import io
 import os
+import zipfile
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import urllib.parse
@@ -30,7 +32,7 @@ from app.blog_publisher import load_wordpress_configuration, WordPressPublisher,
 from app.cloud_storage import load_nextcloud_configuration, NextcloudProvider, CloudStorageError
 from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
-from app.branding import save_logo_upload, remove_logo_file
+from app.branding import save_logo_upload, remove_logo_file, UPLOAD_DIR
 from app.nav_order import NAV_ORDER_DEFAULTS
 from app.area_utils import compute_area_a_sqm, compute_area_b_sqm
 from app.invoice_generation import (
@@ -144,8 +146,9 @@ async def update_check_now(request: Request, db: AsyncSession = Depends(get_db))
 
 
 # ---------------------------------------------------------------------------
-# Backup: one-click pg_dump, streamed straight to the browser as a download.
-# Nothing is ever written to server disk -- see ADR 0053.
+# Backup: one-click pg_dump + uploaded files, zipped and streamed straight
+# to the browser as a download. Nothing is ever written to server disk --
+# see ADR 0053.
 # ---------------------------------------------------------------------------
 
 PG_DUMP_BINARY = "pg_dump"  # module-level constant so tests can monkeypatch it
@@ -153,13 +156,16 @@ PG_DUMP_BINARY = "pg_dump"  # module-level constant so tests can monkeypatch it
 
 @router.post("/backup/download")
 async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
-    """One-click pg_dump of the whole database, returned straight to the
-    browser as a download -- nothing is ever written to server disk (see
-    ADR 0053). Plain SQL format (pg_dump's default) so the file is
-    readable text, restorable with a plain `psql`, rather than requiring
-    pg_restore. --clean --if-exists embeds DROP ... IF EXISTS statements
-    ahead of each CREATE, so the script can be restored directly into a
-    database that already has the same objects in it."""
+    """One-click pg_dump of the whole database, bundled together with
+    app/static/uploads/ (the branding logo, announcement images -- files
+    referenced by filename from DB rows but not themselves part of the
+    dump) into a single zip, returned straight to the browser as a
+    download -- nothing is ever written to server disk (see ADR 0053).
+    Plain SQL format (pg_dump's default) so the dump is readable text,
+    restorable with a plain `psql`, rather than requiring pg_restore.
+    --clean --if-exists embeds DROP ... IF EXISTS statements ahead of
+    each CREATE, so the script can be restored directly into a database
+    that already has the same objects in it."""
     await require_system_admin(request, db)
 
     db_url = urllib.parse.urlsplit(settings.database_url)
@@ -195,10 +201,19 @@ async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
         )
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    filename = f"parcella-backup-{timestamp}.sql"
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"parcella-backup-{timestamp}.sql", stdout)
+        if UPLOAD_DIR.is_dir():
+            for file_path in sorted(UPLOAD_DIR.rglob("*")):
+                if file_path.is_file():
+                    zf.write(file_path, arcname=f"uploads/{file_path.relative_to(UPLOAD_DIR)}")
+
+    filename = f"parcella-backup-{timestamp}.zip"
     return Response(
-        content=stdout,
-        media_type="text/plain; charset=utf-8",
+        content=zip_buffer.getvalue(),
+        media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

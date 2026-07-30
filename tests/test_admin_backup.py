@@ -2,11 +2,18 @@
 Issue #117: "add a backup possibility to administration panel".
 
 Direct-download only (ADR 0053): a system admin triggers a real pg_dump
-against the (test) database and gets the result back as a file
-download -- nothing is ever written to server disk. This test runs a
-REAL pg_dump subprocess against db_test, not a mock, per this repo's
-"real Postgres, not fakes" testing philosophy (docs/testing.md).
+against the (test) database and gets the result back as a zip download
+-- nothing is ever written to server disk. This test runs a REAL
+pg_dump subprocess against db_test, not a mock, per this repo's "real
+Postgres, not fakes" testing philosophy (docs/testing.md).
+
+The zip also bundles app/static/uploads/ (branding logo, announcement
+images) alongside the SQL dump -- those files are referenced by
+filename from DB rows but aren't themselves part of the dump, so a
+DB-only backup would leave dangling references on restore.
 """
+import io
+import zipfile
 
 
 async def web_login(client, email: str, password: str = "testpasswort123") -> None:
@@ -14,7 +21,7 @@ async def web_login(client, email: str, password: str = "testpasswort123") -> No
     assert response.status_code in (302, 303)
 
 
-async def test_backup_download_returns_a_valid_pg_dump_file(client, admin_user):
+async def test_backup_download_returns_a_valid_zip_with_sql_dump(client, admin_user):
     await web_login(client, "admin@example.com")
 
     resp = await client.post("/admin/backup/download")
@@ -22,13 +29,37 @@ async def test_backup_download_returns_a_valid_pg_dump_file(client, admin_user):
     assert resp.status_code == 200
     content_disposition = resp.headers["content-disposition"]
     assert "attachment" in content_disposition
-    assert ".sql" in content_disposition
+    assert ".zip" in content_disposition
+
+    zf = zipfile.ZipFile(io.BytesIO(resp.content))
+    sql_names = [n for n in zf.namelist() if n.endswith(".sql")]
+    assert len(sql_names) == 1
+
+    sql_bytes = zf.read(sql_names[0])
     # Plain-format pg_dump's standard preamble -- proves this is a real,
     # structurally valid dump, not just "some bytes came back".
-    assert b"PostgreSQL database dump" in resp.content
+    assert b"PostgreSQL database dump" in sql_bytes
     # --clean --if-exists must have embedded DROP statements, so the
     # script is restorable directly into a database with existing objects.
-    assert b"DROP TABLE IF EXISTS" in resp.content
+    assert b"DROP TABLE IF EXISTS" in sql_bytes
+
+
+async def test_backup_download_bundles_uploaded_files(client, admin_user, monkeypatch, tmp_path):
+    upload_dir = tmp_path / "uploads"
+    (upload_dir / "announcements").mkdir(parents=True)
+    (upload_dir / "logo.png").write_bytes(b"fake-logo-bytes")
+    (upload_dir / "announcements" / "example.png").write_bytes(b"fake-announcement-bytes")
+    monkeypatch.setattr("app.routers.admin.UPLOAD_DIR", upload_dir)
+
+    await web_login(client, "admin@example.com")
+    resp = await client.post("/admin/backup/download")
+    assert resp.status_code == 200
+
+    zf = zipfile.ZipFile(io.BytesIO(resp.content))
+    names = set(zf.namelist())
+    assert "uploads/logo.png" in names
+    assert "uploads/announcements/example.png" in names
+    assert zf.read("uploads/logo.png") == b"fake-logo-bytes"
 
 
 async def test_backup_download_requires_admin(client):
