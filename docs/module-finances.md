@@ -52,8 +52,7 @@ This is the module's central design decision -- see
 [ADR 0042](./ADR/0042-invoice-item-targeting-plot-scoped-vs-person-scoped.md)
 for the full history of why it ended up this shape:
 
-- **Plot-scoped** (`FIXED_PER_PARCEL`, `PER_SQM`, `WATER_USAGE`,
-  `ELECTRICITY_USAGE`): `applies_to_all_parcels`
+- **Plot-scoped** (`FIXED_PER_PARCEL`, `PER_SQM`): `applies_to_all_parcels`
   (default `True`) with `parcel_scopes` listing specific parcels when
   `False`. Billed one `Invoice` per occupied parcel with an
   invoice-address resident.
@@ -63,21 +62,25 @@ for the full history of why it ended up this shape:
   whether that member currently has a parcel** -- this is what makes
   honorary/supporting memberships and dues for plot-less members
   possible at all.
-- **Automatically scoped** (`WORK_HOURS_SHORTFALL`, `INSURANCE_COST`):
-  neither field is honored for eligibility -- both `applies_to_all_parcels`
-  and `parcel_scopes` are still stored on the row (the form doesn't
-  special-case what it submits) but `compute_invoices_for_run`'s
-  parcel loop bypasses `_parcel_in_scope()` entirely for these two
-  modes, billing exactly whichever parcels the underlying module
-  computes a nonzero amount for. There is deliberately no manual
-  narrowing here: for insurance cost, the `ParcelInsurance` record
-  already *is* the scope (a parcel with no insurance, or a zero total,
-  is skipped by `item_quantity_and_price` regardless), so a separate
-  parcel picker could only be used to under-bill an insured parcel by
-  mistake, never to usefully restrict it. The item forms
-  (`run_detail.html`, `item_template_list.html`) hide the scope
-  picker for both and show a mode-specific "Automatic (... evaluation)"
-  note instead.
+- **Automatically scoped** (`WORK_HOURS_SHORTFALL`, `INSURANCE_COST`,
+  `WATER_USAGE`, `ELECTRICITY_USAGE` -- see
+  [ADR 0056](./ADR/0056-metering-price-drives-automatic-usage-billing.md)
+  for why the latter two joined this group): neither field is honored
+  for eligibility -- both `applies_to_all_parcels` and `parcel_scopes`
+  are still stored on the row (the form doesn't special-case what it
+  submits) but `compute_invoices_for_run`'s parcel loop bypasses
+  `_parcel_in_scope()` entirely for these four modes, billing exactly
+  whichever parcels the underlying module computes a nonzero amount
+  for. There is deliberately no manual narrowing here: for insurance
+  cost, the `ParcelInsurance` record already *is* the scope (a parcel
+  with no insurance, or a zero total, is skipped by
+  `item_quantity_and_price` regardless); for water/electricity usage,
+  having (or not having) an active metering point of that medium
+  already is the scope. A separate parcel picker could only be used to
+  under-bill a metered/insured parcel by mistake, never to usefully
+  restrict it. The item forms (`run_detail.html`,
+  `item_template_list.html`) hide the scope picker for all four and
+  show a mode-specific "Automatic (... evaluation)" note instead.
 
 These scope fields/relationships are meaningless/ignored for the "wrong"
 pricing mode -- a `PER_SQM` item's `member_scopes` is simply never
@@ -118,9 +121,11 @@ Deliberately two-phase and one-way:
 Per-parcel quantity/price resolution (`item_quantity_and_price`) pulls
 from other modules rather than storing its own numbers:
 `WATER_USAGE`/`ELECTRICITY_USAGE` read consumption via
-`app/meter_utils.py`'s `calculate_consumption()` but still need a
-manually entered `unit_price` (no tariff table exists anywhere else).
-`INSURANCE_COST` ignores `unit_price` entirely and is handled outside
+`app/meter_utils.py`'s `calculate_consumption()` and price per unit via
+`MeteringPriceConfiguration` (per medium/year -- see
+[module-metering.md](./module-metering.md)), ignoring `unit_price`
+entirely, same as the two modes below. `INSURANCE_COST` ignores
+`unit_price` entirely and is handled outside
 `item_quantity_and_price` altogether: instead of one combined amount,
 `app/insurance_utils.py`'s `insurance_cost_line_items()` (issue #93)
 returns one `(label, amount)` pair per component actually owed --

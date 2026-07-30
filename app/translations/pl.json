@@ -1099,6 +1099,29 @@
       "no_reading": "brak odczytu",
       "no_entries": "Brak wpisów"
     },
+    "configuration": {
+      "title_suffix": " konfiguracja ceny",
+      "create_update_card_title": "Nowa/aktualizacja ceny",
+      "year_label": "Rok",
+      "price_label": "Cena za {unit}",
+      "note_label": "Notatka",
+      "note_placeholder": "np. zmiana taryfy dostawcy",
+      "save_button": "Zapisz",
+      "history_card_title": "Historia cen",
+      "col_year": "Rok",
+      "col_price": "Cena",
+      "col_note": "Notatka",
+      "delete_confirm": "Czy na pewno usunąć cenę za {year}?",
+      "no_config": "Nie skonfigurowano jeszcze żadnej ceny."
+    },
+    "configuration_form": {
+      "title_suffix": " konfiguracja ceny {year}",
+      "card_title": "Edytuj cenę",
+      "year_label": "Rok",
+      "price_label": "Cena za {unit}",
+      "note_label": "Notatka",
+      "save_button": "Zapisz"
+    },
     "errors": {
       "point_not_found": "Nie znaleziono punktu pomiarowego ({medium})",
       "invalid_reading": "Nieprawidłowy stan licznika",
@@ -1106,7 +1129,9 @@
       "overall_plausibility_evaluation": "Zużycie rozdzielone ({total} {unit}) przekracza zużycie z licznika głównego ({main} {unit}).",
       "reading_below_previous": "Stan licznika ({new_value}) nie może być mniejszy niż poprzedni stan ({previous_value}) tego samego licznika.",
       "reading_above_later": "Stan licznika ({new_value}) nie może być większy niż już zarejestrowany późniejszy stan ({later_value}) tego samego licznika.",
-      "no_active_meter": "Brak aktywnego licznika dla tego punktu pomiarowego"
+      "no_active_meter": "Brak aktywnego licznika dla tego punktu pomiarowego",
+      "configuration_not_found": "Nie znaleziono konfiguracji ceny",
+      "configuration_year_exists": "Inna konfiguracja ceny na {year} już istnieje."
     }
   },
   "work_hours": {
@@ -1886,6 +1911,8 @@
       "picker_no_matches": "Brak wyników",
       "scope_automatic": "Automatycznie (na podstawie ewaluacji godzin pracy)",
       "scope_automatic_insurance": "Automatycznie (na podstawie ewaluacji ubezpieczenia)",
+      "scope_automatic_water": "Automatycznie (działki z aktywnym licznikiem wody)",
+      "scope_automatic_electricity": "Automatycznie (działki z aktywnym licznikiem prądu)",
       "computed_automatically": "Obliczane automatycznie",
       "scope_all": "Wszystkie działki",
       "scope_all_members": "Wszyscy członkowie",

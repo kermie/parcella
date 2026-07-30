@@ -114,6 +114,12 @@
                     <div class="col-12 text-muted" id="new-template-scope-auto-insurance" style="display: none; font-size: 0.85rem;">
                         {{ t('finances.run_detail.scope_automatic_insurance') }}
                     </div>
+                    <div class="col-12 text-muted" id="new-template-scope-auto-water" style="display: none; font-size: 0.85rem;">
+                        {{ t('finances.run_detail.scope_automatic_water') }}
+                    </div>
+                    <div class="col-12 text-muted" id="new-template-scope-auto-electricity" style="display: none; font-size: 0.85rem;">
+                        {{ t('finances.run_detail.scope_automatic_electricity') }}
+                    </div>
                     <div class="col-12" id="new-template-parcel-picker" style="display: none;">
                         {{ scope_picker('newtemplate-parcel', t('finances.run_detail.label_parcels'), 'parcel_ids', parcels, 'plot_number', []) }}
                     </div>
@@ -205,6 +211,12 @@
                                     <div class="text-muted" id="scope-auto-insurance-{{ template.id }}" style="display: none; font-size: 0.8rem;">
                                         {{ t('finances.run_detail.scope_automatic_insurance') }}
                                     </div>
+                                    <div class="text-muted" id="scope-auto-water-{{ template.id }}" style="display: none; font-size: 0.8rem;">
+                                        {{ t('finances.run_detail.scope_automatic_water') }}
+                                    </div>
+                                    <div class="text-muted" id="scope-auto-electricity-{{ template.id }}" style="display: none; font-size: 0.8rem;">
+                                        {{ t('finances.run_detail.scope_automatic_electricity') }}
+                                    </div>
                                 </td>
                                 <td>
                                     <select name="category_id" form="edit-template-{{ template.id }}" class="form-select form-select-sm">
@@ -239,6 +251,10 @@
                                     {{ t('finances.run_detail.scope_automatic') }}
                                     {% elif template.pricing_mode.value == 'insurance_cost' %}
                                     {{ t('finances.run_detail.scope_automatic_insurance') }}
+                                    {% elif template.pricing_mode.value == 'water_usage' %}
+                                    {{ t('finances.run_detail.scope_automatic_water') }}
+                                    {% elif template.pricing_mode.value == 'electricity_usage' %}
+                                    {{ t('finances.run_detail.scope_automatic_electricity') }}
                                     {% elif template.pricing_mode.value == 'fixed_per_person' %}
                                     {% if template.applies_to_all_members %}{{ t('finances.run_detail.scope_all_members') }}
                                     {% else %}{{ t('finances.run_detail.scope_n_members', n=template.member_scopes|length) }}{% endif %}
@@ -291,6 +307,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var memberToggleWrap = document.getElementById('new-template-member-toggle-wrap');
         var scopeAutoNote = document.getElementById('new-template-scope-auto');
         var scopeAutoNoteInsurance = document.getElementById('new-template-scope-auto-insurance');
+        var scopeAutoNoteWater = document.getElementById('new-template-scope-auto-water');
+        var scopeAutoNoteElectricity = document.getElementById('new-template-scope-auto-electricity');
         var parcelPicker = document.getElementById('new-template-parcel-picker');
         var memberPicker = document.getElementById('new-template-member-picker');
         var parcelToggle = document.getElementById('new-template-all-parcels-check');
@@ -303,11 +321,15 @@ document.addEventListener('DOMContentLoaded', function () {
             var isPerson = select.value === 'fixed_per_person';
             var isWorkHoursAuto = select.value === 'work_hours_shortfall';
             var isInsuranceAuto = select.value === 'insurance_cost';
-            var isAutomatic = isWorkHoursAuto || isInsuranceAuto;
+            var isWaterAuto = select.value === 'water_usage';
+            var isElectricityAuto = select.value === 'electricity_usage';
+            var isAutomatic = isWorkHoursAuto || isInsuranceAuto || isWaterAuto || isElectricityAuto;
             parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
             memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
             if (scopeAutoNote) scopeAutoNote.style.display = isWorkHoursAuto ? 'block' : 'none';
             if (scopeAutoNoteInsurance) scopeAutoNoteInsurance.style.display = isInsuranceAuto ? 'block' : 'none';
+            if (scopeAutoNoteWater) scopeAutoNoteWater.style.display = isWaterAuto ? 'block' : 'none';
+            if (scopeAutoNoteElectricity) scopeAutoNoteElectricity.style.display = isElectricityAuto ? 'block' : 'none';
             parcelPicker.style.display = (!isPerson && !isAutomatic && !parcelToggle.checked) ? 'block' : 'none';
             memberPicker.style.display = (isPerson && !isAutomatic && !memberToggle.checked) ? 'block' : 'none';
             if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
@@ -326,6 +348,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var memberToggleWrap = document.getElementById('member-toggle-wrap-' + itemId);
         var scopeAutoNote = document.getElementById('scope-auto-' + itemId);
         var scopeAutoNoteInsurance = document.getElementById('scope-auto-insurance-' + itemId);
+        var scopeAutoNoteWater = document.getElementById('scope-auto-water-' + itemId);
+        var scopeAutoNoteElectricity = document.getElementById('scope-auto-electricity-' + itemId);
         var pickerRow = document.getElementById('picker-row-' + itemId);
         var parcelPickerBlock = document.getElementById('parcel-picker-block-' + itemId);
         var memberPickerBlock = document.getElementById('member-picker-block-' + itemId);
@@ -339,11 +363,15 @@ document.addEventListener('DOMContentLoaded', function () {
             var isPerson = select.value === 'fixed_per_person';
             var isWorkHoursAuto = select.value === 'work_hours_shortfall';
             var isInsuranceAuto = select.value === 'insurance_cost';
-            var isAutomatic = isWorkHoursAuto || isInsuranceAuto;
+            var isWaterAuto = select.value === 'water_usage';
+            var isElectricityAuto = select.value === 'electricity_usage';
+            var isAutomatic = isWorkHoursAuto || isInsuranceAuto || isWaterAuto || isElectricityAuto;
             parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
             memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
             if (scopeAutoNote) scopeAutoNote.style.display = isWorkHoursAuto ? 'block' : 'none';
             if (scopeAutoNoteInsurance) scopeAutoNoteInsurance.style.display = isInsuranceAuto ? 'block' : 'none';
+            if (scopeAutoNoteWater) scopeAutoNoteWater.style.display = isWaterAuto ? 'block' : 'none';
+            if (scopeAutoNoteElectricity) scopeAutoNoteElectricity.style.display = isElectricityAuto ? 'block' : 'none';
             var showParcelPicker = !isPerson && !isAutomatic && parcelToggle && !parcelToggle.checked;
             var showMemberPicker = isPerson && !isAutomatic && memberToggle && !memberToggle.checked;
             parcelPickerBlock.style.display = showParcelPicker ? 'block' : 'none';

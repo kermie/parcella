@@ -59,3 +59,4 @@ in chronological order.
 53. [Admin backup: on-demand download only, no server-side storage](./0053-admin-backup-download-only.md)
 54. [Admin restore from backup: reversing ADR 0053's "no restore-from-UI"](./0054-admin-restore-from-backup.md)
 55. [Scheduled cloud backups: reversing the cloud-storage connector's no-delete stance](./0055-scheduled-cloud-backups.md)
+56. [Metering price configuration drives automatic water/electricity usage billing](./0056-metering-price-drives-automatic-usage-billing.md)

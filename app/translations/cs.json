@@ -1099,6 +1099,29 @@
       "no_reading": "žádný odečet",
       "no_entries": "Žádné záznamy"
     },
+    "configuration": {
+      "title_suffix": " konfigurace ceny",
+      "create_update_card_title": "Nová/aktualizovaná cena",
+      "year_label": "Rok",
+      "price_label": "Cena za {unit}",
+      "note_label": "Poznámka",
+      "note_placeholder": "např. změna tarifu dodavatele",
+      "save_button": "Uložit",
+      "history_card_title": "Historie cen",
+      "col_year": "Rok",
+      "col_price": "Cena",
+      "col_note": "Poznámka",
+      "delete_confirm": "Opravdu smazat cenu za {year}?",
+      "no_config": "Zatím není nastavena žádná cena."
+    },
+    "configuration_form": {
+      "title_suffix": " konfigurace ceny {year}",
+      "card_title": "Upravit cenu",
+      "year_label": "Rok",
+      "price_label": "Cena za {unit}",
+      "note_label": "Poznámka",
+      "save_button": "Uložit"
+    },
     "errors": {
       "point_not_found": "Měrné místo pro {medium} nebylo nalezeno",
       "invalid_reading": "Neplatný odečet měřidla",
@@ -1106,7 +1129,9 @@
       "overall_plausibility_evaluation": "Rozdělená spotřeba ({total} {unit}) přesahuje spotřebu hlavního měřidla ({main} {unit}).",
       "reading_below_previous": "Odečet měřidla ({new_value}) nesmí být menší než předchozí odečet ({previous_value}) stejného měřidla.",
       "reading_above_later": "Odečet měřidla ({new_value}) nesmí být větší než již zaznamenaný pozdější odečet ({later_value}) stejného měřidla.",
-      "no_active_meter": "Pro toto měrné místo neexistuje aktivní měřidlo"
+      "no_active_meter": "Pro toto měrné místo neexistuje aktivní měřidlo",
+      "configuration_not_found": "Konfigurace ceny nebyla nalezena",
+      "configuration_year_exists": "Pro rok {year} již existuje jiná konfigurace ceny."
     }
   },
   "work_hours": {
@@ -1886,6 +1911,8 @@
       "picker_no_matches": "Žádné výsledky",
       "scope_automatic": "Automaticky (na základě vyhodnocení pracovních hodin)",
       "scope_automatic_insurance": "Automaticky (na základě vyhodnocení pojištění)",
+      "scope_automatic_water": "Automaticky (parcely s aktivním vodoměrem)",
+      "scope_automatic_electricity": "Automaticky (parcely s aktivním elektroměrem)",
       "computed_automatically": "Počítá se automaticky",
       "scope_all": "Všechny parcely",
       "scope_all_members": "Všichni členové",
