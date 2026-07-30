@@ -31,13 +31,21 @@ the whole database is exactly this category of feature, not a
 per-association-configurable module area, so it gets no new
 `modul_backup`-style flag in `app/module_flags.py`.
 
-**Decision 3: custom format (`pg_dump -F c`), not plain SQL.** Custom
-format is built-in compressed and restorable selectively via
-`pg_restore` (choose which tables/objects to bring back), which is the
-standard recommendation whenever the goal is "restore this later" rather
-than "read it as SQL text." It also gives a cheap, reliable way to verify
-a download is a structurally real dump (the `PGDMP` magic header), used
-directly in `tests/test_admin_backup.py`.
+**Decision 3: plain SQL (`pg_dump`'s default format), not custom
+format.** Custom format (`-F c`) was the initial choice -- built-in
+compressed, restorable selectively via `pg_restore` -- but it produces a
+binary file with no readable content, which surprised the admin who
+actually downloaded one (reasonably: `pg_dump` ships as plain SQL by
+default, and this app's admins are club board members, not necessarily
+DB experts). Plain SQL means the file can be opened in a text editor and
+restored with a plain `psql`, at the cost of no built-in compression and
+no selective restore -- both worth giving up for a feature whose whole
+point is "an admin can understand and use this without extra tooling
+knowledge." `--clean --if-exists` is passed to `pg_dump` so the emitted
+script includes `DROP ... IF EXISTS` ahead of each `CREATE`, keeping it
+restorable directly into a database that already has the same objects
+(the equivalent of `pg_restore --clean --if-exists`, but embedded in the
+script itself since plain SQL has no separate restore-time flags).
 
 **Mechanics, for completeness:** `pg_dump` runs from inside the `web`
 container against the `db` service over the network (same pattern as
@@ -56,9 +64,9 @@ never partially streams a corrupt file that looks like a successful
 download.
 
 **Out of scope:** there is no restore-from-UI feature. Restoring a
-downloaded backup is a deliberately manual, `pg_restore`-on-the-command-
-line operation (see [Operations](../operations.md#backups--restore)) --
+downloaded backup is a deliberately manual, `psql`-on-the-command-line
+operation (see [Operations](../operations.md#backups--restore)) --
 building a restore-from-upload feature would mean accepting an arbitrary
-binary file from an admin's browser and feeding it to `pg_restore`
-against the live database, a much larger blast-radius feature than this
-issue asked for.
+SQL/binary file from an admin's browser and feeding it to `psql`/
+`pg_restore` against the live database, a much larger blast-radius
+feature than this issue asked for.

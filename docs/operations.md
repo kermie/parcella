@@ -76,21 +76,24 @@ reached.
 A system admin can download a full database backup on demand from
 `/admin/` ("Download backup" -- see
 [ADR 0053](./ADR/0053-admin-backup-download-only.md)). It's a one-click
-`pg_dump` (custom format) streamed straight to the browser -- nothing is
-ever written to server disk, so there's no backup file to find or clean
-up on the server itself; the downloaded `.dump` file is the only copy,
-and it's the admin's responsibility to store it somewhere safe.
+`pg_dump` (plain SQL, readable text) streamed straight to the browser --
+nothing is ever written to server disk, so there's no backup file to
+find or clean up on the server itself; the downloaded `.sql` file is the
+only copy, and it's the admin's responsibility to store it somewhere
+safe.
 
 To restore a downloaded backup, e.g. into a fresh/empty instance:
 
 ```bash
-docker compose exec -T db pg_restore -U parcella -d parcella --clean --if-exists < parcella-backup-20260730-143000.dump
+docker compose exec -T db psql -U parcella -d parcella < parcella-backup-20260730-143000.sql
 ```
 
-**Warning:** `--clean --if-exists` drops existing objects before
-recreating them. Never run this against a live database whose current
-data you still need -- restore into an empty database (or a throwaway
-one) instead, then swap it in deliberately.
+**Warning:** the backup was generated with `--clean --if-exists`, so the
+script itself contains `DROP ... IF EXISTS` statements ahead of each
+`CREATE` -- restoring it drops existing objects before recreating them.
+Never run this against a live database whose current data you still
+need -- restore into an empty database (or a throwaway one) instead,
+then swap it in deliberately.
 
 ## First login
 

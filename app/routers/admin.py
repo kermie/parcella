@@ -155,8 +155,11 @@ PG_DUMP_BINARY = "pg_dump"  # module-level constant so tests can monkeypatch it
 async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
     """One-click pg_dump of the whole database, returned straight to the
     browser as a download -- nothing is ever written to server disk (see
-    ADR 0053). Custom format (-F c) so it's restorable selectively via
-    pg_restore, not just eyeballable SQL text."""
+    ADR 0053). Plain SQL format (pg_dump's default) so the file is
+    readable text, restorable with a plain `psql`, rather than requiring
+    pg_restore. --clean --if-exists embeds DROP ... IF EXISTS statements
+    ahead of each CREATE, so the script can be restored directly into a
+    database that already has the same objects in it."""
     await require_system_admin(request, db)
 
     db_url = urllib.parse.urlsplit(settings.database_url)
@@ -166,7 +169,8 @@ async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
         "-h", db_url.hostname or "localhost",
         "-p", str(db_url.port or 5432),
         "-U", db_url.username or "",
-        "-F", "c",
+        "-F", "p",
+        "--clean", "--if-exists",
         db_url.path.lstrip("/"),
     ]
 
@@ -191,10 +195,10 @@ async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
         )
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    filename = f"parcella-backup-{timestamp}.dump"
+    filename = f"parcella-backup-{timestamp}.sql"
     return Response(
         content=stdout,
-        media_type="application/octet-stream",
+        media_type="text/plain; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
