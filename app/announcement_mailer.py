@@ -1,9 +1,9 @@
 """
 Email channel for the announcements module.
 
-Recipients are current parcel residents (MemberParcel.assigned_until IS
-NULL -- same "present tenant" definition used elsewhere in the app,
-e.g. insurance household grouping) who are not soft-deleted, whose
+Recipients are current parcel residents (MemberParcel.is_current --
+same "present tenant" definition used elsewhere in the app, e.g.
+insurance household grouping) who are not soft-deleted, whose
 membership hasn't ended, and who have email_notifications = True (this
 is the "e-mail info = yes" flag from the original feature request).
 A member with no stored email address is silently skipped rather than
@@ -45,7 +45,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.database import AsyncSessionLocal
+from app.database import AsyncSessionLocal, current_tenant_filter
 from app.models import (
     Announcement, AnnouncementChannel, AnnouncementDelivery,
     AnnouncementDeliveryStatus, Member, MemberParcel,
@@ -74,7 +74,7 @@ async def get_active_recipient_emails(db: AsyncSession) -> List[Tuple[Member, st
         select(Member)
         .join(MemberParcel, MemberParcel.member_id == Member.id)
         .where(
-            MemberParcel.assigned_until.is_(None),
+            current_tenant_filter(),
             Member.deleted_at.is_(None),
             Member.email_notifications.is_(True),
             or_(Member.member_until.is_(None), Member.member_until >= today),

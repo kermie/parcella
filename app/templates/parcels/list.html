@@ -84,7 +84,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% set current_tenants = p.member_assignments | selectattr('assigned_until', 'none') | list %}
+                            {% set current_tenants = p.member_assignments | selectattr('is_current') | list %}
                             {% for z in current_tenants %}
                             <a href="/members/{{ z.member.id }}" class="text-decoration-none"
                                style="color: var(--gv-gruen);">

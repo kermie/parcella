@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db, active_member_filter
+from app.database import get_db, active_member_filter, current_tenant_filter
 from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
 from app.permissions import require_permission
 from app.i18n import t_for, load_current_language
@@ -74,7 +74,7 @@ async def members_list(
         parcel_condition = Parcel.plot_number.ilike(f"%{search}%")
         if not include_inactive:
             parcel_condition = and_(
-                parcel_condition, MemberParcel.assigned_until.is_(None)
+                parcel_condition, current_tenant_filter()
             )
         parcel_matches = (
             select(MemberParcel.member_id)
@@ -129,16 +129,16 @@ async def signin_sheet_generate(request: Request, db: AsyncSession = Depends(get
     if not headline:
         headline = f"General meeting on {date.today().isoformat()}"
 
-    # Current residents only (assigned_until IS NULL -- same "who lives
-    # here right now" definition used elsewhere, e.g. the announcement
-    # email channel), same active-membership filter as the member list
-    # itself. Already sorted by parcel then name, so grouping
+    # Current residents only (assigned_until IS NULL or in the future --
+    # same "who lives here right now" definition used elsewhere, e.g. the
+    # announcement email channel), same active-membership filter as the
+    # member list itself. Already sorted by parcel then name, so grouping
     # consecutive rows below doesn't need to re-sort.
     result = await db.execute(
         select(Parcel.plot_number, Member.first_name, Member.last_name)
         .join(MemberParcel, MemberParcel.parcel_id == Parcel.id)
         .join(Member, Member.id == MemberParcel.member_id)
-        .where(MemberParcel.assigned_until.is_(None), active_member_filter())
+        .where(current_tenant_filter(), active_member_filter())
         .order_by(Parcel.plot_number, Member.last_name, Member.first_name)
     )
     rows = result.all()

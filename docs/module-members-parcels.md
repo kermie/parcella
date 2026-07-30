@@ -61,6 +61,24 @@ are relevant (dropdowns, reports, assignments). The member list itself
 shows only active members by default, with an "Show inactive" checkbox
 for the history (e.g. deceased members).
 
+**Current vs. former tenants (`MemberParcel.is_current`, issue #130).**
+Same pattern as active members above, applied to tenancy rows: a
+`MemberParcel` counts as current if `assigned_until IS NULL` or
+`assigned_until` is still in the future -- a termination recorded ahead of
+time doesn't take effect until its date arrives. Unlike `Member.is_active`'s
+`>=` boundary, this uses a strict `>`: ending a tenancy (`member_remove` in
+`app/routers/parcels.py`) sets `assigned_until = today`, and that tenant
+must become former the *same* day, not the day before (see
+`tests/test_members_signin_sheet.py::test_signin_sheet_excludes_former_residents`).
+The query-level helper `current_tenant_filter()` in `app/database.py`
+mirrors `active_member_filter()` for SQL-level call sites; in-Python list
+filtering over an already-loaded relationship uses the `.is_current`
+property directly. `is_invoice_address` remains intentionally *stricter*
+than `is_current`: the `ck_invoice_address_only_for_current_tenants` CHECK
+constraint (see above) rejects it for any `assigned_until`, including a
+future one -- a deliberate billing-risk decision this "current tenant"
+display concept does not override.
+
 **Change history (ChangeHistory).** A generic audit log
 (`app/change_tracker.py`) that logs field changes on arbitrary entities
 (currently used for parcels: area, status, plot number, etc.). Instead of

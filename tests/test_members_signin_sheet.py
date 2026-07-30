@@ -112,6 +112,33 @@ async def test_signin_sheet_excludes_former_residents(client, admin_user):
     assert "Former Tenant" not in text
 
 
+async def test_signin_sheet_includes_future_dated_termination(client, admin_user):
+    """Issue #130: a tenancy terminated with a future end date hasn't
+    taken effect yet -- the resident must still show as current, unlike
+    the same-day/past-dated case above."""
+    await web_login(client, "admin@example.com")
+
+    from app.database import AsyncSessionLocal
+    from app.models import Member, Parcel, MemberParcel
+    from datetime import date, timedelta
+
+    async with AsyncSessionLocal() as session:
+        member = Member(first_name="Notice", last_name="Given")
+        parcel = Parcel(plot_number="98")
+        session.add_all([member, parcel])
+        await session.flush()
+        session.add(MemberParcel(
+            member_id=member.id, parcel_id=parcel.id,
+            assigned_until=date.today() + timedelta(days=1), is_invoice_address=False,
+        ))
+        await session.commit()
+
+    response = await client.post("/members/signin-sheet", data={"headline": "Test"})
+    assert response.status_code == 200
+    text = _pdf_text(response.content)
+    assert "Notice Given" in text
+
+
 async def test_signin_sheet_blank_headline_falls_back_to_default(client, admin_user):
     await web_login(client, "admin@example.com")
 

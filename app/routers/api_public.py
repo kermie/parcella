@@ -38,7 +38,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db
+from app.database import get_db, current_tenant_filter
 from app.models import (
     WorkSession, Parcel, ParcelStatus, MemberParcel, Member,
     SessionParticipation, ParticipationStatus,
@@ -194,7 +194,7 @@ async def submit_signup(
     tenants_result = await db.execute(
         select(MemberParcel)
         .options(selectinload(MemberParcel.member))
-        .where(MemberParcel.parcel_id == parcel.id, MemberParcel.assigned_until.is_(None))
+        .where(MemberParcel.parcel_id == parcel.id, current_tenant_filter())
     )
     current_tenants = [
         mp.member for mp in tenants_result.scalars().all()

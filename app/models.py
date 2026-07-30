@@ -405,6 +405,19 @@ class MemberParcel(Base):
     member: Mapped["Member"] = relationship("Member", back_populates="parcel_assignments")
     parcel: Mapped["Parcel"] = relationship("Parcel", back_populates="member_assignments")
 
+    @property
+    def is_current(self) -> bool:
+        """
+        Whether this tenancy is still in effect today. Unlike
+        Member.is_active (">="), this uses a strict ">": ending a
+        tenancy sets assigned_until = today, and that tenant becomes
+        former the same day, not the day before (see
+        tests/test_members_signin_sheet.py::test_signin_sheet_excludes_former_residents).
+        A future assigned_until (termination recorded, not yet in
+        effect -- issue #130) still counts as current.
+        """
+        return self.assigned_until is None or self.assigned_until > date.today()
+
     __table_args__ = (
         UniqueConstraint("member_id", "parcel_id", name="uq_member_parcel"),
         # A former tenant (assigned_until set) can never be the invoice

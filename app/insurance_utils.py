@@ -39,7 +39,7 @@ def household_grouping(assignments: List[MemberParcel]) -> dict:
     residents happen to all have an empty address, they therefore do
     NOT form a shared household group.
     """
-    current = [a.member for a in assignments if a.assigned_until is None]
+    current = [a.member for a in assignments if a.is_current]
     if not current:
         return {"household": [], "external": []}
 
