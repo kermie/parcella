@@ -457,19 +457,24 @@
         </div>
     </div>
     <div class="sidebar-footer">
-        <i class="bi bi-person-circle me-1"></i> {{ user.name }}<br>
-        <small>
-            {% if user.role.value == 'admin' %}{{ t('admin.dashboard.role_admin') }}
-            {% elif user.role.value == 'board' %}{{ t('admin.dashboard.role_board') }}
-            {% elif user.role.value == 'treasurer' %}{{ t('admin.dashboard.role_treasurer') }}
-            {% else %}{{ t('admin.dashboard.role_readonly') }}{% endif %}
-        </small><br>
-        <a href="/auth/change-password" class="mt-1 d-inline-block me-2">
-            <i class="bi bi-key me-1"></i> {{ t('nav.change_password') }}
-        </a>
-        <a href="/auth/logout" class="mt-1 d-inline-block">
-            <i class="bi bi-box-arrow-left me-1"></i> {{ t('nav.logout') }}
-        </a>
+        <div class="mb-2">
+            <i class="bi bi-person-circle me-1"></i> {{ user.name }}<br>
+            <small>
+                {% if request.state.user_group_names %}
+                {{ request.state.user_group_names | join(', ') }}
+                {% elif user.role.value == 'admin' %}{{ t('admin.dashboard.role_admin') }}
+                {% elif user.role.value == 'board' %}{{ t('admin.dashboard.role_board') }}
+                {% else %}–{% endif %}
+            </small>
+        </div>
+        <div class="d-flex flex-column gap-1">
+            <a href="/auth/change-password" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-key me-1"></i>{{ t('nav.change_password') }}
+            </a>
+            <a href="/auth/logout" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-box-arrow-left me-1"></i>{{ t('nav.logout') }}
+            </a>
+        </div>
     </div>
 </nav>
 

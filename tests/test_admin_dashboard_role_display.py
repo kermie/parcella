@@ -73,3 +73,26 @@ async def test_dashboard_shows_group_names_instead_of_role_for_group_member(clie
     assert page.status_code == 200
     assert "Wasserwart User" in page.text
     assert "Wasserwarte" in page.text
+
+
+async def test_sidebar_footer_shows_group_names_instead_of_role_for_current_user(client, admin_user):
+    """Same bug, second occurrence: the sidebar footer (shown on every
+    page, not just the admin user list) displayed the current user's
+    raw UserRole -- defaulting to a misleading "Read-only" for a
+    non-legacy account -- instead of the group(s) that actually grant
+    their access. A full-access group member logging in saw themselves
+    labelled "Read-only" in the left nav, which is exactly backwards."""
+    member = await _create_readonly_user("wasserwart3@example.com", "Sidebar GroupUser")
+
+    async with AsyncSessionLocal() as session:
+        group = Group(name="Administrators", grants_system_admin=True)
+        session.add(group)
+        await session.flush()
+        session.add(GroupMembership(user_id=member.id, group_id=group.id))
+        await session.commit()
+
+    await web_login(client, "wasserwart3@example.com")
+    page = await client.get("/admin/users/")
+    assert page.status_code == 200
+    assert "Administrators" in page.text
+    assert "readonly" not in page.text.lower()

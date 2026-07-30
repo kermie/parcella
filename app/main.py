@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.database import get_db, AsyncSessionLocal, active_member_filter
-from app.models import User, UserRole, Member, Parcel, ParcelStatus, MemberParcel
+from app.models import User, UserRole, Member, Parcel, ParcelStatus, MemberParcel, Group, GroupMembership
 from app.models import PurchaseRequest, PurchaseRequestStatus
 from app.models import Ticket, TicketStatus
 from app.models import Task
@@ -227,12 +227,27 @@ async def permissions_middleware(request: Request, call_next):
     require_system_admin() and the has_perm/is_full_access/is_system_admin
     Jinja globals all read from here instead of re-querying. Anonymous
     requests get all-False permissions, same as get_user_permissions(None).
+
+    Also loads the current user's group names into
+    request.state.user_group_names -- the sidebar footer (base.html)
+    shows these instead of the raw UserRole for the same reason the
+    admin user list does (issue #129/ADR 0041): a non-legacy account's
+    real access comes from group membership, not role, so showing e.g.
+    "Read-only" for a full-access group member is actively misleading.
     """
     async with AsyncSessionLocal() as db:
         user = await get_current_user(request, db)
         request.state.permissions = await get_user_permissions(db, user)
         request.state.is_full_access = await is_full_access_user(db, user)
         request.state.is_system_admin = await is_system_admin_user(db, user)
+        request.state.user_group_names = []
+        if user is not None:
+            result = await db.execute(
+                select(Group.name)
+                .join(GroupMembership, GroupMembership.group_id == Group.id)
+                .where(GroupMembership.user_id == user.id)
+            )
+            request.state.user_group_names = list(result.scalars().all())
     response = await call_next(request)
     return response
 
