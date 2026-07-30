@@ -127,7 +127,7 @@ async def test_restore_rejects_zip_slip_attempt(client, admin_user, tmp_path):
 
 async def test_restore_uploads_is_a_full_mirror(client, admin_user, monkeypatch, tmp_path):
     (tmp_path / "orphan.png").write_bytes(b"leftover-from-before")
-    monkeypatch.setattr("app.routers.admin.UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr("app.backup.UPLOAD_DIR", tmp_path)
 
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as zf:

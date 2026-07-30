@@ -83,15 +83,28 @@ file to find or clean up on the server itself; the downloaded `.zip` is
 the only copy, and it's the admin's responsibility to store it
 somewhere safe.
 
+**Automatic backups to a connected cloud solution:** `Admin -> System ->
+Cloud backups` (`/admin/backup/cloud` -- see
+[ADR 0055](./ADR/0055-scheduled-cloud-backups.md)) can upload that same
+zip to a folder in your connected Nextcloud on a schedule
+(hourly/daily/weekly/monthly), keeping only the newest N backups and
+pruning older ones automatically. Requires the `cloud_storage` module
+enabled and a working Nextcloud connection under **Admin ->
+Integrations** first. No Linux cron involved -- the schedule is an
+in-process check every 15 minutes, same style as the update-check and
+ticket-mailbox polling loops.
+
 **Restoring, the normal way:** a system admin can also upload that same
 zip back through `/admin/backup/restore` ("Restore from backup" -- see
 [ADR 0054](./ADR/0054-admin-restore-from-backup.md)) and restore both
-the database and `app/static/uploads/` in one step. This is a
-destructive, irreversible action -- it replaces the entire current
-database and every uploaded file with the backup's contents -- so the
-page requires typing the literal confirmation phrase `RESTORE` before
-it runs anything. If you want to be able to undo a restore, download a
-fresh backup of the current state *first*.
+the database and `app/static/uploads/` in one step -- or, from the
+Cloud backups page, restore directly from any backup already sitting
+in the cloud, without downloading and re-uploading it by hand. Both are
+destructive, irreversible actions -- they replace the entire current
+database and every uploaded file with the backup's contents -- so both
+require typing the literal confirmation phrase `RESTORE` before running
+anything. If you want to be able to undo a restore, download a fresh
+backup of the current state *first*.
 
 **Restoring manually, e.g. when the app itself is unreachable** (container
 won't start, admin panel broken) and the UI isn't an option:

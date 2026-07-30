@@ -40,12 +40,20 @@ WebDAV (`PROPFIND` to list, `PUT` to upload, `GET` to download, against
 (Google Drive, S3-compatible storage) would be a new class implementing
 the same interface, not a change to this one.
 
-Deliberately narrow for v1: **list, upload, download only** -- no
+Originally list/upload/download only, deliberately narrow for v1 -- no
 delete, no folder creation. The folder a club points Parcella at is
 expected to already exist and typically is already shared with the
 relevant members directly in Nextcloud. Board tooling deleting files
 from someone's personal cloud storage is a bigger, separately-considered
 decision than this module needed to make.
+
+**`delete_file`/`create_folder` added (issue #141, see
+[ADR 0055](./ADR/0055-scheduled-cloud-backups.md)):** the scheduled
+cloud-backups feature needs both -- creating its own destination
+folder on first run, and pruning old backups beyond a configured
+retention count. Scoped narrowly to that feature managing its own
+backup files in its own configured folder, not a general reversal of
+the reasoning above.
 
 Every failure mode (network error, 401, 404, unexpected status,
 unparseable XML) raises `CloudStorageError` with a message meant to be
@@ -92,6 +100,21 @@ Credentials are configured on **Admin -> Integrations**, alongside the
 WordPress blog connection -- same page, same "test connection before
 saving" pattern, same "leave the app password field blank to keep the
 existing one" convention.
+
+## Scheduled cloud backups (`app/cloud_backup.py`, issue #141)
+
+A second, independent consumer of this connector: `Admin -> System ->
+Cloud backups` (`/admin/backup/cloud`) lets an admin turn on automatic
+uploads of the database + uploads backup (the same zip
+`app/backup.py`'s `build_backup_zip()` produces for the manual local
+download, issue #117) to a configured folder in this same Nextcloud
+connection, on an hourly/daily/weekly/monthly schedule, with a
+retention count pruning older backups. Gated on this module being
+enabled *and* a Nextcloud connection actually being configured -- shown
+as a guided message pointing back here otherwise, not a hard 404. See
+[ADR 0055](./ADR/0055-scheduled-cloud-backups.md) for the scheduling
+mechanism (an in-process loop, not cron), the retention semantics, and
+why `delete_file`/`create_folder` exist on the connector at all.
 
 ## Key decisions
 

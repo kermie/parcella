@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}{{ t('admin.cloud_backup.title') }}{% endblock %}
+{% block page_title %}{{ t('admin.cloud_backup.title') }}{% endblock %}
+
+{% block content %}
+
+{% if request.query_params.get('success') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ t('admin.cloud_backup.success_message') }}
+</div>
+{% endif %}
+{% if request.query_params.get('error') %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-circle-fill"></i> {{ request.query_params.get('error') }}
+</div>
+{% endif %}
+
+{% if not module_enabled %}
+<div class="alert alert-warning">
+    {{ t('admin.cloud_backup.module_disabled_notice') }}
+    <a href="/admin/settings">{{ t('admin.cloud_backup.module_disabled_link') }}</a>
+</div>
+{% elif not nextcloud_configured %}
+<div class="alert alert-warning">
+    {{ t('admin.cloud_backup.not_configured_notice') }}
+    <a href="/admin/integrations">{{ t('admin.cloud_backup.not_configured_link') }}</a>
+</div>
+{% else %}
+
+<div class="row g-3">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-cloud-arrow-up me-2"></i>{{ t('admin.cloud_backup.settings_header') }}</div>
+            <div class="card-body">
+                <form method="post" action="/admin/backup/cloud/settings">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               name="enabled" id="cloud-backup-enabled" {% if cfg.enabled %}checked{% endif %}>
+                        <label class="form-check-label fw-semibold" for="cloud-backup-enabled">
+                            {{ t('admin.cloud_backup.enabled_label') }}
+                        </label>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('admin.cloud_backup.folder_label') }}</label>
+                        <input type="text" name="folder" class="form-control" style="max-width: 420px;"
+                               value="{{ cfg.folder }}"
+                               placeholder="{{ t('admin.cloud_backup.folder_placeholder') }}">
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">{{ t('admin.cloud_backup.frequency_label') }}</label>
+                            <select name="frequency" class="form-select">
+                                {% for choice in frequency_choices %}
+                                <option value="{{ choice }}" {% if cfg.frequency == choice %}selected{% endif %}>
+                                    {{ t('admin.cloud_backup.frequency_' + choice) }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold">{{ t('admin.cloud_backup.retention_label') }}</label>
+                            <input type="number" name="retention_count" class="form-control" min="1"
+                                   value="{{ cfg.retention_count }}">
+                        </div>
+                    </div>
+
+                    <div class="mt-3 text-muted" style="font-size: 0.85rem;">
+                        {% if cfg.last_run_at %}
+                            {% if cfg.last_run_status == 'error' %}
+                            <span class="text-danger">
+                                {{ t('admin.cloud_backup.last_run_error', when=cfg.last_run_at.strftime('%d.%m.%Y %H:%M'), detail=cfg.last_run_error) }}
+                            </span>
+                            {% else %}
+                            {{ t('admin.cloud_backup.last_run_success', when=cfg.last_run_at.strftime('%d.%m.%Y %H:%M')) }}
+                            {% endif %}
+                        {% else %}
+                            {{ t('admin.cloud_backup.last_run_never') }}
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>{{ t('admin.cloud_backup.save_button') }}
+                        </button>
+                    </div>
+                </form>
+                <form method="post" action="/admin/backup/cloud/run-now" class="mt-2">
+                    <button type="submit" class="btn btn-outline-secondary">
+                        <i class="bi bi-cloud-arrow-up me-1"></i>{{ t('admin.cloud_backup.run_now_button') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history me-2"></i>{{ t('admin.cloud_backup.backups_header') }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>{{ t('admin.cloud_backup.col_name') }}</th>
+                            <th>{{ t('admin.cloud_backup.col_size') }}</th>
+                            <th>{{ t('admin.cloud_backup.col_modified') }}</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in backups %}
+                        <tr>
+                            <td class="text-muted">{{ b.name }}</td>
+                            <td class="text-muted">{{ (b.size / 1024 / 1024) | round(1) if b.size else '–' }} MB</td>
+                            <td class="text-muted">{{ b.last_modified or '–' }}</td>
+                            <td class="text-end">
+                                <form method="post" action="/admin/backup/restore-from-cloud"
+                                      class="d-flex gap-2 align-items-center justify-content-end"
+                                      onsubmit="return confirm('{{ t('admin.restore.submit_confirm') }}');">
+                                    <input type="hidden" name="filename" value="{{ b.name }}">
+                                    <input type="text" name="confirm_phrase" class="form-control form-control-sm"
+                                           style="max-width: 140px;" autocomplete="off"
+                                           placeholder="{{ t('admin.cloud_backup.restore_confirm_placeholder', phrase=confirm_phrase) }}" required>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>{{ t('admin.cloud_backup.restore_button') }}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">
+                                {{ t('admin.cloud_backup.no_backups_yet') }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+{% endblock %}

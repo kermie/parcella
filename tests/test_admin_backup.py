@@ -49,7 +49,7 @@ async def test_backup_download_bundles_uploaded_files(client, admin_user, monkey
     (upload_dir / "announcements").mkdir(parents=True)
     (upload_dir / "logo.png").write_bytes(b"fake-logo-bytes")
     (upload_dir / "announcements" / "example.png").write_bytes(b"fake-announcement-bytes")
-    monkeypatch.setattr("app.routers.admin.UPLOAD_DIR", upload_dir)
+    monkeypatch.setattr("app.backup.UPLOAD_DIR", upload_dir)
 
     await web_login(client, "admin@example.com")
     resp = await client.post("/admin/backup/download")
@@ -69,7 +69,7 @@ async def test_backup_download_requires_admin(client):
 
 
 async def test_backup_download_shows_error_when_pg_dump_binary_missing(client, admin_user, monkeypatch):
-    monkeypatch.setattr("app.routers.admin.PG_DUMP_BINARY", "/nonexistent/pg_dump")
+    monkeypatch.setattr("app.backup.PG_DUMP_BINARY", "/nonexistent/pg_dump")
 
     await web_login(client, "admin@example.com")
     resp = await client.post("/admin/backup/download", follow_redirects=False)

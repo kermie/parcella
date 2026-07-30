@@ -44,6 +44,12 @@ members in Nextcloud itself); letting board tooling delete files from
 someone's personal cloud storage is a bigger, separately-considered
 decision than this module needed to make.
 
+**Update:** `delete_file`/`create_folder` were added in
+[ADR 0055](./0055-scheduled-cloud-backups.md) (issue #141, scheduled
+cloud backups) -- scoped narrowly to that feature's own retention sweep
+and destination-folder setup, not a general reversal of the reasoning
+above.
+
 **A WebDAV path-encoding bug was found and fixed while building
 this.** `_join_dav_path` originally quoted each function argument as
 one opaque unit (`quote(segment, safe="")`), which is correct for a

@@ -69,11 +69,14 @@ class CloudStorageProvider:
     Google Drive or S3-compatible connector would be a new class
     implementing the same methods, not a change to this one.
 
-    Deliberately narrow for v1: list/upload/download only. No delete,
-    no folder creation -- the folder a club points Parcella at is
-    expected to already exist (it's usually already shared with the
-    relevant members in the cloud backend itself), and deleting files
-    from board tooling is a bigger, separately-considered decision.
+    Originally list/upload/download only, deliberately narrow for v1 --
+    no delete, no folder creation, since the folder a club points
+    Parcella at was expected to already exist. Extended for issue #141
+    (scheduled cloud backups, see docs/ADR/0055-scheduled-cloud-backups.md):
+    that feature needs to create its own destination folder on first
+    run and prune old backups beyond a retention count, so `delete_file`
+    and `create_folder` were added -- scoped narrowly to that use case,
+    not a general "let board tooling delete member files" decision.
     """
 
     async def test_connection(self) -> None:
@@ -88,6 +91,12 @@ class CloudStorageProvider:
         raise NotImplementedError
 
     async def download_file(self, path: str, filename: str) -> bytes:
+        raise NotImplementedError
+
+    async def delete_file(self, path: str, filename: str) -> None:
+        raise NotImplementedError
+
+    async def create_folder(self, path: str) -> None:
         raise NotImplementedError
 
 
@@ -264,6 +273,53 @@ class NextcloudProvider(CloudStorageProvider):
         if response.status_code != 200:
             raise CloudStorageError(f"Download from Nextcloud failed (HTTP {response.status_code}).")
         return response.content
+
+    async def delete_file(self, path: str, filename: str) -> None:
+        """Idempotent by design: a 404 (already gone) is treated as
+        success, not an error -- the cloud-backup retention sweep
+        (app/cloud_backup.py) calls this and must tolerate a backup
+        already removed by an earlier, partially-failed sweep without
+        treating that as a failure."""
+        client = await self._get_client()
+        url = self._file_url(path, filename)
+        try:
+            response = await client.delete(url)
+        except httpx.HTTPError as e:
+            raise CloudStorageError(f"Could not reach {self.base_url}: {e}") from e
+
+        if response.status_code == 401:
+            raise CloudStorageError("Nextcloud rejected the credentials (401 Unauthorized).")
+        if response.status_code in (200, 204, 404):
+            return
+        raise CloudStorageError(f"Delete on Nextcloud failed (HTTP {response.status_code}).")
+
+    async def create_folder(self, path: str) -> None:
+        """MKCOL each path segment in turn -- WebDAV's MKCOL returns
+        409 Conflict if an intermediate parent collection doesn't
+        exist yet, it does not create nested collections in one call
+        (unlike e.g. `mkdir -p`). A 405 Method Not Allowed for a
+        segment that already exists is treated as success (Nextcloud's
+        documented MKCOL behavior for an existing collection), making
+        the whole operation idempotent and safe to call before every
+        backup run."""
+        client = await self._get_client()
+        segments = [s for s in path.strip("/").split("/") if s]
+        accumulated = ""
+        for segment in segments:
+            accumulated = f"{accumulated}/{segment}" if accumulated else segment
+            url = self._folder_url(accumulated)
+            try:
+                response = await client.request("MKCOL", url)
+            except httpx.HTTPError as e:
+                raise CloudStorageError(f"Could not reach {self.base_url}: {e}") from e
+
+            if response.status_code == 401:
+                raise CloudStorageError("Nextcloud rejected the credentials (401 Unauthorized).")
+            if response.status_code in (201, 405):
+                continue
+            raise CloudStorageError(
+                f"Could not create folder '{accumulated}' on Nextcloud (HTTP {response.status_code})."
+            )
 
 
 async def load_nextcloud_configuration(db: AsyncSession) -> Optional[dict]:

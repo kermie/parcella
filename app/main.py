@@ -27,6 +27,7 @@ from app.i18n import load_translations, load_current_language, t_for
 from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
 from app.update_check import refresh_update_check_cache
+from app.cloud_backup import get_cloud_backup_settings, is_backup_due, run_cloud_backup_now
 from app.permissions import get_user_permissions, is_full_access_user, is_system_admin_user
 
 # Loaded at module import time (not only in the lifespan startup
@@ -84,6 +85,30 @@ async def _update_check_polling_loop():
         await asyncio.sleep(6 * 60 * 60)  # 6 hours
 
 
+async def _cloud_backup_polling_loop():
+    """
+    Ticks every 15 minutes and checks whether a scheduled cloud backup
+    is due (see Admin -> System -> Cloud backups, app/cloud_backup.py),
+    rather than sleeping for the full configured duration like the two
+    loops above -- the backup frequency is user-configurable at
+    runtime, so a single long asyncio.sleep couldn't react to a changed
+    setting without an app restart. See docs/ADR/0055-scheduled-cloud-backups.md.
+    run_cloud_backup_now() never raises on its own (it records
+    success/failure in ClubSettings) -- the try/except here is pure
+    defense in depth against something truly unexpected.
+    """
+    while True:
+        try:
+            async with AsyncSessionLocal() as db:
+                cfg = await get_cloud_backup_settings(db)
+                if is_backup_due(cfg):
+                    await run_cloud_backup_now(db)
+        except Exception as e:
+            logger.error(f"Cloud backup polling failed: {e}")
+
+        await asyncio.sleep(15 * 60)  # 15 minutes
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup: create the first admin if the users table is empty."""
@@ -105,9 +130,11 @@ async def lifespan(app: FastAPI):
 
     polling_task = asyncio.create_task(_ticket_inbox_polling_loop())
     update_check_task = asyncio.create_task(_update_check_polling_loop())
+    cloud_backup_task = asyncio.create_task(_cloud_backup_polling_loop())
     yield
     polling_task.cancel()
     update_check_task.cancel()
+    cloud_backup_task.cancel()
 
 
 app = FastAPI(
