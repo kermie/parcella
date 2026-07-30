@@ -163,7 +163,7 @@ docker compose up -d</pre>
                         <tr>
                             <th>{{ t('admin.dashboard.col_name') }}</th>
                             <th>{{ t('admin.dashboard.col_email') }}</th>
-                            <th>{{ t('admin.dashboard.col_role') }}</th>
+                            <th>{{ t('admin.dashboard.col_groups') }}</th>
                             <th>{{ t('admin.dashboard.col_status') }}</th>
                             <th></th>
                         </tr>
@@ -174,10 +174,17 @@ docker compose up -d</pre>
                             <td class="fw-semibold">{{ b.name }}</td>
                             <td class="text-muted">{{ b.email }}</td>
                             <td>
-                                {% if b.role in (UserRole.ADMIN, UserRole.BOARD) %}
+                                {% set groups = user_group_names.get(b.id, []) %}
+                                {% if groups %}
+                                {% for group_name in groups %}
+                                <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">{{ group_name }}</span>
+                                {% endfor %}
+                                {% elif b.role in (UserRole.ADMIN, UserRole.BOARD) %}
                                 <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
                                     {{ t('admin.dashboard.role_admin') if b.role == UserRole.ADMIN else t('admin.dashboard.role_board') }}
                                 </span>
+                                {% else %}
+                                <span class="text-muted">–</span>
                                 {% endif %}
                             </td>
                             <td>

@@ -107,6 +107,16 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     groups_result = await db.execute(select(Group).order_by(Group.name))
     all_groups = groups_result.scalars().all()
 
+    membership_result = await db.execute(
+        select(GroupMembership).options(selectinload(GroupMembership.group))
+    )
+    # Groups shown in the user list (issue #129: group membership is the
+    # real access mechanism for non-legacy accounts, per ADR 0041, so it
+    # replaces the "role" column there rather than sitting alongside it).
+    user_group_names: dict[str, list[str]] = {}
+    for membership in membership_result.scalars().all():
+        user_group_names.setdefault(membership.user_id, []).append(membership.group.name)
+
     update_status = await get_update_status(db)
 
     return templates.TemplateResponse(
@@ -117,6 +127,7 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
             "all_users": all_users,
             "open_invitations": open_invitations,
             "all_groups": all_groups,
+            "user_group_names": user_group_names,
             "UserRole": UserRole,
             "update_status": update_status,
         },

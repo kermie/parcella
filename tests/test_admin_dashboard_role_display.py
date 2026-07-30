@@ -6,11 +6,14 @@ badge, including the inert READONLY default new users get (see ADR
 "readonly" next to a user who is a full-access Administrators group
 member is misleading, since role has zero effect on their permissions.
 
-Fix mirrors the pattern already used on the user-edit page: the Role
-badge only renders for legacy ADMIN/BOARD accounts.
+First pass only hid the badge for non-legacy users (falling back to a
+blank cell). Reopened by the reporter: the column must show the user's
+actual group assignments instead of a role/blank cell wherever
+possible -- only a legacy ADMIN/BOARD account with no group membership
+still falls back to the role badge.
 """
 from app.database import AsyncSessionLocal
-from app.models import User, UserRole
+from app.models import User, UserRole, Group, GroupMembership
 from app.auth import hash_password
 
 
@@ -50,3 +53,23 @@ async def test_dashboard_shows_role_badge_for_legacy_admin_user(client, admin_us
     assert page.status_code == 200
     assert "Test-Admin" in page.text
     assert "Administrator" in page.text
+
+
+async def test_dashboard_shows_group_names_instead_of_role_for_group_member(client, admin_user):
+    """The actual ask from the reopened issue: a user assigned to a
+    Group must show that group's name in the list, not a role badge or
+    a blank cell."""
+    await web_login(client, "admin@example.com")
+    member = await _create_readonly_user("wasserwart@example.com", "Wasserwart User")
+
+    async with AsyncSessionLocal() as session:
+        group = Group(name="Wasserwarte")
+        session.add(group)
+        await session.flush()
+        session.add(GroupMembership(user_id=member.id, group_id=group.id))
+        await session.commit()
+
+    page = await client.get("/admin/")
+    assert page.status_code == 200
+    assert "Wasserwart User" in page.text
+    assert "Wasserwarte" in page.text

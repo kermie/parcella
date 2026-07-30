@@ -220,7 +220,7 @@
       "users_header": "Registered users",
       "col_name": "Name",
       "col_email": "Email",
-      "col_role": "Role",
+      "col_groups": "Groups",
       "col_status": "Status",
       "status_active": "active",
       "status_inactive": "inactive",

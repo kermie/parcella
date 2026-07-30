@@ -220,7 +220,7 @@
       "users_header": "Geregistreerde gebruikers",
       "col_name": "Naam",
       "col_email": "E-mail",
-      "col_role": "Rol",
+      "col_groups": "Groepen",
       "col_status": "Status",
       "status_active": "actief",
       "status_inactive": "inactief",
