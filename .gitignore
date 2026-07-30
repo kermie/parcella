@@ -26,3 +26,9 @@ Thumbs.db
 
 # Claude Code worktrees (each has its own .git, never track as a subdirectory)
 .claude/worktrees/
+
+# Announcement images are user-uploaded content (test or real), never repo
+# assets -- unlike the default app/static/uploads/logo.png, which IS
+# git-tracked on purpose. A past `git add -A` accidentally committed a pile
+# of these from test runs; don't let that happen again.
+app/static/uploads/announcements/

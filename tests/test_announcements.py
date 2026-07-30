@@ -500,6 +500,15 @@ _TINY_PNG_BYTES = (
 
 
 async def test_uploaded_image_is_saved_and_actually_servable(client, admin_user):
+    """This test deliberately writes a real file under the real, git-
+    tracked app/static/uploads/announcements/ (not a monkeypatched temp
+    dir), since its whole point is to prove the image_url the app hands
+    out actually resolves through the real StaticFiles mount. It must
+    therefore delete the announcement (and assert the file is gone) at
+    the end, rather than leaving orphaned image files behind on disk --
+    that exact leak was previously happening here across every test
+    run, since the ephemeral test DB gets torn down but this bind-
+    mounted directory doesn't."""
     token = await login(client, "admin@example.com")
     await _enable_module(client, auth_header(token))
     await web_login(client, "admin@example.com")
@@ -512,6 +521,7 @@ async def test_uploaded_image_is_saved_and_actually_servable(client, admin_user)
     assert create.status_code == 303
     announcement_id = create.headers["location"].split("/")[2]
 
+    from pathlib import Path
     from app.database import AsyncSessionLocal
     from app.models import Announcement
     from sqlalchemy import select
@@ -522,6 +532,7 @@ async def test_uploaded_image_is_saved_and_actually_servable(client, admin_user)
         assert announcement.image_filename is not None
         image_url = announcement.image_url
         assert image_url is not None
+        image_path = Path("app/static/uploads/announcements") / announcement.image_filename
 
     # The real assertion: the URL the app hands out for the image must
     # actually resolve through the StaticFiles mount, not just look
@@ -529,6 +540,12 @@ async def test_uploaded_image_is_saved_and_actually_servable(client, admin_user)
     image_response = await client.get(image_url)
     assert image_response.status_code == 200
     assert image_response.content == _TINY_PNG_BYTES
+
+    # Deleting the announcement must remove the uploaded image file too
+    # -- not just the DB row -- so it never orphans on disk.
+    delete = await client.post(f"/announcements/{announcement_id}/delete")
+    assert delete.status_code == 303
+    assert not image_path.exists()
 
 
 # ---------------------------------------------------------------------------
@@ -581,7 +598,14 @@ def _wordpress_mock_transport(*, media_status=201, post_status=201, users_me_sta
     return httpx_module.MockTransport(handler)
 
 
-async def test_send_blog_creates_wordpress_draft(client, admin_user, monkeypatch):
+async def test_send_blog_creates_wordpress_draft(client, admin_user, monkeypatch, tmp_path):
+    # Doesn't need the real, git-tracked uploads directory (unlike
+    # test_uploaded_image_is_saved_and_actually_servable above, this test
+    # never asserts the image is servable via the real StaticFiles
+    # mount) -- redirect it to a temp dir so this test never leaves an
+    # orphaned image file on disk.
+    monkeypatch.setattr("app.routers.announcements.UPLOAD_DIR", tmp_path)
+
     token = await login(client, "admin@example.com")
     await _enable_module(client, auth_header(token))
     await web_login(client, "admin@example.com")
