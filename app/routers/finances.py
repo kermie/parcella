@@ -71,6 +71,17 @@ def _parse_decimal(value: str) -> Optional[Decimal]:
         return None
 
 
+def _dedupe_ids(ids: list[str]) -> list[str]:
+    """De-duplicates a submitted scope-picker id list while preserving
+    order. A resubmitted/retried form (e.g. after a network hiccup, or
+    a double form-resubmission on browser back/forward) can otherwise
+    include the same parcel/member id twice, which crashes the
+    subsequent INSERT with a UniqueViolationError on the
+    (definition_id, parcel_id)/(definition_id, member_id) constraint --
+    found via a real 500 on /finances/item-templates."""
+    return list(dict.fromkeys(ids))
+
+
 async def _get_run_or_404(db: AsyncSession, run_id: str) -> InvoiceRun:
     result = await db.execute(
         select(InvoiceRun)
@@ -419,10 +430,10 @@ async def item_create(
     await db.flush()
 
     if not applies_all_parcels:
-        for parcel_id in parcel_ids:
+        for parcel_id in _dedupe_ids(parcel_ids):
             db.add(InvoiceItemDefinitionParcel(invoice_item_definition_id=item.id, parcel_id=parcel_id))
     if not applies_all_members:
-        for member_id in member_ids:
+        for member_id in _dedupe_ids(member_ids):
             db.add(InvoiceItemDefinitionMember(invoice_item_definition_id=item.id, member_id=member_id))
 
     await db.commit()
@@ -553,12 +564,12 @@ async def item_update(
     for scope in list(item.parcel_scopes):
         await db.delete(scope)
     if not applies_all_parcels:
-        for parcel_id in parcel_ids:
+        for parcel_id in _dedupe_ids(parcel_ids):
             db.add(InvoiceItemDefinitionParcel(invoice_item_definition_id=item.id, parcel_id=parcel_id))
     for scope in list(item.member_scopes):
         await db.delete(scope)
     if not applies_all_members:
-        for member_id in member_ids:
+        for member_id in _dedupe_ids(member_ids):
             db.add(InvoiceItemDefinitionMember(invoice_item_definition_id=item.id, member_id=member_id))
 
     await db.commit()
@@ -1103,10 +1114,10 @@ async def item_template_create(
     await db.flush()
 
     if not applies_all_parcels:
-        for parcel_id in parcel_ids:
+        for parcel_id in _dedupe_ids(parcel_ids):
             db.add(InvoiceItemTemplateParcel(invoice_item_template_id=template.id, parcel_id=parcel_id))
     if not applies_all_members:
-        for member_id in member_ids:
+        for member_id in _dedupe_ids(member_ids):
             db.add(InvoiceItemTemplateMember(invoice_item_template_id=template.id, member_id=member_id))
 
     await db.commit()
@@ -1164,12 +1175,12 @@ async def item_template_update(
     for scope in list(template.parcel_scopes):
         await db.delete(scope)
     if not applies_all_parcels:
-        for parcel_id in parcel_ids:
+        for parcel_id in _dedupe_ids(parcel_ids):
             db.add(InvoiceItemTemplateParcel(invoice_item_template_id=template.id, parcel_id=parcel_id))
     for scope in list(template.member_scopes):
         await db.delete(scope)
     if not applies_all_members:
-        for member_id in member_ids:
+        for member_id in _dedupe_ids(member_ids):
             db.add(InvoiceItemTemplateMember(invoice_item_template_id=template.id, member_id=member_id))
 
     await db.commit()
