@@ -13,7 +13,7 @@ from app.database import get_db
 from app.models import User, Invitation, InvitationStatus, UserRole, GroupMembership
 from app.auth import (
     verify_password, hash_password, create_session_token,
-    verify_invitation_token, create_invitation_token, get_current_user, require_admin
+    verify_invitation_token, create_invitation_token, get_current_user, require_admin, require_user
 )
 from app.config import settings
 from app.i18n import t_for
@@ -76,6 +76,52 @@ async def logout():
     response = RedirectResponse("/auth/login", status_code=302)
     response.delete_cookie("session")
     return response
+
+
+# ---------------------------------------------------------------------------
+# Self-service password change (issue #149) -- any logged-in user, not
+# just admins; gated by require_user, not require_admin/require_system_admin.
+# ---------------------------------------------------------------------------
+
+@router.get("/change-password", response_class=HTMLResponse)
+async def change_password_page(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_user(request, db)
+    return templates.TemplateResponse("auth/change_password.html", {"request": request, "user": user})
+
+
+@router.post("/change-password")
+async def change_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    new_password_confirm: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_user(request, db)
+
+    def _error(message: str):
+        return templates.TemplateResponse(
+            "auth/change_password.html",
+            {"request": request, "user": user, "error": message},
+            status_code=400,
+        )
+
+    if not user.password_hash or not verify_password(current_password, user.password_hash):
+        return _error(t_for(request, "errors.current_password_incorrect"))
+
+    if new_password != new_password_confirm:
+        return _error(t_for(request, "errors.passwords_do_not_match"))
+
+    if len(new_password) < 8:
+        return _error(t_for(request, "errors.password_too_short"))
+
+    user.password_hash = hash_password(new_password)
+    await db.commit()
+
+    return templates.TemplateResponse(
+        "auth/change_password.html",
+        {"request": request, "user": user, "success": True},
+    )
 
 
 # ---------------------------------------------------------------------------

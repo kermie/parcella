@@ -28,6 +28,7 @@
     "system": "Systém",
     "settings": "Nastavenia",
     "logout": "Odhlásiť sa",
+    "change_password": "Zmeniť heslo",
     "menu_open_aria": "Otvoriť menu",
     "work_hours_tasks": "Úlohy",
     "calendar_group": "Kalendár",
@@ -54,6 +55,7 @@
     "account_deactivated": "Váš účet bol deaktivovaný.",
     "passwords_do_not_match": "Heslá sa nezhodujú.",
     "password_too_short": "Heslo musí mať aspoň 8 znakov.",
+    "current_password_incorrect": "Aktuálne heslo je nesprávne.",
     "email_already_registered": "E-mail je už zaregistrovaný",
     "invitation_sent": "Pozvánka odoslaná",
     "invitation_resent": "Pozvánka znovu odoslaná",
@@ -165,6 +167,15 @@
       "label_password": "Heslo",
       "button_submit": "Prihlásiť sa",
       "no_account_notice": "Nemáte účet? Vyžaduje sa pozvánka. Obráťte sa prosím na členov výboru."
+    },
+    "change_password": {
+      "page_title": "Zmeniť heslo",
+      "heading": "Zmeniť heslo",
+      "label_current_password": "Aktuálne heslo",
+      "label_new_password": "Nové heslo",
+      "label_new_password_confirm": "Potvrďte nové heslo",
+      "button_save": "Zmeniť heslo",
+      "success_message": "Heslo bolo úspešne zmenené."
     },
     "invitation": {
       "title": "Prijať pozvánku",

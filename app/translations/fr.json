@@ -28,6 +28,7 @@
     "system": "Système",
     "settings": "Paramètres",
     "logout": "Déconnexion",
+    "change_password": "Changer le mot de passe",
     "menu_open_aria": "Ouvrir le menu",
     "work_hours_tasks": "Tâches",
     "calendar_group": "Calendrier",
@@ -54,6 +55,7 @@
     "account_deactivated": "Votre compte a été désactivé.",
     "passwords_do_not_match": "Les mots de passe ne correspondent pas.",
     "password_too_short": "Le mot de passe doit comporter au moins 8 caractères.",
+    "current_password_incorrect": "Le mot de passe actuel est incorrect.",
     "email_already_registered": "E-mail déjà enregistré",
     "invitation_sent": "Invitation envoyée",
     "invitation_resent": "Invitation renvoyée",
@@ -165,6 +167,15 @@
       "label_password": "Mot de passe",
       "button_submit": "Se connecter",
       "no_account_notice": "Pas de compte ? Une invitation est requise. Veuillez contacter les membres du bureau."
+    },
+    "change_password": {
+      "page_title": "Changer le mot de passe",
+      "heading": "Changer le mot de passe",
+      "label_current_password": "Mot de passe actuel",
+      "label_new_password": "Nouveau mot de passe",
+      "label_new_password_confirm": "Confirmer le nouveau mot de passe",
+      "button_save": "Changer le mot de passe",
+      "success_message": "Mot de passe changé avec succès."
     },
     "invitation": {
       "title": "Accepter l'invitation",
