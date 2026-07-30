@@ -113,7 +113,11 @@ async def test_smoke_admin_pages_render_without_jinja_errors(client, admin_user)
     response = await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     assert response.status_code in (302, 303)
 
-    r_dashboard = await client.get("/admin/")
+    r_root_redirect = await client.get("/admin/", follow_redirects=False)
+    assert r_root_redirect.status_code == 302
+    assert r_root_redirect.headers["location"] == "/admin/users/"
+
+    r_dashboard = await client.get("/admin/users/")
     assert r_dashboard.status_code == 200
     assert "UndefinedError" not in r_dashboard.text
 

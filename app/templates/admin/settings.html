@@ -4,14 +4,6 @@
 
 {% block extra_head %}
 <style>
-    /* Foldable settings cards (issue #68): only one open at a time,
-       same accordion idea as the sidebar's module groups. */
-    .settings-card-toggle {
-        cursor: pointer; display: flex; align-items: center; justify-content: space-between;
-    }
-    .settings-card-chevron { transition: transform 0.2s; }
-    .settings-card-toggle.collapsed .settings-card-chevron { transform: rotate(-90deg); }
-
     /* Issue #71: highlight the matched text itself within a card, not
        just show/hide the card -- makes it obvious *why* a card matched. */
     mark.settings-search-mark {

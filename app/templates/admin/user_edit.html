@@ -3,7 +3,7 @@
 {% block page_title %}{{ t('admin.users.edit.heading') }}{% endblock %}
 
 {% block topbar_actions %}
-<a href="/admin/" class="btn btn-sm btn-outline-secondary">
+<a href="/admin/users/" class="btn btn-sm btn-outline-secondary">
     <i class="bi bi-arrow-left me-1"></i>{{ t('common.cancel') }}
 </a>
 {% endblock %}
@@ -50,7 +50,7 @@
 
     <div class="col-12">
         <div class="d-flex gap-2 justify-content-end">
-            <a href="/admin/" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
+            <a href="/admin/users/" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
             <button type="submit" class="btn btn-primary">
                 <i class="bi bi-check-lg me-1"></i>{{ t('admin.users.edit.button_save') }}
             </button>
