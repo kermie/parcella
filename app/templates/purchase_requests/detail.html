@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{{ pr.title }}{% endblock %}
 {% block page_title %}{{ pr.title }}{% endblock %}
 
@@ -18,7 +19,10 @@
                 <dl class="row mb-0">
                     <dt class="col-sm-4 text-muted">{{ t('purchase_requests.detail.label_requester') }}</dt>
                     <dd class="col-sm-8">
+                        <span class="d-inline-flex align-items-center gap-1">
+                        {% if pr.requested_by %}{{ user_avatar(pr.requested_by, size=20) }}{% endif %}
                         {{ pr.requester_display_name }}
+                        </span>
                         {% if pr.requester_email %}
                         <div class="text-muted" style="font-size: 0.82rem;">{{ pr.requester_email }}</div>
                         {% if pr.confirmed_by_requester %}
@@ -30,7 +34,10 @@
                     </dd>
 
                     <dt class="col-sm-4 text-muted">{{ t('purchase_requests.detail.label_created_by') }}</dt>
-                    <dd class="col-sm-8">{{ pr.created_by.name if pr.created_by else '–' }} am {{ pr.created_at.strftime('%d.%m.%Y %H:%M') }}</dd>
+                    <dd class="col-sm-8 d-flex align-items-center gap-1">
+                        {% if pr.created_by %}{{ user_avatar(pr.created_by, size=20) }}{% endif %}
+                        {{ pr.created_by.name if pr.created_by else '–' }} am {{ pr.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    </dd>
 
                     <dt class="col-sm-4 text-muted">{{ t('purchase_requests.detail.label_justification') }}</dt>
                     <dd class="col-sm-8" style="white-space: pre-wrap;">{{ pr.justification }}</dd>
@@ -70,7 +77,7 @@
                 <ul class="list-group list-group-flush mb-3">
                     {% for a in pr.approvals %}
                     <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
-                        <span><i class="bi bi-check-circle-fill text-success me-2"></i>{{ a.user.name }}</span>
+                        <span class="d-inline-flex align-items-center gap-1"><i class="bi bi-check-circle-fill text-success me-1"></i>{{ user_avatar(a.user, size=20) }}{{ a.user.name }}</span>
                         <span class="text-muted" style="font-size: 0.8rem;">{{ a.approved_at.strftime('%d.%m.%Y %H:%M') }}</span>
                     </li>
                     {% else %}

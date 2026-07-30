@@ -13,6 +13,7 @@ from app.i18n import jinja_t
 from app.l10n import jinja_money, jinja_number, jinja_address, jinja_address_lines, jinja_currency_symbol
 from app.html_sanitizer import sanitize_email_html
 from app.permissions import jinja_has_perm, jinja_is_full_access, jinja_is_system_admin
+from app.avatars import avatar_url
 
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["t"] = jinja_t
@@ -22,6 +23,7 @@ templates.env.globals["currency_symbol"] = jinja_currency_symbol
 templates.env.globals["has_perm"] = jinja_has_perm
 templates.env.globals["is_full_access"] = jinja_is_full_access
 templates.env.globals["is_system_admin"] = jinja_is_system_admin
+templates.env.globals["avatar_url"] = avatar_url
 templates.env.filters["money"] = jinja_money
 templates.env.filters["number"] = jinja_number
 # Second sanitization layer at render time (see app/html_sanitizer.py) --

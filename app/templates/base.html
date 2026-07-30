@@ -1,3 +1,4 @@
+{% from "_avatar.html" import user_avatar %}
 <!DOCTYPE html>
 <html lang="{{ request.state.language }}">
 <head>
@@ -457,8 +458,10 @@
         </div>
     </div>
     <div class="sidebar-footer">
-        <div class="mb-2">
-            <i class="bi bi-person-circle me-1"></i> {{ user.name }}<br>
+        <div class="mb-2 d-flex align-items-center gap-2">
+            {{ user_avatar(user, size=24) }}
+            <div>
+            {{ user.name }}<br>
             <small>
                 {% if request.state.user_group_names %}
                 {{ request.state.user_group_names | join(', ') }}
@@ -466,6 +469,7 @@
                 {% elif user.role.value == 'board' %}{{ t('admin.dashboard.role_board') }}
                 {% else %}–{% endif %}
             </small>
+            </div>
         </div>
         <div class="d-flex flex-column gap-1">
             <a href="/auth/change-password" class="btn btn-sm btn-outline-light">

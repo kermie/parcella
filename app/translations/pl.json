@@ -177,6 +177,14 @@
       "button_save": "Zmień hasło",
       "success_message": "Hasło zostało pomyślnie zmienione."
     },
+    "avatar": {
+      "heading": "Awatar",
+      "button_upload": "Prześlij",
+      "button_remove": "Usuń awatar",
+      "success_message": "Awatar został pomyślnie przesłany.",
+      "error_type": "Nieprawidłowy typ pliku. Prześlij PNG, JPEG lub WebP.",
+      "error_size": "Plik jest zbyt duży (maksymalnie 2 MB)."
+    },
     "invitation": {
       "title": "Przyjmij zaproszenie",
       "heading": "Utwórz konto",

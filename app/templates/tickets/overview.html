@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{{ t('tickets.overview.title') }}{% endblock %}
 {% block page_title %}{{ t('tickets.overview.title') }}{% endblock %}
 
@@ -156,7 +157,11 @@
                                 <span class="badge" style="background: #f3f4f6; color: #6b7280;">{{ t('tickets.overview.status_closed') }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ t_row.assigned_to.name if t_row.assigned_to else '–' }}</td>
+                            <td>
+                                {% if t_row.assigned_to %}
+                                <span class="d-inline-flex align-items-center gap-1">{{ user_avatar(t_row.assigned_to, size=20) }}{{ t_row.assigned_to.name }}</span>
+                                {% else %}–{% endif %}
+                            </td>
                             <td class="text-muted" style="font-size: 0.82rem;">{{ t_row.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                             <td class="text-end">
                                 <a href="/tickets/{{ t_row.id }}" class="btn btn-sm btn-outline-secondary">

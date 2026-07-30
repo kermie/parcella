@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_avatar.html" import user_avatar %}
 {% block title %}{{ t('admin.dashboard.page_title') }}{% endblock %}
 {% block page_title %}{{ t('admin.dashboard.heading') }}{% endblock %}
 
@@ -115,7 +116,7 @@
                     <tbody>
                         {% for b in all_users %}
                         <tr>
-                            <td class="fw-semibold">{{ b.name }}</td>
+                            <td class="fw-semibold"><div class="d-flex align-items-center gap-2">{{ user_avatar(b, size=24) }}{{ b.name }}</div></td>
                             <td class="text-muted">{{ b.email }}</td>
                             <td>
                                 {% set groups = user_group_names.get(b.id, []) %}

@@ -177,6 +177,14 @@
       "button_save": "Changer le mot de passe",
       "success_message": "Mot de passe changé avec succès."
     },
+    "avatar": {
+      "heading": "Avatar",
+      "button_upload": "Téléverser",
+      "button_remove": "Supprimer l'avatar",
+      "success_message": "Avatar téléversé avec succès.",
+      "error_type": "Type de fichier invalide. Veuillez téléverser un PNG, JPEG ou WebP.",
+      "error_size": "Le fichier est trop volumineux (maximum 2 Mo)."
+    },
     "invitation": {
       "title": "Accepter l'invitation",
       "heading": "Configurer votre compte",

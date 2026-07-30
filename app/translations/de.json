@@ -177,6 +177,14 @@
       "button_save": "Passwort ändern",
       "success_message": "Passwort erfolgreich geändert."
     },
+    "avatar": {
+      "heading": "Avatar",
+      "button_upload": "Hochladen",
+      "button_remove": "Avatar entfernen",
+      "success_message": "Avatar erfolgreich hochgeladen.",
+      "error_type": "Ungültiger Dateityp. Bitte PNG, JPEG oder WebP hochladen.",
+      "error_size": "Die Datei ist zu groß (maximal 2 MB)."
+    },
     "invitation": {
       "title": "Einladung annehmen",
       "heading": "Konto einrichten",

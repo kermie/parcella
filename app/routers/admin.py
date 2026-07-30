@@ -29,6 +29,7 @@ from app.cloud_storage import load_nextcloud_configuration, get_nextcloud_provid
 from app.i18n import AVAILABLE_LANGUAGES, t_for
 from app.l10n import AVAILABLE_REGIONS, AVAILABLE_CURRENCIES
 from app.branding import save_logo_upload, remove_logo_file
+from app.avatars import save_avatar_upload, remove_avatar_file
 from app.nav_order import NAV_ORDER_DEFAULTS
 from app.area_utils import compute_area_a_sqm, compute_area_b_sqm
 from app.invoice_generation import (
@@ -724,6 +725,57 @@ async def user_edit(
         f"/admin/users/?success={urllib.parse.quote(t_for(request, 'errors.user_updated'))}",
         status_code=302,
     )
+
+
+# ---------------------------------------------------------------------------
+# Avatar upload/removal for another user (issue #150) -- an admin can set
+# this from the edit page, alongside the self-service /auth/avatar upload
+# every user has for their own account. Shares app/avatars.py's storage/
+# validation core with that self-service route.
+# ---------------------------------------------------------------------------
+
+@router.post("/users/{user_id}/avatar")
+async def user_avatar_upload(
+    user_id: str,
+    request: Request,
+    avatar: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_system_admin(request, db)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail=t_for(request, "errors.user_not_found"))
+
+    try:
+        target.avatar_filename = await save_avatar_upload(target.id, avatar)
+    except ValueError as e:
+        return RedirectResponse(
+            f"/admin/users/{user_id}/edit?avatar_error={str(e)}", status_code=302,
+        )
+
+    await db.commit()
+    return RedirectResponse(f"/admin/users/{user_id}/edit", status_code=302)
+
+
+@router.post("/users/{user_id}/avatar/remove")
+async def user_avatar_remove(
+    user_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    await require_system_admin(request, db)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    target = result.scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail=t_for(request, "errors.user_not_found"))
+
+    remove_avatar_file(target.id)
+    target.avatar_filename = None
+    await db.commit()
+    return RedirectResponse(f"/admin/users/{user_id}/edit", status_code=302)
 
 
 @router.post("/users/{user_id}/delete")

@@ -3,7 +3,7 @@ Auth router: login, logout, invitations.
 """
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Request, Form, Depends, HTTPException
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -15,6 +15,7 @@ from app.auth import (
     verify_password, hash_password, create_session_token,
     verify_invitation_token, create_invitation_token, get_current_user, require_admin, require_user
 )
+from app.avatars import save_avatar_upload, remove_avatar_file
 from app.config import settings
 from app.i18n import t_for
 
@@ -122,6 +123,46 @@ async def change_password(
         "auth/change_password.html",
         {"request": request, "user": user, "success": True},
     )
+
+
+# ---------------------------------------------------------------------------
+# Self-service avatar upload (issue #150) -- any logged-in user, not just
+# admins; same require_user gate as change-password above. Shares the
+# storage/validation core in app/avatars.py with the admin-side upload on
+# /admin/users/{id}/edit (app/routers/admin.py).
+# ---------------------------------------------------------------------------
+
+@router.post("/avatar")
+async def upload_own_avatar(
+    request: Request,
+    avatar: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_user(request, db)
+
+    try:
+        user.avatar_filename = await save_avatar_upload(user.id, avatar)
+    except ValueError as e:
+        return templates.TemplateResponse(
+            "auth/change_password.html",
+            {"request": request, "user": user, "avatar_error": str(e)},
+            status_code=400,
+        )
+
+    await db.commit()
+    return templates.TemplateResponse(
+        "auth/change_password.html",
+        {"request": request, "user": user, "avatar_success": True},
+    )
+
+
+@router.post("/avatar/remove")
+async def remove_own_avatar(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_user(request, db)
+    remove_avatar_file(user.id)
+    user.avatar_filename = None
+    await db.commit()
+    return RedirectResponse("/auth/change-password", status_code=302)
 
 
 # ---------------------------------------------------------------------------

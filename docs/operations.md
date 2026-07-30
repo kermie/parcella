@@ -78,7 +78,7 @@ A system admin can download a full backup on demand from `/admin/`
 [ADR 0053](./ADR/0053-admin-backup-download-only.md)). It's a zip
 containing a one-click `pg_dump` (plain SQL, readable text) plus
 everything under `app/static/uploads/` (the branding logo, announcement
-images) -- nothing is ever written to server disk, so there's no backup
+images, user avatars) -- nothing is ever written to server disk, so there's no backup
 file to find or clean up on the server itself; the downloaded `.zip` is
 the only copy, and it's the admin's responsibility to store it
 somewhere safe.
