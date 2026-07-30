@@ -71,6 +71,18 @@ def _parse_decimal(value: str) -> Optional[Decimal]:
         return None
 
 
+# Pricing modes computed entirely from another module -- unit_price is
+# never stored for these (INSURANCE_COST/WORK_HOURS_SHORTFALL pull
+# their amount from the insurance/work-hours modules;
+# WATER_USAGE/ELECTRICITY_USAGE pull their price from
+# MeteringPriceConfiguration, per medium/year -- see
+# app/invoice_generation.py's item_quantity_and_price).
+_AUTOMATIC_PRICING_MODES = (
+    InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL,
+    InvoicePricingMode.WATER_USAGE, InvoicePricingMode.ELECTRICITY_USAGE,
+)
+
+
 def _dedupe_ids(ids: list[str]) -> list[str]:
     """De-duplicates a submitted scope-picker id list while preserving
     order. A resubmitted/retried form (e.g. after a network hiccup, or
@@ -421,7 +433,7 @@ async def item_create(
         name=name.strip(),
         description=description.strip() or None,
         pricing_mode=mode,
-        unit_price=_parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None,
+        unit_price=_parse_decimal(unit_price) if mode not in _AUTOMATIC_PRICING_MODES else None,
         applies_to_all_parcels=applies_all_parcels,
         applies_to_all_members=applies_all_members,
         category_id=category_id.strip() or None,
@@ -552,7 +564,7 @@ async def item_update(
     item.name = name.strip()
     item.description = description.strip() or None
     item.pricing_mode = mode
-    item.unit_price = _parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None
+    item.unit_price = _parse_decimal(unit_price) if mode not in _AUTOMATIC_PRICING_MODES else None
     item.applies_to_all_parcels = applies_all_parcels
     item.applies_to_all_members = applies_all_members
     item.category_id = category_id.strip() or None
@@ -1117,7 +1129,7 @@ async def item_template_create(
         name=name.strip(),
         description=description.strip() or None,
         pricing_mode=mode,
-        unit_price=_parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None,
+        unit_price=_parse_decimal(unit_price) if mode not in _AUTOMATIC_PRICING_MODES else None,
         applies_to_all_parcels=applies_all_parcels,
         applies_to_all_members=applies_all_members,
         category_id=category_id.strip() or None,
@@ -1179,7 +1191,7 @@ async def item_template_update(
     template.name = name.strip()
     template.description = description.strip() or None
     template.pricing_mode = mode
-    template.unit_price = _parse_decimal(unit_price) if mode not in (InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL) else None
+    template.unit_price = _parse_decimal(unit_price) if mode not in _AUTOMATIC_PRICING_MODES else None
     template.applies_to_all_parcels = applies_all_parcels
     template.applies_to_all_members = applies_all_members
     template.category_id = category_id.strip() or None

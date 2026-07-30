@@ -1028,6 +1028,38 @@ class MeterReading(Base):
         UniqueConstraint("meter_id", "year", name="uq_meter_year"),
     )
 
+
+class MeteringPriceConfiguration(Base):
+    """
+    Annual price per unit (EUR per m³ or per kWh) for one medium --
+    drives the water_usage/electricity_usage invoice pricing modes
+    (app/invoice_generation.py), same "computed automatically" pattern
+    as WorkHoursConfiguration's rate_per_hour_eur and the insurance
+    module's premiums. Historized per year like WorkHoursConfiguration
+    (ADR 0005): old years' prices must stay intact for past runs.
+    """
+    __tablename__ = "metering_price_configuration"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    medium: Mapped[MeteringMedium] = mapped_column(SAEnum(MeteringMedium), nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    price_per_unit: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("medium", "year", name="uq_metering_price_medium_year"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<MeteringPriceConfiguration {self.medium} {self.year}: {self.price_per_unit}€>"
+
+
 # ---------------------------------------------------------------------------
 # Insurance module: property and accident insurance per parcel
 # ---------------------------------------------------------------------------
@@ -2134,11 +2166,11 @@ class InvoiceItemDefinition(Base):
     "Water usage 2026"), applied to every in-scope parcel when the run
     is generated. `pricing_mode` decides where quantity/price come from
     -- WATER_USAGE/ELECTRICITY_USAGE pull quantity from
-    app/meter_utils.py's calculate_consumption() but still need a
-    manually-entered unit_price (there's no tariff/price-per-unit
-    stored anywhere else in the app); INSURANCE_COST pulls its whole
-    amount from app/insurance_utils.py's calculate_insurance_cost() and
-    ignores unit_price entirely.
+    app/meter_utils.py's calculate_consumption() and price from
+    MeteringPriceConfiguration (per medium/year), ignoring unit_price
+    entirely, same as WORK_HOURS_SHORTFALL/INSURANCE_COST already do;
+    INSURANCE_COST pulls its whole amount from app/insurance_utils.py's
+    calculate_insurance_cost().
     """
     __tablename__ = "invoice_item_definitions"
 

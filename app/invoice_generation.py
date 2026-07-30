@@ -24,7 +24,7 @@ from sqlalchemy.orm import selectinload
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoicePricingMode, Invoice, InvoiceLineItem,
     Parcel, ParcelStatus, MemberParcel, Member, MeteringPoint, MeteringMedium, MeteringPointType, Meter,
-    ParcelInsurance, InsuranceConfiguration, ClubSetting, WorkHoursMode,
+    ParcelInsurance, InsuranceConfiguration, ClubSetting, WorkHoursMode, MeteringPriceConfiguration,
 )
 from app.database import active_member_filter
 from app.i18n import load_current_language
@@ -248,6 +248,20 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
     electricity_points = await _load_metering_points_by_parcel(db, MeteringMedium.ELECTRICITY)
     parcel_insurance = await _load_parcel_insurance_by_parcel(db, run.year)
 
+    # Price per unit for water_usage/electricity_usage (issue: "same as
+    # work-hours-shortfall/insurance -- computed automatically") comes
+    # from MeteringPriceConfiguration, not a manually-entered unit_price
+    # -- same "nothing configured for this year -> nothing billed"
+    # behavior as insurance_configuration/work_hours_mode below.
+    metering_prices: Dict[MeteringMedium, Optional[Decimal]] = {}
+    metering_pricing_modes = (InvoicePricingMode.WATER_USAGE, InvoicePricingMode.ELECTRICITY_USAGE)
+    if any(d.pricing_mode in metering_pricing_modes for d in run.item_definitions):
+        price_result = await db.execute(
+            select(MeteringPriceConfiguration).where(MeteringPriceConfiguration.year == run.year)
+        )
+        for cfg in price_result.scalars().all():
+            metering_prices[cfg.medium] = Decimal(str(cfg.price_per_unit))
+
     insurance_config_result = await db.execute(
         select(InsuranceConfiguration).where(InsuranceConfiguration.year == run.year)
     )
@@ -299,7 +313,9 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
                 return None, None
             return Decimal(str(parcel.area_sqm)), Decimal(str(definition.unit_price))
         if mode in (InvoicePricingMode.WATER_USAGE, InvoicePricingMode.ELECTRICITY_USAGE):
-            if definition.unit_price is None:
+            medium = MeteringMedium.WATER if mode == InvoicePricingMode.WATER_USAGE else MeteringMedium.ELECTRICITY
+            price = metering_prices.get(medium)
+            if price is None:
                 return None, None
             points = water_points if mode == InvoicePricingMode.WATER_USAGE else electricity_points
             point = points.get(parcel.id)
@@ -307,7 +323,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             consumption = calculate_consumption(meter, run.year) if meter else None
             if consumption is None:
                 return None, None
-            return consumption, Decimal(str(definition.unit_price))
+            return consumption, price
         if mode == InvoicePricingMode.COMMUNAL_AREA_SHARE:
             if definition.unit_price is None:
                 return None, None
@@ -335,7 +351,10 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             d for d in run.item_definitions
             if _applies_to_parcel_loop(d)
             and (
-                d.pricing_mode in (InvoicePricingMode.WORK_HOURS_SHORTFALL, InvoicePricingMode.INSURANCE_COST)
+                d.pricing_mode in (
+                    InvoicePricingMode.WORK_HOURS_SHORTFALL, InvoicePricingMode.INSURANCE_COST,
+                    InvoicePricingMode.WATER_USAGE, InvoicePricingMode.ELECTRICITY_USAGE,
+                )
                 or _parcel_in_scope(d, parcel)
             )
         ]

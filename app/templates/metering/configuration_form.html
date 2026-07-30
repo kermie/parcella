@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ medium_label }}{{ t('metering.configuration_form.title_suffix', year=configuration.year) }}{% endblock %}
+{% block page_title %}{{ medium_label }}{{ t('metering.configuration_form.title_suffix', year=configuration.year) }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_prefix }}/configuration" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('common.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3" style="max-width: 560px;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-pencil me-2"></i>{{ t('metering.configuration_form.card_title') }}</div>
+            <div class="card-body">
+                <form method="post" action="{{ url_prefix }}/configuration/{{ configuration.id }}/edit">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('metering.configuration_form.year_label') }} <span class="text-danger">*</span></label>
+                        <input type="number" name="year" class="form-control"
+                               value="{{ configuration.year }}" min="2000" max="2100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('metering.configuration_form.price_label', unit=unit) }} <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="price_per_unit" class="form-control"
+                                   value="{{ '%.2f'|format(configuration.price_per_unit|float) }}" required>
+                            <span class="input-group-text">{{ currency_symbol() }}/{{ unit }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ t('metering.configuration_form.note_label') }}</label>
+                        <input type="text" name="note" class="form-control"
+                               value="{{ configuration.note or '' }}">
+                    </div>
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{{ url_prefix }}/configuration" class="btn btn-outline-secondary">{{ t('common.cancel') }}</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>{{ t('metering.configuration_form.save_button') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

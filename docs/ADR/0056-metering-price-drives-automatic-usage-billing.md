@@ -1,0 +1,59 @@
+# Metering price configuration drives automatic water/electricity usage billing
+
+**Context:** ADR 0042 already established two "automatically scoped"
+invoice pricing modes -- `WORK_HOURS_SHORTFALL` (rate from
+`WorkHoursConfiguration`) and `INSURANCE_COST` (premiums from the
+insurance module) -- where the item form hides both the manual unit
+price and the parcel-scope picker, since the underlying module's own
+data already determines who owes what.
+
+`WATER_USAGE`/`ELECTRICITY_USAGE` were meant to join that group from
+the start -- the pricing-mode dropdown already labeled them "(from
+module)" -- but the metering module never actually got a price
+setting, so both modes still required a manually-entered `unit_price`
+on every item template/run item, and still respected the manual
+parcel-scope picker even though a parcel without a meter of that
+medium was already excluded by `calculate_consumption()` returning
+`None`. In practice this meant water/electricity billing was
+non-functional: the two real item templates for this club had
+`unit_price` left blank (nothing to bill) precisely because there was
+nowhere else to put the number.
+
+**Decision: give `WATER_USAGE`/`ELECTRICITY_USAGE` full parity with
+`WORK_HOURS_SHORTFALL`/`INSURANCE_COST`.**
+
+- New `MeteringPriceConfiguration` model: one row per `(medium, year)`
+  (unique constraint on the pair), holding `price_per_unit` (EUR per
+  m³/kWh) + an optional note. Historized per year, mirroring
+  `WorkHoursConfiguration`'s shape exactly (ADR 0005: old years' prices
+  must stay intact for past runs' invoices).
+- Edited at `/water/configuration` / `/electricity/configuration` --
+  added directly to the existing `create_metering_router()` factory
+  (`app/routers/metering.py`), so both media share the same CRUD
+  routes/templates rather than duplicating a settings page per medium.
+- `item_quantity_and_price` (`app/invoice_generation.py`) now reads
+  `price_per_unit` from this table for the run's year instead of
+  `definition.unit_price`; if no price is configured for that year,
+  the item bills nothing for that year -- same "nothing configured ->
+  nothing billed" behavior insurance/work-hours already have.
+- The parcel-scope bypass tuple in `compute_invoices_for_run` gains
+  `WATER_USAGE`/`ELECTRICITY_USAGE` alongside the existing two modes:
+  every parcel becomes a loop candidate, and having (or not having) an
+  active metering point + reading of that medium is what actually
+  limits billing -- exactly the same shape as insurance/work-hours
+  limiting themselves via their own module's data, not a manual
+  picker.
+- `item_template_create`/`item_template_update`/`item_create`/
+  `item_update` (`app/routers/finances.py`) now null out `unit_price`
+  for these two modes as well; the item forms hide their scope picker
+  and unit-price input and show a mode-specific "Automatic (parcels
+  with an active water/electricity meter)" note, mirroring the
+  existing insurance/work-hours treatment exactly.
+
+**Consequence, confirmed acceptable:** this removes the *ability* to
+manually restrict water/electricity billing to a parcel subset via the
+item template/run item -- both of this club's real templates already
+had `applies_to_all_parcels=True`, so nothing currently configured
+changes behavior. A club that genuinely needs to exclude a specific
+metered parcel from billing has no such override going forward (same
+constraint insurance/work-hours already accepted in ADR 0042).
