@@ -199,6 +199,7 @@
       "backup_description": "Téléchargez maintenant une sauvegarde complète (base de données + fichiers téléversés, ex. logo et images d'annonces, sous forme de ZIP). Rien n'est stocké sur le serveur -- conservez le fichier vous-même en lieu sûr.",
       "backup_button": "Télécharger la sauvegarde",
       "backup_error": "Échec de la sauvegarde : {detail}",
+      "restore_link": "Restaurer depuis une sauvegarde",
       "invite_header": "Inviter un utilisateur",
       "label_email": "Adresse e-mail",
       "label_role": "Rôle",
@@ -399,6 +400,24 @@
       "nextcloud_save_button": "Enregistrer",
       "nextcloud_test_button": "Tester la connexion",
       "nextcloud_test_success": "Connexion réussie"
+    },
+    "restore": {
+      "title": "Restaurer depuis une sauvegarde",
+      "success_message": "Restauration terminée avec succès.",
+      "warning_header": "Ceci écrasera toutes les données actuelles",
+      "warning_text": "La restauration remplace l'intégralité de la base de données et tous les fichiers téléversés (logo, images d'annonces) par le contenu du fichier ZIP de sauvegarde que vous téléversez. Cette action est irréversible.",
+      "warning_hint": "Si vous voulez pouvoir annuler cette action, téléchargez d'abord une sauvegarde récente de l'état actuel.",
+      "form_header": "Téléverser une sauvegarde",
+      "label_file": "Fichier de sauvegarde (.zip)",
+      "label_confirm_phrase": "Tapez {phrase} pour confirmer",
+      "submit_button": "Restaurer",
+      "submit_confirm": "Êtes-vous absolument sûr ? Ceci écrasera toute la base de données actuelle et tous les fichiers téléversés.",
+      "error_wrong_phrase": "La phrase de confirmation ne correspond pas -- rien n'a été modifié.",
+      "error_too_large": "Le fichier est trop volumineux.",
+      "error_not_a_zip": "Le fichier téléversé n'est pas une archive zip valide.",
+      "error_invalid_zip": "Le fichier de sauvegarde a une structure inattendue : {detail}",
+      "error_restore_failed": "Échec de la restauration, rien n'a été modifié : {detail}",
+      "error_uploads_failed": "Base de données restaurée avec succès, mais la restauration des fichiers téléversés a échoué : {detail}. Relancer la restauration est sûr -- l'étape de la base de données n'a pas besoin d'être refaite."
     },
     "sample_data": {
       "title": "Données d'exemple",

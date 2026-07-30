@@ -199,6 +199,7 @@
       "backup_description": "Nyní stáhnout úplnou zálohu (databáze + nahrané soubory, např. logo a obrázky oznámení, jako ZIP). Na serveru se nic neukládá -- soubor si bezpečně uložte sami.",
       "backup_button": "Stáhnout zálohu",
       "backup_error": "Zálohování se nezdařilo: {detail}",
+      "restore_link": "Obnovit ze zálohy",
       "invite_header": "Pozvat uživatele",
       "label_email": "E-mailová adresa",
       "label_role": "Role",
@@ -399,6 +400,24 @@
       "nextcloud_save_button": "Uložit",
       "nextcloud_test_button": "Otestovat připojení",
       "nextcloud_test_success": "Připojení úspěšné"
+    },
+    "restore": {
+      "title": "Obnovit ze zálohy",
+      "success_message": "Obnovení bylo úspěšně dokončeno.",
+      "warning_header": "Tímto přepíšete všechna aktuální data",
+      "warning_text": "Obnovení nahradí celou databázi a všechny nahrané soubory (logo, obrázky oznámení) obsahem nahraného souboru ZIP se zálohou. Tuto akci nelze vrátit zpět.",
+      "warning_hint": "Pokud chcete mít možnost tuto akci vrátit zpět, nejprve si stáhněte novou zálohu aktuálního stavu.",
+      "form_header": "Nahrát zálohu",
+      "label_file": "Soubor zálohy (.zip)",
+      "label_confirm_phrase": "Napište {phrase} pro potvrzení",
+      "submit_button": "Obnovit",
+      "submit_confirm": "Jste si naprosto jisti? Tímto přepíšete celou aktuální databázi a všechny nahrané soubory.",
+      "error_wrong_phrase": "Potvrzovací fráze se neshodovala -- nic nebylo změněno.",
+      "error_too_large": "Soubor je příliš velký.",
+      "error_not_a_zip": "Nahraný soubor není platný zip archiv.",
+      "error_invalid_zip": "Soubor zálohy má neočekávanou strukturu: {detail}",
+      "error_restore_failed": "Obnovení selhalo, nic nebylo změněno: {detail}",
+      "error_uploads_failed": "Databáze byla úspěšně obnovena, ale obnovení nahraných souborů selhalo: {detail}. Opětovné spuštění obnovení je bezpečné -- krok databáze není třeba opakovat."
     },
     "sample_data": {
       "title": "Ukázková data",

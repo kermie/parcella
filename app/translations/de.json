@@ -199,6 +199,7 @@
       "backup_description": "Jetzt eine vollständige Sicherung herunterladen (Datenbank + hochgeladene Dateien, z. B. Logo und Ankündigungsbilder, als ZIP). Es wird nichts auf dem Server gespeichert -- bewahren Sie die Datei selbst sicher auf.",
       "backup_button": "Sicherung herunterladen",
       "backup_error": "Sicherung fehlgeschlagen: {detail}",
+      "restore_link": "Aus Sicherung wiederherstellen",
       "invite_header": "Benutzer einladen",
       "label_email": "E-Mail-Adresse",
       "label_role": "Rolle",
@@ -399,6 +400,24 @@
       "nextcloud_save_button": "Speichern",
       "nextcloud_test_button": "Verbindung testen",
       "nextcloud_test_success": "Verbindung erfolgreich"
+    },
+    "restore": {
+      "title": "Aus Sicherung wiederherstellen",
+      "success_message": "Wiederherstellung erfolgreich abgeschlossen.",
+      "warning_header": "Dadurch werden alle aktuellen Daten überschrieben",
+      "warning_text": "Die Wiederherstellung ersetzt die gesamte Datenbank und alle hochgeladenen Dateien (Logo, Ankündigungsbilder) durch den Inhalt der von Ihnen hochgeladenen Sicherungs-ZIP-Datei. Dies kann nicht rückgängig gemacht werden.",
+      "warning_hint": "Wenn Sie dies rückgängig machen können möchten, laden Sie zuerst eine aktuelle Sicherung des jetzigen Zustands herunter.",
+      "form_header": "Sicherung hochladen",
+      "label_file": "Sicherungsdatei (.zip)",
+      "label_confirm_phrase": "Geben Sie {phrase} ein, um zu bestätigen",
+      "submit_button": "Wiederherstellen",
+      "submit_confirm": "Sind Sie absolut sicher? Dadurch werden die gesamte aktuelle Datenbank und alle hochgeladenen Dateien überschrieben.",
+      "error_wrong_phrase": "Bestätigungsphrase stimmte nicht überein -- es wurde nichts geändert.",
+      "error_too_large": "Die Datei ist zu groß.",
+      "error_not_a_zip": "Die hochgeladene Datei ist kein gültiges ZIP-Archiv.",
+      "error_invalid_zip": "Die Sicherungsdatei hat eine unerwartete Struktur: {detail}",
+      "error_restore_failed": "Wiederherstellung fehlgeschlagen, es wurde nichts geändert: {detail}",
+      "error_uploads_failed": "Datenbank erfolgreich wiederhergestellt, aber die Wiederherstellung der hochgeladenen Dateien ist fehlgeschlagen: {detail}. Ein erneuter Versuch ist sicher -- der Datenbankschritt muss nicht wiederholt werden."
     },
     "sample_data": {
       "title": "Beispieldaten",

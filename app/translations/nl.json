@@ -199,6 +199,7 @@
       "backup_description": "Download nu een volledige back-up (database + geüploade bestanden, bijv. logo en aankondigingsafbeeldingen, als ZIP). Er wordt niets op de server opgeslagen -- bewaar het bestand zelf op een veilige plek.",
       "backup_button": "Back-up downloaden",
       "backup_error": "Back-up mislukt: {detail}",
+      "restore_link": "Herstellen vanaf back-up",
       "invite_header": "Gebruiker uitnodigen",
       "label_email": "E-mailadres",
       "label_role": "Rol",
@@ -399,6 +400,24 @@
       "nextcloud_save_button": "Opslaan",
       "nextcloud_test_button": "Verbinding testen",
       "nextcloud_test_success": "Verbinding geslaagd"
+    },
+    "restore": {
+      "title": "Herstellen vanaf back-up",
+      "success_message": "Herstel succesvol voltooid.",
+      "warning_header": "Dit overschrijft alle huidige gegevens",
+      "warning_text": "Herstellen vervangt de volledige database en alle geüploade bestanden (logo, aankondigingsafbeeldingen) door de inhoud van de back-up-ZIP die u uploadt. Dit kan niet ongedaan worden gemaakt.",
+      "warning_hint": "Als u dit ongedaan wilt kunnen maken, download dan eerst een verse back-up van de huidige status.",
+      "form_header": "Back-up uploaden",
+      "label_file": "Back-upbestand (.zip)",
+      "label_confirm_phrase": "Typ {phrase} om te bevestigen",
+      "submit_button": "Herstellen",
+      "submit_confirm": "Weet u het absoluut zeker? Dit overschrijft de volledige huidige database en alle geüploade bestanden.",
+      "error_wrong_phrase": "Bevestigingszin kwam niet overeen -- er is niets gewijzigd.",
+      "error_too_large": "Het bestand is te groot.",
+      "error_not_a_zip": "Het geüploade bestand is geen geldig zip-archief.",
+      "error_invalid_zip": "Het back-upbestand heeft een onverwachte structuur: {detail}",
+      "error_restore_failed": "Herstellen mislukt, er is niets gewijzigd: {detail}",
+      "error_uploads_failed": "Database succesvol hersteld, maar het herstellen van geüploade bestanden is mislukt: {detail}. Het herstel opnieuw uitvoeren is veilig -- de databasestap hoeft niet te worden herhaald."
     },
     "sample_data": {
       "title": "Voorbeeldgegevens",

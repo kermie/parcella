@@ -70,11 +70,16 @@ docker compose up -d</pre>
                     <h5 class="mb-1"><i class="bi bi-hdd-fill me-2"></i>{{ t('admin.dashboard.backup_header') }}</h5>
                     <p class="mb-0 text-muted" style="font-size: 0.9rem;">{{ t('admin.dashboard.backup_description') }}</p>
                 </div>
-                <form method="post" action="/admin/backup/download">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                        <i class="bi bi-download me-1"></i>{{ t('admin.dashboard.backup_button') }}
-                    </button>
-                </form>
+                <div class="d-flex gap-2">
+                    <a href="/admin/backup/restore" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>{{ t('admin.dashboard.restore_link') }}
+                    </a>
+                    <form method="post" action="/admin/backup/download">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-download me-1"></i>{{ t('admin.dashboard.backup_button') }}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

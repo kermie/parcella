@@ -199,6 +199,7 @@
       "backup_description": "Download a full backup right now (database + uploaded files, e.g. logo and announcement images, as a zip). Nothing is stored on the server -- save the file somewhere safe yourself.",
       "backup_button": "Download backup",
       "backup_error": "Backup failed: {detail}",
+      "restore_link": "Restore from backup",
       "invite_header": "Invite user",
       "label_email": "Email address",
       "label_role": "Role",
@@ -399,6 +400,24 @@
       "nextcloud_save_button": "Save",
       "nextcloud_test_button": "Test connection",
       "nextcloud_test_success": "Connection successful"
+    },
+    "restore": {
+      "title": "Restore from backup",
+      "success_message": "Restore completed successfully.",
+      "warning_header": "This will overwrite all current data",
+      "warning_text": "Restoring replaces the entire database and all uploaded files (logo, announcement images) with the contents of the backup zip you upload. This cannot be undone.",
+      "warning_hint": "If you want to be able to undo this, download a fresh backup of the current state first.",
+      "form_header": "Upload backup",
+      "label_file": "Backup file (.zip)",
+      "label_confirm_phrase": "Type {phrase} to confirm",
+      "submit_button": "Restore",
+      "submit_confirm": "Are you absolutely sure? This will overwrite the entire current database and all uploaded files.",
+      "error_wrong_phrase": "Confirmation phrase did not match -- nothing was changed.",
+      "error_too_large": "File is too large.",
+      "error_not_a_zip": "The uploaded file is not a valid zip archive.",
+      "error_invalid_zip": "The backup file has an unexpected structure: {detail}",
+      "error_restore_failed": "Restore failed, nothing was changed: {detail}",
+      "error_uploads_failed": "Database restored successfully, but restoring uploaded files failed: {detail}. Re-running the restore is safe -- the database step doesn't need to be redone."
     },
     "sample_data": {
       "title": "Sample data",
