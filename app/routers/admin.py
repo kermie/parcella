@@ -121,8 +121,6 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
     for membership in membership_result.scalars().all():
         user_group_names.setdefault(membership.user_id, []).append(membership.group.name)
 
-    update_status = await get_update_status(db)
-
     return templates.TemplateResponse(
         "admin/dashboard.html",
         {
@@ -133,9 +131,25 @@ async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)):
             "all_groups": all_groups,
             "user_group_names": user_group_names,
             "UserRole": UserRole,
-            "update_status": update_status,
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# System: update check + backup/restore -- split out from user management
+# (the dashboard above) since these are operational/maintenance concerns,
+# not user administration. Follows the same "own page, linked from the
+# Administration nav group" pattern as Groups/Settings/Integrations/
+# Sample data (app/templates/base.html).
+# ---------------------------------------------------------------------------
+
+@router.get("/system", response_class=HTMLResponse)
+async def admin_system_page(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_system_admin(request, db)
+    update_status = await get_update_status(db)
+    return templates.TemplateResponse("admin/system.html", {
+        "request": request, "user": user, "update_status": update_status,
+    })
 
 
 @router.post("/updates/check-now")
@@ -144,7 +158,7 @@ async def update_check_now(request: Request, db: AsyncSession = Depends(get_db))
     6 hours (see app/update_check.py), for admins who don't want to wait."""
     await require_system_admin(request, db)
     await refresh_update_check_cache(db)
-    return RedirectResponse("/admin/", status_code=302)
+    return RedirectResponse("/admin/system", status_code=302)
 
 
 # ---------------------------------------------------------------------------
@@ -191,14 +205,14 @@ async def backup_download(request: Request, db: AsyncSession = Depends(get_db)):
     except (OSError, asyncio.TimeoutError) as e:
         detail = str(e)[:500]
         return RedirectResponse(
-            f"/admin/?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
+            f"/admin/system?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
             status_code=302,
         )
 
     if process.returncode != 0:
         detail = stderr.decode("utf-8", errors="replace").strip()[:500]
         return RedirectResponse(
-            f"/admin/?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
+            f"/admin/system?error={urllib.parse.quote(t_for(request, 'admin.dashboard.backup_error', detail=detail))}",
             status_code=302,
         )
 

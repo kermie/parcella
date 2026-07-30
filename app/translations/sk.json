@@ -25,6 +25,7 @@
     "configuration": "Konfigurácia",
     "administration": "Administrácia",
     "users": "Používatelia",
+    "system": "Systém",
     "settings": "Nastavenia",
     "logout": "Odhlásiť sa",
     "menu_open_aria": "Otvoriť menu",
@@ -400,6 +401,10 @@
       "nextcloud_save_button": "Uložiť",
       "nextcloud_test_button": "Otestovať pripojenie",
       "nextcloud_test_success": "Pripojenie úspešné"
+    },
+    "system": {
+      "page_title": "Systém",
+      "heading": "Systém"
     },
     "restore": {
       "title": "Obnoviť zo zálohy",

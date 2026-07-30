@@ -25,6 +25,7 @@
     "configuration": "Configuration",
     "administration": "Administration",
     "users": "Users",
+    "system": "System",
     "settings": "Settings",
     "logout": "Log Out",
     "menu_open_aria": "Open Menu",
@@ -400,6 +401,10 @@
       "nextcloud_save_button": "Save",
       "nextcloud_test_button": "Test connection",
       "nextcloud_test_success": "Connection successful"
+    },
+    "system": {
+      "page_title": "System",
+      "heading": "System"
     },
     "restore": {
       "title": "Restore from backup",
