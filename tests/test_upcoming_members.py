@@ -161,6 +161,32 @@ async def test_pending_only_view_shows_upcoming_members_sorted_by_created_at(cli
     assert text.index("Applicant, Second") < text.index("Applicant, First")
 
 
+async def test_pending_only_view_includes_blank_member_since(client, admin_user):
+    """A member entered with no confirmed start date at all (neither
+    member_since nor member_until set) is just as much "not actually a
+    member yet" as one with a future member_since -- reported live:
+    Sophia Möbius had blank dates and didn't show up in the pending
+    view before this fix. Deliberately does NOT change
+    active_member_filter() itself -- she must stay "active" everywhere
+    else (invoices, meetings, etc.), same as any other legacy member
+    with no member_since ever set."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+
+    async with AsyncSessionLocal() as session:
+        blank_dates_member = Member(first_name="Sophia", last_name="Möbius", member_since=None, member_until=None)
+        session.add(blank_dates_member)
+        await session.commit()
+
+    response = await client.get("/members/?pending_only=true")
+    assert response.status_code == 200
+    assert "Möbius, Sophia" in response.text
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Member.last_name).where(active_member_filter()))
+        last_names = {row[0] for row in result.all()}
+    assert "Möbius" in last_names, "active_member_filter() itself must be unaffected -- still active everywhere else"
+
+
 async def test_pending_only_view_empty_state(client, admin_user):
     await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
 

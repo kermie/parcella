@@ -59,14 +59,22 @@ async def members_list(
 
     if pending_only:
         # Issue #167 follow-up: a dedicated view for pending
-        # applications (member_since in the future -- excluded from
-        # active_member_filter() everywhere else). Sorted oldest-applied
-        # first (by created_at, the "entered into the system"
-        # timestamp the reporter asked for), since that's the order a
-        # board actually works through a queue of applications in --
-        # takes precedence over include_inactive, which is meaningless
-        # here (a pending application is never "inactive/expired").
-        query = query.where(Member.deleted_at.is_(None), Member.member_since > date.today())
+        # applications -- member_since in the future, OR blank (a
+        # member entered into the system with no confirmed start date
+        # at all is just as much "not actually a member yet" as one
+        # with a future date, per the reporter). Deliberately narrower
+        # than active_member_filter(), which still treats a blank
+        # member_since as already-started everywhere else (invoices,
+        # meetings, dashboard counts, etc.) -- only this review view
+        # widens to catch incomplete records too. Sorted oldest-entered
+        # first (by created_at, the "entered into the system" timestamp
+        # the reporter asked for), since that's the order a board
+        # actually works through a queue of applications in -- takes
+        # precedence over include_inactive, which is meaningless here.
+        query = query.where(
+            Member.deleted_at.is_(None),
+            (Member.member_since.is_(None)) | (Member.member_since > date.today()),
+        )
         query = query.order_by(Member.created_at.asc())
     else:
         query = query.order_by(Member.last_name, Member.first_name)
