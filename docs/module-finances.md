@@ -56,7 +56,15 @@ for the full history of why it ended up this shape:
 - **Plot-scoped** (`FIXED_PER_PARCEL`, `PER_SQM`, `COMMUNAL_AREA_SHARE`,
   `PUBLIC_BURDENS`): `applies_to_all_parcels` (default `True`) with
   `parcel_scopes` listing specific parcels when `False`. Billed one
-  `Invoice` per occupied parcel with an invoice-address resident.
+  `Invoice` per occupied parcel with an invoice-address resident,
+  regardless of the parcel's status (issue #166: a TERMINATED plot with
+  a current invoice-address resident -- typically a new tenant who's
+  taken over before the status gets flipped back to ACTIVE -- must
+  still be billed; only DELETED parcels are excluded). This does *not*
+  reopen [ADR 0035](./ADR/0035-invoice-address-flag-on-member-parcel-assignments.md)'s
+  constraint that a former tenant can never hold `is_invoice_address` --
+  a terminated *lease* still means the departed tenant is never billed,
+  only that a terminated *parcel* isn't excluded outright.
 - **Person-scoped** (`FIXED_PER_PERSON` only): `applies_to_all_members`
   (default `True`) with `member_scopes` listing specific members when
   `False`. Billed one `Invoice` per targeted member, **regardless of

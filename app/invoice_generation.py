@@ -236,10 +236,20 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
     region = await load_current_region(db)
     language = await load_current_language(db)
 
+    # Issue #166: a parcel whose lease was terminated must still be
+    # billable as long as it has a current invoice-address resident
+    # (typically a new tenant who's taken over the plot but whose admin
+    # hasn't flipped the status back to ACTIVE yet) -- only DELETED
+    # (a genuine soft-delete) is excluded, matching the "!= DELETED"
+    # convention already used everywhere else real parcels are counted
+    # (app/area_utils.py, app/routers/api_stats.py, app/main.py's
+    # dashboard stats). _parcel_is_billable() below still requires a
+    # current (non-former) invoice-address resident, so a terminated
+    # parcel with no such resident is correctly skipped, not billed.
     parcels_result = await db.execute(
         select(Parcel)
         .options(selectinload(Parcel.member_assignments).selectinload(MemberParcel.member))
-        .where(Parcel.status == ParcelStatus.ACTIVE)
+        .where(Parcel.status != ParcelStatus.DELETED)
         .order_by(Parcel.plot_number)
     )
     all_parcels = list(parcels_result.scalars().all())
