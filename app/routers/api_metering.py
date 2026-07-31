@@ -13,14 +13,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import MeteringPoint, MeteringPointType, MeteringMedium, Meter, MeterReading, User
+from app.models import (
+    MeteringPoint, MeteringPointType, MeteringMedium, Meter, MeterReading, User,
+    MeteringPriceConfiguration,
+)
 from app.api_auth import get_current_api_user, require_write_access
 from app.module_flags import require_module
 from app.meter_utils import calculate_consumption, check_monotonicity, format_monotonicity_error_de, total_consumption_for_type
 from app.schemas import (
     MeteringPointOut, MeteringPointDetailOut, MeteringPointCreate, MeteringPointUpdate,
     MeterOut, MeterSwapRequest, MeterReadingCreate, MeterReadingOut,
-    ConsumptionRowOut,
+    ConsumptionRowOut, MeteringPriceConfigurationOut, MeteringPriceConfigurationCreate,
 )
 
 
@@ -273,5 +276,70 @@ def create_metering_api_router(
                 consumption=consumption,
             ))
         return rows
+
+    # -----------------------------------------------------------------
+    # Price configuration -- see app/routers/metering.py's HTML
+    # counterpart and app/routers/api_work_hours.py's identically-shaped
+    # configuration endpoints.
+    # -----------------------------------------------------------------
+
+    @router.get("/configuration", response_model=List[MeteringPriceConfigurationOut], summary="List price configurations")
+    async def price_configurations_list(
+        db: AsyncSession = Depends(get_db),
+        user: User = Depends(get_current_api_user),
+    ):
+        result = await db.execute(
+            select(MeteringPriceConfiguration)
+            .where(MeteringPriceConfiguration.medium == medium)
+            .order_by(MeteringPriceConfiguration.year.desc())
+        )
+        return result.scalars().all()
+
+    @router.get("/configuration/{year}", response_model=MeteringPriceConfigurationOut, summary="Retrieve price configuration for a year")
+    async def price_configuration_get(
+        year: int,
+        db: AsyncSession = Depends(get_db),
+        user: User = Depends(get_current_api_user),
+    ):
+        result = await db.execute(
+            select(MeteringPriceConfiguration).where(
+                MeteringPriceConfiguration.medium == medium, MeteringPriceConfiguration.year == year,
+            )
+        )
+        config = result.scalar_one_or_none()
+        if not config:
+            raise HTTPException(status_code=404, detail=f"No price configuration for {year}")
+        return config
+
+    @router.put(
+        "/configuration/{year}", response_model=MeteringPriceConfigurationOut,
+        summary="Set price configuration (upsert)",
+        description="Creates the price configuration for a year or updates it if one already exists.",
+    )
+    async def price_configuration_set(
+        year: int,
+        data: MeteringPriceConfigurationCreate,
+        db: AsyncSession = Depends(get_db),
+        user: User = Depends(require_write_access),
+    ):
+        result = await db.execute(
+            select(MeteringPriceConfiguration).where(
+                MeteringPriceConfiguration.medium == medium, MeteringPriceConfiguration.year == year,
+            )
+        )
+        config = result.scalar_one_or_none()
+
+        if config:
+            config.price_per_unit = data.price_per_unit
+            config.note = data.note
+        else:
+            config = MeteringPriceConfiguration(
+                medium=medium, year=year, price_per_unit=data.price_per_unit, note=data.note,
+            )
+            db.add(config)
+
+        await db.commit()
+        await db.refresh(config)
+        return config
 
     return router

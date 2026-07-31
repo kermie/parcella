@@ -34,8 +34,8 @@ def _assert_toggle_wrap_uses_block_not_flex(html):
         "existing-row applies-to toggle-wrap must use 'block' display, not 'flex' "
         "(issue #84/#79: 'flex' breaks the form-switch checkbox-to-label spacing)"
     )
-    assert "parcelToggleWrap.style.display = (isPerson || isScopeAutomatic) ? 'none' : 'block';" in html
-    assert "memberToggleWrap.style.display = (isPerson && !isScopeAutomatic) ? 'block' : 'none';" in html
+    assert "parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';" in html
+    assert "memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';" in html
 
 
 async def test_item_template_list_toggle_wrap_spacing(client, admin_user):

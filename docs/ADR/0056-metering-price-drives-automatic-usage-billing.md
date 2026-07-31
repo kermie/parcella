@@ -74,3 +74,19 @@ bypass (a parcel with no active meter of that medium simply has no
 consumption to bill, so the manual parcel-scope picker stays hidden)
 was correct and is unchanged -- only the price half of "full parity
 with insurance/work-hours" was the misread.
+
+**Update (2026-07-31, later same day): the price-sourcing half was
+restored.** After seeing manual per-invoice pricing live, the user
+clarified they actually wanted the original per-year config back --
+the config-page idea was "brilliant" and should stay as it was.
+`MeteringPriceConfiguration` (model, migration, `/water/configuration`
++`/electricity/configuration` CRUD, REST endpoints) was re-added
+exactly as originally shipped; `item_quantity_and_price` reads price
+from it again for `WATER_USAGE`/`ELECTRICITY_USAGE`, and
+`finances.py`'s `_AUTOMATIC_PRICING_MODES` includes both modes again,
+so the unit-price input is hidden on both item forms once more, same
+as insurance/work-hours. Net effect after both updates: back to this
+ADR's original design exactly as first written above -- the
+intermediate revert is kept in history for anyone wondering why the
+migration numbering has a drop-then-recreate pair (0061 create, 0064
+drop, 0065 recreate) rather than one straight line.

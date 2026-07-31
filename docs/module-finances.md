@@ -120,16 +120,13 @@ Deliberately two-phase and one-way:
   instead.
 
 Per-parcel quantity/price resolution (`item_quantity_and_price`) pulls
-quantity from other modules where it can, but not always the price:
+from other modules rather than storing its own numbers:
 `WATER_USAGE`/`ELECTRICITY_USAGE` read consumption via
-`app/meter_utils.py`'s `calculate_consumption()` but still need a
-manually-entered `unit_price` -- a club's utility tariff changes from
-year to year, so the price is typed fresh on each invoice run rather
-than sourced from a stored setting (an earlier attempt at storing it
-centrally per year/medium was reverted, see
-[ADR 0056](./ADR/0056-metering-price-drives-automatic-usage-billing.md)'s
-Update note). `INSURANCE_COST` ignores `unit_price` entirely and is
-handled outside
+`app/meter_utils.py`'s `calculate_consumption()` and price per unit via
+`MeteringPriceConfiguration` (per medium/year -- see
+[module-metering.md](./module-metering.md)), ignoring `unit_price`
+entirely, same as the two modes below. `INSURANCE_COST` ignores
+`unit_price` entirely and is handled outside
 `item_quantity_and_price` altogether: instead of one combined amount,
 `app/insurance_utils.py`'s `insurance_cost_line_items()` (issue #93)
 returns one `(label, amount)` pair per component actually owed --
