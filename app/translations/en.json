@@ -580,6 +580,7 @@
       "col_status": "Status",
       "status_active": "active",
       "status_inactive": "inactive",
+      "status_pending": "pending",
       "inactive_since": "since {date}",
       "empty_search": "No members found for \"{query}\"",
       "empty_none": "No members yet.",

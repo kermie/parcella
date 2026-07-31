@@ -580,6 +580,7 @@
       "col_status": "Status",
       "status_active": "actief",
       "status_inactive": "inactief",
+      "status_pending": "in behandeling",
       "inactive_since": "sinds {date}",
       "empty_search": "Geen leden gevonden voor \"{query}\"",
       "empty_none": "Nog geen leden.",

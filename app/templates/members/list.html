@@ -122,7 +122,14 @@
                             {% endfor %}
                         </td>
                         <td>
-                            {% if m.is_active %}
+                            {% if m.member_since is none and m.is_active %}
+                            <!-- Issue #170: is_active is True (blank member_since still
+                                 counts as active everywhere -- invoices, meetings, dashboard
+                                 counts, per issue #167) but showing "active" here for a
+                                 record with no confirmed start date at all is misleading --
+                                 display-only distinction, doesn't touch is_active itself. -->
+                            <span class="badge badge-ausstehend">{{ t('members.list.status_pending') }}</span>
+                            {% elif m.is_active %}
                             <span class="badge badge-aktiv">{{ t('members.list.status_active') }}</span>
                             {% else %}
                             <span class="badge badge-gekuendigt">{{ t('members.list.status_inactive') }}</span>

@@ -580,6 +580,7 @@
       "col_status": "Statut",
       "status_active": "actif",
       "status_inactive": "inactif",
+      "status_pending": "en attente",
       "inactive_since": "depuis {date}",
       "empty_search": "Aucun membre trouvé pour \"{query}\"",
       "empty_none": "Pas encore de membres.",

@@ -580,6 +580,7 @@
       "col_status": "Stav",
       "status_active": "aktivní",
       "status_inactive": "neaktivní",
+      "status_pending": "čekající",
       "inactive_since": "od {date}",
       "empty_search": "Pro \"{query}\" nebyli nalezeni žádní členové",
       "empty_none": "Zatím žádní členové.",

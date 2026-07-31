@@ -580,6 +580,7 @@
       "col_status": "Status",
       "status_active": "aktywny",
       "status_inactive": "nieaktywny",
+      "status_pending": "oczekujący",
       "inactive_since": "od {date}",
       "empty_search": "Nie znaleziono członków dla „{query}”",
       "empty_none": "Nie utworzono jeszcze żadnych członków.",
