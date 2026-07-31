@@ -475,23 +475,17 @@ document.addEventListener('DOMContentLoaded', function () {
             var isInsuranceAuto = select.value === 'insurance_cost';
             var isWaterAuto = select.value === 'water_usage';
             var isElectricityAuto = select.value === 'electricity_usage';
-            // Scope stays automatic for water/electricity too (no meter
-            // = nothing to bill), but their PRICE is a manually-typed
-            // field entered fresh each invoice run -- a tariff changes
-            // year to year, unlike insurance/work-hours' fully computed
-            // amount. See docs/ADR/0056's Update note.
-            var isScopeAutomatic = isWorkHoursAuto || isInsuranceAuto || isWaterAuto || isElectricityAuto;
-            var isPriceAutomatic = isWorkHoursAuto || isInsuranceAuto;
-            parcelToggleWrap.style.display = (isPerson || isScopeAutomatic) ? 'none' : 'block';
-            memberToggleWrap.style.display = (isPerson && !isScopeAutomatic) ? 'block' : 'none';
+            var isAutomatic = isWorkHoursAuto || isInsuranceAuto || isWaterAuto || isElectricityAuto;
+            parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
+            memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
             if (scopeAutoNote) scopeAutoNote.style.display = isWorkHoursAuto ? 'block' : 'none';
             if (scopeAutoNoteInsurance) scopeAutoNoteInsurance.style.display = isInsuranceAuto ? 'block' : 'none';
             if (scopeAutoNoteWater) scopeAutoNoteWater.style.display = isWaterAuto ? 'block' : 'none';
             if (scopeAutoNoteElectricity) scopeAutoNoteElectricity.style.display = isElectricityAuto ? 'block' : 'none';
-            parcelPicker.style.display = (!isPerson && !isScopeAutomatic && !parcelToggle.checked) ? 'block' : 'none';
-            memberPicker.style.display = (isPerson && !isScopeAutomatic && !memberToggle.checked) ? 'block' : 'none';
-            if (unitPriceInput) unitPriceInput.style.display = isPriceAutomatic ? 'none' : '';
-            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isPriceAutomatic ? 'block' : 'none';
+            parcelPicker.style.display = (!isPerson && !isAutomatic && !parcelToggle.checked) ? 'block' : 'none';
+            memberPicker.style.display = (isPerson && !isAutomatic && !memberToggle.checked) ? 'block' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         parcelToggle.addEventListener('change', sync);
@@ -524,21 +518,20 @@ document.addEventListener('DOMContentLoaded', function () {
             var isInsuranceAuto = select.value === 'insurance_cost';
             var isWaterAuto = select.value === 'water_usage';
             var isElectricityAuto = select.value === 'electricity_usage';
-            var isScopeAutomatic = isWorkHoursAuto || isInsuranceAuto || isWaterAuto || isElectricityAuto;
-            var isPriceAutomatic = isWorkHoursAuto || isInsuranceAuto;
-            parcelToggleWrap.style.display = (isPerson || isScopeAutomatic) ? 'none' : 'block';
-            memberToggleWrap.style.display = (isPerson && !isScopeAutomatic) ? 'block' : 'none';
+            var isAutomatic = isWorkHoursAuto || isInsuranceAuto || isWaterAuto || isElectricityAuto;
+            parcelToggleWrap.style.display = (isPerson || isAutomatic) ? 'none' : 'block';
+            memberToggleWrap.style.display = (isPerson && !isAutomatic) ? 'block' : 'none';
             if (scopeAutoNote) scopeAutoNote.style.display = isWorkHoursAuto ? 'block' : 'none';
             if (scopeAutoNoteInsurance) scopeAutoNoteInsurance.style.display = isInsuranceAuto ? 'block' : 'none';
             if (scopeAutoNoteWater) scopeAutoNoteWater.style.display = isWaterAuto ? 'block' : 'none';
             if (scopeAutoNoteElectricity) scopeAutoNoteElectricity.style.display = isElectricityAuto ? 'block' : 'none';
-            var showParcelPicker = !isPerson && !isScopeAutomatic && parcelToggle && !parcelToggle.checked;
-            var showMemberPicker = isPerson && !isScopeAutomatic && memberToggle && !memberToggle.checked;
+            var showParcelPicker = !isPerson && !isAutomatic && parcelToggle && !parcelToggle.checked;
+            var showMemberPicker = isPerson && !isAutomatic && memberToggle && !memberToggle.checked;
             parcelPickerBlock.style.display = showParcelPicker ? 'block' : 'none';
             memberPickerBlock.style.display = showMemberPicker ? 'block' : 'none';
             pickerRow.style.display = (showParcelPicker || showMemberPicker) ? 'table-row' : 'none';
-            if (unitPriceInput) unitPriceInput.style.display = isPriceAutomatic ? 'none' : '';
-            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isPriceAutomatic ? 'block' : 'none';
+            if (unitPriceInput) unitPriceInput.style.display = isAutomatic ? 'none' : '';
+            if (unitPriceAutoNote) unitPriceAutoNote.style.display = isAutomatic ? 'block' : 'none';
         }
         select.addEventListener('change', sync);
         if (parcelToggle) parcelToggle.addEventListener('change', sync);

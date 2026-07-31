@@ -1099,6 +1099,29 @@
       "no_reading": "žiadny odpočet",
       "no_entries": "Žiadne záznamy"
     },
+    "configuration": {
+      "title_suffix": " konfigurácia ceny",
+      "create_update_card_title": "Nová/aktualizovaná cena",
+      "year_label": "Rok",
+      "price_label": "Cena za {unit}",
+      "note_label": "Poznámka",
+      "note_placeholder": "napr. zmena tarify dodávateľa",
+      "save_button": "Uložiť",
+      "history_card_title": "História cien",
+      "col_year": "Rok",
+      "col_price": "Cena",
+      "col_note": "Poznámka",
+      "delete_confirm": "Naozaj vymazať cenu za {year}?",
+      "no_config": "Zatiaľ nie je nastavená žiadna cena."
+    },
+    "configuration_form": {
+      "title_suffix": " konfigurácia ceny {year}",
+      "card_title": "Upraviť cenu",
+      "year_label": "Rok",
+      "price_label": "Cena za {unit}",
+      "note_label": "Poznámka",
+      "save_button": "Uložiť"
+    },
     "errors": {
       "point_not_found": "Merací bod pre {medium} nebol nájdený",
       "invalid_reading": "Neplatný odpočet merača",
@@ -1106,7 +1129,9 @@
       "overall_plausibility_evaluation": "Rozdelená spotreba ({total} {unit}) presahuje spotrebu hlavného merača ({main} {unit}).",
       "reading_below_previous": "Odpočet merača ({new_value}) nesmie byť menší ako predchádzajúci odpočet ({previous_value}) toho istého merača.",
       "reading_above_later": "Odpočet merača ({new_value}) nesmie byť väčší ako už zaznamenaný neskorší odpočet ({later_value}) toho istého merača.",
-      "no_active_meter": "Pre tento merací bod neexistuje aktívny merač"
+      "no_active_meter": "Pre tento merací bod neexistuje aktívny merač",
+      "configuration_not_found": "Konfigurácia ceny nebola nájdená",
+      "configuration_year_exists": "Pre rok {year} už existuje iná konfigurácia ceny."
     }
   },
   "work_hours": {

@@ -1099,6 +1099,29 @@
       "no_reading": "no reading",
       "no_entries": "No entries"
     },
+    "configuration": {
+      "title_suffix": " price configuration",
+      "create_update_card_title": "New/update price",
+      "year_label": "Year",
+      "price_label": "Price per {unit}",
+      "note_label": "Note",
+      "note_placeholder": "e.g. utility provider rate change",
+      "save_button": "Save",
+      "history_card_title": "Price history",
+      "col_year": "Year",
+      "col_price": "Price",
+      "col_note": "Note",
+      "delete_confirm": "Really delete the price for {year}?",
+      "no_config": "No price configured yet."
+    },
+    "configuration_form": {
+      "title_suffix": " price configuration {year}",
+      "card_title": "Edit price",
+      "year_label": "Year",
+      "price_label": "Price per {unit}",
+      "note_label": "Note",
+      "save_button": "Save"
+    },
     "errors": {
       "point_not_found": "{medium} metering point not found",
       "invalid_reading": "Invalid meter reading",
@@ -1106,7 +1129,9 @@
       "overall_plausibility_evaluation": "Distributed consumption ({total} {unit}) exceeds main meter consumption ({main} {unit}).",
       "reading_below_previous": "The meter reading ({new_value}) must not be smaller than the previous reading ({previous_value}) of the same meter.",
       "reading_above_later": "The meter reading ({new_value}) must not be larger than the already-recorded later reading ({later_value}) of the same meter.",
-      "no_active_meter": "No active meter for this metering point"
+      "no_active_meter": "No active meter for this metering point",
+      "configuration_not_found": "Price configuration not found",
+      "configuration_year_exists": "A different price configuration already exists for {year}."
     }
   },
   "work_hours": {

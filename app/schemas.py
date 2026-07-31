@@ -458,6 +458,22 @@ class MeteringPointDetailOut(MeteringPointOut):
     former_meters: List[MeterOut] = []
 
 
+class MeteringPriceConfigurationBase(BaseModel):
+    medium: str = Field(..., description="WATER or ELECTRICITY")
+    year: int
+    price_per_unit: Decimal
+    note: Optional[str] = None
+
+
+class MeteringPriceConfigurationCreate(MeteringPriceConfigurationBase):
+    pass
+
+
+class MeteringPriceConfigurationOut(MeteringPriceConfigurationBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+
+
 class MeterSwapRequest(BaseModel):
     new_number: str
     removed_at: date
