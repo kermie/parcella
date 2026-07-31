@@ -1952,7 +1952,8 @@
       "electricity_usage": "Consommation d'électricité (depuis le module)",
       "insurance_cost": "Coût d'assurance (depuis le module)",
       "communal_area_share": "Part du bail de la surface commune",
-      "work_hours_shortfall": "Déficit d'heures de travail (depuis le module)"
+      "work_hours_shortfall": "Déficit d'heures de travail (depuis le module)",
+      "public_burdens": "Charges publiques (surface propre + part de la surface commune)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Cette série de factures est déjà finalisée et ne peut plus être supprimée.",

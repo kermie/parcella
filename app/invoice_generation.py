@@ -274,12 +274,14 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
     # reconstructs the whole communal area -- the club only enters the
     # price per sqm by hand. The denominator is per-definition (not
     # global) since two communal-share items could theoretically be
-    # scoped to different subsets of parcels.
+    # scoped to different subsets of parcels. PUBLIC_BURDENS (issue
+    # #163) shares this exact same denominator: it also bills a share
+    # of Area B, on top of the parcel's own leased area.
     area_b_sqm = await compute_area_b_sqm(db)
     communal_share_denominators: Dict[str, int] = {
         d.id: sum(1 for p in all_parcels if _parcel_in_scope(d, p) and _parcel_is_billable(p))
         for d in run.item_definitions
-        if d.pricing_mode == InvoicePricingMode.COMMUNAL_AREA_SHARE
+        if d.pricing_mode in (InvoicePricingMode.COMMUNAL_AREA_SHARE, InvoicePricingMode.PUBLIC_BURDENS)
     }
 
     # "Charge those who not completely or never used their work
@@ -339,6 +341,24 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             # rendering never see the raw repeating fraction.
             share = Decimal(str(area_b_sqm)) / Decimal(denom)
             return share.quantize(Decimal("0.1")), Decimal(str(definition.unit_price))
+        if mode == InvoicePricingMode.PUBLIC_BURDENS:
+            # "Öffentliche Lasten" (issue #163): billed at one rate per
+            # sqm against the parcel's own leased area PLUS its share
+            # of Area B -- unlike COMMUNAL_AREA_SHARE, the own-area
+            # component is always well-defined, so a missing/zero Area
+            # B configuration degrades to a 0 sqm communal share rather
+            # than skipping the item entirely (confirmed with the
+            # reporter: the own-area charge must never silently
+            # disappear over an unrelated club setting).
+            if definition.unit_price is None or parcel.area_sqm is None:
+                return None, None
+            denom = communal_share_denominators.get(definition.id, 0)
+            if denom > 0 and area_b_sqm is not None and area_b_sqm > 0:
+                communal_share = (Decimal(str(area_b_sqm)) / Decimal(denom)).quantize(Decimal("0.1"))
+            else:
+                communal_share = Decimal("0")
+            quantity = Decimal(str(parcel.area_sqm)) + communal_share
+            return quantity, Decimal(str(definition.unit_price))
         if mode == InvoicePricingMode.WORK_HOURS_SHORTFALL:
             amount = work_hours_by_parcel.get(parcel.id)
             if amount is None:

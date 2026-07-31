@@ -53,10 +53,10 @@ This is the module's central design decision -- see
 [ADR 0042](./ADR/0042-invoice-item-targeting-plot-scoped-vs-person-scoped.md)
 for the full history of why it ended up this shape:
 
-- **Plot-scoped** (`FIXED_PER_PARCEL`, `PER_SQM`): `applies_to_all_parcels`
-  (default `True`) with `parcel_scopes` listing specific parcels when
-  `False`. Billed one `Invoice` per occupied parcel with an
-  invoice-address resident.
+- **Plot-scoped** (`FIXED_PER_PARCEL`, `PER_SQM`, `COMMUNAL_AREA_SHARE`,
+  `PUBLIC_BURDENS`): `applies_to_all_parcels` (default `True`) with
+  `parcel_scopes` listing specific parcels when `False`. Billed one
+  `Invoice` per occupied parcel with an invoice-address resident.
 - **Person-scoped** (`FIXED_PER_PERSON` only): `applies_to_all_members`
   (default `True`) with `member_scopes` listing specific members when
   `False`. Billed one `Invoice` per targeted member, **regardless of
@@ -142,6 +142,22 @@ gets two, +N additional persons adds a third). The labels come from
 `translate()` using the club's configured language (`ClubSetting
 "language"`), not the item definition's own name/description, since
 they're generated per parcel rather than typed once by an admin.
+
+`COMMUNAL_AREA_SHARE` (issue #82) bills Area B (communal, see
+`app/area_utils.py`) split evenly across however many parcels actually
+get billed for that specific item definition -- the denominator is
+per-definition, not global, since two communal-share items could be
+scoped to different parcel subsets. `PUBLIC_BURDENS` (issue #163)
+reuses that exact same per-definition denominator/split, but adds it
+**on top of** the parcel's own leased area (`PER_SQM`'s quantity) at
+one combined rate, rather than billing the communal share alone. The
+two modes deliberately diverge on missing-data behavior: if Area B
+isn't configured (or has no eligible parcels), `COMMUNAL_AREA_SHARE`
+bills nothing at all (its only component is the missing one), while
+`PUBLIC_BURDENS` still bills the parcel's own area with the communal
+share simply treated as 0 -- the own-area component is always
+well-defined and shouldn't silently vanish over an unrelated club
+setting.
 
 Invoice numbering (`invoice_number_format` / `invoice_number_start`
 `ClubSetting`s, issue #65) is club-configurable

@@ -1952,7 +1952,8 @@
       "electricity_usage": "Electricity usage (from module)",
       "insurance_cost": "Insurance cost (from module)",
       "communal_area_share": "Share of the communal area lease",
-      "work_hours_shortfall": "Work-hours shortfall (from module)"
+      "work_hours_shortfall": "Work-hours shortfall (from module)",
+      "public_burdens": "Public burdens (own area + communal area share)"
     },
     "errors": {
       "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",
