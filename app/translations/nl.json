@@ -2018,6 +2018,7 @@
       "label_amount": "Bedrag",
       "label_paid_on": "Betaald op",
       "label_note": "Notitie",
+      "label_account": "Rekening",
       "add_payment_button": "Betaling toevoegen",
       "delete_payment_confirm": "Deze betaling verwijderen?",
       "success_message": "Klaar."
@@ -2030,8 +2031,7 @@
       "stat_overdue": "Achterstallig",
       "outgoing_hint": "{n} factuurronde(s)",
       "coming_soon_hint": "Binnenkort beschikbaar",
-      "accounts_header": "Rekeningen",
-      "accounts_hint": "Binnenkort beschikbaar -- de rekeningen van uw vereniging verschijnen hier.",
+      "accounts_hint": "{n} rekening(en) gedefinieerd",
       "categories_hint": "{n} categorie(ën) gedefinieerd",
       "item_templates_hint": "{n} artikelsjabloon/sjablonen gedefinieerd",
       "reminders_hint": "{n} factu(u)r(en) achterstallig"
@@ -2091,6 +2091,30 @@
       "col_group": "Groep",
       "no_categories": "Nog geen categorieën -- voeg er hierboven een toe of importeer een CSV.",
       "delete_confirm": "Deze categorie verwijderen? Regels die deze gebruiken blijven werken, alleen zonder categorie."
+    },
+    "account_types": {
+      "bank": "Bank",
+      "cash": "Contant"
+    },
+    "account_list": {
+      "title": "Rekeningen",
+      "heading": "Rekeningen",
+      "saved": "Klaar.",
+      "new_header": "Nieuwe rekening",
+      "label_name": "Naam",
+      "label_type": "Type",
+      "label_number": "Rekeningnummer/IBAN",
+      "label_note": "Notitie",
+      "label_active": "Actief",
+      "button_create": "Rekening toevoegen",
+      "list_header": "Rekeningen",
+      "col_name": "Naam",
+      "col_type": "Type",
+      "col_number": "Rekeningnummer/IBAN",
+      "col_note": "Notitie",
+      "col_total_payments": "Geregistreerde betalingen",
+      "no_accounts": "Nog geen rekeningen -- voeg er hierboven een toe.",
+      "delete_confirm": "Deze rekening verwijderen? Betalingen die eraan gekoppeld zijn blijven werken, alleen zonder rekening."
     },
     "item_template_list": {
       "title": "Artikelcatalogus",

@@ -2018,6 +2018,7 @@
       "label_amount": "Kwota",
       "label_paid_on": "Zapłacono dnia",
       "label_note": "Notatka",
+      "label_account": "Konto",
       "add_payment_button": "Dodaj płatność",
       "delete_payment_confirm": "Usunąć tę płatność?",
       "success_message": "Gotowe."
@@ -2030,8 +2031,7 @@
       "stat_overdue": "Zaległe",
       "outgoing_hint": "{n} seria(e) faktur",
       "coming_soon_hint": "Wkrótce dostępne",
-      "accounts_header": "Konta",
-      "accounts_hint": "Wkrótce dostępne -- tutaj pojawią się konta Twojego stowarzyszenia.",
+      "accounts_hint": "{n} konto(a) zdefiniowane",
       "categories_hint": "zdefiniowano {n} kategorii",
       "item_templates_hint": "zdefiniowano {n} szablonów pozycji",
       "reminders_hint": "Zaległych faktur: {n}"
@@ -2091,6 +2091,30 @@
       "col_group": "Grupa",
       "no_categories": "Brak jeszcze kategorii -- dodaj powyżej lub zaimportuj plik CSV.",
       "delete_confirm": "Usunąć tę kategorię? Pozycje, które jej używają, nadal będą działać, tylko bez kategorii."
+    },
+    "account_types": {
+      "bank": "Bank",
+      "cash": "Gotówka"
+    },
+    "account_list": {
+      "title": "Konta",
+      "heading": "Konta",
+      "saved": "Gotowe.",
+      "new_header": "Nowe konto",
+      "label_name": "Nazwa",
+      "label_type": "Typ",
+      "label_number": "Numer konta/IBAN",
+      "label_note": "Notatka",
+      "label_active": "Aktywne",
+      "button_create": "Dodaj konto",
+      "list_header": "Konta",
+      "col_name": "Nazwa",
+      "col_type": "Typ",
+      "col_number": "Numer konta/IBAN",
+      "col_note": "Notatka",
+      "col_total_payments": "Zarejestrowane płatności",
+      "no_accounts": "Brak jeszcze kont -- dodaj jedno powyżej.",
+      "delete_confirm": "Usunąć to konto? Płatności powiązane z nim nadal będą działać, tylko bez konta."
     },
     "item_template_list": {
       "title": "Katalog pozycji",

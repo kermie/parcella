@@ -2018,6 +2018,7 @@
       "label_amount": "Montant",
       "label_paid_on": "Payé le",
       "label_note": "Remarque",
+      "label_account": "Compte",
       "add_payment_button": "Ajouter un paiement",
       "delete_payment_confirm": "Supprimer ce paiement ?",
       "success_message": "Fait."
@@ -2030,8 +2031,7 @@
       "stat_overdue": "En retard",
       "outgoing_hint": "{n} série(s) de factures",
       "coming_soon_hint": "Bientôt disponible",
-      "accounts_header": "Comptes",
-      "accounts_hint": "Bientôt disponible -- les comptes de votre association apparaîtront ici.",
+      "accounts_hint": "{n} compte(s) défini(s)",
       "categories_hint": "{n} catégorie(s) définie(s)",
       "item_templates_hint": "{n} modèle(s) d'article défini(s)",
       "reminders_hint": "{n} facture(s) en retard"
@@ -2091,6 +2091,30 @@
       "col_group": "Groupe",
       "no_categories": "Aucune catégorie pour le moment -- ajoutez-en une ci-dessus ou importez un CSV.",
       "delete_confirm": "Supprimer cette catégorie ? Les lignes qui l'utilisent continuent de fonctionner, simplement sans catégorie."
+    },
+    "account_types": {
+      "bank": "Banque",
+      "cash": "Espèces"
+    },
+    "account_list": {
+      "title": "Comptes",
+      "heading": "Comptes",
+      "saved": "Terminé.",
+      "new_header": "Nouveau compte",
+      "label_name": "Nom",
+      "label_type": "Type",
+      "label_number": "Numéro de compte/IBAN",
+      "label_note": "Remarque",
+      "label_active": "Actif",
+      "button_create": "Ajouter un compte",
+      "list_header": "Comptes",
+      "col_name": "Nom",
+      "col_type": "Type",
+      "col_number": "Numéro de compte/IBAN",
+      "col_note": "Remarque",
+      "col_total_payments": "Paiements enregistrés",
+      "no_accounts": "Aucun compte pour le moment -- ajoutez-en un ci-dessus.",
+      "delete_confirm": "Supprimer ce compte ? Les paiements qui lui sont associés continuent de fonctionner, simplement sans compte."
     },
     "item_template_list": {
       "title": "Catalogue d'articles",

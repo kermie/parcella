@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.account_list.title') }}{% endblock %}
+{% block page_title %}{{ t('finances.account_list.heading') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/finances/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.coming_soon.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+{% if request.query_params.get('success') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ t('finances.account_list.saved') }}
+</div>
+{% elif request.query_params.get('error') %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ request.query_params.get('error') }}
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+    {% if has_perm(request, 'finances', 'write') %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.account_list.new_header') }}</div>
+            <div class="card-body">
+                <form method="post" action="/finances/accounts" class="row g-2 align-items-end">
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_list.label_name') }}</label>
+                        <input type="text" name="name" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_list.label_type') }}</label>
+                        <select name="account_type" class="form-select form-select-sm">
+                            {% for account_type in account_types %}
+                            <option value="{{ account_type.value }}">{{ t('finances.account_types.' ~ account_type.value|lower) }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_list.label_number') }}</label>
+                        <input type="text" name="account_number" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_list.label_note') }}</label>
+                        <input type="text" name="note" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-sm-1 form-check form-switch mb-1">
+                        <input type="checkbox" name="is_active" class="form-check-input" id="new-account-active" checked>
+                        <label class="form-check-label" for="new-account-active" style="font-size: 0.8rem;">{{ t('finances.account_list.label_active') }}</label>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>{{ t('finances.account_list.button_create') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-bank me-2"></i>{{ t('finances.account_list.list_header') }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('finances.account_list.col_name') }}</th>
+                                <th>{{ t('finances.account_list.col_type') }}</th>
+                                <th>{{ t('finances.account_list.col_number') }}</th>
+                                <th>{{ t('finances.account_list.col_note') }}</th>
+                                <th>{{ t('finances.account_list.label_active') }}</th>
+                                <th class="text-end">{{ t('finances.account_list.col_total_payments') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if has_perm(request, 'finances', 'write') %}
+                            {% for account in accounts %}
+                            <form method="post" action="/finances/accounts/{{ account.id }}/edit" id="edit-account-{{ account.id }}"></form>
+                            {% endfor %}
+                            {% endif %}
+                            {% for account in accounts %}
+                            <tr>
+                                {% if has_perm(request, 'finances', 'write') %}
+                                <td>
+                                    <input type="text" name="name" form="edit-account-{{ account.id }}" class="form-control form-control-sm"
+                                           value="{{ account.name }}" required>
+                                </td>
+                                <td>
+                                    <select name="account_type" form="edit-account-{{ account.id }}" class="form-select form-select-sm">
+                                        {% for account_type in account_types %}
+                                        <option value="{{ account_type.value }}" {% if account.account_type == account_type %}selected{% endif %}>
+                                            {{ t('finances.account_types.' ~ account_type.value|lower) }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" name="account_number" form="edit-account-{{ account.id }}" class="form-control form-control-sm"
+                                           value="{{ account.account_number or '' }}">
+                                </td>
+                                <td>
+                                    <input type="text" name="note" form="edit-account-{{ account.id }}" class="form-control form-control-sm"
+                                           value="{{ account.note or '' }}">
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="is_active" form="edit-account-{{ account.id }}" class="form-check-input"
+                                           {% if account.is_active %}checked{% endif %}>
+                                </td>
+                                <td class="text-end">{{ (payment_sums.get(account.id, 0))|float|money }}</td>
+                                <td class="text-end text-nowrap">
+                                    <button type="submit" form="edit-account-{{ account.id }}" class="btn btn-sm btn-outline-primary border-0">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    {% if has_perm(request, 'finances', 'delete') %}
+                                    <form method="post" action="/finances/accounts/{{ account.id }}/delete" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('{{ t('finances.account_list.delete_confirm') }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                                {% else %}
+                                <td>{{ account.name }}</td>
+                                <td>{{ t('finances.account_types.' ~ account.account_type.value|lower) }}</td>
+                                <td>{{ account.account_number or '' }}</td>
+                                <td>{{ account.note or '' }}</td>
+                                <td>{% if account.is_active %}<i class="bi bi-check-lg"></i>{% endif %}</td>
+                                <td class="text-end">{{ (payment_sums.get(account.id, 0))|float|money }}</td>
+                                <td></td>
+                                {% endif %}
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-3">{{ t('finances.account_list.no_accounts') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

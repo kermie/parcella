@@ -2018,6 +2018,7 @@
       "label_amount": "Betrag",
       "label_paid_on": "Bezahlt am",
       "label_note": "Notiz",
+      "label_account": "Konto",
       "add_payment_button": "Zahlung hinzufügen",
       "delete_payment_confirm": "Diese Zahlung löschen?",
       "success_message": "Erledigt."
@@ -2030,8 +2031,7 @@
       "stat_overdue": "Überfällig",
       "outgoing_hint": "{n} Rechnungslauf(e/äufe)",
       "coming_soon_hint": "Demnächst verfügbar",
-      "accounts_header": "Konten",
-      "accounts_hint": "Demnächst verfügbar -- hier erscheinen die Konten Ihres Vereins.",
+      "accounts_hint": "{n} Konto/Konten angelegt",
       "categories_hint": "{n} Kategorie(n) angelegt",
       "item_templates_hint": "{n} Artikelvorlage(n) angelegt",
       "reminders_hint": "{n} Rechnung(en) überfällig"
@@ -2091,6 +2091,30 @@
       "col_group": "Gruppe",
       "no_categories": "Noch keine Kategorien -- oben hinzufügen oder eine CSV importieren.",
       "delete_confirm": "Diese Kategorie löschen? Positionen, die sie verwenden, bleiben erhalten, nur ohne Kategorie."
+    },
+    "account_types": {
+      "bank": "Bank",
+      "cash": "Bar"
+    },
+    "account_list": {
+      "title": "Konten",
+      "heading": "Konten",
+      "saved": "Erledigt.",
+      "new_header": "Neues Konto",
+      "label_name": "Name",
+      "label_type": "Typ",
+      "label_number": "Kontonummer/IBAN",
+      "label_note": "Notiz",
+      "label_active": "Aktiv",
+      "button_create": "Konto hinzufügen",
+      "list_header": "Konten",
+      "col_name": "Name",
+      "col_type": "Typ",
+      "col_number": "Kontonummer/IBAN",
+      "col_note": "Notiz",
+      "col_total_payments": "Erfasste Zahlungen",
+      "no_accounts": "Noch keine Konten -- oben eines hinzufügen.",
+      "delete_confirm": "Dieses Konto löschen? Zahlungen, die darauf verweisen, bleiben erhalten, nur ohne Konto."
     },
     "item_template_list": {
       "title": "Artikelkatalog",
