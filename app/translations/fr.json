@@ -1099,29 +1099,6 @@
       "no_reading": "pas de relevé",
       "no_entries": "Aucune entrée"
     },
-    "configuration": {
-      "title_suffix": " configuration du prix",
-      "create_update_card_title": "Nouveau/mise à jour du prix",
-      "year_label": "Année",
-      "price_label": "Prix par {unit}",
-      "note_label": "Remarque",
-      "note_placeholder": "p. ex. changement de tarif du fournisseur",
-      "save_button": "Enregistrer",
-      "history_card_title": "Historique des prix",
-      "col_year": "Année",
-      "col_price": "Prix",
-      "col_note": "Remarque",
-      "delete_confirm": "Vraiment supprimer le prix pour {year} ?",
-      "no_config": "Aucun prix configuré pour l'instant."
-    },
-    "configuration_form": {
-      "title_suffix": " configuration du prix {year}",
-      "card_title": "Modifier le prix",
-      "year_label": "Année",
-      "price_label": "Prix par {unit}",
-      "note_label": "Remarque",
-      "save_button": "Enregistrer"
-    },
     "errors": {
       "point_not_found": "Point de mesure {medium} non trouvé",
       "invalid_reading": "Relevé de compteur invalide",
@@ -1129,9 +1106,7 @@
       "overall_plausibility_evaluation": "La consommation distribuée ({total} {unit}) dépasse la consommation du compteur principal ({main} {unit}).",
       "reading_below_previous": "Le relevé de compteur ({new_value}) ne doit pas être inférieur au relevé précédent ({previous_value}) du même compteur.",
       "reading_above_later": "Le relevé de compteur ({new_value}) ne doit pas être supérieur au relevé ultérieur déjà enregistré ({later_value}) du même compteur.",
-      "no_active_meter": "Aucun compteur actif pour ce point de mesure",
-      "configuration_not_found": "Configuration du prix non trouvée",
-      "configuration_year_exists": "Une autre configuration du prix existe déjà pour {year}."
+      "no_active_meter": "Aucun compteur actif pour ce point de mesure"
     }
   },
   "work_hours": {

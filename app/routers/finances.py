@@ -75,13 +75,15 @@ def _parse_decimal(value: str) -> Optional[Decimal]:
 
 # Pricing modes computed entirely from another module -- unit_price is
 # never stored for these (INSURANCE_COST/WORK_HOURS_SHORTFALL pull
-# their amount from the insurance/work-hours modules;
-# WATER_USAGE/ELECTRICITY_USAGE pull their price from
-# MeteringPriceConfiguration, per medium/year -- see
-# app/invoice_generation.py's item_quantity_and_price).
+# their amount from the insurance/work-hours modules). WATER_USAGE/
+# ELECTRICITY_USAGE deliberately stay OUT of this set: their quantity
+# is automatic (metering module), but the price per unit is still a
+# manually-typed field, entered fresh on each invoice run -- a club's
+# utility tariff changes year to year, so there's no single "current"
+# price to store centrally (see app/invoice_generation.py's
+# item_quantity_and_price and its docstring for the reverted attempt).
 _AUTOMATIC_PRICING_MODES = (
     InvoicePricingMode.INSURANCE_COST, InvoicePricingMode.WORK_HOURS_SHORTFALL,
-    InvoicePricingMode.WATER_USAGE, InvoicePricingMode.ELECTRICITY_USAGE,
 )
 
 
