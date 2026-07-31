@@ -662,7 +662,10 @@
       "label_headline": "Kop",
       "headline_hint": "Wordt bovenaan de PDF getoond. Vrij aan te passen.",
       "generate_button": "PDF genereren",
-      "cancel_button": "Annuleren"
+      "cancel_button": "Annuleren",
+      "col_parcel": "Perceel",
+      "col_name": "Naam",
+      "col_signature": "Handtekening"
     }
   },
   "parcels": {
@@ -1336,6 +1339,13 @@
       "manage_tasks_link": "Taken beheren",
       "no_tasks": "Voor deze sessie zijn nog geen taken ingepland.",
       "attendee_sheet_link": "Deelnemerslijst"
+    },
+    "attendee_sheet": {
+      "col_parcel": "Perceel",
+      "col_member": "Lid",
+      "col_hours": "Uren",
+      "col_tasks": "Toegewezen taken",
+      "col_signature": "Handtekening"
     },
     "session_form": {
       "title_edit": "Sessie bewerken",

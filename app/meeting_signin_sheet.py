@@ -18,6 +18,7 @@ from typing import List, Optional, Tuple
 
 from weasyprint import HTML
 
+from app.i18n import translate
 from app.pdf_chrome import wrap_document, org_footer_html, OrgFooterContext
 
 EXTRA_CSS = """
@@ -39,7 +40,7 @@ class ParcelGroup:
     member_names: List[str]
 
 
-def _body_html(headline: str, groups: List[ParcelGroup]) -> str:
+def _body_html(headline: str, groups: List[ParcelGroup], language: str) -> str:
     rows_html = []
     for group in groups:
         for row_index, name in enumerate(group.member_names):
@@ -60,9 +61,9 @@ def _body_html(headline: str, groups: List[ParcelGroup]) -> str:
     <table>
         <thead>
             <tr>
-                <th>Parcel</th>
-                <th>Name</th>
-                <th>Signature</th>
+                <th>{translate("members.signin_sheet.col_parcel", language)}</th>
+                <th>{translate("members.signin_sheet.col_name", language)}</th>
+                <th>{translate("members.signin_sheet.col_signature", language)}</th>
             </tr>
         </thead>
         <tbody>
@@ -82,7 +83,7 @@ def render_meeting_signin_sheet_pdf(
     caller's responsibility."""
     groups = [ParcelGroup(plot_number=p, member_names=names) for p, names in parcel_members]
     html_doc = wrap_document(
-        _body_html(headline, groups),
+        _body_html(headline, groups, language),
         footer_context.club_name, logo_path, org_footer_html(footer_context, language), language,
         extra_css=EXTRA_CSS,
     )

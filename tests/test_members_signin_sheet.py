@@ -146,3 +146,26 @@ async def test_signin_sheet_blank_headline_falls_back_to_default(client, admin_u
     assert response.status_code == 200
     text = _pdf_text(response.content)
     assert "General meeting on" in text
+
+
+async def test_signin_sheet_table_headers_follow_configured_language(client, admin_user):
+    """Issue #165: the "Parcel"/"Name"/"Signature" table headers were
+    hardcoded English literals in app/meeting_signin_sheet.py, never
+    routed through translate() -- unlike every other string in the PDF,
+    which already correctly followed the club's configured language."""
+    await web_login(client, "admin@example.com")
+
+    from app.database import AsyncSessionLocal
+    from app.models import ClubSetting
+
+    async with AsyncSessionLocal() as session:
+        session.add(ClubSetting(key="language", value="de", description="test"))
+        await _create_resident(session, plot_number="01", first_name="Anna", last_name="Muster")
+        await session.commit()
+
+    response = await client.post("/members/signin-sheet", data={"headline": "Test"})
+    assert response.status_code == 200
+    text = _pdf_text(response.content).upper()
+    assert "PARZELLE" in text
+    assert "UNTERSCHRIFT" in text
+    assert "SIGNATURE" not in text

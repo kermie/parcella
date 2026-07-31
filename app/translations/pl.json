@@ -662,7 +662,10 @@
       "label_headline": "Nagłówek",
       "headline_hint": "Wyświetlany na górze pliku PDF. Można go dowolnie edytować.",
       "generate_button": "Generuj PDF",
-      "cancel_button": "Anuluj"
+      "cancel_button": "Anuluj",
+      "col_parcel": "Działka",
+      "col_name": "Imię i nazwisko",
+      "col_signature": "Podpis"
     }
   },
   "parcels": {
@@ -1336,6 +1339,13 @@
       "manage_tasks_link": "Zarządzaj zadaniami",
       "no_tasks": "Dla tego wpisu nie zaplanowano jeszcze żadnych zadań.",
       "attendee_sheet_link": "Lista uczestników"
+    },
+    "attendee_sheet": {
+      "col_parcel": "Działka",
+      "col_member": "Członek",
+      "col_hours": "Godziny",
+      "col_tasks": "Przydzielone zadania",
+      "col_signature": "Podpis"
     },
     "session_form": {
       "title_edit": "Edytuj wpis",

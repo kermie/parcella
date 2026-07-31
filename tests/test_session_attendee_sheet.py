@@ -166,3 +166,29 @@ async def test_attendee_sheet_404_for_unknown_session(client, admin_user):
     await web_login(client, "admin@example.com")
     response = await client.get("/work-hours/sessions/00000000-0000-0000-0000-000000000000/attendee-sheet")
     assert response.status_code == 404
+
+
+async def test_attendee_sheet_table_headers_follow_configured_language(client, admin_user):
+    """Issue #165: the "Parcel"/"Member"/"Hours"/"Tasks assigned"/
+    "Signature" table headers were hardcoded English literals in
+    app/session_attendee_sheet.py, never routed through translate() --
+    unlike every other string in the PDF, which already correctly
+    followed the club's configured language."""
+    await web_login(client, "admin@example.com")
+
+    from app.database import AsyncSessionLocal
+    from app.models import ClubSetting
+
+    async with AsyncSessionLocal() as session:
+        session.add(ClubSetting(key="language", value="de", description="test"))
+        session_id = await _create_session_with_participants(session)
+
+    response = await client.get(f"/work-hours/sessions/{session_id}/attendee-sheet")
+    assert response.status_code == 200
+    text = _pdf_text(response.content).upper()
+    assert "PARZELLE" in text
+    assert "MITGLIED" in text
+    assert "STUNDEN" in text
+    assert "ZUGEWIESENE AUFGABEN" in text
+    assert "UNTERSCHRIFT" in text
+    assert "SIGNATURE" not in text

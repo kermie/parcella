@@ -662,7 +662,10 @@
       "label_headline": "Nadpis",
       "headline_hint": "Zobrazuje se v horní části PDF. Můžete jej libovolně upravit.",
       "generate_button": "Vytvořit PDF",
-      "cancel_button": "Zrušit"
+      "cancel_button": "Zrušit",
+      "col_parcel": "Parcela",
+      "col_name": "Jméno",
+      "col_signature": "Podpis"
     }
   },
   "parcels": {
@@ -1336,6 +1339,13 @@
       "manage_tasks_link": "Spravovat úkoly",
       "no_tasks": "Pro tuto směnu zatím nejsou naplánovány žádné úkoly.",
       "attendee_sheet_link": "Seznam účastníků"
+    },
+    "attendee_sheet": {
+      "col_parcel": "Parcela",
+      "col_member": "Člen",
+      "col_hours": "Hodiny",
+      "col_tasks": "Přiřazené úkoly",
+      "col_signature": "Podpis"
     },
     "session_form": {
       "title_edit": "Upravit sezení",

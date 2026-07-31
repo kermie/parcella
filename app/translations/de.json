@@ -662,7 +662,10 @@
       "label_headline": "Überschrift",
       "headline_hint": "Wird oben auf dem PDF angezeigt. Kann frei angepasst werden.",
       "generate_button": "PDF erstellen",
-      "cancel_button": "Abbrechen"
+      "cancel_button": "Abbrechen",
+      "col_parcel": "Parzelle",
+      "col_name": "Name",
+      "col_signature": "Unterschrift"
     }
   },
   "parcels": {
@@ -1336,6 +1339,13 @@
       "manage_tasks_link": "Aufgaben verwalten",
       "no_tasks": "Für diesen Einsatz sind noch keine Aufgaben eingeplant.",
       "attendee_sheet_link": "Teilnehmerliste"
+    },
+    "attendee_sheet": {
+      "col_parcel": "Parzelle",
+      "col_member": "Mitglied",
+      "col_hours": "Stunden",
+      "col_tasks": "Zugewiesene Aufgaben",
+      "col_signature": "Unterschrift"
     },
     "session_form": {
       "title_edit": "Einsatz bearbeiten",

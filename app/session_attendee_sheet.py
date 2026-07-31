@@ -19,6 +19,7 @@ from typing import List, Optional
 
 from weasyprint import HTML
 
+from app.i18n import translate
 from app.pdf_chrome import wrap_document, org_footer_html, OrgFooterContext
 
 EXTRA_CSS = """
@@ -44,7 +45,7 @@ class AttendeeRow:
     tasks: str
 
 
-def _body_html(headline: str, subtitle: str, rows: List[AttendeeRow]) -> str:
+def _body_html(headline: str, subtitle: str, rows: List[AttendeeRow], language: str) -> str:
     rows_html = "".join(
         f'<tr><td class="parcel-col">{r.parcel}</td>'
         f'<td class="member-col">{r.member_name}</td>'
@@ -60,11 +61,11 @@ def _body_html(headline: str, subtitle: str, rows: List[AttendeeRow]) -> str:
     <table>
         <thead>
             <tr>
-                <th>Parcel</th>
-                <th>Member</th>
-                <th>Hours</th>
-                <th>Tasks assigned</th>
-                <th>Signature</th>
+                <th>{translate("work_hours.attendee_sheet.col_parcel", language)}</th>
+                <th>{translate("work_hours.attendee_sheet.col_member", language)}</th>
+                <th>{translate("work_hours.attendee_sheet.col_hours", language)}</th>
+                <th>{translate("work_hours.attendee_sheet.col_tasks", language)}</th>
+                <th>{translate("work_hours.attendee_sheet.col_signature", language)}</th>
             </tr>
         </thead>
         <tbody>
@@ -81,7 +82,7 @@ def render_session_attendee_sheet_pdf(
     """rows should already be sorted the way the caller wants them to
     appear -- this function doesn't re-sort."""
     html_doc = wrap_document(
-        _body_html(headline, subtitle, rows),
+        _body_html(headline, subtitle, rows, language),
         footer_context.club_name, logo_path, org_footer_html(footer_context, language), language,
         extra_css=EXTRA_CSS,
     )

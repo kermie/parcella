@@ -662,7 +662,10 @@
       "label_headline": "Headline",
       "headline_hint": "Shown at the top of the PDF. Feel free to edit it.",
       "generate_button": "Generate PDF",
-      "cancel_button": "Cancel"
+      "cancel_button": "Cancel",
+      "col_parcel": "Parcel",
+      "col_name": "Name",
+      "col_signature": "Signature"
     }
   },
   "parcels": {
@@ -1336,6 +1339,13 @@
       "manage_tasks_link": "Manage Tasks",
       "no_tasks": "No tasks scheduled for this session yet.",
       "attendee_sheet_link": "Attendee sheet"
+    },
+    "attendee_sheet": {
+      "col_parcel": "Parcel",
+      "col_member": "Member",
+      "col_hours": "Hours",
+      "col_tasks": "Tasks assigned",
+      "col_signature": "Signature"
     },
     "session_form": {
       "title_edit": "Edit Session",

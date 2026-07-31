@@ -662,7 +662,10 @@
       "label_headline": "Nadpis",
       "headline_hint": "Zobrazuje sa v hornej časti PDF. Môžete ho ľubovoľne upraviť.",
       "generate_button": "Vytvoriť PDF",
-      "cancel_button": "Zrušiť"
+      "cancel_button": "Zrušiť",
+      "col_parcel": "Parcela",
+      "col_name": "Meno",
+      "col_signature": "Podpis"
     }
   },
   "parcels": {
@@ -1336,6 +1339,13 @@
       "manage_tasks_link": "Spravovať úlohy",
       "no_tasks": "Pre túto zmenu zatiaľ nie sú naplánované žiadne úlohy.",
       "attendee_sheet_link": "Zoznam účastníkov"
+    },
+    "attendee_sheet": {
+      "col_parcel": "Parcela",
+      "col_member": "Člen",
+      "col_hours": "Hodiny",
+      "col_tasks": "Pridelené úlohy",
+      "col_signature": "Podpis"
     },
     "session_form": {
       "title_edit": "Upraviť sedenie",
