@@ -187,6 +187,29 @@ async def test_pending_only_view_includes_blank_member_since(client, admin_user)
     assert "Möbius" in last_names, "active_member_filter() itself must be unaffected -- still active everywhere else"
 
 
+async def test_pending_only_view_excludes_member_with_a_parcel_assigned(client, admin_user):
+    """Second follow-up to issue #167: a member with a future/blank
+    member_since who already has a parcel assigned is clearly an
+    actual resident (most likely just a missing member_since data
+    entry), not a pending application -- must not show up here even
+    though they'd otherwise match on dates alone."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+
+    async with AsyncSessionLocal() as session:
+        parcel = Parcel(plot_number="PENDING-WITH-PARCEL")
+        member_with_parcel = Member(
+            first_name="Already", last_name="Resident", member_since=date.today() + timedelta(days=30),
+        )
+        session.add_all([parcel, member_with_parcel])
+        await session.flush()
+        session.add(MemberParcel(member_id=member_with_parcel.id, parcel_id=parcel.id, is_invoice_address=True))
+        await session.commit()
+
+    response = await client.get("/members/?pending_only=true")
+    assert response.status_code == 200
+    assert "Resident, Already" not in response.text
+
+
 async def test_pending_only_view_empty_state(client, admin_user):
     await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
 

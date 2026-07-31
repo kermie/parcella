@@ -571,7 +571,7 @@
       "search_button": "Hľadať",
       "reset_button": "Resetovať",
       "inactive_notice": "Zobrazujú sa iba neaktívni členovia (členstvo ukončené alebo ešte nezačalo).",
-      "pending_notice": "Zobrazujú sa členovia, ktorých členstvo ešte nezačalo, zoradení podľa dátumu prihlásenia.",
+      "pending_notice": "Zobrazujú sa členovia, ktorých členstvo ešte nezačalo a nemajú priradenú parcelu, zoradení podľa dátumu prihlásenia.",
       "col_name": "Meno",
       "col_city": "Mesto",
       "col_member_since": "Členom od",

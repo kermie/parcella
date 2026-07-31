@@ -71,9 +71,20 @@ async def members_list(
         # the reporter asked for), since that's the order a board
         # actually works through a queue of applications in -- takes
         # precedence over include_inactive, which is meaningless here.
+        #
+        # Also requires zero parcel assignments at all (issue #167,
+        # second follow-up): a member who already has a parcel is
+        # clearly an actual resident, not a pending application -- most
+        # likely just missing member_since data entry, not someone
+        # still waiting to be let in. Confirmed trade-off, accepted for
+        # now: this also hides a member pre-assigned a parcel ahead of a
+        # future start date (e.g. approved today, moves in next month)
+        # -- a real but rarer case, left as a follow-up.
+        no_parcel_assigned = Member.id.not_in(select(MemberParcel.member_id))
         query = query.where(
             Member.deleted_at.is_(None),
             (Member.member_since.is_(None)) | (Member.member_since > date.today()),
+            no_parcel_assigned,
         )
         query = query.order_by(Member.created_at.asc())
     else:

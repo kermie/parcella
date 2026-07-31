@@ -571,7 +571,7 @@
       "search_button": "Suchen",
       "reset_button": "Zurücksetzen",
       "inactive_notice": "Es werden nur inaktive Mitglieder angezeigt (Mitgliedschaft abgelaufen oder noch nicht begonnen).",
-      "pending_notice": "Mitglieder, deren Mitgliedschaft noch nicht begonnen hat, werden angezeigt, sortiert nach Bewerbungsdatum.",
+      "pending_notice": "Mitglieder, deren Mitgliedschaft noch nicht begonnen hat UND die keiner Parzelle zugewiesen sind, werden angezeigt, sortiert nach Bewerbungsdatum.",
       "col_name": "Name",
       "col_city": "Ort",
       "col_member_since": "Mitglied seit",
