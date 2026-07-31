@@ -1952,7 +1952,8 @@
       "electricity_usage": "Stromverbrauch (aus Modul)",
       "insurance_cost": "Versicherungskosten (aus Modul)",
       "communal_area_share": "Anteil an der Gemeinschaftsflächenpacht",
-      "work_hours_shortfall": "Pflichtstunden-Fehlbetrag (aus Modul)"
+      "work_hours_shortfall": "Pflichtstunden-Fehlbetrag (aus Modul)",
+      "public_burdens": "Öffentliche Lasten (eigene Fläche + Gemeinschaftsflächenanteil)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",

@@ -1952,7 +1952,8 @@
       "electricity_usage": "Spotreba elektriny (z modúlu)",
       "insurance_cost": "Náklady na poistenie (z modúlu)",
       "communal_area_share": "Podiel na nájme spoločnej plochy",
-      "work_hours_shortfall": "Nedoplatok pracovných hodín (z modulu)"
+      "work_hours_shortfall": "Nedoplatok pracovných hodín (z modulu)",
+      "public_burdens": "Verejné dávky (vlastná plocha + podiel na spoločnej ploche)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Toto vyúčtovanie je už dokončené a nemožno ho zmazať.",
