@@ -82,7 +82,6 @@
                 <thead>
                     <tr>
                         <th>{{ t('members.list.col_name') }}</th>
-                        <th>{{ t('members.list.col_city') }}</th>
                         <th>{{ t('members.list.col_member_since') }}</th>
                         {% if pending_only %}
                         <th>{{ t('members.list.col_added') }}</th>
@@ -100,9 +99,6 @@
                                style="color: var(--gv-gruen);">
                                 {{ m.last_name }}, {{ m.first_name }}
                             </a>
-                        </td>
-                        <td class="text-muted">
-                            {% if m.postal_code and m.city %}{{ m.postal_code }} {{ m.city }}{% elif m.city %}{{ m.city }}{% else %}–{% endif %}
                         </td>
                         <td class="text-muted">
                             {{ m.member_since.strftime('%d.%m.%Y') if m.member_since else '–' }}
@@ -146,7 +142,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="{{ 7 if pending_only else 6 }}" class="text-center py-5 text-muted">
+                        <td colspan="{{ 6 if pending_only else 5 }}" class="text-center py-5 text-muted">
                             {% if search %}
                             <i class="bi bi-search d-block mb-2" style="font-size: 1.5rem;"></i>
                             {{ t('members.list.empty_search', query=search) }}

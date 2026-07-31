@@ -573,7 +573,6 @@
       "inactive_notice": "Seuls les membres inactifs sont affichés (adhésion terminée ou pas encore commencée).",
       "pending_notice": "Les membres dont l'adhésion n'a pas encore commencé et qui n'ont aucune parcelle attribuée sont affichés, triés par date de candidature.",
       "col_name": "Nom",
-      "col_city": "Ville",
       "col_member_since": "Membre depuis",
       "col_added": "Ajouté le",
       "col_parcels": "Parcelles",

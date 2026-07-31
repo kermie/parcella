@@ -573,7 +573,6 @@
       "inactive_notice": "Zobrazují se pouze neaktivní členové (členství ukončeno nebo ještě nezačalo).",
       "pending_notice": "Zobrazují se členové, jejichž členství ještě nezačalo a nemají přiřazenou parcelu, seřazeni podle data přihlášky.",
       "col_name": "Jméno",
-      "col_city": "Město",
       "col_member_since": "Členem od",
       "col_added": "Přidáno dne",
       "col_parcels": "Parcely",

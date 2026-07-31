@@ -573,7 +573,6 @@
       "inactive_notice": "Only inactive members are shown (membership expired or not yet started).",
       "pending_notice": "Members whose membership hasn't started yet AND have no parcel assigned are shown, sorted by when they applied.",
       "col_name": "Name",
-      "col_city": "City",
       "col_member_since": "Member since",
       "col_added": "Added on",
       "col_parcels": "Parcels",

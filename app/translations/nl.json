@@ -573,7 +573,6 @@
       "inactive_notice": "Alleen inactieve leden worden getoond (lidmaatschap beëindigd of nog niet begonnen).",
       "pending_notice": "Leden van wie het lidmaatschap nog niet is begonnen en die geen perceel toegewezen hebben gekregen worden getoond, gesorteerd op aanvraagdatum.",
       "col_name": "Naam",
-      "col_city": "Plaats",
       "col_member_since": "Lid sinds",
       "col_added": "Toegevoegd op",
       "col_parcels": "Percelen",

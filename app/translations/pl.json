@@ -573,7 +573,6 @@
       "inactive_notice": "Wyświetlani są tylko nieaktywni członkowie (członkostwo wygasłe lub jeszcze nierozpoczęte).",
       "pending_notice": "Wyświetlani są członkowie, których członkostwo jeszcze się nie rozpoczęło i którzy nie mają przypisanej działki, posortowani według daty zgłoszenia.",
       "col_name": "Imię i nazwisko",
-      "col_city": "Miejscowość",
       "col_member_since": "Członek od",
       "col_added": "Dodano dnia",
       "col_parcels": "Działki",
