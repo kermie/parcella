@@ -79,8 +79,23 @@ async def members_list(
     else:
         query = query.order_by(Member.last_name, Member.first_name)
         if include_inactive:
-            # All non-deleted members (including expired memberships)
-            query = query.where(Member.deleted_at.is_(None))
+            # Issue #169: this must show ONLY inactive members (expired
+            # OR not-yet-started), not every non-deleted member
+            # regardless of status -- previously this was the plain
+            # complement of active_member_filter() done wrong (just
+            # deleted_at IS NULL), which meant active members showed up
+            # here too. The actual complement of active_member_filter()
+            # is an OR (a member is inactive if EITHER half fails), not
+            # an AND. Doesn't widen to blank member_since the way
+            # pending_only does above -- that's still "active" per
+            # active_member_filter() itself, unchanged.
+            query = query.where(
+                Member.deleted_at.is_(None),
+                or_(
+                    and_(Member.member_since.is_not(None), Member.member_since > date.today()),
+                    and_(Member.member_until.is_not(None), Member.member_until < date.today()),
+                ),
+            )
         else:
             query = query.where(active_member_filter())
 
