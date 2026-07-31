@@ -42,13 +42,24 @@ def active_member_filter():
     """
     Default filter for active members:
     - not soft-deleted (deleted_at IS NULL)
+    - membership already started (member_since IS NULL or today or earlier)
     - membership not expired (member_until IS NULL or in the future)
+
+    member_since IS NULL is treated as "already started" (no
+    restriction), same as member_until IS NULL means "no end date" --
+    this keeps every pre-existing member without a member_since value
+    unaffected (issue #167: a member whose membership hasn't started
+    yet -- a pending application -- must not count as an actual member
+    anywhere this shared filter is used: invoices, meeting sign-in
+    sheets, dashboard counts, birthdays, work-hours/inventory/ticket
+    member pickers, etc.).
 
     Usage: .where(active_member_filter())
     """
     from app.models import Member
     return _and_(
         Member.deleted_at.is_(None),
+        (Member.member_since.is_(None)) | (Member.member_since <= _date.today()),
         (Member.member_until.is_(None)) | (Member.member_until >= _date.today())
     )
 
