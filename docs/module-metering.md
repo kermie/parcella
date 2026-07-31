@@ -81,20 +81,6 @@ calibration deadlines), the old one is **not deleted** but deactivated
 with a new number and its own initial reading. This correctly separates
 consumption calculations -- no mixing of old and new meter readings.
 
-## Billing price configuration
-
-`MeteringPriceConfiguration` (one row per `(medium, year)`, unique
-constraint on the pair) holds the EUR price per m³/kWh that drives the
-`water_usage`/`electricity_usage` invoice pricing modes in the finances
-module -- see [ADR 0056](./ADR/0056-metering-price-drives-automatic-usage-billing.md).
-Historized per year (like `WorkHoursConfiguration`), edited at
-`/water/configuration` and `/electricity/configuration` (added to the
-shared `create_metering_router()` factory, so both media get the CRUD
-routes/templates for free). If no price is configured for a run's
-year, that run's water/electricity items simply bill nothing for that
-year -- same "nothing configured -> nothing billed" behavior as
-`InsuranceConfiguration`/`WorkHoursConfiguration`.
-
 ## Known pitfalls
 
 - **Jinja2 can't do Python's `.format()`**: `"%.{}f"|format(places)|format(value)`

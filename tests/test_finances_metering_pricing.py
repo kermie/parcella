@@ -1,10 +1,16 @@
 """
-Issue: give water_usage/electricity_usage invoice pricing modes full
-parity with work_hours_shortfall/insurance_cost (see docs/ADR/0056) --
-price pulled from MeteringPriceConfiguration (per medium/year) instead
-of a manually-entered unit_price, and billing automatically limited to
-parcels with an active meter of that medium regardless of the manual
-scope picker. Mirrors tests/test_work_hours_shortfall.py's shape.
+Water/electricity usage billing: quantity (consumption) is pulled
+automatically from the metering module, but the price per unit stays
+a manually-typed field on the item, entered fresh for each invoice run
+-- a club's utility tariff changes from one year to the next, so
+there's no single "current" price to store centrally (an earlier
+attempt at sourcing it from a per-year MeteringPriceConfiguration was
+reverted after user feedback -- see docs/ADR/0056's Update note).
+
+Scope, however, stays automatic: a parcel with no metering point of
+that medium simply has no consumption to bill, so the manual
+parcel-scope picker is (and remains) hidden for these two modes, same
+as insurance_cost/work_hours_shortfall.
 """
 from datetime import date
 
@@ -15,7 +21,6 @@ from app.database import AsyncSessionLocal
 from app.models import (
     Member, MemberParcel, Parcel, Invoice, ClubSetting,
     MeteringPoint, MeteringPointType, MeteringMedium, Meter, MeterReading,
-    MeteringPriceConfiguration,
 )
 
 
@@ -47,14 +52,12 @@ async def _add_meter_with_reading(
     session.add(MeterReading(meter_id=meter.id, year=year, date=date(year, 10, 1), reading=current_reading))
 
 
-async def test_water_usage_bills_metered_parcel_and_ignores_manual_scoping(client, admin_user):
+async def test_water_usage_bills_metered_parcel_using_typed_price_and_ignores_manual_scoping(client, admin_user):
     await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     await _enable_finances_module()
     year = 2026
 
     async with AsyncSessionLocal() as session:
-        session.add(MeteringPriceConfiguration(medium=MeteringMedium.WATER, year=year, price_per_unit=2.50))
-
         metered_member = Member(
             first_name="Metered", last_name="Tenant",
             street="Gartenweg 1", postal_code="12345", city="Testort",
@@ -80,12 +83,13 @@ async def test_water_usage_bills_metered_parcel_and_ignores_manual_scoping(clien
         await session.commit()
 
     run_id = await _make_run(client, year)
-    # applies_to_all_parcels deliberately NOT sent ("off") and unit_price
-    # deliberately wrong -- if manual scoping/pricing had any effect here,
-    # this would exclude every parcel and/or bill the typed price.
+    # applies_to_all_parcels deliberately NOT sent ("off") -- if manual
+    # scoping had any effect here, this would exclude every parcel. It
+    # must not: the metered parcel still gets billed, at the price
+    # actually typed into the form (not sourced from anywhere else).
     r_item = await client.post(f"/finances/runs/{run_id}/items", data={
         "order_number": "10", "name": "Water usage", "description": "",
-        "pricing_mode": "water_usage", "unit_price": "999.00",
+        "pricing_mode": "water_usage", "unit_price": "2.50",
     })
     assert r_item.status_code in (302, 303)
 
@@ -106,19 +110,16 @@ async def test_water_usage_bills_metered_parcel_and_ignores_manual_scoping(clien
     )
     line = invoices[0].line_items[0]
     assert float(line.quantity) == 50.0  # 150 - 100 initial reading
-    assert float(line.unit_price) == 2.50, "price from MeteringPriceConfiguration, not the typed 999.00"
+    assert float(line.unit_price) == 2.50, "the price typed on the item, not sourced anywhere else"
     assert float(line.line_total) == 125.00
 
 
-async def test_electricity_usage_uses_its_own_price_independent_of_water(client, admin_user):
+async def test_electricity_usage_bills_metered_parcel_using_typed_price(client, admin_user):
     await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     await _enable_finances_module()
     year = 2027
 
     async with AsyncSessionLocal() as session:
-        session.add(MeteringPriceConfiguration(medium=MeteringMedium.WATER, year=year, price_per_unit=2.50))
-        session.add(MeteringPriceConfiguration(medium=MeteringMedium.ELECTRICITY, year=year, price_per_unit=0.35))
-
         member = Member(
             first_name="Electric", last_name="Tenant",
             street="Vereinsstr 1", postal_code="12345", city="Testort",
@@ -138,7 +139,7 @@ async def test_electricity_usage_uses_its_own_price_independent_of_water(client,
     run_id = await _make_run(client, year)
     r_item = await client.post(f"/finances/runs/{run_id}/items", data={
         "order_number": "10", "name": "Electricity usage", "description": "",
-        "pricing_mode": "electricity_usage", "unit_price": "999.00",
+        "pricing_mode": "electricity_usage", "unit_price": "0.32",
     })
     assert r_item.status_code in (302, 303)
 
@@ -156,28 +157,30 @@ async def test_electricity_usage_uses_its_own_price_independent_of_water(client,
     assert len(invoices) == 1
     line = invoices[0].line_items[0]
     assert float(line.quantity) == 200.0  # 1200 - 1000 initial reading
-    assert float(line.unit_price) == 0.35, "electricity's own price, not water's 2.50 or the typed 999.00"
-    assert float(line.line_total) == 70.00
+    assert float(line.unit_price) == 0.32
+    assert float(line.line_total) == 64.00
 
 
-async def test_water_usage_bills_nothing_when_no_price_configured_for_year(client, admin_user):
+async def test_water_usage_bills_nothing_when_unit_price_left_blank(client, admin_user):
+    """The exact workflow reported: leave the price blank when adding
+    the item, fill it in later when actually writing the invoice run.
+    Left blank at finalize time -> nothing billed, no crash."""
     await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     await _enable_finances_module()
     year = 2028
 
     async with AsyncSessionLocal() as session:
-        # Deliberately NO MeteringPriceConfiguration for this year.
         member = Member(
             first_name="NoPrice", last_name="Tenant",
             street="Gartenweg 9", postal_code="12345", city="Testort",
         )
-        parcel = Parcel(plot_number="WATERPRICE-NOCONFIG", area_sqm=100)
+        parcel = Parcel(plot_number="WATERPRICE-NOPRICE", area_sqm=100)
         session.add_all([member, parcel])
         await session.flush()
         session.add(MemberParcel(member_id=member.id, parcel_id=parcel.id, is_invoice_address=True))
 
         await _add_meter_with_reading(
-            session, parcel.id, MeteringMedium.WATER, "W-PRICE-NOCONFIG",
+            session, parcel.id, MeteringMedium.WATER, "W-PRICE-NOPRICE",
             year, initial_reading=0.0, current_reading=42.0,
         )
         await session.commit()
@@ -196,10 +199,14 @@ async def test_water_usage_bills_nothing_when_no_price_configured_for_year(clien
         result = await session.execute(select(Invoice).where(Invoice.invoice_run_id == run_id))
         invoices = list(result.scalars().all())
 
-    assert invoices == [], "no price configured for this year -> nothing billed, no crash"
+    assert invoices == [], "no price typed -> nothing billed, no crash"
 
 
-async def test_item_template_water_usage_ignores_submitted_unit_price(client, admin_user):
+async def test_item_template_water_usage_stores_typed_unit_price(client, admin_user):
+    """The item-templates catalog page must let the price be typed and
+    stored for water_usage/electricity_usage, same as any other
+    pricing mode -- it is NOT one of the "computed automatically"
+    modes (only quantity is automatic for these two)."""
     await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     await _enable_finances_module()
 
@@ -207,7 +214,7 @@ async def test_item_template_water_usage_ignores_submitted_unit_price(client, ad
         "/finances/item-templates",
         data={
             "order_number": "10", "name": "Water usage template", "description": "",
-            "pricing_mode": "water_usage", "unit_price": "15.00",
+            "pricing_mode": "water_usage", "unit_price": "2.62",
         },
     )
     assert resp.status_code in (302, 303)
@@ -220,4 +227,4 @@ async def test_item_template_water_usage_ignores_submitted_unit_price(client, ad
         )
         template = result.scalar_one()
 
-    assert template.unit_price is None, "unit_price must be ignored for water_usage, same as insurance_cost/work_hours_shortfall"
+    assert float(template.unit_price) == 2.62, "unit_price must be stored for water_usage, not nulled out"

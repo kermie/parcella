@@ -57,3 +57,20 @@ had `applies_to_all_parcels=True`, so nothing currently configured
 changes behavior. A club that genuinely needs to exclude a specific
 metered parcel from billing has no such override going forward (same
 constraint insurance/work-hours already accepted in ADR 0042).
+
+**Update (2026-07-31): the price-sourcing half was reverted; the
+scope-bypass half was kept.** The user clarified the actual want after
+seeing this shipped: a club's utility tariff (EUR per m³/kWh) changes
+from one invoice run to the next, and the price should stay a
+manually-typed field entered fresh when writing each invoice -- not a
+per-year setting stored centrally and hidden from the item form.
+`MeteringPriceConfiguration` (model, migration, `/water/configuration`
++`/electricity/configuration` CRUD, REST endpoints) was removed
+entirely; `item_quantity_and_price` reads `definition.unit_price`
+again for `WATER_USAGE`/`ELECTRICITY_USAGE`, and `finances.py`'s
+`_AUTOMATIC_PRICING_MODES` no longer includes these two modes, so the
+unit-price input is visible again on both item forms. The *scope*
+bypass (a parcel with no active meter of that medium simply has no
+consumption to bill, so the manual parcel-scope picker stays hidden)
+was correct and is unchanged -- only the price half of "full parity
+with insurance/work-hours" was the misread.

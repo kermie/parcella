@@ -185,3 +185,36 @@ async def test_communal_area_share_quantity_rounds_to_one_decimal_place(client, 
     for inv in invoices:
         line = inv.line_items[0]
         assert float(line.quantity) == 3133.3, "9400/3 must be cut off to one decimal place, not left as a repeating decimal"
+
+
+async def test_communal_area_share_item_template_create_does_not_500(client, admin_user):
+    """Issue #160: adding a catalog item template with pricing_mode
+    communal_area_share crashed with `invalid input value for enum
+    invoicepricingmode: "COMMUNAL_AREA_SHARE"` on the real production
+    DB -- migration 0052's own file always specified the correct
+    uppercase ADD VALUE, but the deployed database's enum type had
+    somehow ended up with the lowercase label instead (fixed by
+    migration 0063, which rebuilds the enum type from scratch). This
+    is also the first test at all for this pricing mode on the
+    item-TEMPLATE endpoint (previous coverage only exercised the
+    run-level item endpoint)."""
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    await _enable_finances_module()
+
+    resp = await client.post(
+        "/finances/item-templates",
+        data={
+            "order_number": "10", "name": "Communal area share template", "description": "",
+            "pricing_mode": "communal_area_share", "unit_price": "2.00", "applies_to_all_parcels": "on",
+        },
+    )
+    assert resp.status_code in (302, 303)
+
+    from app.models import InvoiceItemTemplate, InvoicePricingMode
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(InvoiceItemTemplate).where(InvoiceItemTemplate.name == "Communal area share template")
+        )
+        template = result.scalar_one()
+        assert template.pricing_mode == InvoicePricingMode.COMMUNAL_AREA_SHARE

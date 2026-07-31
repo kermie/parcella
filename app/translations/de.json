@@ -1099,29 +1099,6 @@
       "no_reading": "keine Ablesung",
       "no_entries": "Keine Einträge"
     },
-    "configuration": {
-      "title_suffix": " Preiskonfiguration",
-      "create_update_card_title": "Preis neu/aktualisieren",
-      "year_label": "Jahr",
-      "price_label": "Preis pro {unit}",
-      "note_label": "Notiz",
-      "note_placeholder": "z.B. Tarifänderung des Versorgers",
-      "save_button": "Speichern",
-      "history_card_title": "Preisverlauf",
-      "col_year": "Jahr",
-      "col_price": "Preis",
-      "col_note": "Notiz",
-      "delete_confirm": "Preis für {year} wirklich löschen?",
-      "no_config": "Noch kein Preis konfiguriert."
-    },
-    "configuration_form": {
-      "title_suffix": " Preiskonfiguration {year}",
-      "card_title": "Preis bearbeiten",
-      "year_label": "Jahr",
-      "price_label": "Preis pro {unit}",
-      "note_label": "Notiz",
-      "save_button": "Speichern"
-    },
     "errors": {
       "point_not_found": "{medium}-Zählpunkt nicht gefunden",
       "invalid_reading": "Ungültiger Zählerstand",
@@ -1129,9 +1106,7 @@
       "overall_plausibility_evaluation": "Verteilverbrauch ({total} {unit}) übersteigt Hauptzähler-Verbrauch ({main} {unit}).",
       "reading_below_previous": "Der Zählerstand ({new_value}) darf nicht kleiner sein als der vorherige Stand ({previous_value}) desselben Zählers.",
       "reading_above_later": "Der Zählerstand ({new_value}) darf nicht größer sein als der bereits erfasste spätere Stand ({later_value}) desselben Zählers.",
-      "no_active_meter": "Kein aktiver Zähler für diesen Zählpunkt vorhanden",
-      "configuration_not_found": "Preiskonfiguration nicht gefunden",
-      "configuration_year_exists": "Für {year} existiert bereits eine andere Preiskonfiguration."
+      "no_active_meter": "Kein aktiver Zähler für diesen Zählpunkt vorhanden"
     }
   },
   "work_hours": {
