@@ -672,6 +672,7 @@
     "status": {
       "active": "actief",
       "terminated": "beëindigd",
+      "communal": "gemeenschappelijk",
       "deleted": "verwijderd"
     },
     "list": {

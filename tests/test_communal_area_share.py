@@ -52,8 +52,10 @@ async def test_communal_area_share_splits_area_b_evenly_and_skips_vacant_parcels
     await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
     await _enable_finances_module()
 
-    # Area A counts EVERY parcel regardless of lease status (issues
-    # #80/#81), so all 5 parcels (4 occupied + 1 vacant) contribute:
+    # Area A counts every leasable parcel regardless of lease status
+    # (issues #80/#81) -- excludes only DELETED and COMMUNAL (issue
+    # #168), neither of which any parcel here is -- so all 5 parcels
+    # (4 occupied + 1 vacant) contribute:
     # Area A = 5 x 200 = 1000. Total = 9000, Area C = 0.
     # Area B = 9000 - 1000 - 0 = 8000. But the SPLIT only counts the 4
     # OCCUPIED parcels (the vacant one doesn't get billed at all):

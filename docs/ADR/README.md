@@ -60,3 +60,4 @@ in chronological order.
 54. [Admin restore from backup: reversing ADR 0053's "no restore-from-UI"](./0054-admin-restore-from-backup.md)
 55. [Scheduled cloud backups: reversing the cloud-storage connector's no-delete stance](./0055-scheduled-cloud-backups.md)
 56. [Metering price configuration drives automatic water/electricity usage billing](./0056-metering-price-drives-automatic-usage-billing.md)
+57. [Communal parcel status: excluded from Area A, Area B stays a manual figure](./0057-communal-parcel-status-excluded-from-area-a.md)

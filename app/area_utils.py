@@ -1,12 +1,22 @@
 """
-Club-wide area figures (issues #80, #81, #82).
+Club-wide area figures (issues #80, #81, #82, #168).
 
-Area A (leased parcels) is always the live sum of every parcel's area
-regardless of lease status -- not a manually-entered ClubSetting -- so
-it can't drift out of sync with the parcel data it's actually built
-from (see ADR-worthy history in issue #81: it used to be a free-typed
-number, mislabeled "municipal" to boot). Area B (communal) is derived
-from it (Total area - Area A - Area C) rather than entered either.
+Area A (leased parcels) is always the live sum of every leasable
+parcel's area -- not a manually-entered ClubSetting -- so it can't
+drift out of sync with the parcel data it's actually built from (see
+ADR-worthy history in issue #81: it used to be a free-typed number,
+mislabeled "municipal" to boot). Area B (communal) is derived from it
+(Total area - Area A - Area C) rather than entered either.
+
+DELETED (soft-deleted) and COMMUNAL (a club-managed common area
+tracked as its own Parcel row, issue #168, see ADR 0057) are excluded
+from Area A: DELETED because it's not a real parcel at all, COMMUNAL
+because it's not leasable land in the first place -- its area already
+belongs to the club, not to some Area A/B/C split. This is deliberately
+a manual, admin-entered figure for Area B's Total/C inputs even though
+COMMUNAL parcels now exist as real records (issue #168's reporter
+confirmed this): only Area A's own-parcel-sum changes, not how Area B
+itself gets computed.
 
 Shared between the admin settings page (display only) and invoice
 generation's "communal area share" pricing mode (issue #82, see
@@ -22,7 +32,9 @@ from app.models import Parcel, ParcelStatus, ClubSetting
 
 async def compute_area_a_sqm(db: AsyncSession) -> float:
     result = await db.scalar(
-        select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(Parcel.status != ParcelStatus.DELETED)
+        select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(
+            Parcel.status.notin_([ParcelStatus.DELETED, ParcelStatus.COMMUNAL])
+        )
     )
     return float(result or 0)
 

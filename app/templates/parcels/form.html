@@ -44,6 +44,7 @@
                         <select name="status" class="form-select">
                             <option value="ACTIVE" {% if parcel.status.value == 'ACTIVE' %}selected{% endif %}>{{ t('parcels.status.active') }}</option>
                             <option value="TERMINATED" {% if parcel.status.value == 'TERMINATED' %}selected{% endif %}>{{ t('parcels.status.terminated') }}</option>
+                            <option value="COMMUNAL" {% if parcel.status.value == 'COMMUNAL' %}selected{% endif %}>{{ t('parcels.status.communal') }}</option>
                             <option value="DELETED" {% if parcel.status.value == 'DELETED' %}selected{% endif %}>{{ t('parcels.status.deleted') }}</option>
                         </select>
                         <div class="form-text">

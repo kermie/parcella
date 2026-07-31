@@ -672,6 +672,7 @@
     "status": {
       "active": "active",
       "terminated": "terminated",
+      "communal": "communal",
       "deleted": "deleted"
     },
     "list": {

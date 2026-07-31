@@ -40,6 +40,7 @@
                 <option value="">{{ t('parcels.list.all_statuses') }}</option>
                 <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>{{ t('parcels.status.active') }}</option>
                 <option value="TERMINATED" {% if status_filter == 'TERMINATED' %}selected{% endif %}>{{ t('parcels.status.terminated') }}</option>
+                <option value="COMMUNAL" {% if status_filter == 'COMMUNAL' %}selected{% endif %}>{{ t('parcels.status.communal') }}</option>
                 <option value="DELETED" {% if status_filter == 'DELETED' %}selected{% endif %}>{{ t('parcels.status.deleted') }}</option>
             </select>
             <button type="submit" class="btn btn-sm btn-primary">{{ t('parcels.list.search_button') }}</button>
@@ -79,6 +80,8 @@
                             <span class="badge badge-aktiv">{{ t('parcels.status.active') }}</span>
                             {% elif p.status.value == 'TERMINATED' %}
                             <span class="badge badge-gekuendigt">{{ t('parcels.status.terminated') }}</span>
+                            {% elif p.status.value == 'COMMUNAL' %}
+                            <span class="badge badge-gemeinschaft">{{ t('parcels.status.communal') }}</span>
                             {% else %}
                             <span class="badge badge-geloescht">{{ t('parcels.status.deleted') }}</span>
                             {% endif %}

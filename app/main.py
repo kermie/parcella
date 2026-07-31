@@ -28,6 +28,7 @@ from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
 from app.update_check import refresh_update_check_cache
 from app.cloud_backup import get_cloud_backup_settings, is_backup_due, run_cloud_backup_now
+from app.area_utils import compute_area_a_sqm
 from app.permissions import get_user_permissions, is_full_access_user, is_system_admin_user
 
 # Loaded at module import time (not only in the lifespan startup
@@ -350,15 +351,13 @@ async def startseite(request: Request):
             )
         )
         # Every parcel that's ever been leased (active or terminated) --
-        # not just currently-active ones (issue #80) -- but not DELETED,
-        # which represents a parcel removed from the system entirely
-        # (e.g. a data correction), not a real leased plot. Matches how
-        # api_stats.py's parcels_total already counts "total" parcels.
-        area_total = await db.scalar(
-            select(func.coalesce(func.sum(Parcel.area_sqm), 0)).where(
-                Parcel.status != ParcelStatus.DELETED
-            )
-        )
+        # not just currently-active ones (issue #80) -- same figure as
+        # app/area_utils.py's Area A, reused directly rather than
+        # duplicating the query so this stat and the settings page's
+        # Area A can never drift apart (issue #168 added the COMMUNAL
+        # exclusion there; duplicating it here would have been an easy
+        # spot to miss).
+        area_total = await compute_area_a_sqm(db)
         neueste_result = await db.execute(
             select(Member)
             .where(active_member_filter())

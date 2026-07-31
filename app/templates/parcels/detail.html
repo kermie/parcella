@@ -40,6 +40,8 @@
                         <span class="badge badge-aktiv">{{ t('parcels.status.active') }}</span>
                         {% elif parcel.status.value == 'TERMINATED' %}
                         <span class="badge badge-gekuendigt">{{ t('parcels.status.terminated') }}</span>
+                        {% elif parcel.status.value == 'COMMUNAL' %}
+                        <span class="badge badge-gemeinschaft">{{ t('parcels.status.communal') }}</span>
                         {% else %}
                         <span class="badge badge-geloescht">{{ t('parcels.status.deleted') }}</span>
                         {% endif %}

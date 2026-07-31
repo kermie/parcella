@@ -38,6 +38,12 @@ class ParcelStatus(str, enum.Enum):
     ACTIVE = "ACTIVE"
     TERMINATED = "TERMINATED"
     DELETED = "DELETED"
+    # Club-managed common area (paths, playground, etc.), issue #168 --
+    # tracked as a real Parcel row (so its area_sqm is entered like any
+    # other plot) but excluded from Area A (see app/area_utils.py) and
+    # structurally never leased to a member. Freely switchable back to
+    # ACTIVE if the club decides to lease it out after all.
+    COMMUNAL = "COMMUNAL"
 
 
 class UserRole(str, enum.Enum):

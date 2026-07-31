@@ -672,6 +672,7 @@
     "status": {
       "active": "aktywna",
       "terminated": "wypowiedziana",
+      "communal": "wspólna",
       "deleted": "usunięta"
     },
     "list": {

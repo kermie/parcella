@@ -672,6 +672,7 @@
     "status": {
       "active": "aktívna",
       "terminated": "ukončená",
+      "communal": "spoločná",
       "deleted": "vymazaná"
     },
     "list": {

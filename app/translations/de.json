@@ -672,6 +672,7 @@
     "status": {
       "active": "aktiv",
       "terminated": "gekündigt",
+      "communal": "Gemeinschaftsfläche",
       "deleted": "gelöscht"
     },
     "list": {
