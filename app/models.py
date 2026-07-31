@@ -293,7 +293,14 @@ class Member(Base):
 
     @property
     def is_active(self) -> bool:
+        """Python-side mirror of app/database.py's active_member_filter()
+        -- keep the two in sync (issue #167: this one was missed when
+        the member_since check was added to the SQL filter, so the
+        member list's status badge and the REST API's active_only
+        filter kept showing a pending application as active)."""
         return self.deleted_at is None and (
+            self.member_since is None or self.member_since <= date.today()
+        ) and (
             self.member_until is None or self.member_until >= date.today()
         )
 

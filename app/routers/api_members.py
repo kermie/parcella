@@ -62,7 +62,7 @@ def _to_detail_schema(member: Member) -> MemberDetailOut:
 )
 async def members_list(
     search: Optional[str] = Query(None, description="Search in first/last name and city"),
-    active_only: bool = Query(False, description="Only active memberships (member_until in the future or empty)"),
+    active_only: bool = Query(False, description="Only active memberships (member_since already started, member_until in the future or empty)"),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),

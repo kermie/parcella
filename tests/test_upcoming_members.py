@@ -9,11 +9,20 @@ was silently treated as fully active everywhere.
 
 member_since IS NULL is unaffected (treated as "already started", same
 as every member before this field existed).
+
+Follow-up (same issue): Member.is_active -- a second, Python-side
+mirror of active_member_filter() used by the member list's status
+badge and the REST API's active_only filter -- was missed in the
+original fix and still showed a pending application as active. Also
+adds a dedicated /members/?pending_only=true view, sorted by
+created_at (the "entered into the system" timestamp), for reviewing a
+queue of pending applications.
 """
 from datetime import date, timedelta
 
 from sqlalchemy import select
 
+from tests.conftest import login, auth_header
 from app.database import AsyncSessionLocal, active_member_filter
 from app.models import Member, MemberParcel, Parcel, ClubSetting
 
@@ -111,3 +120,66 @@ async def test_fixed_per_person_invoice_excludes_upcoming_member(client, admin_u
     assert r_preview.status_code == 200
     assert "Pending Payer" not in r_preview.text
     assert "Actual Payer" in r_preview.text
+
+
+async def test_member_is_active_property_reflects_member_since():
+    async with AsyncSessionLocal() as session:
+        upcoming = Member(first_name="Upcoming", last_name="Applicant", member_since=date.today() + timedelta(days=30))
+        started = Member(first_name="Already", last_name="Started", member_since=date.today() - timedelta(days=1))
+        session.add_all([upcoming, started])
+        await session.commit()
+
+    assert upcoming.is_active is False, "Member.is_active must mirror active_member_filter()'s member_since check"
+    assert started.is_active is True
+
+
+async def test_pending_only_view_shows_upcoming_members_sorted_by_created_at(client, admin_user):
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+
+    async with AsyncSessionLocal() as session:
+        active_member = Member(first_name="Already", last_name="Active", member_since=date.today() - timedelta(days=1))
+        second_applicant = Member(first_name="Second", last_name="Applicant", member_since=date.today() + timedelta(days=10))
+        session.add_all([active_member, second_applicant])
+        await session.commit()
+
+    # Added in a separate commit, after the first applicant, so
+    # created_at ordering is unambiguous even at second resolution.
+    async with AsyncSessionLocal() as session:
+        first_applicant = Member(first_name="First", last_name="Applicant", member_since=date.today() + timedelta(days=5))
+        session.add(first_applicant)
+        await session.commit()
+
+    response = await client.get("/members/?pending_only=true")
+    assert response.status_code == 200
+    text = response.text
+
+    assert "Active, Already" not in text, "an already-active member must not appear in the pending-only view"
+    assert "Applicant, Second" in text
+    assert "Applicant, First" in text
+    # "Second" was entered into the system before "First" (committed
+    # first above), so it must be listed first (oldest-applied-first).
+    assert text.index("Applicant, Second") < text.index("Applicant, First")
+
+
+async def test_pending_only_view_empty_state(client, admin_user):
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+
+    response = await client.get("/members/?pending_only=true")
+    assert response.status_code == 200
+
+
+async def test_rest_api_active_only_excludes_upcoming_member(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    async with AsyncSessionLocal() as session:
+        session.add(Member(first_name="Pending", last_name="ApiApplicant", member_since=date.today() + timedelta(days=30)))
+        session.add(Member(first_name="Actual", last_name="ApiMember"))
+        await session.commit()
+
+    response = await client.get("/api/v1/members?active_only=true", headers=headers)
+    assert response.status_code == 200
+    names = {(m["first_name"], m["last_name"]) for m in response.json()}
+
+    assert ("Pending", "ApiApplicant") not in names
+    assert ("Actual", "ApiMember") in names

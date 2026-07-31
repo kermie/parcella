@@ -44,6 +44,7 @@ async def members_list(
     request: Request,
     search: str = "",
     include_inactive: bool = False,
+    pending_only: bool = False,
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_permission(request, db, "members_parcels", "read")
@@ -54,14 +55,26 @@ async def members_list(
             selectinload(Member.email_addresses),
             selectinload(Member.parcel_assignments).selectinload(MemberParcel.parcel),
         )
-        .order_by(Member.last_name, Member.first_name)
     )
 
-    if include_inactive:
-        # All non-deleted members (including expired memberships)
-        query = query.where(Member.deleted_at.is_(None))
+    if pending_only:
+        # Issue #167 follow-up: a dedicated view for pending
+        # applications (member_since in the future -- excluded from
+        # active_member_filter() everywhere else). Sorted oldest-applied
+        # first (by created_at, the "entered into the system"
+        # timestamp the reporter asked for), since that's the order a
+        # board actually works through a queue of applications in --
+        # takes precedence over include_inactive, which is meaningless
+        # here (a pending application is never "inactive/expired").
+        query = query.where(Member.deleted_at.is_(None), Member.member_since > date.today())
+        query = query.order_by(Member.created_at.asc())
     else:
-        query = query.where(active_member_filter())
+        query = query.order_by(Member.last_name, Member.first_name)
+        if include_inactive:
+            # All non-deleted members (including expired memberships)
+            query = query.where(Member.deleted_at.is_(None))
+        else:
+            query = query.where(active_member_filter())
 
     if search:
         # Searches by first/last name OR parcel number. For the parcel
@@ -100,6 +113,7 @@ async def members_list(
             "members": members,
             "search": search,
             "include_inactive": include_inactive,
+            "pending_only": pending_only,
         },
     )
 
