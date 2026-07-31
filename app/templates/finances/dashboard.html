@@ -70,6 +70,19 @@
         </a>
     </div>
     <div class="col-md-6">
+        <a href="/finances/accounts" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <i class="bi bi-bank" style="font-size: 1.8rem; color: var(--gv-gruen);"></i>
+                    <div>
+                        <div class="fw-semibold">{{ t('finances.account_list.title') }}</div>
+                        <div class="text-muted" style="font-size: 0.85rem;">{{ t('finances.dashboard.accounts_hint', n=account_count) }}</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6">
         <a href="/finances/reminders" class="text-decoration-none">
             <div class="card h-100">
                 <div class="card-body d-flex align-items-center gap-3">
@@ -94,18 +107,6 @@
                 </div>
             </div>
         </a>
-    </div>
-
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-body d-flex align-items-center gap-3">
-                <i class="bi bi-bank" style="font-size: 1.8rem; color: #9ca3af;"></i>
-                <div>
-                    <div class="fw-semibold">{{ t('finances.dashboard.accounts_header') }}</div>
-                    <div class="text-muted" style="font-size: 0.85rem;">{{ t('finances.dashboard.accounts_hint') }}</div>
-                </div>
-            </div>
-        </div>
     </div>
 
 </div>

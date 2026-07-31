@@ -1994,6 +1994,46 @@ class FinanceCategory(Base):
         return f"<FinanceCategory {self.code} {self.title!r}>"
 
 
+class FinanceAccountType(str, enum.Enum):
+    BANK = "BANK"
+    CASH = "CASH"
+
+
+class FinanceAccount(Base):
+    """
+    A club's real-world bank or cash account (issue #156), e.g. an old
+    and a new giro account plus a deposit account, or a cash box.
+    Purely a tag on InvoicePayment -- same "reporting tag, no effect on
+    invoice generation" role FinanceCategory already has -- not a real
+    ledger: no manual transactions, no opening balance, just a sum of
+    the payments recorded against it. Freely hard-deletable like
+    FinanceCategory (InvoicePayment.account_id is ON DELETE SET NULL) --
+    the payment record itself is never lost, only its account
+    attribution.
+
+    `is_active` lets an old/closed account (the user's own "one old and
+    one new giro account" example) stay around for its already-recorded
+    payments' sake without still being offered when recording a new one.
+    """
+    __tablename__ = "finance_accounts"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    account_type: Mapped[FinanceAccountType] = mapped_column(SAEnum(FinanceAccountType), nullable=False)
+    account_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<FinanceAccount {self.name!r} ({self.account_type})>"
+
+
 class InvoiceRunStatus(str, enum.Enum):
     DRAFT = "draft"
     FINALIZED = "finalized"
@@ -2417,6 +2457,9 @@ class InvoicePayment(Base):
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     paid_on: Mapped[date] = mapped_column(Date, nullable=False)
     note: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    account_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("finance_accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     recorded_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -2426,6 +2469,7 @@ class InvoicePayment(Base):
 
     invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="payments")
     recorded_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[recorded_by_id])
+    account: Mapped[Optional["FinanceAccount"]] = relationship("FinanceAccount")
 
     def __repr__(self) -> str:
         return f"<InvoicePayment {self.amount} on {self.paid_on}>"

@@ -10,11 +10,13 @@ numbers -- see app/invoice_generation.py's module docstring for why
 this is a one-way action). Phase 3 (#58): delivery (email with the PDF
 attached, upload to the parcel's cloud folder, a merged print bundle
 for anyone not reachable by email -- see app/invoice_delivery.py) and
-payment tracking across every finalized run. Categories (#67, this
-addition): optional bookkeeping codes an item definition can be
-tagged with, manageable by hand or via CSV import -- see
-FinanceCategory's docstring in app/models.py for why this app doesn't
-ship real SKR42 codes itself.
+payment tracking across every finalized run. Categories (#67): optional
+bookkeeping codes an item definition can be tagged with, manageable by
+hand or via CSV import -- see FinanceCategory's docstring in
+app/models.py for why this app doesn't ship real SKR42 codes itself.
+Accounts (#156): a club's real bank/cash accounts, a reporting tag on
+InvoicePayment with the same "no effect on invoice generation" role as
+categories -- see FinanceAccount's docstring.
 """
 import csv
 import io
@@ -27,7 +29,7 @@ from typing import Optional
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
@@ -36,7 +38,7 @@ from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel, InvoiceItemDefinitionMember,
     InvoiceItemTemplate, InvoiceItemTemplateParcel, InvoiceItemTemplateMember,
     InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, Parcel, ParcelStatus, Member,
-    FinanceCategory, FinanceCategoryGroup,
+    FinanceCategory, FinanceCategoryGroup, FinanceAccount, FinanceAccountType,
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
@@ -158,9 +160,8 @@ async def _pdf_context(db: AsyncSession) -> dict:
 
 # ---------------------------------------------------------------------------
 # Dashboard (nav landing page) -- outstanding-balance summary and quick
-# links into the module's sections. Accounts (planned) will show up
-# here as cards linking out to each account, rather than getting their
-# own nav entries -- see the module docstring.
+# links into the module's sections, including Accounts (issue #156) as
+# a card linking out, rather than getting its own nav entry.
 # ---------------------------------------------------------------------------
 
 @router.get("/", response_class=HTMLResponse)
@@ -193,11 +194,15 @@ async def finances_dashboard(request: Request, db: AsyncSession = Depends(get_db
     item_template_count_result = await db.execute(select(InvoiceItemTemplate))
     item_template_count = len(item_template_count_result.scalars().all())
 
+    account_count_result = await db.execute(select(FinanceAccount))
+    account_count = len(account_count_result.scalars().all())
+
     return templates.TemplateResponse("finances/dashboard.html", {
         "request": request, "user": user,
         "run_count": run_count, "open_invoice_count": open_count,
         "overdue_count": overdue_count, "outstanding_total": outstanding_total,
         "category_count": category_count, "item_template_count": item_template_count,
+        "account_count": account_count,
     })
 
 
@@ -823,7 +828,8 @@ async def _get_invoice_or_404(db: AsyncSession, invoice_id: str) -> Invoice:
     result = await db.execute(
         select(Invoice)
         .options(
-            selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.member), selectinload(Invoice.payments),
+            selectinload(Invoice.line_items), selectinload(Invoice.parcel), selectinload(Invoice.member),
+            selectinload(Invoice.payments).selectinload(InvoicePayment.account),
             selectinload(Invoice.reminders),
         )
         .where(Invoice.id == invoice_id)
@@ -874,9 +880,14 @@ async def invoice_detail(invoice_id: str, request: Request, db: AsyncSession = D
     run_result = await db.execute(select(InvoiceRun).where(InvoiceRun.id == invoice.invoice_run_id))
     run = run_result.scalar_one_or_none()
 
+    accounts_result = await db.execute(
+        select(FinanceAccount).where(FinanceAccount.is_active == True).order_by(FinanceAccount.name)  # noqa: E712
+    )
+    accounts = list(accounts_result.scalars().all())
+
     return templates.TemplateResponse("finances/invoice_detail.html", {
         "request": request, "user": user, "invoice": invoice, "run": run,
-        "today": date.today().isoformat(),
+        "today": date.today().isoformat(), "accounts": accounts,
     })
 
 
@@ -904,6 +915,7 @@ async def invoice_resend_email(invoice_id: str, request: Request, db: AsyncSessi
 async def payment_create(
     invoice_id: str, request: Request,
     amount: str = Form(...), paid_on: str = Form(...), note: str = Form(""),
+    account_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_permission(request, db, "finances", "write")
@@ -917,6 +929,7 @@ async def payment_create(
         invoice_id=invoice_id, amount=parsed_amount,
         paid_on=datetime.strptime(paid_on, "%Y-%m-%d").date(),
         note=note.strip() or None, recorded_by_id=user.id,
+        account_id=account_id.strip() or None,
     ))
     await db.commit()
     return RedirectResponse(f"/finances/invoices/{invoice_id}", status_code=302)
@@ -1075,6 +1088,109 @@ async def category_import(request: Request, file: UploadFile = File(...), db: As
     return RedirectResponse(
         f"/finances/categories?success=1&imported={imported}&skipped={skipped}", status_code=302,
     )
+
+
+# ---------------------------------------------------------------------------
+# Accounts (issue #156): a club's real bank/cash accounts. Purely a tag
+# on InvoicePayment (see FinanceAccount's docstring) -- not a ledger.
+# ---------------------------------------------------------------------------
+
+@router.get("/accounts", response_class=HTMLResponse)
+async def account_list(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+
+    result = await db.execute(select(FinanceAccount).order_by(FinanceAccount.name))
+    accounts = list(result.scalars().all())
+
+    payment_sums_result = await db.execute(
+        select(InvoicePayment.account_id, func.sum(InvoicePayment.amount))
+        .where(InvoicePayment.account_id.is_not(None))
+        .group_by(InvoicePayment.account_id)
+    )
+    payment_sums = {account_id: total for account_id, total in payment_sums_result.all()}
+
+    return templates.TemplateResponse("finances/account_list.html", {
+        "request": request, "user": user, "accounts": accounts,
+        "account_types": list(FinanceAccountType), "payment_sums": payment_sums,
+    })
+
+
+@router.post("/accounts")
+async def account_create(
+    request: Request,
+    name: str = Form(...),
+    account_type: str = Form(...),
+    account_number: str = Form(""),
+    note: str = Form(""),
+    is_active: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "finances", "write")
+
+    if not name.strip():
+        return RedirectResponse(
+            f"/finances/accounts?error={t_for(request, 'errors.name_required')}", status_code=302,
+        )
+    try:
+        parsed_type = FinanceAccountType(account_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid account_type")
+
+    db.add(FinanceAccount(
+        name=name.strip(), account_type=parsed_type,
+        account_number=account_number.strip() or None, note=note.strip() or None,
+        is_active=is_active == "on",
+    ))
+    await db.commit()
+    return RedirectResponse("/finances/accounts?success=1", status_code=302)
+
+
+@router.post("/accounts/{account_id}/edit")
+async def account_update(
+    account_id: str,
+    request: Request,
+    name: str = Form(...),
+    account_type: str = Form(...),
+    account_number: str = Form(""),
+    note: str = Form(""),
+    is_active: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    if not name.strip():
+        return RedirectResponse(
+            f"/finances/accounts?error={t_for(request, 'errors.name_required')}", status_code=302,
+        )
+    try:
+        parsed_type = FinanceAccountType(account_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid account_type")
+
+    account.name = name.strip()
+    account.account_type = parsed_type
+    account.account_number = account_number.strip() or None
+    account.note = note.strip() or None
+    account.is_active = is_active == "on"
+    await db.commit()
+    return RedirectResponse("/finances/accounts?success=1", status_code=302)
+
+
+@router.post("/accounts/{account_id}/delete")
+async def account_delete(account_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "delete")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if account:
+        await db.delete(account)
+        await db.commit()
+    return RedirectResponse("/finances/accounts?success=1", status_code=302)
 
 
 # ---------------------------------------------------------------------------

@@ -2018,6 +2018,7 @@
       "label_amount": "Amount",
       "label_paid_on": "Paid on",
       "label_note": "Note",
+      "label_account": "Account",
       "add_payment_button": "Add payment",
       "delete_payment_confirm": "Delete this payment?",
       "success_message": "Done."
@@ -2030,8 +2031,7 @@
       "stat_overdue": "Overdue",
       "outgoing_hint": "{n} invoice run(s)",
       "coming_soon_hint": "Coming soon",
-      "accounts_header": "Accounts",
-      "accounts_hint": "Coming soon -- your club's accounts will appear here.",
+      "accounts_hint": "{n} account(s) defined",
       "categories_hint": "{n} categor(y/ies) defined",
       "item_templates_hint": "{n} item template(s) defined",
       "reminders_hint": "{n} invoice(s) overdue"
@@ -2091,6 +2091,30 @@
       "col_group": "Group",
       "no_categories": "No categories yet -- add one above, or import a CSV.",
       "delete_confirm": "Delete this category? Items using it keep working, just without a category."
+    },
+    "account_types": {
+      "bank": "Bank",
+      "cash": "Cash"
+    },
+    "account_list": {
+      "title": "Accounts",
+      "heading": "Accounts",
+      "saved": "Done.",
+      "new_header": "New account",
+      "label_name": "Name",
+      "label_type": "Type",
+      "label_number": "Account number/IBAN",
+      "label_note": "Note",
+      "label_active": "Active",
+      "button_create": "Add account",
+      "list_header": "Accounts",
+      "col_name": "Name",
+      "col_type": "Type",
+      "col_number": "Account number/IBAN",
+      "col_note": "Note",
+      "col_total_payments": "Payments recorded",
+      "no_accounts": "No accounts yet -- add one above.",
+      "delete_confirm": "Delete this account? Payments recorded against it keep working, just without an account."
     },
     "item_template_list": {
       "title": "Item catalog",

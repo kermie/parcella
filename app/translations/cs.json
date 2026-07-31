@@ -2018,6 +2018,7 @@
       "label_amount": "Částka",
       "label_paid_on": "Uhrazeno dne",
       "label_note": "Poznámka",
+      "label_account": "Účet",
       "add_payment_button": "Přidat platbu",
       "delete_payment_confirm": "Smazat tuto platbu?",
       "success_message": "Hotovo."
@@ -2030,8 +2031,7 @@
       "stat_overdue": "Po splatnosti",
       "outgoing_hint": "{n} vyúčtování",
       "coming_soon_hint": "Již brzy",
-      "accounts_header": "Účty",
-      "accounts_hint": "Již brzy -- zde se zobrazí účty vaší organizace.",
+      "accounts_hint": "{n} účet(ů) definováno",
       "categories_hint": "definováno {n} kategorií",
       "item_templates_hint": "definováno {n} šablon položek",
       "reminders_hint": "Faktur po splatnosti: {n}"
@@ -2091,6 +2091,30 @@
       "col_group": "Skupina",
       "no_categories": "Zatím žádné kategorie -- přidejte výše nebo importujte CSV.",
       "delete_confirm": "Smazat tuto kategorii? Položky, které ji používají, zůstanou zachovány, jen bez kategorie."
+    },
+    "account_types": {
+      "bank": "Banka",
+      "cash": "Hotovost"
+    },
+    "account_list": {
+      "title": "Účty",
+      "heading": "Účty",
+      "saved": "Hotovo.",
+      "new_header": "Nový účet",
+      "label_name": "Název",
+      "label_type": "Typ",
+      "label_number": "Číslo účtu/IBAN",
+      "label_note": "Poznámka",
+      "label_active": "Aktivní",
+      "button_create": "Přidat účet",
+      "list_header": "Účty",
+      "col_name": "Název",
+      "col_type": "Typ",
+      "col_number": "Číslo účtu/IBAN",
+      "col_note": "Poznámka",
+      "col_total_payments": "Zaznamenané platby",
+      "no_accounts": "Zatím žádné účty -- přidejte jeden výše.",
+      "delete_confirm": "Smazat tento účet? Platby přiřazené k němu zůstanou zachovány, jen bez účtu."
     },
     "item_template_list": {
       "title": "Katalog položek",

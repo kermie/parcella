@@ -12,6 +12,7 @@ optional bookkeeping-category tag for reporting. Off by default
 
 ```
 finance_categories        -- optional bookkeeping tag (code + title + group)
+finance_accounts           -- a club's real bank/cash accounts (issue #156)
 
 invoice_runs               -- one "annual invoices" batch (e.g. "2026")
   invoice_item_templates    -- reusable catalog, independent of any run
@@ -22,7 +23,7 @@ invoice_runs               -- one "annual invoices" batch (e.g. "2026")
     invoice_item_definition_members -- explicit member scope (FIXED_PER_PERSON only)
   invoices                  -- one per parcel OR one per directly-targeted member
     invoice_line_items
-    invoice_payments
+    invoice_payments         -- optionally tagged with a finance_accounts row
     invoice_reminders
 ```
 
@@ -196,6 +197,24 @@ referenced SKR42) without shipping any of DATEV's actual copyrighted
 codes -- a club imports its own chart via CSV or types categories in by
 hand. Purely a reporting tag on item definitions/templates; has no
 effect on invoice generation.
+
+## Accounts
+
+`FinanceAccount` (issue #156) is a club's real bank/cash account (e.g.
+an old and a new giro account, plus a cash box) -- `name`, `account_type`
+(`BANK`/`CASH`), an optional `account_number`/IBAN and note, and
+`is_active` so a closed/retired account can stay around for its
+already-recorded payments' sake without still being offered when
+recording a new one (`/finances/accounts`).
+
+Same role as `FinanceCategory`: purely a reporting tag, this time on
+`InvoicePayment.account_id` (nullable, `ON DELETE SET NULL`) rather
+than on an item definition -- deleting an account never deletes the
+payment record itself, only its account attribution. **Not a ledger**:
+no manual transactions, no opening balance. The accounts list just
+sums the payments recorded against each account
+(`SUM(InvoicePayment.amount) GROUP BY account_id`); that sum has no
+effect on invoice generation either.
 
 ## Key decisions
 
