@@ -13,6 +13,10 @@ optional bookkeeping-category tag for reporting. Off by default
 ```
 finance_categories        -- optional bookkeeping tag (code + title + group)
 finance_accounts           -- a club's real bank/cash accounts (issue #156)
+  account_transactions      -- other bookings against the account (issue #174)
+
+incoming_invoices          -- a bill the club received (issue #178)
+  incoming_invoice_line_items
 
 invoice_runs               -- one "annual invoices" batch (e.g. "2026")
   invoice_item_templates    -- reusable catalog, independent of any run
@@ -258,6 +262,33 @@ import against outstanding invoices is a different, harder problem,
 explicitly out of scope). See
 [ADR 0059](./ADR/0059-account-transactions-reopen-not-a-ledger-stance.md)
 for the full reasoning.
+
+## Incoming invoices
+
+`IncomingInvoice` (issue #178) is the mirror image of `Invoice` -- a
+bill the club *received* from a supplier/vendor -- but far simpler:
+recorded directly by hand at `/finances/incoming-invoices`, no
+generation/finalization phases, no payment/reminder tracking. A single
+invoice can carry several cost positions (`IncomingInvoiceLineItem`),
+each tagged with its own `FinanceCategory` (`category_id`, nullable,
+`ON DELETE SET NULL` -- same historization-over-deletion precedent as
+`InvoiceItemDefinition.category_id`: deleting a category later must
+never destroy a historical bookkeeping record).
+
+The scanned/photographed bill itself, if any, is never stored in this
+app's own database or filesystem (the app doesn't store media at all).
+Instead, `cloud_filename` just names a file inside **one shared**
+Nextcloud folder configured for all incoming invoices (`ClubSetting`
+key `incoming_invoices_cloud_folder`, set from the incoming-invoices
+page itself when the `cloud_storage` module is enabled) -- deliberately
+simpler than the per-parcel `ParcelCloudFolder` pattern
+(`app/parcel_cloud_folders.py`), since there's no per-entity turnover
+concept here that would need its own history table. Uploading/
+downloading reuses the same `get_nextcloud_provider()` connection
+(`app/cloud_storage.py`) `ParcelCloudFolder` already uses. Deleting an
+`IncomingInvoice` only removes the DB row; an already-uploaded
+attachment is left in the cloud folder untouched (this app's own data
+is never the source of truth for the file itself).
 
 ## Key decisions
 

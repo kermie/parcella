@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.incoming_invoices.title') }}{% endblock %}
+{% block page_title %}{{ t('finances.incoming_invoices.title') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/finances/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.coming_soon.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+{% if request.query_params.get('success') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ t('finances.incoming_invoices.saved') }}
+</div>
+{% elif request.query_params.get('deleted') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ t('finances.incoming_invoices.deleted') }}
+</div>
+{% elif request.query_params.get('cloud_folder_saved') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ t('finances.incoming_invoices.cloud_folder_saved') }}
+</div>
+{% elif request.query_params.get('cloud_error') %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ request.query_params.get('cloud_error') }}
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+    {% if cloud_storage_enabled %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-cloud me-2"></i>{{ t('finances.incoming_invoices.cloud_folder_header') }}</div>
+            <div class="card-body">
+                <p class="text-muted">{{ t('finances.incoming_invoices.cloud_folder_help') }}</p>
+                <form method="post" action="/finances/incoming-invoices/cloud-folder" class="d-flex gap-2 align-items-end flex-wrap">
+                    <div style="min-width: 300px;">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.cloud_folder_label') }}</label>
+                        <input type="text" name="relative_path" class="form-control form-control-sm"
+                               value="{{ folder_path or '' }}" placeholder="Rechnungen/Eingang">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-check-lg me-1"></i>{{ t('finances.incoming_invoices.cloud_folder_save_button') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if has_perm(request, 'finances', 'write') %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.incoming_invoices.new_header') }}</div>
+            <div class="card-body">
+                <form method="post" action="/finances/incoming-invoices" enctype="multipart/form-data" id="new-incoming-invoice-form">
+                    <div class="row g-2">
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_sender') }}</label>
+                            <input type="text" name="sender" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_invoice_number') }}</label>
+                            <input type="text" name="invoice_number" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-sm-2">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_invoice_date') }}</label>
+                            <input type="date" name="invoice_date" class="form-control form-control-sm" value="{{ today }}" required>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_note') }}</label>
+                            <input type="text" name="note" class="form-control form-control-sm">
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_positions') }}</label>
+                        <div id="line-items">
+                            <div class="row g-2 mb-2 line-item-row">
+                                <div class="col-sm-6">
+                                    <select name="category_id" class="form-select form-select-sm">
+                                        <option value="">—</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.code }} · {{ category.title }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-sm-4">
+                                    <input type="text" name="amount" class="form-control form-control-sm" placeholder="0,00">
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-line-item-btn" style="display: none;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="add-line-item-btn" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-plus-lg me-1"></i>{{ t('finances.incoming_invoices.add_position_button') }}
+                        </button>
+                    </div>
+
+                    {% if cloud_storage_enabled and folder_path %}
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_file') }}</label>
+                        <input type="file" name="file" class="form-control form-control-sm">
+                        <div class="form-text">{{ t('finances.incoming_invoices.file_help') }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-save me-1"></i>{{ t('finances.incoming_invoices.save_button') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-inboxes me-2"></i>{{ t('finances.incoming_invoices.list_header') }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('finances.incoming_invoices.col_date') }}</th>
+                                <th>{{ t('finances.incoming_invoices.col_sender') }}</th>
+                                <th>{{ t('finances.incoming_invoices.col_invoice_number') }}</th>
+                                <th>{{ t('finances.incoming_invoices.col_categories') }}</th>
+                                <th class="text-end">{{ t('finances.incoming_invoices.col_amount') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td class="text-nowrap">{{ invoice.invoice_date.strftime('%d.%m.%Y') }}</td>
+                                <td><a href="/finances/incoming-invoices/{{ invoice.id }}">{{ invoice.sender }}</a></td>
+                                <td class="text-muted">{{ invoice.invoice_number or '' }}</td>
+                                <td class="text-muted">
+                                    {% for li in invoice.line_items %}
+                                    <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
+                                        {{ li.category.title if li.category else t('finances.incoming_invoices.no_category') }}
+                                    </span>
+                                    {% endfor %}
+                                </td>
+                                <td class="text-end">{{ invoice.total_amount|float|money }}</td>
+                                <td class="text-end">
+                                    {% if invoice.cloud_filename and cloud_storage_enabled %}
+                                    <a href="/finances/incoming-invoices/{{ invoice.id }}/download" class="btn btn-sm btn-outline-secondary border-0">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if has_perm(request, 'finances', 'delete') %}
+                                    <form method="post" action="/finances/incoming-invoices/{{ invoice.id }}/delete" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('{{ t('finances.incoming_invoices.delete_confirm') }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.incoming_invoices.no_invoices') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var container = document.getElementById('line-items');
+    var addButton = document.getElementById('add-line-item-btn');
+    if (!container || !addButton) return;
+
+    function syncRemoveButtons() {
+        var rows = container.querySelectorAll('.line-item-row');
+        rows.forEach(function (row) {
+            var btn = row.querySelector('.remove-line-item-btn');
+            btn.style.display = rows.length > 1 ? '' : 'none';
+        });
+    }
+
+    addButton.addEventListener('click', function () {
+        var rows = container.querySelectorAll('.line-item-row');
+        var last = rows[rows.length - 1];
+        var clone = last.cloneNode(true);
+        clone.querySelectorAll('select').forEach(function (el) { el.selectedIndex = 0; });
+        clone.querySelectorAll('input').forEach(function (el) { el.value = ''; });
+        container.appendChild(clone);
+        syncRemoveButtons();
+    });
+
+    container.addEventListener('click', function (e) {
+        var btn = e.target.closest('.remove-line-item-btn');
+        if (!btn) return;
+        var rows = container.querySelectorAll('.line-item-row');
+        if (rows.length > 1) {
+            btn.closest('.line-item-row').remove();
+            syncRemoveButtons();
+        }
+    });
+
+    syncRemoveButtons();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.incoming_invoice_detail.title', sender=invoice.sender) }}{% endblock %}
+{% block page_title %}{{ t('finances.incoming_invoice_detail.title', sender=invoice.sender) }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2">
+    {% if invoice.cloud_filename and cloud_storage_enabled %}
+    <a href="/finances/incoming-invoices/{{ invoice.id }}/download" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-download me-1"></i>{{ t('finances.incoming_invoice_detail.download_button') }}
+    </a>
+    {% endif %}
+    <a href="/finances/incoming-invoices" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>{{ t('finances.incoming_invoice_detail.back') }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>{{ t('finances.incoming_invoice_detail.info_header') }}</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">{{ t('finances.incoming_invoices.col_sender') }}</dt>
+                    <dd class="col-sm-7">{{ invoice.sender }}</dd>
+                    <dt class="col-sm-5">{{ t('finances.incoming_invoices.col_invoice_number') }}</dt>
+                    <dd class="col-sm-7">{{ invoice.invoice_number or '—' }}</dd>
+                    <dt class="col-sm-5">{{ t('finances.incoming_invoices.col_date') }}</dt>
+                    <dd class="col-sm-7">{{ invoice.invoice_date.strftime('%d.%m.%Y') }}</dd>
+                    <dt class="col-sm-5">{{ t('finances.incoming_invoices.label_note') }}</dt>
+                    <dd class="col-sm-7">{{ invoice.note or '—' }}</dd>
+                    <dt class="col-sm-5">{{ t('finances.incoming_invoices.col_amount') }}</dt>
+                    <dd class="col-sm-7">{{ invoice.total_amount|float|money }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-list-ol me-2"></i>{{ t('finances.incoming_invoice_detail.positions_header') }}</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        {% for li in invoice.line_items %}
+                        <tr>
+                            <td>{{ li.category.code ~ ' · ' ~ li.category.title if li.category else t('finances.incoming_invoices.no_category') }}</td>
+                            <td class="text-end">{{ li.amount|float|money }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="fw-bold">
+                            <td>{{ t('finances.invoice_list.col_subtotal') }}</td>
+                            <td class="text-end">{{ invoice.total_amount|float|money }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

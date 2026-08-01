@@ -2041,11 +2041,11 @@
       "stat_outstanding": "Montant en attente",
       "stat_overdue": "En retard",
       "outgoing_hint": "{n} série(s) de factures",
-      "coming_soon_hint": "Bientôt disponible",
       "accounts_hint": "{n} compte(s) défini(s)",
       "categories_hint": "{n} catégorie(s) définie(s)",
       "item_templates_hint": "{n} modèle(s) d'article défini(s)",
-      "reminders_hint": "{n} facture(s) en retard"
+      "reminders_hint": "{n} facture(s) en retard",
+      "incoming_invoices_hint": "{n} facture(s) entrante(s)"
     },
     "coming_soon": {
       "message": "Cette fonctionnalité sera bientôt disponible.",
@@ -2075,7 +2075,34 @@
       "send_button_help": "Génère le rappel suivant au format PDF -- les frais (le cas échéant) sont ajoutés au montant dû. L'envoie par e-mail si le membre y a consenti et dispose d'une adresse enregistrée, sinon le prépare pour l'impression/l'envoi postal."
     },
     "incoming_invoices": {
-      "title": "Factures reçues"
+      "title": "Factures reçues",
+      "saved": "Enregistré.",
+      "deleted": "Supprimé.",
+      "cloud_folder_saved": "Dossier cloud enregistré.",
+      "cloud_folder_header": "Dossier cloud",
+      "cloud_folder_help": "Les pièces jointes des factures entrantes sont stockées dans ce dossier Nextcloud partagé -- l'application elle-même ne stocke jamais le fichier.",
+      "cloud_folder_label": "Chemin du dossier",
+      "cloud_folder_save_button": "Enregistrer",
+      "new_header": "Enregistrer une facture entrante",
+      "label_sender": "Expéditeur",
+      "label_invoice_number": "N° de facture",
+      "label_invoice_date": "Date de facture",
+      "label_note": "Note",
+      "label_positions": "Postes",
+      "add_position_button": "Ajouter un poste",
+      "label_file": "Pièce jointe",
+      "file_help": "Téléchargé vers le dossier cloud partagé ci-dessus.",
+      "save_button": "Enregistrer",
+      "list_header": "Factures entrantes",
+      "col_date": "Date",
+      "col_sender": "Expéditeur",
+      "col_invoice_number": "N° de facture",
+      "col_categories": "Catégories",
+      "col_amount": "Montant",
+      "no_category": "Sans catégorie",
+      "delete_confirm": "Vraiment supprimer cette facture entrante ? La pièce jointe ne sera pas supprimée du dossier cloud.",
+      "no_invoices": "Aucune facture entrante enregistrée pour l'instant.",
+      "cloud_not_configured": "La connexion au stockage cloud n'est pas configurée -- voir /admin/integrations."
     },
     "category_groups": {
       "INCOME": "Recettes",
@@ -2194,6 +2221,13 @@
       "row_previous_fees": "Frais des rappels précédents",
       "row_this_fee": "Frais de ce rappel",
       "closing": "Merci de régler le montant dû dans les meilleurs délais. Si vous avez déjà effectué le paiement, veuillez ignorer ce rappel."
+    },
+    "incoming_invoice_detail": {
+      "title": "Facture entrante — {sender}",
+      "download_button": "Télécharger la pièce jointe",
+      "back": "Retour aux factures entrantes",
+      "info_header": "Facture",
+      "positions_header": "Postes"
     }
   },
   "pdf": {

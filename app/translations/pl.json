@@ -2041,11 +2041,11 @@
       "stat_outstanding": "Kwota do zapłaty",
       "stat_overdue": "Zaległe",
       "outgoing_hint": "{n} seria(e) faktur",
-      "coming_soon_hint": "Wkrótce dostępne",
       "accounts_hint": "{n} konto(a) zdefiniowane",
       "categories_hint": "zdefiniowano {n} kategorii",
       "item_templates_hint": "zdefiniowano {n} szablonów pozycji",
-      "reminders_hint": "Zaległych faktur: {n}"
+      "reminders_hint": "Zaległych faktur: {n}",
+      "incoming_invoices_hint": "zarejestrowano {n} faktur przychodzących"
     },
     "coming_soon": {
       "message": "Ta funkcja będzie wkrótce dostępna.",
@@ -2075,7 +2075,34 @@
       "send_button_help": "Generuje kolejne przypomnienie jako PDF -- opłata (jeśli podana) zostaje doliczona do kwoty należnej. Wysyła je e-mailem, jeśli członek wyraził zgodę i ma zapisany adres, w przeciwnym razie przygotowuje je do druku/wysyłki pocztowej."
     },
     "incoming_invoices": {
-      "title": "Faktury przychodzące"
+      "title": "Faktury przychodzące",
+      "saved": "Zapisano.",
+      "deleted": "Usunięto.",
+      "cloud_folder_saved": "Folder w chmurze zapisany.",
+      "cloud_folder_header": "Folder w chmurze",
+      "cloud_folder_help": "Załączniki do faktur przychodzących są przechowywane w tym współdzielonym folderze Nextcloud -- aplikacja sama nie przechowuje pliku.",
+      "cloud_folder_label": "Ścieżka folderu",
+      "cloud_folder_save_button": "Zapisz",
+      "new_header": "Zarejestruj fakturę przychodzącą",
+      "label_sender": "Nadawca",
+      "label_invoice_number": "Nr faktury",
+      "label_invoice_date": "Data faktury",
+      "label_note": "Notatka",
+      "label_positions": "Pozycje",
+      "add_position_button": "Dodaj pozycję",
+      "label_file": "Załącznik",
+      "file_help": "Przesyłany do współdzielonego folderu w chmurze powyżej.",
+      "save_button": "Zapisz",
+      "list_header": "Faktury przychodzące",
+      "col_date": "Data",
+      "col_sender": "Nadawca",
+      "col_invoice_number": "Nr faktury",
+      "col_categories": "Kategorie",
+      "col_amount": "Kwota",
+      "no_category": "Bez kategorii",
+      "delete_confirm": "Czy na pewno usunąć tę fakturę przychodzącą? Załącznik nie zostanie usunięty z folderu w chmurze.",
+      "no_invoices": "Nie zarejestrowano jeszcze żadnych faktur przychodzących.",
+      "cloud_not_configured": "Połączenie z chmurą nie jest skonfigurowane -- zobacz /admin/integrations."
     },
     "category_groups": {
       "INCOME": "Przychody",
@@ -2194,6 +2221,13 @@
       "row_previous_fees": "Poprzednie opłaty za upomnienia",
       "row_this_fee": "Opłata za to upomnienie",
       "closing": "Prosimy o jak najszybsze uregulowanie zaległej kwoty. Jeśli płatność została już dokonana, prosimy zignorować to upomnienie."
+    },
+    "incoming_invoice_detail": {
+      "title": "Faktura przychodząca — {sender}",
+      "download_button": "Pobierz załącznik",
+      "back": "Powrót do faktur przychodzących",
+      "info_header": "Faktura",
+      "positions_header": "Pozycje"
     }
   },
   "pdf": {

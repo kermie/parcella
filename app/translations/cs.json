@@ -2041,11 +2041,11 @@
       "stat_outstanding": "Dlužná částka",
       "stat_overdue": "Po splatnosti",
       "outgoing_hint": "{n} vyúčtování",
-      "coming_soon_hint": "Již brzy",
       "accounts_hint": "{n} účet(ů) definováno",
       "categories_hint": "definováno {n} kategorií",
       "item_templates_hint": "definováno {n} šablon položek",
-      "reminders_hint": "Faktur po splatnosti: {n}"
+      "reminders_hint": "Faktur po splatnosti: {n}",
+      "incoming_invoices_hint": "zaznamenáno {n} přijatých faktur"
     },
     "coming_soon": {
       "message": "Tato funkce bude brzy k dispozici.",
@@ -2075,7 +2075,34 @@
       "send_button_help": "Vygeneruje další upomínku jako PDF -- poplatek (pokud je zadán) se přičte k dlužné částce. Odešle ji e-mailem, pokud s tím člen souhlasil a má uloženou adresu, jinak ji připraví k tisku/poštovnímu doručení."
     },
     "incoming_invoices": {
-      "title": "Přijaté faktury"
+      "title": "Přijaté faktury",
+      "saved": "Uloženo.",
+      "deleted": "Smazáno.",
+      "cloud_folder_saved": "Cloudová složka uložena.",
+      "cloud_folder_header": "Cloudová složka",
+      "cloud_folder_help": "Přílohy přijatých faktur se ukládají do této sdílené složky Nextcloud -- aplikace samotný soubor neukládá.",
+      "cloud_folder_label": "Cesta ke složce",
+      "cloud_folder_save_button": "Uložit",
+      "new_header": "Zaznamenat přijatou fakturu",
+      "label_sender": "Odesílatel",
+      "label_invoice_number": "Č. faktury",
+      "label_invoice_date": "Datum faktury",
+      "label_note": "Poznámka",
+      "label_positions": "Položky",
+      "add_position_button": "Přidat položku",
+      "label_file": "Příloha",
+      "file_help": "Nahráno do sdílené cloudové složky výše.",
+      "save_button": "Uložit",
+      "list_header": "Přijaté faktury",
+      "col_date": "Datum",
+      "col_sender": "Odesílatel",
+      "col_invoice_number": "Č. faktury",
+      "col_categories": "Kategorie",
+      "col_amount": "Částka",
+      "no_category": "Bez kategorie",
+      "delete_confirm": "Opravdu smazat tuto přijatou fakturu? Příloha se tím z cloudové složky nesmaže.",
+      "no_invoices": "Zatím nebyly zaznamenány žádné přijaté faktury.",
+      "cloud_not_configured": "Připojení k cloudovému úložišti není nastaveno -- viz /admin/integrations."
     },
     "category_groups": {
       "INCOME": "Příjmy",
@@ -2194,6 +2221,13 @@
       "row_previous_fees": "Předchozí poplatky za upomínky",
       "row_this_fee": "Poplatek za tuto upomínku",
       "closing": "Uhraďte prosím dlužnou částku co nejdříve. Pokud jste již zaplatili, považujte tuto upomínku za bezpředmětnou."
+    },
+    "incoming_invoice_detail": {
+      "title": "Přijatá faktura — {sender}",
+      "download_button": "Stáhnout přílohu",
+      "back": "Zpět na přijaté faktury",
+      "info_header": "Faktura",
+      "positions_header": "Položky"
     }
   },
   "pdf": {

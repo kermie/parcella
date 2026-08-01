@@ -2041,11 +2041,11 @@
       "stat_outstanding": "Outstanding amount",
       "stat_overdue": "Overdue",
       "outgoing_hint": "{n} invoice run(s)",
-      "coming_soon_hint": "Coming soon",
       "accounts_hint": "{n} account(s) defined",
       "categories_hint": "{n} categor(y/ies) defined",
       "item_templates_hint": "{n} item template(s) defined",
-      "reminders_hint": "{n} invoice(s) overdue"
+      "reminders_hint": "{n} invoice(s) overdue",
+      "incoming_invoices_hint": "{n} incoming invoice(s)"
     },
     "coming_soon": {
       "message": "This feature is coming soon.",
@@ -2075,7 +2075,34 @@
       "send_button_help": "Generates the next reminder as a PDF -- adds the fee (if entered) to the amount owed, emails it if the member has opted in and has a stored address, or prepares it for printing/postal delivery otherwise."
     },
     "incoming_invoices": {
-      "title": "Incoming Invoices"
+      "title": "Incoming Invoices",
+      "saved": "Saved.",
+      "deleted": "Deleted.",
+      "cloud_folder_saved": "Cloud folder saved.",
+      "cloud_folder_header": "Cloud folder",
+      "cloud_folder_help": "Attachments for incoming invoices are stored in this shared Nextcloud folder -- the app itself never stores the file.",
+      "cloud_folder_label": "Folder path",
+      "cloud_folder_save_button": "Save",
+      "new_header": "Record incoming invoice",
+      "label_sender": "Sender",
+      "label_invoice_number": "Invoice no.",
+      "label_invoice_date": "Invoice date",
+      "label_note": "Note",
+      "label_positions": "Positions",
+      "add_position_button": "Add position",
+      "label_file": "Attachment",
+      "file_help": "Uploaded to the shared cloud folder above.",
+      "save_button": "Save",
+      "list_header": "Incoming invoices",
+      "col_date": "Date",
+      "col_sender": "Sender",
+      "col_invoice_number": "Invoice no.",
+      "col_categories": "Categories",
+      "col_amount": "Amount",
+      "no_category": "Uncategorized",
+      "delete_confirm": "Really delete this incoming invoice? This does not delete the attachment from the cloud folder.",
+      "no_invoices": "No incoming invoices recorded yet.",
+      "cloud_not_configured": "The cloud storage connection isn't configured -- see /admin/integrations."
     },
     "category_groups": {
       "INCOME": "Income",
@@ -2194,6 +2221,13 @@
       "row_previous_fees": "Previous reminder fees",
       "row_this_fee": "This reminder's fee",
       "closing": "Please settle the outstanding amount as soon as possible. If you have already paid, please disregard this reminder."
+    },
+    "incoming_invoice_detail": {
+      "title": "Incoming invoice — {sender}",
+      "download_button": "Download attachment",
+      "back": "Back to incoming invoices",
+      "info_header": "Invoice",
+      "positions_header": "Positions"
     }
   },
   "pdf": {

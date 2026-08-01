@@ -2041,11 +2041,11 @@
       "stat_outstanding": "Openstaand bedrag",
       "stat_overdue": "Achterstallig",
       "outgoing_hint": "{n} factuurronde(s)",
-      "coming_soon_hint": "Binnenkort beschikbaar",
       "accounts_hint": "{n} rekening(en) gedefinieerd",
       "categories_hint": "{n} categorie(ën) gedefinieerd",
       "item_templates_hint": "{n} artikelsjabloon/sjablonen gedefinieerd",
-      "reminders_hint": "{n} factu(u)r(en) achterstallig"
+      "reminders_hint": "{n} factu(u)r(en) achterstallig",
+      "incoming_invoices_hint": "{n} inkomende factu(u)r(en)"
     },
     "coming_soon": {
       "message": "Deze functie is binnenkort beschikbaar.",
@@ -2075,7 +2075,34 @@
       "send_button_help": "Genereert de volgende herinnering als PDF -- de kosten (indien ingevuld) worden opgeteld bij het verschuldigde bedrag. Verstuurt deze per e-mail als het lid daarvoor gekozen heeft en een adres heeft opgeslagen, anders wordt deze klaargemaakt voor afdrukken/verzending per post."
     },
     "incoming_invoices": {
-      "title": "Inkomende facturen"
+      "title": "Inkomende facturen",
+      "saved": "Opgeslagen.",
+      "deleted": "Verwijderd.",
+      "cloud_folder_saved": "Cloudmap opgeslagen.",
+      "cloud_folder_header": "Cloudmap",
+      "cloud_folder_help": "Bijlagen van inkomende facturen worden opgeslagen in deze gedeelde Nextcloud-map -- de app zelf slaat het bestand nooit op.",
+      "cloud_folder_label": "Mappad",
+      "cloud_folder_save_button": "Opslaan",
+      "new_header": "Inkomende factuur registreren",
+      "label_sender": "Afzender",
+      "label_invoice_number": "Factuurnr.",
+      "label_invoice_date": "Factuurdatum",
+      "label_note": "Notitie",
+      "label_positions": "Posten",
+      "add_position_button": "Post toevoegen",
+      "label_file": "Bijlage",
+      "file_help": "Wordt geüpload naar de hierboven gedeelde cloudmap.",
+      "save_button": "Opslaan",
+      "list_header": "Inkomende facturen",
+      "col_date": "Datum",
+      "col_sender": "Afzender",
+      "col_invoice_number": "Factuurnr.",
+      "col_categories": "Categorieën",
+      "col_amount": "Bedrag",
+      "no_category": "Geen categorie",
+      "delete_confirm": "Deze inkomende factuur echt verwijderen? De bijlage wordt niet uit de cloudmap verwijderd.",
+      "no_invoices": "Nog geen inkomende facturen geregistreerd.",
+      "cloud_not_configured": "De cloudopslagverbinding is niet geconfigureerd -- zie /admin/integrations."
     },
     "category_groups": {
       "INCOME": "Inkomsten",
@@ -2194,6 +2221,13 @@
       "row_previous_fees": "Kosten eerdere herinneringen",
       "row_this_fee": "Kosten van deze herinnering",
       "closing": "Wij verzoeken u het openstaande bedrag zo spoedig mogelijk te voldoen. Heeft u al betaald, dan kunt u deze herinnering als niet verzonden beschouwen."
+    },
+    "incoming_invoice_detail": {
+      "title": "Inkomende factuur — {sender}",
+      "download_button": "Bijlage downloaden",
+      "back": "Terug naar inkomende facturen",
+      "info_header": "Factuur",
+      "positions_header": "Posten"
     }
   },
   "pdf": {

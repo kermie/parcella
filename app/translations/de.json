@@ -2041,11 +2041,11 @@
       "stat_outstanding": "Offener Betrag",
       "stat_overdue": "Überfällig",
       "outgoing_hint": "{n} Rechnungslauf(e/äufe)",
-      "coming_soon_hint": "Demnächst verfügbar",
       "accounts_hint": "{n} Konto/Konten angelegt",
       "categories_hint": "{n} Kategorie(n) angelegt",
       "item_templates_hint": "{n} Artikelvorlage(n) angelegt",
-      "reminders_hint": "{n} Rechnung(en) überfällig"
+      "reminders_hint": "{n} Rechnung(en) überfällig",
+      "incoming_invoices_hint": "{n} Eingangsrechnung(en)"
     },
     "coming_soon": {
       "message": "Diese Funktion ist demnächst verfügbar.",
@@ -2075,7 +2075,34 @@
       "send_button_help": "Erstellt die nächste Mahnung als PDF -- die Gebühr (falls angegeben) wird zum offenen Betrag addiert. Verschickt sie per E-Mail, wenn das Mitglied dem zugestimmt hat und eine Adresse hinterlegt ist, sonst wird sie für den Postversand/Ausdruck vorbereitet."
     },
     "incoming_invoices": {
-      "title": "Eingangsrechnungen"
+      "title": "Eingangsrechnungen",
+      "saved": "Gespeichert.",
+      "deleted": "Gelöscht.",
+      "cloud_folder_saved": "Cloud-Ordner gespeichert.",
+      "cloud_folder_header": "Cloud-Ordner",
+      "cloud_folder_help": "Anhänge für Eingangsrechnungen werden in diesem gemeinsamen Nextcloud-Ordner gespeichert -- die App selbst speichert die Datei nicht.",
+      "cloud_folder_label": "Ordnerpfad",
+      "cloud_folder_save_button": "Speichern",
+      "new_header": "Eingangsrechnung erfassen",
+      "label_sender": "Absender",
+      "label_invoice_number": "Rechnungsnr.",
+      "label_invoice_date": "Rechnungsdatum",
+      "label_note": "Notiz",
+      "label_positions": "Positionen",
+      "add_position_button": "Position hinzufügen",
+      "label_file": "Anhang",
+      "file_help": "Wird in den oben angegebenen gemeinsamen Cloud-Ordner hochgeladen.",
+      "save_button": "Speichern",
+      "list_header": "Eingangsrechnungen",
+      "col_date": "Datum",
+      "col_sender": "Absender",
+      "col_invoice_number": "Rechnungsnr.",
+      "col_categories": "Kategorien",
+      "col_amount": "Betrag",
+      "no_category": "Ohne Kategorie",
+      "delete_confirm": "Diese Eingangsrechnung wirklich löschen? Der Anhang wird dabei nicht aus dem Cloud-Ordner gelöscht.",
+      "no_invoices": "Noch keine Eingangsrechnungen erfasst.",
+      "cloud_not_configured": "Die Cloud-Speicher-Verbindung ist nicht eingerichtet -- siehe /admin/integrations."
     },
     "category_groups": {
       "INCOME": "Einnahmen",
@@ -2194,6 +2221,13 @@
       "row_previous_fees": "Vorherige Mahngebühren",
       "row_this_fee": "Gebühr dieser Mahnung",
       "closing": "Bitte begleichen Sie den offenen Betrag schnellstmöglich. Sollten Sie bereits gezahlt haben, betrachten Sie diese Mahnung als gegenstandslos."
+    },
+    "incoming_invoice_detail": {
+      "title": "Eingangsrechnung — {sender}",
+      "download_button": "Anhang herunterladen",
+      "back": "Zurück zu den Eingangsrechnungen",
+      "info_header": "Rechnung",
+      "positions_header": "Positionen"
     }
   },
   "pdf": {

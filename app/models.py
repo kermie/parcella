@@ -2544,6 +2544,77 @@ class AccountTransaction(Base):
         return f"<AccountTransaction {self.amount} on {self.booking_date}>"
 
 
+class IncomingInvoice(Base):
+    """A bill the club received from a supplier/vendor (issue #178) --
+    the mirror image of Invoice (which the club sends out), but far
+    simpler: recorded directly by hand, no generation/finalization
+    phases. May have several cost positions, each tagged with its own
+    FinanceCategory (IncomingInvoiceLineItem) -- e.g. one bill covering
+    both insurance and maintenance costs.
+
+    The actual scanned/photographed bill, if any, is never stored in
+    this app's own database or filesystem (per CLAUDE.md's "the app
+    itself does not store any media" constraint) -- cloud_filename
+    just names a file inside the single shared cloud folder configured
+    for incoming invoices (ClubSetting "incoming_invoices_cloud_folder"),
+    same Nextcloud connection ParcelCloudFolder already uses.
+    """
+    __tablename__ = "incoming_invoices"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    sender: Mapped[str] = mapped_column(String(255), nullable=False)
+    invoice_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    invoice_date: Mapped[date] = mapped_column(Date, nullable=False)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    cloud_filename: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    created_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    line_items: Mapped[List["IncomingInvoiceLineItem"]] = relationship(
+        "IncomingInvoiceLineItem", back_populates="incoming_invoice",
+        cascade="all, delete-orphan", order_by="IncomingInvoiceLineItem.created_at",
+    )
+    created_by: Mapped[Optional["User"]] = relationship("User")
+
+    @property
+    def total_amount(self) -> float:
+        return float(sum((li.amount for li in self.line_items), 0))
+
+    def __repr__(self) -> str:
+        return f"<IncomingInvoice {self.sender} {self.invoice_number or ''}>"
+
+
+class IncomingInvoiceLineItem(Base):
+    """One categorized cost position on an IncomingInvoice -- category_id
+    is nullable (`ON DELETE SET NULL`) so deleting a FinanceCategory
+    later never destroys a historical bookkeeping record, same
+    historization-over-deletion precedent as InvoiceItemDefinition/
+    InvoiceItemTemplate.category_id."""
+    __tablename__ = "incoming_invoice_line_items"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    incoming_invoice_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("incoming_invoices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    category_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("finance_categories.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    incoming_invoice: Mapped["IncomingInvoice"] = relationship("IncomingInvoice", back_populates="line_items")
+    category: Mapped[Optional["FinanceCategory"]] = relationship("FinanceCategory")
+
+    def __repr__(self) -> str:
+        return f"<IncomingInvoiceLineItem {self.amount}>"
+
+
 class InvoiceReminder(Base):
     """
     A dunning/collection reminder sent for an unpaid Invoice (issue

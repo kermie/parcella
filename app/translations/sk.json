@@ -2041,11 +2041,11 @@
       "stat_outstanding": "Dlžná suma",
       "stat_overdue": "Po splatnosti",
       "outgoing_hint": "{n} vyúčtovaní",
-      "coming_soon_hint": "Už čoskoro",
       "accounts_hint": "{n} účet(ov) definovaných",
       "categories_hint": "definovaných {n} kategórií",
       "item_templates_hint": "definovaných {n} šablón položiek",
-      "reminders_hint": "Faktúr po splatnosti: {n}"
+      "reminders_hint": "Faktúr po splatnosti: {n}",
+      "incoming_invoices_hint": "zaznamenaných {n} prijatých faktúr"
     },
     "coming_soon": {
       "message": "Táto funkcia bude čoskoro k dispozícii.",
@@ -2075,7 +2075,34 @@
       "send_button_help": "Vygeneruje ďalšiu upomienku ako PDF -- poplatok (ak je zadaný) sa pripočíta k dlžnej sume. Odošle ju e-mailom, ak s tým člen súhlasil a má uloženú adresu, inak ju pripraví na tlač/poštové doručenie."
     },
     "incoming_invoices": {
-      "title": "Prijaté faktúry"
+      "title": "Prijaté faktúry",
+      "saved": "Uložené.",
+      "deleted": "Vymazané.",
+      "cloud_folder_saved": "Cloudový priečinok uložený.",
+      "cloud_folder_header": "Cloudový priečinok",
+      "cloud_folder_help": "Prílohy prijatých faktúr sa ukladajú do tohto zdieľaného priečinka Nextcloud -- aplikácia samotný súbor neukladá.",
+      "cloud_folder_label": "Cesta k priečinku",
+      "cloud_folder_save_button": "Uložiť",
+      "new_header": "Zaznamenať prijatú faktúru",
+      "label_sender": "Odosielateľ",
+      "label_invoice_number": "Č. faktúry",
+      "label_invoice_date": "Dátum faktúry",
+      "label_note": "Poznámka",
+      "label_positions": "Položky",
+      "add_position_button": "Pridať položku",
+      "label_file": "Príloha",
+      "file_help": "Nahrané do zdieľaného cloudového priečinka vyššie.",
+      "save_button": "Uložiť",
+      "list_header": "Prijaté faktúry",
+      "col_date": "Dátum",
+      "col_sender": "Odosielateľ",
+      "col_invoice_number": "Č. faktúry",
+      "col_categories": "Kategórie",
+      "col_amount": "Suma",
+      "no_category": "Bez kategórie",
+      "delete_confirm": "Naozaj vymazať túto prijatú faktúru? Príloha sa tým z cloudového priečinka nevymaže.",
+      "no_invoices": "Zatiaľ neboli zaznamenané žiadne prijaté faktúry.",
+      "cloud_not_configured": "Pripojenie k cloudovému úložisku nie je nastavené -- pozri /admin/integrations."
     },
     "category_groups": {
       "INCOME": "Príjmy",
@@ -2194,6 +2221,13 @@
       "row_previous_fees": "Predchádzajúce poplatky za upomienky",
       "row_this_fee": "Poplatok za túto upomienku",
       "closing": "Uhraďte, prosím, dlžnú sumu čo najskôr. Ak ste už zaplatili, považujte túto upomienku za bezpredmetnú."
+    },
+    "incoming_invoice_detail": {
+      "title": "Prijatá faktúra — {sender}",
+      "download_button": "Stiahnuť prílohu",
+      "back": "Späť na prijaté faktúry",
+      "info_header": "Faktúra",
+      "positions_header": "Položky"
     }
   },
   "pdf": {

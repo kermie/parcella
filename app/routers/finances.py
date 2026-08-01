@@ -25,6 +25,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote as urlquote
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -39,13 +40,16 @@ from app.models import (
     InvoiceItemTemplate, InvoiceItemTemplateParcel, InvoiceItemTemplateMember,
     InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, Parcel, ParcelStatus, Member,
     FinanceCategory, FinanceCategoryGroup, FinanceAccount, FinanceAccountType, AccountTransaction,
+    IncomingInvoice, IncomingInvoiceLineItem, ClubSetting,
 )
+from app.auth import require_admin
 from app.permissions import require_permission
 from app.module_flags import require_module
 from app.branding import load_branding
 from app.pdf_chrome import load_org_footer_context
 from app.l10n import load_current_region, load_current_currency
-from app.cloud_storage import get_nextcloud_provider
+from app.cloud_storage import get_nextcloud_provider, CloudStorageError
+from app.parcel_cloud_folders import sanitize_relative_path, InvalidCloudPathError
 from app.invoice_generation import compute_invoices_for_run, finalize_run, SequenceCollisionError
 from app.invoice_pdf import (
     InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf, invoice_pdf_data_from_invoice, invoice_pdf_filename,
@@ -197,12 +201,15 @@ async def finances_dashboard(request: Request, db: AsyncSession = Depends(get_db
     account_count_result = await db.execute(select(FinanceAccount))
     account_count = len(account_count_result.scalars().all())
 
+    incoming_invoice_count_result = await db.execute(select(IncomingInvoice))
+    incoming_invoice_count = len(incoming_invoice_count_result.scalars().all())
+
     return templates.TemplateResponse("finances/dashboard.html", {
         "request": request, "user": user,
         "run_count": run_count, "open_invoice_count": open_count,
         "overdue_count": overdue_count, "outstanding_total": outstanding_total,
         "category_count": category_count, "item_template_count": item_template_count,
-        "account_count": account_count,
+        "account_count": account_count, "incoming_invoice_count": incoming_invoice_count,
     })
 
 
@@ -301,14 +308,190 @@ async def reminder_pdf(reminder_id: str, request: Request, db: AsyncSession = De
     )
 
 
+INCOMING_INVOICES_FOLDER_SETTING = "incoming_invoices_cloud_folder"
+
+
+def _cloud_storage_enabled(request: Request) -> bool:
+    module_flags = getattr(request.state, "module_flags", {})
+    return bool(module_flags.get("cloud_storage")) and getattr(request.state, "is_full_access", False)
+
+
+async def _get_incoming_invoices_folder(db: AsyncSession) -> Optional[str]:
+    result = await db.execute(select(ClubSetting).where(ClubSetting.key == INCOMING_INVOICES_FOLDER_SETTING))
+    entry = result.scalar_one_or_none()
+    return entry.value if entry and entry.value else None
+
+
 @router.get("/incoming-invoices", response_class=HTMLResponse)
-async def incoming_invoices_placeholder(request: Request, db: AsyncSession = Depends(get_db)):
+async def incoming_invoices_list(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_permission(request, db, "finances", "read")
-    return templates.TemplateResponse("finances/coming_soon.html", {
-        "request": request, "user": user,
-        "feature_title": t_for(request, "finances.incoming_invoices.title"),
-        "feature_icon": "bi-inboxes",
+
+    result = await db.execute(
+        select(IncomingInvoice)
+        .options(selectinload(IncomingInvoice.line_items).selectinload(IncomingInvoiceLineItem.category))
+        .order_by(IncomingInvoice.invoice_date.desc(), IncomingInvoice.created_at.desc())
+    )
+    invoices = list(result.scalars().all())
+
+    categories_result = await db.execute(select(FinanceCategory).order_by(FinanceCategory.code))
+    categories = list(categories_result.scalars().all())
+
+    cloud_storage_enabled = _cloud_storage_enabled(request)
+    folder_path = await _get_incoming_invoices_folder(db) if cloud_storage_enabled else None
+
+    return templates.TemplateResponse("finances/incoming_invoices_list.html", {
+        "request": request, "user": user, "invoices": invoices, "categories": categories,
+        "cloud_storage_enabled": cloud_storage_enabled, "folder_path": folder_path,
+        "today": date.today().isoformat(),
     })
+
+
+@router.post("/incoming-invoices")
+async def incoming_invoice_create(
+    request: Request,
+    sender: str = Form(...), invoice_number: str = Form(""), invoice_date: str = Form(...), note: str = Form(""),
+    category_id: list[str] = Form([]), amount: list[str] = Form([]),
+    file: Optional[UploadFile] = File(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """One or more (category_id, amount) positions, submitted as
+    same-named repeated fields (issue #178: "there might be more than
+    one position with different categories/amounts") -- paired up by
+    index, same convention as the scope-picker lists elsewhere in this
+    router."""
+    user = await require_permission(request, db, "finances", "write")
+
+    parsed_date = _parse_date_flexible(invoice_date)
+    if parsed_date is None or not sender.strip():
+        raise HTTPException(status_code=400)
+
+    invoice = IncomingInvoice(
+        sender=sender.strip(), invoice_number=invoice_number.strip() or None,
+        invoice_date=parsed_date, note=note.strip() or None, created_by_id=user.id,
+    )
+    db.add(invoice)
+    await db.flush()
+
+    for cat_id, amt in zip(category_id, amount):
+        parsed_amount = _parse_decimal(amt)
+        if parsed_amount is None:
+            continue
+        db.add(IncomingInvoiceLineItem(
+            incoming_invoice_id=invoice.id, category_id=cat_id.strip() or None, amount=parsed_amount,
+        ))
+
+    if file is not None and file.filename and _cloud_storage_enabled(request):
+        folder_path = await _get_incoming_invoices_folder(db)
+        if folder_path:
+            provider = await get_nextcloud_provider(db)
+            if provider is not None:
+                try:
+                    content = await file.read()
+                    stored_filename = f"{invoice.id}_{file.filename}"
+                    await provider.upload_file(folder_path, stored_filename, content)
+                    invoice.cloud_filename = stored_filename
+                except CloudStorageError as e:
+                    await db.commit()
+                    message = urlquote(str(e))
+                    return RedirectResponse(f"/finances/incoming-invoices?cloud_error={message}", status_code=303)
+                finally:
+                    await provider.aclose()
+
+    await db.commit()
+    return RedirectResponse("/finances/incoming-invoices?success=1", status_code=302)
+
+
+@router.get("/incoming-invoices/{invoice_id}", response_class=HTMLResponse)
+async def incoming_invoice_detail(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+
+    result = await db.execute(
+        select(IncomingInvoice)
+        .options(selectinload(IncomingInvoice.line_items).selectinload(IncomingInvoiceLineItem.category))
+        .where(IncomingInvoice.id == invoice_id)
+    )
+    invoice = result.scalar_one_or_none()
+    if not invoice:
+        raise HTTPException(status_code=404)
+
+    return templates.TemplateResponse("finances/incoming_invoice_detail.html", {
+        "request": request, "user": user, "invoice": invoice,
+        "cloud_storage_enabled": _cloud_storage_enabled(request),
+    })
+
+
+@router.post("/incoming-invoices/{invoice_id}/delete")
+async def incoming_invoice_delete(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Deletes the DB record only -- an attachment already uploaded to
+    the shared cloud folder is left in place, same principle as
+    deleting a FinanceAccount never reaching into Nextcloud to remove
+    files (this app's own data is not the source of truth for media)."""
+    await require_permission(request, db, "finances", "delete")
+
+    result = await db.execute(select(IncomingInvoice).where(IncomingInvoice.id == invoice_id))
+    invoice = result.scalar_one_or_none()
+    if invoice:
+        await db.delete(invoice)
+        await db.commit()
+    return RedirectResponse("/finances/incoming-invoices?deleted=1", status_code=302)
+
+
+@router.get(
+    "/incoming-invoices/{invoice_id}/download",
+    dependencies=[Depends(require_module("cloud_storage"))],
+)
+async def incoming_invoice_download(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_admin(request, db)
+
+    result = await db.execute(select(IncomingInvoice).where(IncomingInvoice.id == invoice_id))
+    invoice = result.scalar_one_or_none()
+    if not invoice or not invoice.cloud_filename:
+        raise HTTPException(status_code=404)
+
+    folder_path = await _get_incoming_invoices_folder(db)
+    if not folder_path:
+        raise HTTPException(status_code=400, detail=t_for(request, "finances.incoming_invoices.cloud_not_configured"))
+
+    provider = await get_nextcloud_provider(db)
+    if provider is None:
+        raise HTTPException(status_code=400, detail=t_for(request, "finances.incoming_invoices.cloud_not_configured"))
+
+    try:
+        content = await provider.download_file(folder_path, invoice.cloud_filename)
+    except CloudStorageError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    finally:
+        await provider.aclose()
+
+    return Response(
+        content=content, media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{invoice.cloud_filename}"'},
+    )
+
+
+@router.post(
+    "/incoming-invoices/cloud-folder",
+    dependencies=[Depends(require_module("cloud_storage"))],
+)
+async def incoming_invoices_cloud_folder_set(
+    request: Request, relative_path: str = Form(...), db: AsyncSession = Depends(get_db),
+):
+    await require_admin(request, db)
+
+    try:
+        sanitized = sanitize_relative_path(relative_path)
+    except InvalidCloudPathError as e:
+        message = urlquote(str(e))
+        return RedirectResponse(f"/finances/incoming-invoices?cloud_error={message}", status_code=303)
+
+    result = await db.execute(select(ClubSetting).where(ClubSetting.key == INCOMING_INVOICES_FOLDER_SETTING))
+    entry = result.scalar_one_or_none()
+    if entry:
+        entry.value = sanitized
+    else:
+        db.add(ClubSetting(key=INCOMING_INVOICES_FOLDER_SETTING, value=sanitized, description="Shared cloud folder for incoming invoice attachments"))
+    await db.commit()
+    return RedirectResponse("/finances/incoming-invoices?cloud_folder_saved=1", status_code=303)
 
 
 @router.post("/runs")
