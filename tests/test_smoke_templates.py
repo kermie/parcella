@@ -443,7 +443,14 @@ async def test_smoke_finances_pages_render_without_jinja_errors(client, admin_us
     r_inv_detail2 = await client.get(f"/finances/invoices/{invoice_id}")
     assert r_inv_detail2.status_code == 200
     assert "UndefinedError" not in r_inv_detail2.text
-    assert "smoke test payment" in r_inv_detail2.text
+
+    # Issue #175/#176/#177: the invoice detail page no longer shows a
+    # Payments card -- payments are recorded/displayed from the run
+    # page instead (#173).
+    r_run_detail_after_payment = await client.get(f"/finances/runs/{run_id}")
+    assert r_run_detail_after_payment.status_code == 200
+    assert "UndefinedError" not in r_run_detail_after_payment.text
+    assert "smoke test payment" in r_run_detail_after_payment.text
 
     # Reminders (issue #59): sending one adds an optional, custom fee
     # that actually counts toward what "paid" requires. Delivery

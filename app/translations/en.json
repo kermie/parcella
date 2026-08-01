@@ -2024,16 +2024,7 @@
       "back": "Back to invoices",
       "info_header": "Invoice",
       "due_date": "Due date",
-      "delivery_header": "Delivery",
-      "emailed_at": "Emailed on {date}",
-      "not_emailed": "Not emailed",
-      "printed_at": "Printed on {date}",
-      "not_printed": "Not printed",
-      "uploaded_at": "Uploaded on {date}",
-      "not_uploaded": "Not uploaded",
       "resend_button": "Resend email",
-      "line_items_header": "Line items",
-      "payments_header": "Payments",
       "no_payments": "No payments recorded yet.",
       "label_amount": "Amount",
       "label_paid_on": "Paid on",
@@ -2080,7 +2071,8 @@
       "label_fee": "Fee (optional)",
       "fee_placeholder": "0,00",
       "label_message": "Message (optional)",
-      "send_button": "Send reminder"
+      "send_button": "Send reminder",
+      "send_button_help": "Generates the next reminder as a PDF -- adds the fee (if entered) to the amount owed, emails it if the member has opted in and has a stored address, or prepares it for printing/postal delivery otherwise."
     },
     "incoming_invoices": {
       "title": "Incoming Invoices"

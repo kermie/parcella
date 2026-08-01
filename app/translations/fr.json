@@ -2024,16 +2024,7 @@
       "back": "Retour aux factures",
       "info_header": "Facture",
       "due_date": "Date d'échéance",
-      "delivery_header": "Envoi",
-      "emailed_at": "Envoyée par e-mail le {date}",
-      "not_emailed": "Pas envoyée par e-mail",
-      "printed_at": "Imprimée le {date}",
-      "not_printed": "Pas imprimée",
-      "uploaded_at": "Téléversée le {date}",
-      "not_uploaded": "Pas téléversée",
       "resend_button": "Renvoyer l'e-mail",
-      "line_items_header": "Lignes",
-      "payments_header": "Paiements",
       "no_payments": "Aucun paiement enregistré pour le moment.",
       "label_amount": "Montant",
       "label_paid_on": "Payé le",
@@ -2080,7 +2071,8 @@
       "label_fee": "Frais (facultatif)",
       "fee_placeholder": "0,00",
       "label_message": "Message (facultatif)",
-      "send_button": "Envoyer le rappel"
+      "send_button": "Envoyer le rappel",
+      "send_button_help": "Génère le rappel suivant au format PDF -- les frais (le cas échéant) sont ajoutés au montant dû. L'envoie par e-mail si le membre y a consenti et dispose d'une adresse enregistrée, sinon le prépare pour l'impression/l'envoi postal."
     },
     "incoming_invoices": {
       "title": "Factures reçues"

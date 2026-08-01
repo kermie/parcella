@@ -2024,16 +2024,7 @@
       "back": "Zpět na faktury",
       "info_header": "Faktura",
       "due_date": "Datum splatnosti",
-      "delivery_header": "Doručení",
-      "emailed_at": "Odesláno e-mailem {date}",
-      "not_emailed": "Neodesláno e-mailem",
-      "printed_at": "Vytištěno {date}",
-      "not_printed": "Nevytištěno",
-      "uploaded_at": "Nahráno {date}",
-      "not_uploaded": "Nenahráno",
       "resend_button": "Znovu odeslat e-mail",
-      "line_items_header": "Položky",
-      "payments_header": "Platby",
       "no_payments": "Zatím nebyly zaznamenány žádné platby.",
       "label_amount": "Částka",
       "label_paid_on": "Uhrazeno dne",
@@ -2080,7 +2071,8 @@
       "label_fee": "Poplatek (volitelné)",
       "fee_placeholder": "0,00",
       "label_message": "Zpráva (volitelné)",
-      "send_button": "Odeslat upomínku"
+      "send_button": "Odeslat upomínku",
+      "send_button_help": "Vygeneruje další upomínku jako PDF -- poplatek (pokud je zadán) se přičte k dlužné částce. Odešle ji e-mailem, pokud s tím člen souhlasil a má uloženou adresu, jinak ji připraví k tisku/poštovnímu doručení."
     },
     "incoming_invoices": {
       "title": "Přijaté faktury"

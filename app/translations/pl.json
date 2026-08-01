@@ -2024,16 +2024,7 @@
       "back": "Powrót do faktur",
       "info_header": "Faktura",
       "due_date": "Termin płatności",
-      "delivery_header": "Doręczenie",
-      "emailed_at": "Wysłano e-mailem {date}",
-      "not_emailed": "Nie wysłano e-mailem",
-      "printed_at": "Wydrukowano {date}",
-      "not_printed": "Nie wydrukowano",
-      "uploaded_at": "Przesłano {date}",
-      "not_uploaded": "Nie przesłano",
       "resend_button": "Wyślij e-mail ponownie",
-      "line_items_header": "Pozycje",
-      "payments_header": "Płatności",
       "no_payments": "Nie zarejestrowano jeszcze żadnych płatności.",
       "label_amount": "Kwota",
       "label_paid_on": "Zapłacono dnia",
@@ -2080,7 +2071,8 @@
       "label_fee": "Opłata (opcjonalnie)",
       "fee_placeholder": "0,00",
       "label_message": "Wiadomość (opcjonalnie)",
-      "send_button": "Wyślij upomnienie"
+      "send_button": "Wyślij upomnienie",
+      "send_button_help": "Generuje kolejne przypomnienie jako PDF -- opłata (jeśli podana) zostaje doliczona do kwoty należnej. Wysyła je e-mailem, jeśli członek wyraził zgodę i ma zapisany adres, w przeciwnym razie przygotowuje je do druku/wysyłki pocztowej."
     },
     "incoming_invoices": {
       "title": "Faktury przychodzące"

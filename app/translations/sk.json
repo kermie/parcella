@@ -2024,16 +2024,7 @@
       "back": "Späť na faktúry",
       "info_header": "Faktúra",
       "due_date": "Dátum splatnosti",
-      "delivery_header": "Doručenie",
-      "emailed_at": "Odoslané e-mailom {date}",
-      "not_emailed": "Neodoslané e-mailom",
-      "printed_at": "Vytlačené {date}",
-      "not_printed": "Nevytlačené",
-      "uploaded_at": "Nahrané {date}",
-      "not_uploaded": "Nenahrané",
       "resend_button": "Znova odoslať e-mail",
-      "line_items_header": "Položky",
-      "payments_header": "Platby",
       "no_payments": "Zatiaľ neboli zaznamenané žiadne platby.",
       "label_amount": "Suma",
       "label_paid_on": "Uhradené dňa",
@@ -2080,7 +2071,8 @@
       "label_fee": "Poplatok (voliteľné)",
       "fee_placeholder": "0,00",
       "label_message": "Správa (voliteľné)",
-      "send_button": "Odoslať upomienku"
+      "send_button": "Odoslať upomienku",
+      "send_button_help": "Vygeneruje ďalšiu upomienku ako PDF -- poplatok (ak je zadaný) sa pripočíta k dlžnej sume. Odošle ju e-mailom, ak s tým člen súhlasil a má uloženú adresu, inak ju pripraví na tlač/poštové doručenie."
     },
     "incoming_invoices": {
       "title": "Prijaté faktúry"

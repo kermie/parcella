@@ -2024,16 +2024,7 @@
       "back": "Terug naar facturen",
       "info_header": "Factuur",
       "due_date": "Vervaldatum",
-      "delivery_header": "Verzending",
-      "emailed_at": "Verstuurd per e-mail op {date}",
-      "not_emailed": "Niet per e-mail verstuurd",
-      "printed_at": "Afgedrukt op {date}",
-      "not_printed": "Niet afgedrukt",
-      "uploaded_at": "Geüpload op {date}",
-      "not_uploaded": "Niet geüpload",
       "resend_button": "E-mail opnieuw versturen",
-      "line_items_header": "Regels",
-      "payments_header": "Betalingen",
       "no_payments": "Nog geen betalingen geregistreerd.",
       "label_amount": "Bedrag",
       "label_paid_on": "Betaald op",
@@ -2080,7 +2071,8 @@
       "label_fee": "Kosten (optioneel)",
       "fee_placeholder": "0,00",
       "label_message": "Bericht (optioneel)",
-      "send_button": "Herinnering versturen"
+      "send_button": "Herinnering versturen",
+      "send_button_help": "Genereert de volgende herinnering als PDF -- de kosten (indien ingevuld) worden opgeteld bij het verschuldigde bedrag. Verstuurt deze per e-mail als het lid daarvoor gekozen heeft en een adres heeft opgeslagen, anders wordt deze klaargemaakt voor afdrukken/verzending per post."
     },
     "incoming_invoices": {
       "title": "Inkomende facturen"

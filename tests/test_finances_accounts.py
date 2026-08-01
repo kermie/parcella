@@ -142,7 +142,11 @@ async def test_recording_payment_with_account_persists_and_displays(client, admi
         assert payment.account_id == account.id
         assert payment.account.name == "Main Giro"
 
-    page = await client.get(f"/finances/invoices/{invoice_id}")
+    # Issue #175/#176/#177: the invoice detail page no longer shows a
+    # Payments card (payments are recorded from the run page, #173) --
+    # the account-tagged booking now displays on the account's own
+    # bookings list instead (#174).
+    page = await client.get(f"/finances/accounts/{account.id}/bookings")
     assert page.status_code == 200
     assert "Main Giro" in page.text
 
@@ -189,7 +193,13 @@ async def test_inactive_account_excluded_from_payment_dropdown(client, admin_use
 
     invoice_id = await _make_invoice(client, year=2028, plot_number="ACCT-INACTIVE")
 
-    page = await client.get(f"/finances/invoices/{invoice_id}")
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Invoice).where(Invoice.id == invoice_id))
+        run_id = result.scalar_one().invoice_run_id
+
+    # Issue #175/#176/#177: the payment form (and its account dropdown)
+    # moved from the invoice detail page to the run detail page (#173).
+    page = await client.get(f"/finances/runs/{run_id}")
     assert page.status_code == 200
     assert "Active Account" in page.text
     assert "Closed Account" not in page.text

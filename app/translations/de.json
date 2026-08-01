@@ -2024,16 +2024,7 @@
       "back": "Zurück zu den Rechnungen",
       "info_header": "Rechnung",
       "due_date": "Zahlungsziel",
-      "delivery_header": "Versand",
-      "emailed_at": "Per E-Mail versendet am {date}",
-      "not_emailed": "Nicht per E-Mail versendet",
-      "printed_at": "Gedruckt am {date}",
-      "not_printed": "Nicht gedruckt",
-      "uploaded_at": "Hochgeladen am {date}",
-      "not_uploaded": "Nicht hochgeladen",
       "resend_button": "E-Mail erneut senden",
-      "line_items_header": "Positionen",
-      "payments_header": "Zahlungen",
       "no_payments": "Noch keine Zahlungen erfasst.",
       "label_amount": "Betrag",
       "label_paid_on": "Bezahlt am",
@@ -2080,7 +2071,8 @@
       "label_fee": "Gebühr (optional)",
       "fee_placeholder": "0,00",
       "label_message": "Nachricht (optional)",
-      "send_button": "Mahnung senden"
+      "send_button": "Mahnung senden",
+      "send_button_help": "Erstellt die nächste Mahnung als PDF -- die Gebühr (falls angegeben) wird zum offenen Betrag addiert. Verschickt sie per E-Mail, wenn das Mitglied dem zugestimmt hat und eine Adresse hinterlegt ist, sonst wird sie für den Postversand/Ausdruck vorbereitet."
     },
     "incoming_invoices": {
       "title": "Eingangsrechnungen"
