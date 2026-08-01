@@ -286,12 +286,19 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
     # global) since two communal-share items could theoretically be
     # scoped to different subsets of parcels. PUBLIC_BURDENS (issue
     # #163) shares this exact same denominator: it also bills a share
-    # of Area B, on top of the parcel's own leased area.
+    # of Area B, on top of the parcel's own leased area. GENERAL_LEVY
+    # (issue #171) reuses it too, for the same reason: whatever total
+    # the club enters must be collected in full, so a vacant parcel
+    # (one with no current invoice-address resident) must never count
+    # toward the split -- it's never actually billed.
     area_b_sqm = await compute_area_b_sqm(db)
-    communal_share_denominators: Dict[str, int] = {
+    billable_parcel_denominators: Dict[str, int] = {
         d.id: sum(1 for p in all_parcels if _parcel_in_scope(d, p) and _parcel_is_billable(p))
         for d in run.item_definitions
-        if d.pricing_mode in (InvoicePricingMode.COMMUNAL_AREA_SHARE, InvoicePricingMode.PUBLIC_BURDENS)
+        if d.pricing_mode in (
+            InvoicePricingMode.COMMUNAL_AREA_SHARE, InvoicePricingMode.PUBLIC_BURDENS,
+            InvoicePricingMode.GENERAL_LEVY,
+        )
     }
 
     # "Charge those who not completely or never used their work
@@ -340,7 +347,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
         if mode == InvoicePricingMode.COMMUNAL_AREA_SHARE:
             if definition.unit_price is None:
                 return None, None
-            denom = communal_share_denominators.get(definition.id, 0)
+            denom = billable_parcel_denominators.get(definition.id, 0)
             if denom == 0 or area_b_sqm is None or area_b_sqm <= 0:
                 return None, None
             # The division rarely comes out even (e.g. 8000/3 sqm), and
@@ -362,7 +369,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             # disappear over an unrelated club setting).
             if definition.unit_price is None or parcel.area_sqm is None:
                 return None, None
-            denom = communal_share_denominators.get(definition.id, 0)
+            denom = billable_parcel_denominators.get(definition.id, 0)
             if denom > 0 and area_b_sqm is not None and area_b_sqm > 0:
                 communal_share = (Decimal(str(area_b_sqm)) / Decimal(denom)).quantize(Decimal("0.1"))
             else:
@@ -374,6 +381,22 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             if amount is None:
                 return None, None
             return Decimal("1"), Decimal(str(amount))
+        if mode == InvoicePricingMode.GENERAL_LEVY:
+            # General levy ("Umlage", issue #171): unit_price holds the
+            # TOTAL amount the club needs to cover, not a per-unit rate
+            # -- split evenly across every billable parcel (same
+            # denominator as COMMUNAL_AREA_SHARE/PUBLIC_BURDENS above,
+            # so the total is always collected in full). Quantity is
+            # always 1; the computed "unit price" here is really each
+            # parcel's share, quantized to cents rather than the tenth-
+            # of-a-sqm precision the area-based modes use.
+            if definition.unit_price is None:
+                return None, None
+            denom = billable_parcel_denominators.get(definition.id, 0)
+            if denom == 0:
+                return None, None
+            share = (Decimal(str(definition.unit_price)) / Decimal(denom)).quantize(Decimal("0.01"))
+            return Decimal("1"), share
         return None, None
 
     computed: List[ComputedInvoice] = []

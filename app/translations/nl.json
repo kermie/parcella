@@ -1968,7 +1968,8 @@
       "insurance_cost": "Verzekeringskosten (uit module)",
       "communal_area_share": "Aandeel in de pacht van het gemeenschappelijk terrein",
       "work_hours_shortfall": "Tekort werkuren (uit module)",
-      "public_burdens": "Publieke lasten (eigen oppervlakte + aandeel gemeenschappelijk terrein)"
+      "public_burdens": "Publieke lasten (eigen oppervlakte + aandeel gemeenschappelijk terrein)",
+      "general_levy": "Algemene omslag (gelijk verdeeld over alle percelen)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Deze factuurronde is al afgerond en kan niet meer worden verwijderd.",

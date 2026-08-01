@@ -2068,6 +2068,7 @@ class InvoicePricingMode(str, enum.Enum):
     COMMUNAL_AREA_SHARE = "communal_area_share"
     WORK_HOURS_SHORTFALL = "work_hours_shortfall"
     PUBLIC_BURDENS = "public_burdens"
+    GENERAL_LEVY = "general_levy"
 
 
 class InvoiceRun(Base):

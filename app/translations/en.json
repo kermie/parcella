@@ -1968,7 +1968,8 @@
       "insurance_cost": "Insurance cost (from module)",
       "communal_area_share": "Share of the communal area lease",
       "work_hours_shortfall": "Work-hours shortfall (from module)",
-      "public_burdens": "Public burdens (own area + communal area share)"
+      "public_burdens": "Public burdens (own area + communal area share)",
+      "general_levy": "General levy (split evenly across all parcels)"
     },
     "errors": {
       "cannot_delete_finalized_run": "This invoice run is already finalized and can no longer be deleted.",

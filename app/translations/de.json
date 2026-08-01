@@ -1968,7 +1968,8 @@
       "insurance_cost": "Versicherungskosten (aus Modul)",
       "communal_area_share": "Anteil an der Gemeinschaftsflächenpacht",
       "work_hours_shortfall": "Pflichtstunden-Fehlbetrag (aus Modul)",
-      "public_burdens": "Öffentliche Lasten (eigene Fläche + Gemeinschaftsflächenanteil)"
+      "public_burdens": "Öffentliche Lasten (eigene Fläche + Gemeinschaftsflächenanteil)",
+      "general_levy": "Allgemeine Umlage (gleichmäßig auf alle Parzellen aufgeteilt)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Dieser Rechnungslauf ist bereits abgeschlossen und kann nicht mehr gelöscht werden.",

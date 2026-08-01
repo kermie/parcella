@@ -1968,7 +1968,8 @@
       "insurance_cost": "Koszt ubezpieczenia (z modułu)",
       "communal_area_share": "Udział w dzierżawie powierzchni wspólnej",
       "work_hours_shortfall": "Niedobór godzin pracy (z modułu)",
-      "public_burdens": "Obciążenia publiczne (własna powierzchnia + udział w powierzchni wspólnej)"
+      "public_burdens": "Obciążenia publiczne (własna powierzchnia + udział w powierzchni wspólnej)",
+      "general_levy": "Ogólna składka (podzielona równo na wszystkie działki)"
     },
     "errors": {
       "cannot_delete_finalized_run": "Ta seria faktur jest już zakończona i nie można jej usunąć.",

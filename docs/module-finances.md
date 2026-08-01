@@ -167,6 +167,16 @@ share simply treated as 0 -- the own-area component is always
 well-defined and shouldn't silently vanish over an unrelated club
 setting.
 
+`GENERAL_LEVY` (issue #171, "Umlage") reuses the exact same billable-
+parcel denominator as a third consumer, but for an unrelated purpose:
+`unit_price` here holds a single TOTAL amount the club needs to cover
+(e.g. a one-off legal fee or an insurance premium hike), split evenly
+across every billable parcel rather than multiplied by a per-unit
+rate. Quantized to cents (`0.01`), not the tenth-of-a-sqm precision the
+area-based modes use, since this is money, not an area share. Like
+`COMMUNAL_AREA_SHARE`, a zero denominator means the item bills nothing
+at all rather than dividing by zero.
+
 Invoice numbering (`invoice_number_format` / `invoice_number_start`
 `ClubSetting`s, issue #65) is club-configurable
 (`{year}/{number}` by default) and supports a one-shot starting-sequence
