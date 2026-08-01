@@ -29,7 +29,7 @@ from typing import Optional
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, union_all, literal, or_, and_, cast, String
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
@@ -38,7 +38,7 @@ from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel, InvoiceItemDefinitionMember,
     InvoiceItemTemplate, InvoiceItemTemplateParcel, InvoiceItemTemplateMember,
     InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, Parcel, ParcelStatus, Member,
-    FinanceCategory, FinanceCategoryGroup, FinanceAccount, FinanceAccountType,
+    FinanceCategory, FinanceCategoryGroup, FinanceAccount, FinanceAccountType, AccountTransaction,
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
@@ -1218,6 +1218,292 @@ async def account_delete(account_id: str, request: Request, db: AsyncSession = D
         await db.delete(account)
         await db.commit()
     return RedirectResponse("/finances/accounts?success=1", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# Account bookings (issue #174): a unified, filterable list of
+# everything ever booked against one account -- InvoicePayment rows
+# (always tied to an invoice) UNION ALL'd with AccountTransaction rows
+# (anything else: refunds, purchases, bank fees, CSV-imported), see
+# ADR 0059. Both are normalized to the same
+# (id, booking_date, amount, reference, description, source) shape so
+# search/filtering/pagination only has to be written once, against the
+# combined result.
+# ---------------------------------------------------------------------------
+
+BOOKINGS_PAGE_SIZE = 50
+
+
+def _account_bookings_base(account_id: str):
+    payments_q = (
+        select(
+            InvoicePayment.id.label("id"),
+            InvoicePayment.paid_on.label("booking_date"),
+            InvoicePayment.amount.label("amount"),
+            Invoice.invoice_number.label("reference"),
+            InvoicePayment.note.label("description"),
+            cast(literal("invoice_payment"), String(20)).label("source"),
+            Invoice.id.label("invoice_id"),
+        )
+        .join(Invoice, Invoice.id == InvoicePayment.invoice_id)
+        .where(InvoicePayment.account_id == account_id)
+    )
+    transactions_q = (
+        select(
+            AccountTransaction.id.label("id"),
+            AccountTransaction.booking_date.label("booking_date"),
+            AccountTransaction.amount.label("amount"),
+            cast(literal(None), String(50)).label("reference"),
+            AccountTransaction.description.label("description"),
+            AccountTransaction.source.label("source"),
+            cast(literal(None), String(36)).label("invoice_id"),
+        )
+        .where(AccountTransaction.account_id == account_id)
+    )
+    return union_all(payments_q, transactions_q).subquery("bookings")
+
+
+def _account_bookings_filtered(
+    account_id: str, search: str, date_from: str, date_to: str,
+    amount_min: str, amount_max: str, source: str,
+):
+    """Returns the filtered/searched (but not yet ordered, limited, or
+    offset) bookings query -- shared by the HTML page, the JSON
+    pagination endpoint, and the CSV export, so all three always agree
+    on exactly which rows match the current filters."""
+    bookings = _account_bookings_base(account_id)
+    query = select(bookings)
+
+    if search.strip():
+        like = f"%{search.strip()}%"
+        query = query.where(or_(bookings.c.reference.ilike(like), bookings.c.description.ilike(like)))
+    if date_from.strip():
+        parsed = _parse_date_flexible(date_from)
+        if parsed:
+            query = query.where(bookings.c.booking_date >= parsed)
+    if date_to.strip():
+        parsed = _parse_date_flexible(date_to)
+        if parsed:
+            query = query.where(bookings.c.booking_date <= parsed)
+    if amount_min.strip():
+        parsed = _parse_decimal(amount_min)
+        if parsed is not None:
+            query = query.where(bookings.c.amount >= parsed)
+    if amount_max.strip():
+        parsed = _parse_decimal(amount_max)
+        if parsed is not None:
+            query = query.where(bookings.c.amount <= parsed)
+    if source in ("invoice_payment", "manual", "csv_import"):
+        query = query.where(bookings.c.source == source)
+
+    return bookings, query
+
+
+def _parse_date_flexible(s: str):
+    s = s.strip()
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d.%m.%y"):
+        try:
+            return date.fromisoformat(s) if fmt == "%Y-%m-%d" else datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _bookings_filter_params(request: Request) -> dict:
+    q = request.query_params
+    return {
+        "search": q.get("search", ""), "date_from": q.get("date_from", ""), "date_to": q.get("date_to", ""),
+        "amount_min": q.get("amount_min", ""), "amount_max": q.get("amount_max", ""), "source": q.get("source", ""),
+    }
+
+
+@router.get("/accounts/{account_id}/bookings", response_class=HTMLResponse)
+async def account_bookings(account_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "finances", "read")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    filters = _bookings_filter_params(request)
+    bookings, query = _account_bookings_filtered(account_id, **filters)
+    query = query.order_by(bookings.c.booking_date.desc(), bookings.c.id.desc()).limit(BOOKINGS_PAGE_SIZE)
+    rows = (await db.execute(query)).all()
+
+    return templates.TemplateResponse("finances/account_bookings.html", {
+        "request": request, "user": user, "account": account, "rows": rows,
+        "filters": filters, "page_size": BOOKINGS_PAGE_SIZE,
+        "has_more": len(rows) == BOOKINGS_PAGE_SIZE,
+        "today": date.today().isoformat(),
+    })
+
+
+@router.get("/accounts/{account_id}/bookings.json")
+async def account_bookings_json(
+    account_id: str, request: Request, offset: int = 0, db: AsyncSession = Depends(get_db),
+):
+    """Fetched by the bookings page's infinite scroll for every page
+    after the first (which the HTML route above already renders)."""
+    await require_permission(request, db, "finances", "read")
+
+    filters = _bookings_filter_params(request)
+    bookings, query = _account_bookings_filtered(account_id, **filters)
+    query = (
+        query.order_by(bookings.c.booking_date.desc(), bookings.c.id.desc())
+        .limit(BOOKINGS_PAGE_SIZE).offset(offset)
+    )
+    rows = (await db.execute(query)).all()
+
+    return {
+        "rows": [
+            {
+                "id": r.id,
+                "booking_date": r.booking_date.strftime("%d.%m.%Y"),
+                "amount": float(r.amount),
+                "reference": r.reference,
+                "description": r.description,
+                "source": r.source,
+                "invoice_url": f"/finances/invoices/{r.invoice_id}" if r.invoice_id else None,
+            }
+            for r in rows
+        ],
+        "has_more": len(rows) == BOOKINGS_PAGE_SIZE,
+    }
+
+
+@router.get("/accounts/{account_id}/bookings/export.csv")
+async def account_bookings_export_csv(account_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "finances", "read")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    filters = _bookings_filter_params(request)
+    bookings, query = _account_bookings_filtered(account_id, **filters)
+    query = query.order_by(bookings.c.booking_date.desc(), bookings.c.id.desc())
+    rows = (await db.execute(query)).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";")
+    writer.writerow(["Date", "Amount", "Reference", "Description", "Source"])
+    for r in rows:
+        writer.writerow([
+            r.booking_date.strftime("%Y-%m-%d"), f"{float(r.amount):.2f}",
+            r.reference or "", r.description or "", r.source,
+        ])
+
+    filename = f"{account.name.replace(' ', '_')}_bookings.csv"
+    return Response(
+        content=output.getvalue(), media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/accounts/{account_id}/bookings/import")
+async def account_bookings_import_csv(
+    account_id: str, request: Request,
+    datei: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """CSV columns: Date;Amount;Description (semicolon or comma,
+    auto-detected -- same convention as /members/import/csv). Every
+    imported row becomes an AccountTransaction tagged source=
+    "csv_import" -- this never creates or matches an InvoicePayment;
+    reconciling an import against outstanding invoices is a different,
+    harder problem, deliberately out of scope (issue #174/ADR 0059)."""
+    user = await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    content = await datei.read()
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = content.decode("latin-1")
+
+    try:
+        delimiter = csv.Sniffer().sniff(text[:2048], delimiters=";,").delimiter
+    except csv.Error:
+        delimiter = ";"
+
+    reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+    if reader.fieldnames:
+        reader.fieldnames = [f.strip() if f else f for f in reader.fieldnames]
+
+    imported = 0
+    skipped = 0
+    for row in reader:
+        parsed_date = _parse_date_flexible(row.get("Date") or "")
+        parsed_amount = _parse_decimal(row.get("Amount") or "")
+        if parsed_date is None or parsed_amount is None:
+            skipped += 1
+            continue
+
+        db.add(AccountTransaction(
+            account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
+            description=(row.get("Description") or "").strip() or None,
+            source="csv_import", recorded_by_id=user.id,
+        ))
+        imported += 1
+
+    await db.commit()
+    return RedirectResponse(
+        f"/finances/accounts/{account_id}/bookings?imported={imported}&skipped={skipped}", status_code=302,
+    )
+
+
+@router.post("/accounts/{account_id}/bookings/manual")
+async def account_bookings_add_manual(
+    account_id: str, request: Request,
+    booking_date: str = Form(...), amount: str = Form(...), description: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    parsed_date = _parse_date_flexible(booking_date)
+    parsed_amount = _parse_decimal(amount)
+    if parsed_date is None or parsed_amount is None:
+        raise HTTPException(status_code=400)
+
+    db.add(AccountTransaction(
+        account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
+        description=description.strip() or None, source="manual", recorded_by_id=user.id,
+    ))
+    await db.commit()
+    return RedirectResponse(f"/finances/accounts/{account_id}/bookings", status_code=302)
+
+
+@router.post("/accounts/{account_id}/bookings/{transaction_id}/delete")
+async def account_bookings_delete_manual(
+    account_id: str, transaction_id: str, request: Request, db: AsyncSession = Depends(get_db),
+):
+    """Only AccountTransaction rows can be deleted here -- an
+    InvoicePayment must be removed via its own invoice's payment-delete
+    route, since that's the only place that still makes sense as the
+    single source of truth for a real invoice payment."""
+    await require_permission(request, db, "finances", "delete")
+
+    result = await db.execute(
+        select(AccountTransaction).where(
+            AccountTransaction.id == transaction_id, AccountTransaction.account_id == account_id,
+        )
+    )
+    transaction = result.scalar_one_or_none()
+    if transaction:
+        await db.delete(transaction)
+        await db.commit()
+    return RedirectResponse(f"/finances/accounts/{account_id}/bookings", status_code=302)
 
 
 # ---------------------------------------------------------------------------

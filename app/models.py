@@ -2026,17 +2026,21 @@ class FinanceAccount(Base):
     """
     A club's real-world bank or cash account (issue #156), e.g. an old
     and a new giro account plus a deposit account, or a cash box.
-    Purely a tag on InvoicePayment -- same "reporting tag, no effect on
-    invoice generation" role FinanceCategory already has -- not a real
-    ledger: no manual transactions, no opening balance, just a sum of
-    the payments recorded against it. Freely hard-deletable like
-    FinanceCategory (InvoicePayment.account_id is ON DELETE SET NULL) --
-    the payment record itself is never lost, only its account
-    attribution.
+    Started as purely a tag on InvoicePayment -- no manual transactions,
+    no opening balance, just a sum of the payments recorded against it
+    -- but issue #174 deliberately reopened that "not a ledger" stance:
+    an account's booking list now also includes AccountTransaction rows
+    (any money movement that isn't tied to a specific invoice -- a
+    refund, a purchase, a bank fee), manually entered or CSV-imported.
+    See ADR 0059. Still freely hard-deletable like FinanceCategory
+    (InvoicePayment.account_id is ON DELETE SET NULL, so a payment
+    record itself is never lost, only its account attribution --
+    AccountTransaction rows, which only exist *for* this account, are
+    CASCADE-deleted instead).
 
     `is_active` lets an old/closed account (the user's own "one old and
     one new giro account" example) stay around for its already-recorded
-    payments' sake without still being offered when recording a new one.
+    bookings' sake without still being offered when recording a new one.
     """
     __tablename__ = "finance_accounts"
 
@@ -2498,6 +2502,46 @@ class InvoicePayment(Base):
 
     def __repr__(self) -> str:
         return f"<InvoicePayment {self.amount} on {self.paid_on}>"
+
+
+class AccountTransaction(Base):
+    """A manual or CSV-imported ledger entry against a FinanceAccount
+    (issue #174) -- unlike InvoicePayment (always tied to a specific
+    invoice), this covers any other money movement on the account (a
+    refund, a purchase, a bank fee, interest, etc.). Deliberately
+    reopens FinanceAccount's original "not a ledger" stance (issue
+    #156) -- confirmed with the reporter; see ADR 0059.
+
+    amount is signed (positive = credit/deposit, negative = debit/
+    withdrawal), matching how a bank statement CSV export normally
+    represents it -- there's no separate "type" field to keep in sync
+    with the sign.
+    """
+    __tablename__ = "account_transactions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    account_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("finance_accounts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    booking_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # "manual" (entered by hand) or "csv_import" -- purely informational,
+    # shown in the list so an imported row can be told apart from one
+    # typed in directly; no behavioral difference between the two.
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")
+    recorded_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    account: Mapped["FinanceAccount"] = relationship("FinanceAccount")
+    recorded_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[recorded_by_id])
+
+    def __repr__(self) -> str:
+        return f"<AccountTransaction {self.amount} on {self.booking_date}>"
 
 
 class InvoiceReminder(Base):

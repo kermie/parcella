@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.account_bookings.title', name=account.name) }}{% endblock %}
+{% block page_title %}{{ t('finances.account_bookings.title', name=account.name) }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/finances/accounts" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.coming_soon.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+{% if request.query_params.get('imported') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i>
+    {{ t('finances.account_bookings.import_result', imported=request.query_params.get('imported'), skipped=request.query_params.get('skipped', '0')) }}
+</div>
+{% endif %}
+
+<div class="row g-3">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" id="bookings-filter-form" class="row g-2 align-items-end">
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_search') }}</label>
+                        <input type="text" name="search" value="{{ filters.search }}" class="form-control form-control-sm"
+                               placeholder="{{ t('finances.account_bookings.search_placeholder') }}">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_date_from') }}</label>
+                        <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_date_to') }}</label>
+                        <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_amount_min') }}</label>
+                        <input type="text" name="amount_min" value="{{ filters.amount_min }}" class="form-control form-control-sm" placeholder="0,00">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_amount_max') }}</label>
+                        <input type="text" name="amount_max" value="{{ filters.amount_max }}" class="form-control form-control-sm" placeholder="0,00">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_source') }}</label>
+                        <select name="source" class="form-select form-select-sm">
+                            <option value="">{{ t('finances.account_bookings.source_all') }}</option>
+                            <option value="invoice_payment" {% if filters.source == 'invoice_payment' %}selected{% endif %}>{{ t('finances.account_bookings.source_invoice_payment') }}</option>
+                            <option value="manual" {% if filters.source == 'manual' %}selected{% endif %}>{{ t('finances.account_bookings.source_manual') }}</option>
+                            <option value="csv_import" {% if filters.source == 'csv_import' %}selected{% endif %}>{{ t('finances.account_bookings.source_csv_import') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-12 d-flex gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-search me-1"></i>{{ t('finances.account_bookings.filter_button') }}
+                        </button>
+                        <a href="/finances/accounts/{{ account.id }}/bookings" class="btn btn-sm btn-outline-secondary">{{ t('finances.account_bookings.reset_button') }}</a>
+                        <a href="#" id="export-csv-link" class="btn btn-sm btn-outline-secondary ms-auto">
+                            <i class="bi bi-download me-1"></i>{{ t('finances.account_bookings.export_button') }}
+                        </a>
+                        {% if has_perm(request, 'finances', 'write') %}
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                            <i class="bi bi-upload me-1"></i>{{ t('finances.account_bookings.import_button') }}
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addBookingModal">
+                            <i class="bi bi-plus-lg me-1"></i>{{ t('finances.account_bookings.add_button') }}
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-list-ul me-2"></i>{{ t('finances.account_bookings.list_header') }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="bookings-table">
+                        <thead>
+                            <tr>
+                                <th>{{ t('finances.account_bookings.col_date') }}</th>
+                                <th class="text-end">{{ t('finances.account_bookings.col_amount') }}</th>
+                                <th>{{ t('finances.account_bookings.col_reference') }}</th>
+                                <th>{{ t('finances.account_bookings.col_description') }}</th>
+                                <th>{{ t('finances.account_bookings.col_source') }}</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookings-tbody">
+                            {% for r in rows %}
+                            <tr>
+                                <td class="text-nowrap">{{ r.booking_date.strftime('%d.%m.%Y') }}</td>
+                                <td class="text-end text-nowrap {{ 'text-danger' if r.amount < 0 else '' }}">{{ r.amount|float|money }}</td>
+                                <td>
+                                    {% if r.invoice_id %}<a href="/finances/invoices/{{ r.invoice_id }}">{{ r.reference }}</a>{% else %}{{ r.reference or '—' }}{% endif %}
+                                </td>
+                                <td class="text-muted">{{ r.description or '' }}</td>
+                                <td class="text-muted">{{ t('finances.account_bookings.source_' ~ r.source) }}</td>
+                                <td class="text-end">
+                                    {% if r.source != 'invoice_payment' and has_perm(request, 'finances', 'delete') %}
+                                    <form method="post" action="/finances/accounts/{{ account.id }}/bookings/{{ r.id }}/delete" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('{{ t('finances.account_bookings.delete_confirm') }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr id="bookings-empty-row">
+                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.account_bookings.no_bookings') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div id="bookings-sentinel" class="text-center text-muted py-3">
+                    <div id="bookings-spinner" class="spinner-border spinner-border-sm" role="status" style="visibility: hidden;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% if has_perm(request, 'finances', 'write') %}
+<div class="modal fade" id="importCsvModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-upload me-2"></i>{{ t('finances.account_bookings.import_modal_title') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/import" enctype="multipart/form-data"
+                      class="d-flex gap-2 align-items-center flex-wrap">
+                    <input type="file" name="datei" accept=".csv" class="form-control form-control-sm" required style="max-width: 300px;">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-upload me-1"></i>{{ t('finances.account_bookings.import_button') }}
+                    </button>
+                </form>
+                <div class="form-text mt-2">
+                    {{ t('finances.account_bookings.csv_format_help') }}
+                    <code>Date;Amount;Description</code><br>
+                    {{ t('finances.account_bookings.csv_date_format_help', iso='YYYY-MM-DD', de='DD.MM.YYYY') }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addBookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.account_bookings.add_modal_title') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/manual" class="row g-2 align-items-end">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.col_date') }}</label>
+                        <input type="date" name="booking_date" class="form-control form-control-sm" value="{{ today }}" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.col_amount') }}</label>
+                        <input type="text" name="amount" class="form-control form-control-sm" placeholder="-12,50" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.col_description') }}</label>
+                        <input type="text" name="description" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>{{ t('finances.account_bookings.add_button') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var accountId = {{ account.id|tojson }};
+    var tbody = document.getElementById('bookings-tbody');
+    var sentinel = document.getElementById('bookings-sentinel');
+    var emptyRow = document.getElementById('bookings-empty-row');
+    var offset = {{ rows|length }};
+    var hasMore = {{ 'true' if has_more else 'false' }};
+    var loading = false;
+
+    function currentFilterParams() {
+        var form = document.getElementById('bookings-filter-form');
+        return new URLSearchParams(new FormData(form));
+    }
+
+    document.getElementById('export-csv-link').addEventListener('click', function (e) {
+        e.preventDefault();
+        var params = currentFilterParams();
+        window.location = '/finances/accounts/' + accountId + '/bookings/export.csv?' + params.toString();
+    });
+
+    function moneyFormat(amount) {
+        return amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    }
+
+    function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s == null ? '' : s;
+        return div.innerHTML;
+    }
+
+    function sourceLabel(source) {
+        var labels = {
+            'invoice_payment': {{ t('finances.account_bookings.source_invoice_payment')|tojson }},
+            'manual': {{ t('finances.account_bookings.source_manual')|tojson }},
+            'csv_import': {{ t('finances.account_bookings.source_csv_import')|tojson }}
+        };
+        return labels[source] || source;
+    }
+
+    function appendRows(rows) {
+        if (emptyRow) { emptyRow.remove(); emptyRow = null; }
+        rows.forEach(function (r) {
+            var tr = document.createElement('tr');
+            var referenceHtml = r.invoice_url
+                ? '<a href="' + r.invoice_url + '">' + escapeHtml(r.reference) + '</a>'
+                : escapeHtml(r.reference || '—');
+            tr.innerHTML =
+                '<td class="text-nowrap">' + escapeHtml(r.booking_date) + '</td>' +
+                '<td class="text-end text-nowrap' + (r.amount < 0 ? ' text-danger' : '') + '">' + moneyFormat(r.amount) + '</td>' +
+                '<td>' + referenceHtml + '</td>' +
+                '<td class="text-muted">' + escapeHtml(r.description) + '</td>' +
+                '<td class="text-muted">' + escapeHtml(sourceLabel(r.source)) + '</td>' +
+                '<td></td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    var spinner = document.getElementById('bookings-spinner');
+
+    function loadMore() {
+        if (loading || !hasMore) return;
+        loading = true;
+        spinner.style.visibility = 'visible';
+        var params = currentFilterParams();
+        params.set('offset', offset);
+        fetch('/finances/accounts/' + accountId + '/bookings.json?' + params.toString())
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                appendRows(data.rows);
+                offset += data.rows.length;
+                hasMore = data.has_more;
+                spinner.style.visibility = 'hidden';
+                loading = false;
+                if (!hasMore) { observer.disconnect(); sentinel.style.display = 'none'; }
+            })
+            .catch(function () { loading = false; spinner.style.visibility = 'hidden'; });
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) { loadMore(); }
+    });
+    if (hasMore) {
+        observer.observe(sentinel);
+    } else {
+        sentinel.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

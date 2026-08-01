@@ -241,14 +241,23 @@ an old and a new giro account, plus a cash box) -- `name`, `account_type`
 already-recorded payments' sake without still being offered when
 recording a new one (`/finances/accounts`).
 
-Same role as `FinanceCategory`: purely a reporting tag, this time on
-`InvoicePayment.account_id` (nullable, `ON DELETE SET NULL`) rather
-than on an item definition -- deleting an account never deletes the
-payment record itself, only its account attribution. **Not a ledger**:
-no manual transactions, no opening balance. The accounts list just
-sums the payments recorded against each account
-(`SUM(InvoicePayment.amount) GROUP BY account_id`); that sum has no
-effect on invoice generation either.
+Started as purely a reporting tag on `InvoicePayment.account_id`
+(nullable, `ON DELETE SET NULL` -- deleting an account never deletes
+the payment record itself, only its account attribution), same role as
+`FinanceCategory`. Issue #174 deliberately reopened the original "not a
+ledger" stance: `/finances/accounts/{id}/bookings` shows a unified,
+searchable, paginated (infinite scroll) list of everything ever booked
+against the account -- `InvoicePayment` rows `UNION ALL`'d with the new
+`AccountTransaction` rows (any other money movement: a refund, a
+purchase, a bank fee, manually entered or CSV-imported, `ON DELETE
+CASCADE` since a transaction only exists *for* its account). Supports
+CSV export (honoring the current search/filter) and CSV import
+(`Date;Amount;Description`, always creates `AccountTransaction` rows --
+never auto-matches or creates an `InvoicePayment`; reconciling an
+import against outstanding invoices is a different, harder problem,
+explicitly out of scope). See
+[ADR 0059](./ADR/0059-account-transactions-reopen-not-a-ledger-stance.md)
+for the full reasoning.
 
 ## Key decisions
 

@@ -115,6 +115,9 @@
                                 </td>
                                 <td class="text-end">{{ (payment_sums.get(account.id, 0))|float|money }}</td>
                                 <td class="text-end text-nowrap">
+                                    <a href="/finances/accounts/{{ account.id }}/bookings" class="btn btn-sm btn-outline-secondary border-0" title="{{ t('finances.account_list.bookings_link') }}">
+                                        <i class="bi bi-list-ul"></i>
+                                    </a>
                                     <button type="submit" form="edit-account-{{ account.id }}" class="btn btn-sm btn-outline-primary border-0">
                                         <i class="bi bi-check-lg"></i>
                                     </button>
@@ -134,7 +137,11 @@
                                 <td>{{ account.note or '' }}</td>
                                 <td>{% if account.is_active %}<i class="bi bi-check-lg"></i>{% endif %}</td>
                                 <td class="text-end">{{ (payment_sums.get(account.id, 0))|float|money }}</td>
-                                <td></td>
+                                <td class="text-end">
+                                    <a href="/finances/accounts/{{ account.id }}/bookings" class="btn btn-sm btn-outline-secondary border-0" title="{{ t('finances.account_list.bookings_link') }}">
+                                        <i class="bi bi-list-ul"></i>
+                                    </a>
+                                </td>
                                 {% endif %}
                             </tr>
                             {% else %}
