@@ -366,14 +366,23 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
     next_order = (max((i.order_number for i in run.item_definitions), default=0) + 10)
 
     invoices = []
+    accounts = []
     if run.status == InvoiceRunStatus.FINALIZED:
         result = await db.execute(
             select(Invoice)
-            .options(selectinload(Invoice.parcel), selectinload(Invoice.member))
+            .options(
+                selectinload(Invoice.parcel), selectinload(Invoice.member),
+                selectinload(Invoice.payments).selectinload(InvoicePayment.account),
+                selectinload(Invoice.reminders),
+            )
             .where(Invoice.invoice_run_id == run.id)
             .order_by(Invoice.invoice_number)
         )
         invoices = list(result.scalars().all())
+        accounts_result = await db.execute(
+            select(FinanceAccount).where(FinanceAccount.is_active == True).order_by(FinanceAccount.name)  # noqa: E712
+        )
+        accounts = list(accounts_result.scalars().all())
 
     item_templates = []
     catalog_all_used = False
@@ -397,6 +406,8 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
         "pricing_modes": list(InvoicePricingMode),
         "next_order": next_order,
         "invoices": invoices,
+        "accounts": accounts,
+        "today": date.today().isoformat(),
         "item_templates": item_templates,
         "catalog_all_used": catalog_all_used,
         "categories": categories,
@@ -916,8 +927,16 @@ async def payment_create(
     invoice_id: str, request: Request,
     amount: str = Form(...), paid_on: str = Form(...), note: str = Form(""),
     account_id: str = Form(""),
+    from_run: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
+    """Issue #173: also reachable from a run's own invoice list
+    (/finances/runs/{run_id}), not just an invoice's own detail page --
+    from_run, when present, sends the admin back there instead, so they
+    can record payments for several invoices in one run without
+    re-navigating each time. Built from a plain id (never an arbitrary
+    URL) to avoid an open-redirect; a bogus id just 404s on the next
+    request, same as visiting a wrong URL directly."""
     user = await require_permission(request, db, "finances", "write")
     await _get_invoice_or_404(db, invoice_id)
 
@@ -932,11 +951,17 @@ async def payment_create(
         account_id=account_id.strip() or None,
     ))
     await db.commit()
+    if from_run.strip():
+        return RedirectResponse(f"/finances/runs/{from_run.strip()}", status_code=302)
     return RedirectResponse(f"/finances/invoices/{invoice_id}", status_code=302)
 
 
 @router.post("/invoices/{invoice_id}/payments/{payment_id}/delete")
-async def payment_delete(invoice_id: str, payment_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+async def payment_delete(
+    invoice_id: str, payment_id: str, request: Request,
+    from_run: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
     await require_permission(request, db, "finances", "delete")
 
     result = await db.execute(
@@ -946,6 +971,8 @@ async def payment_delete(invoice_id: str, payment_id: str, request: Request, db:
     if payment:
         await db.delete(payment)
         await db.commit()
+    if from_run.strip():
+        return RedirectResponse(f"/finances/runs/{from_run.strip()}", status_code=302)
     return RedirectResponse(f"/finances/invoices/{invoice_id}", status_code=302)
 
 

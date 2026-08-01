@@ -91,6 +91,7 @@
                                 <th>{{ t('finances.run_detail.col_parcel') }}</th>
                                 <th>{{ t('finances.run_detail.col_recipient') }}</th>
                                 <th>{{ t('finances.run_detail.col_invoice_subtotal') }}</th>
+                                <th>{{ t('finances.run_detail.col_payment_status') }}</th>
                                 <th>{{ t('finances.run_detail.col_delivery') }}</th>
                                 <th></th>
                             </tr>
@@ -106,11 +107,25 @@
                                 <td style="white-space: pre-line;">{{ invoice.recipient_names }}</td>
                                 <td>{{ invoice.subtotal|float|money }}</td>
                                 <td class="text-nowrap">
+                                    {% if invoice.payment_status == 'paid' %}
+                                    <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('finances.invoice_list.status_paid') }}</span>
+                                    {% elif invoice.payment_status == 'partially_paid' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('finances.invoice_list.status_partially_paid') }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('finances.invoice_list.status_open') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-nowrap">
                                     {% if invoice.emailed_at %}<i class="bi bi-envelope-check text-success" title="{{ t('finances.run_detail.icon_emailed') }}"></i>{% endif %}
                                     {% if invoice.printed_at %}<i class="bi bi-printer-fill text-success ms-1" title="{{ t('finances.run_detail.icon_printed') }}"></i>{% endif %}
                                     {% if invoice.uploaded_to_cloud_at %}<i class="bi bi-cloud-check text-success ms-1" title="{{ t('finances.run_detail.icon_uploaded') }}"></i>{% endif %}
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end text-nowrap">
+                                    {% if has_perm(request, 'finances', 'write') %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#payment-modal-{{ invoice.id }}">
+                                        <i class="bi bi-cash-coin me-1"></i>{{ t('finances.run_detail.payment_button') }}
+                                    </button>
+                                    {% endif %}
                                     <a href="/finances/invoices/{{ invoice.id }}/pdf" target="_blank" class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('finances.run_preview.pdf_button') }}
                                     </a>
@@ -118,7 +133,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.run_preview.no_invoices') }}</td>
+                                <td colspan="7" class="text-center text-muted py-3">{{ t('finances.run_preview.no_invoices') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -127,6 +142,80 @@
             </div>
         </div>
     </div>
+
+    {% for invoice in invoices %}
+    <div class="modal fade" id="payment-modal-{{ invoice.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-cash-coin me-2"></i>{{ t('finances.run_detail.payment_modal_title', number=invoice.invoice_number) }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {% if invoice.payments %}
+                    <table class="table table-sm">
+                        <tbody>
+                            {% for payment in invoice.payments %}
+                            <tr>
+                                <td>{{ payment.paid_on.strftime('%d.%m.%Y') }}</td>
+                                <td>{{ payment.amount|float|money }}</td>
+                                <td class="text-muted">{{ payment.account.name if payment.account else '—' }}</td>
+                                <td class="text-muted">{{ payment.note or '' }}</td>
+                                <td class="text-end">
+                                    {% if has_perm(request, 'finances', 'delete') %}
+                                    <form method="post" action="/finances/invoices/{{ invoice.id }}/payments/{{ payment.id }}/delete" class="d-inline">
+                                        <input type="hidden" name="from_run" value="{{ run.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger border-0"
+                                                onclick="return confirm('{{ t('finances.invoice_detail.delete_payment_confirm') }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted mb-3">{{ t('finances.invoice_detail.no_payments') }}</p>
+                    {% endif %}
+
+                    {% if has_perm(request, 'finances', 'write') %}
+                    <form method="post" action="/finances/invoices/{{ invoice.id }}/payments" class="row g-2 align-items-end">
+                        <input type="hidden" name="from_run" value="{{ run.id }}">
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_amount') }}</label>
+                            <input type="text" name="amount" class="form-control form-control-sm" placeholder="0,00" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_paid_on') }}</label>
+                            <input type="date" name="paid_on" class="form-control form-control-sm" value="{{ today }}" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_note') }}</label>
+                            <input type="text" name="note" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_account') }}</label>
+                            <select name="account_id" class="form-select form-select-sm">
+                                <option value="">—</option>
+                                {% for account in accounts %}
+                                <option value="{{ account.id }}">{{ account.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>{{ t('finances.invoice_detail.add_payment_button') }}
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
     {% else %}
 
     <div class="col-12">
