@@ -48,6 +48,8 @@ If a Github issue is declared as a bug, write a test for it so it never appears 
 
 Always trigger a database backup before changing anything.
 
+You never ever expose your user name to Github. Use my handle instead!
+
 ## Architectural conventions (the load-bearing ones)
 
 - **Module flags** (`app/module_flags.py`): every optional feature area is
