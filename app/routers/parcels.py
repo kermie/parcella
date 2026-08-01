@@ -393,8 +393,13 @@ async def member_assignment_update(
 
     assignment.assigned_from = date.fromisoformat(assigned_from) if assigned_from.strip() else None
     assignment.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
-    # A former tenant (assigned_until set) can never be the invoice address.
-    assignment.is_invoice_address = is_invoice_address if assignment.assigned_until is None else False
+    # A former tenant can never be the invoice address -- but a future-
+    # dated assigned_until (notice given, not yet moved out -- issue
+    # #130/ADR 0052) doesn't make them former yet, so it must not clear
+    # this (issue #172: this used to zero it out the moment ANY
+    # assigned_until was set, silently un-billing a still-occupied
+    # parcel for the months until the tenant actually leaves).
+    assignment.is_invoice_address = is_invoice_address if assignment.is_current else False
 
     await db.commit()
     await deactivate_if_vacant(db, parcel_id)

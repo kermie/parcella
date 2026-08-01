@@ -437,12 +437,16 @@ class MemberParcel(Base):
 
     __table_args__ = (
         UniqueConstraint("member_id", "parcel_id", name="uq_member_parcel"),
-        # A former tenant (assigned_until set) can never be the invoice
-        # address -- annual invoices must not go to someone who's moved on.
-        CheckConstraint(
-            "NOT is_invoice_address OR assigned_until IS NULL",
-            name="ck_invoice_address_only_for_current_tenants",
-        ),
+        # ADR 0035's original DB-level backstop here (dropped in
+        # migration 0069, issue #172) required assigned_until IS NULL,
+        # which also rejected a future-dated termination (notice given,
+        # not yet moved out) even though that tenant is still current
+        # per is_current/ADR 0052. A CHECK constraint can't reference
+        # "today" safely (it isn't re-evaluated as time passes), so
+        # there's no equivalent immutable check for "is_current" --
+        # correctness now relies on every read path using is_current
+        # (or current_tenant_filter() in SQL) instead of trusting a
+        # stored is_invoice_address in isolation. See ADR 0058.
     )
 
 

@@ -223,8 +223,14 @@ def _parcel_is_billable(parcel: Parcel) -> bool:
     uses to decide whether a parcel gets an invoice at all. Shared with
     the communal-area-share denominator below (issue #82), so "how many
     parcels split Area B" always matches "how many parcels actually get
-    billed"."""
-    current_residents = [a for a in parcel.member_assignments if a.assigned_until is None]
+    billed".
+
+    Uses MemberParcel.is_current, not "assigned_until is None" -- a
+    tenant who gave notice for a future date hasn't actually moved out
+    yet (issue #130/ADR 0052) and must still be billed until they do
+    (issue #172: this used to exclude them the moment ANY assigned_until
+    was set, silently un-billing a still-occupied parcel for months)."""
+    current_residents = [a for a in parcel.member_assignments if a.is_current]
     return any(a.is_invoice_address for a in current_residents)
 
 
@@ -418,7 +424,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
         if not _parcel_is_billable(parcel):
             continue
         invoice_address_members = [
-            a.member for a in parcel.member_assignments if a.assigned_until is None and a.is_invoice_address
+            a.member for a in parcel.member_assignments if a.is_current and a.is_invoice_address
         ]
 
         names, street, postal_code, city = _group_recipient(invoice_address_members)

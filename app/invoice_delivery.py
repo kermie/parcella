@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.database import current_tenant_filter
 from app.models import Invoice, InvoiceRun, InvoiceReminder, MemberParcel, Member
 from app.email_service import send_email
 from app.parcel_cloud_folders import get_active_folder
@@ -53,7 +54,7 @@ async def _invoice_recipient(db: AsyncSession, invoice: Invoice) -> Optional[Tup
         .options(selectinload(MemberParcel.member).selectinload(Member.email_addresses))
         .where(
             MemberParcel.parcel_id == invoice.parcel_id,
-            MemberParcel.assigned_until.is_(None),
+            current_tenant_filter(),
             MemberParcel.is_invoice_address.is_(True),
         )
     )

@@ -209,11 +209,13 @@ async def member_assign(
     assignment = MemberParcel(
         parcel_id=parcel_id,
         member_id=data.member_id,
-        # A former tenant (assigned_until set) can never be the invoice address.
-        is_invoice_address=data.is_invoice_address if data.assigned_until is None else False,
         assigned_from=data.assigned_from,
         assigned_until=data.assigned_until,
     )
+    # A former tenant can never be the invoice address -- but a future-
+    # dated assigned_until (notice given, not yet moved out -- issue
+    # #130/ADR 0052) doesn't make them former yet (issue #172).
+    assignment.is_invoice_address = data.is_invoice_address if assignment.is_current else False
     db.add(assignment)
     await db.commit()
     await db.refresh(assignment)

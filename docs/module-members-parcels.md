@@ -34,12 +34,16 @@ assignment row, defaulting to `True`, no "exactly one per parcel"
 constraint) but a different concern: it selects an address for postal
 mail, not a liability rank -- see
 [Architecture Decisions](./ADR/0035-invoice-address-flag-on-member-parcel-assignments.md).
-A former tenant can never hold this flag -- a CHECK constraint
-(`ck_invoice_address_only_for_current_tenants`, migration
-`0036_invoice_current_only`) enforces `NOT is_invoice_address OR
-assigned_until IS NULL`, and every code path that ends a tenancy clears
-the flag in the same write so invoices don't keep going to someone
-who's moved out.
+A former tenant can never hold this flag; every code path that ends a
+tenancy clears it in the same write so invoices don't keep going to
+someone who's moved out. "Former" here means `is_current` is `False`
+(the tenancy has actually ended, `assigned_until` in the past or
+today), not merely "`assigned_until` is set" -- a tenant who gave
+notice for a future date is still current and must still be billed
+until they actually leave. The original DB-level backstop
+(`ck_invoice_address_only_for_current_tenants` CHECK constraint) was
+dropped for exactly this reason -- see
+[ADR 0058](./ADR/0058-invoice-address-check-constraint-dropped-for-future-terminations.md).
 Households (e.g. a couple who should both appear on the invoice letter)
 are resolved at document-generation time by matching addresses among
 current residents, the same way `household_grouping()` in
@@ -73,11 +77,11 @@ must become former the *same* day, not the day before (see
 The query-level helper `current_tenant_filter()` in `app/database.py`
 mirrors `active_member_filter()` for SQL-level call sites; in-Python list
 filtering over an already-loaded relationship uses the `.is_current`
-property directly. `is_invoice_address` remains intentionally *stricter*
-than `is_current`: the `ck_invoice_address_only_for_current_tenants` CHECK
-constraint (see above) rejects it for any `assigned_until`, including a
-future one -- a deliberate billing-risk decision this "current tenant"
-display concept does not override.
+property directly. `is_invoice_address` now follows the exact same
+`is_current` rule (see above) rather than the stricter "no
+`assigned_until` at all" it used to require -- a tenant who's given
+notice for a future date is still billed until that date actually
+arrives.
 
 **Change history (ChangeHistory).** A generic audit log
 (`app/change_tracker.py`) that logs field changes on arbitrary entities
