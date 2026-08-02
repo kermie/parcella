@@ -2212,7 +2212,11 @@
       "col_match": "Correspondance",
       "invalid_row": "Ligne invalide — sera ignorée",
       "matched_result": "{n} écriture(s) associée(s) à une facture existante.",
-      "single_match_result": "Enregistré comme paiement pour la facture associée."
+      "single_match_result": "Enregistré comme paiement pour la facture associée.",
+      "label_assigned": "Association",
+      "assigned_all": "Toutes",
+      "assigned_yes": "Associée à une facture",
+      "assigned_no": "Non associée"
     },
     "item_template_list": {
       "title": "Catalogue d'articles",

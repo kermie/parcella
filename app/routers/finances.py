@@ -1546,20 +1546,28 @@ async def account_delete(account_id: str, request: Request, db: AsyncSession = D
 
 # ---------------------------------------------------------------------------
 # Account bookings (issue #174): a unified, filterable list of
-# everything ever booked against one account -- InvoicePayment rows
-# (always tied to an invoice) UNION ALL'd with AccountTransaction rows
-# (anything else: refunds, purchases, bank fees, CSV-imported), see
-# ADR 0059. Both are normalized to the same (id, booking_date, amount,
-# reference, description, source, counterparty) shape so search/
-# filtering/pagination only has to be written once, against the
-# combined result. counterparty (issue #185) is Invoice.recipient_names
-# for invoice_payment rows, AccountTransaction.counterparty (manual/
-# CSV, optional) for everything else. source is kept internally (it
-# still decides whether a row is deletable here) but is no longer
-# shown or filterable in the UI (issue #184).
+# everything ever booked against one account -- InvoicePayment and
+# IncomingInvoicePayment rows (always tied to an invoice) UNION ALL'd
+# with AccountTransaction rows (anything else: refunds, purchases,
+# bank fees, CSV-imported), see ADR 0059. issue #189: IncomingInvoicePayment
+# was missing from this union entirely -- since issue #181 gave it an
+# account_id, and issue #188 started actively creating tagged rows via
+# invoice matching, any expense payment tagged to an account had been
+# silently invisible on that account's own bookings page. All three are
+# normalized to the same (id, booking_date, amount, reference,
+# description, source, counterparty, invoice_id, incoming_invoice_id)
+# shape so search/filtering/pagination only has to be written once,
+# against the combined result. counterparty (issue #185) is
+# Invoice.recipient_names / IncomingInvoice.sender for invoice rows,
+# AccountTransaction.counterparty (manual/CSV, optional) otherwise.
+# source is kept internally (it decides whether a row is deletable
+# here, and now also drives the "assigned" filter, issue #189) but is
+# no longer shown directly in the UI (issue #184).
 # ---------------------------------------------------------------------------
 
 BOOKINGS_PAGE_SIZE = 50
+ASSIGNED_SOURCES = ("invoice_payment", "incoming_invoice_payment")
+UNASSIGNED_SOURCES = ("manual", "csv_import")
 
 
 def _account_bookings_base(account_id: str):
@@ -1570,12 +1578,28 @@ def _account_bookings_base(account_id: str):
             InvoicePayment.amount.label("amount"),
             Invoice.invoice_number.label("reference"),
             InvoicePayment.note.label("description"),
-            cast(literal("invoice_payment"), String(20)).label("source"),
+            cast(literal("invoice_payment"), String(30)).label("source"),
             Invoice.recipient_names.label("counterparty"),
             Invoice.id.label("invoice_id"),
+            cast(literal(None), String(36)).label("incoming_invoice_id"),
         )
         .join(Invoice, Invoice.id == InvoicePayment.invoice_id)
         .where(InvoicePayment.account_id == account_id)
+    )
+    incoming_payments_q = (
+        select(
+            IncomingInvoicePayment.id.label("id"),
+            IncomingInvoicePayment.paid_on.label("booking_date"),
+            (-IncomingInvoicePayment.amount).label("amount"),
+            IncomingInvoice.invoice_number.label("reference"),
+            IncomingInvoicePayment.note.label("description"),
+            cast(literal("incoming_invoice_payment"), String(30)).label("source"),
+            IncomingInvoice.sender.label("counterparty"),
+            cast(literal(None), String(36)).label("invoice_id"),
+            IncomingInvoice.id.label("incoming_invoice_id"),
+        )
+        .join(IncomingInvoice, IncomingInvoice.id == IncomingInvoicePayment.incoming_invoice_id)
+        .where(IncomingInvoicePayment.account_id == account_id)
     )
     transactions_q = (
         select(
@@ -1587,15 +1611,16 @@ def _account_bookings_base(account_id: str):
             AccountTransaction.source.label("source"),
             AccountTransaction.counterparty.label("counterparty"),
             cast(literal(None), String(36)).label("invoice_id"),
+            cast(literal(None), String(36)).label("incoming_invoice_id"),
         )
         .where(AccountTransaction.account_id == account_id)
     )
-    return union_all(payments_q, transactions_q).subquery("bookings")
+    return union_all(payments_q, incoming_payments_q, transactions_q).subquery("bookings")
 
 
 def _account_bookings_filtered(
     account_id: str, search: str, date_from: str, date_to: str,
-    amount_min: str, amount_max: str,
+    amount_min: str, amount_max: str, assigned: str = "",
 ):
     """Returns the filtered/searched (but not yet ordered, limited, or
     offset) bookings query -- shared by the HTML page, the JSON
@@ -1603,9 +1628,17 @@ def _account_bookings_filtered(
     on exactly which rows match the current filters. search also
     matches counterparty (issue #185: "I want to filter for this
     sender or recipient") -- there's no separate filter control for it,
-    same free-text box already used for reference/description."""
+    same free-text box already used for reference/description.
+    assigned (issue #189) filters on whether a row is tied to an
+    outgoing/incoming invoice at all, independent of how it got
+    entered (which issue #184 already decided doesn't matter)."""
     bookings = _account_bookings_base(account_id)
     query = select(bookings)
+
+    if assigned == "yes":
+        query = query.where(bookings.c.source.in_(ASSIGNED_SOURCES))
+    elif assigned == "no":
+        query = query.where(bookings.c.source.in_(UNASSIGNED_SOURCES))
 
     if search.strip():
         like = f"%{search.strip()}%"
@@ -1648,6 +1681,7 @@ def _bookings_filter_params(request: Request) -> dict:
     return {
         "search": q.get("search", ""), "date_from": q.get("date_from", ""), "date_to": q.get("date_to", ""),
         "amount_min": q.get("amount_min", ""), "amount_max": q.get("amount_max", ""),
+        "assigned": q.get("assigned", ""),
     }
 
 
@@ -1698,7 +1732,11 @@ async def account_bookings_json(
                 "reference": r.reference,
                 "description": r.description,
                 "counterparty": r.counterparty,
-                "invoice_url": f"/finances/invoices/{r.invoice_id}" if r.invoice_id else None,
+                "invoice_url": (
+                    f"/finances/invoices/{r.invoice_id}" if r.invoice_id
+                    else f"/finances/incoming-invoices/{r.incoming_invoice_id}" if r.incoming_invoice_id
+                    else None
+                ),
             }
             for r in rows
         ],

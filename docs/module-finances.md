@@ -284,6 +284,22 @@ this same list -- the user found it added noise without adding value;
 whether a row is deletable from this list at all) but is no longer
 shown or filterable.
 
+**Bug fixed in issue #189:** `_account_bookings_base`'s `UNION ALL`
+never included `IncomingInvoicePayment` at all -- since issue #181
+gave it an `account_id` and issue #188 started actively creating
+tagged rows via invoice matching, any expense payment tagged to an
+account had been silently invisible on that account's own bookings
+page (while still correctly appearing in the club-wide bookings list,
+issue #180, which was built with all three row types from the start).
+Now a third `UNION ALL` branch, shown as a negative amount (an
+outgoing InvoicePayment is a credit; an incoming one is a debit,
+matching AccountTransaction's existing sign convention), linked to
+`/finances/incoming-invoices/{id}`, and not deletable from this list
+(same as an outgoing InvoicePayment -- remove it via the incoming
+invoice's own payment-delete route instead). Also added an "assigned"
+filter (linked to an outgoing/incoming invoice, or not) reusing the
+`source` column that issue #184 stopped showing directly.
+
 ## Incoming invoices
 
 `IncomingInvoice` (issue #178) is the mirror image of `Invoice` -- a

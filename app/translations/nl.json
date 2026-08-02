@@ -2212,7 +2212,11 @@
       "col_match": "Koppeling",
       "invalid_row": "Ongeldige rij — wordt overgeslagen",
       "matched_result": "{n} boeking(en) gekoppeld aan een bestaande factuur.",
-      "single_match_result": "Geregistreerd als betaling voor de gekoppelde factuur."
+      "single_match_result": "Geregistreerd als betaling voor de gekoppelde factuur.",
+      "label_assigned": "Koppeling",
+      "assigned_all": "Alle",
+      "assigned_yes": "Gekoppeld aan een factuur",
+      "assigned_no": "Niet gekoppeld"
     },
     "item_template_list": {
       "title": "Artikelcatalogus",

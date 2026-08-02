@@ -16,6 +16,7 @@ from app.database import AsyncSessionLocal
 from app.models import (
     ClubSetting, Parcel, Member, MemberParcel, Invoice, InvoicePayment,
     FinanceAccount, FinanceAccountType, AccountTransaction,
+    IncomingInvoice, IncomingInvoicePayment,
 )
 
 
@@ -85,6 +86,26 @@ async def _make_invoice_payment(client, account_id: str, amount: str, paid_on: s
     assert r_pay.status_code in (302, 303)
 
 
+async def _make_incoming_invoice_payment(client, account_id: str, amount: str, paid_on: str, sender: str) -> str:
+    """Creates an incoming invoice and records a payment against it,
+    tagged to account_id -- returns the incoming invoice id."""
+    r_invoice = await client.post("/finances/incoming-invoices", data={
+        "sender": sender, "invoice_number": "", "invoice_date": paid_on, "note": "",
+        "category_id": [""], "amount": [amount],
+    })
+    assert r_invoice.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(IncomingInvoice).where(IncomingInvoice.sender == sender))
+        incoming_invoice_id = result.scalar_one().id
+
+    r_pay = await client.post(f"/finances/incoming-invoices/{incoming_invoice_id}/payments", data={
+        "amount": amount, "paid_on": paid_on, "note": "", "account_id": account_id,
+    })
+    assert r_pay.status_code in (302, 303)
+    return incoming_invoice_id
+
+
 async def test_bookings_list_unifies_invoice_payments_and_transactions(client, admin_user):
     await web_login(client)
     await _enable_finances_module()
@@ -104,6 +125,97 @@ async def test_bookings_list_unifies_invoice_payments_and_transactions(client, a
     assert "50,00" in response.text
     # Most recent first: the bank fee (Aug 15) must appear before the invoice payment (Aug 10).
     assert response.text.index("Bank fee") < response.text.index("50,00")
+
+
+async def test_incoming_invoice_payment_appears_in_account_bookings(client, admin_user):
+    """Issue #189: IncomingInvoicePayment was entirely missing from
+    this UNION -- any expense payment tagged to an account (issue #181
+    payment form, or issue #188's invoice matching) was silently
+    invisible on that account's own bookings page."""
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    incoming_invoice_id = await _make_incoming_invoice_payment(
+        client, account_id, "30.00", "2026-08-05", "Repair Shop",
+    )
+
+    response = await client.get(f"/finances/accounts/{account_id}/bookings")
+    assert response.status_code == 200
+    assert "Repair Shop" in response.text
+    assert f"/finances/incoming-invoices/{incoming_invoice_id}" in response.text
+
+
+async def test_incoming_invoice_payment_shows_as_negative_amount(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    await _make_incoming_invoice_payment(client, account_id, "30.00", "2026-08-06", "Negative Amount Test")
+
+    response = await client.get(f"/finances/accounts/{account_id}/bookings")
+    assert response.status_code == 200
+    assert "-30,00" in response.text
+
+
+async def test_incoming_invoice_payment_has_no_delete_button(client, admin_user):
+    """Same reasoning as an outgoing InvoicePayment: it must be removed
+    via the incoming invoice's own payment-delete route, not from here."""
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+    incoming_invoice_id = await _make_incoming_invoice_payment(
+        client, account_id, "20.00", "2026-08-07", "No Delete Button Test",
+    )
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(IncomingInvoicePayment).where(IncomingInvoicePayment.incoming_invoice_id == incoming_invoice_id)
+        )
+        payment_id = result.scalar_one().id
+
+    response = await client.get(f"/finances/accounts/{account_id}/bookings")
+    assert f'/bookings/{payment_id}/delete' not in response.text
+
+
+async def test_assigned_filter_yes_shows_only_invoice_linked_bookings(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    await _make_invoice_payment(client, account_id, "40.00", "2026-08-08", "ASSIGNFILTER1")
+    await _make_incoming_invoice_payment(client, account_id, "25.00", "2026-08-08", "Assigned Expense")
+    async with AsyncSessionLocal() as session:
+        session.add(AccountTransaction(
+            account_id=account_id, booking_date=date.fromisoformat("2026-08-08"), amount="-5.00",
+            description="Unassigned Entry", source="manual",
+        ))
+        await session.commit()
+
+    response = await client.get(f"/finances/accounts/{account_id}/bookings?assigned=yes")
+    assert response.status_code == 200
+    assert "40,00" in response.text
+    assert "Assigned Expense" in response.text
+    assert "Unassigned Entry" not in response.text
+
+
+async def test_assigned_filter_no_shows_only_generic_bookings(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    await _make_invoice_payment(client, account_id, "40.00", "2026-08-09", "ASSIGNFILTER2")
+    async with AsyncSessionLocal() as session:
+        session.add(AccountTransaction(
+            account_id=account_id, booking_date=date.fromisoformat("2026-08-09"), amount="-5.00",
+            description="Unassigned Entry Two", source="manual",
+        ))
+        await session.commit()
+
+    response = await client.get(f"/finances/accounts/{account_id}/bookings?assigned=no")
+    assert response.status_code == 200
+    assert "Unassigned Entry Two" in response.text
+    assert "40,00" not in response.text
 
 
 async def test_bookings_search_filters_by_description(client, admin_user):

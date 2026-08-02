@@ -2212,7 +2212,11 @@
       "col_match": "Zhoda",
       "invalid_row": "Neplatný riadok — bude preskočený",
       "matched_result": "{n} platieb priradených k existujúcej faktúre.",
-      "single_match_result": "Zaznamenané ako platba k priradenej faktúre."
+      "single_match_result": "Zaznamenané ako platba k priradenej faktúre.",
+      "label_assigned": "Priradenie",
+      "assigned_all": "Všetky",
+      "assigned_yes": "Priradené k faktúre",
+      "assigned_no": "Nepriradené"
     },
     "item_template_list": {
       "title": "Katalóg položiek",

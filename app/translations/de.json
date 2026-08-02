@@ -2212,7 +2212,11 @@
       "col_match": "Zuordnung",
       "invalid_row": "Ungültige Zeile — wird übersprungen",
       "matched_result": "{n} Buchung(en) einer bestehenden Rechnung zugeordnet.",
-      "single_match_result": "Als Zahlung gegen die zugeordnete Rechnung erfasst."
+      "single_match_result": "Als Zahlung gegen die zugeordnete Rechnung erfasst.",
+      "label_assigned": "Zuordnung",
+      "assigned_all": "Alle",
+      "assigned_yes": "Einer Rechnung zugeordnet",
+      "assigned_no": "Nicht zugeordnet"
     },
     "item_template_list": {
       "title": "Artikelkatalog",

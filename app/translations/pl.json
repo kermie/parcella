@@ -2212,7 +2212,11 @@
       "col_match": "Dopasowanie",
       "invalid_row": "Nieprawidłowy wiersz — zostanie pominięty",
       "matched_result": "Dopasowano {n} księgowań do istniejącej faktury.",
-      "single_match_result": "Zarejestrowano jako płatność do dopasowanej faktury."
+      "single_match_result": "Zarejestrowano jako płatność do dopasowanej faktury.",
+      "label_assigned": "Przypisanie",
+      "assigned_all": "Wszystkie",
+      "assigned_yes": "Przypisane do faktury",
+      "assigned_no": "Nieprzypisane"
     },
     "item_template_list": {
       "title": "Katalog pozycji",

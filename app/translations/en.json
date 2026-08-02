@@ -2212,7 +2212,11 @@
       "col_match": "Match",
       "invalid_row": "Invalid row — will be skipped",
       "matched_result": "{n} booking(s) matched to an existing invoice.",
-      "single_match_result": "Recorded as a payment against the matched invoice."
+      "single_match_result": "Recorded as a payment against the matched invoice.",
+      "label_assigned": "Assigned",
+      "assigned_all": "All",
+      "assigned_yes": "Assigned to an invoice",
+      "assigned_no": "Not assigned"
     },
     "item_template_list": {
       "title": "Item catalog",

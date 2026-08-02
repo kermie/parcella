@@ -2212,7 +2212,11 @@
       "col_match": "Shoda",
       "invalid_row": "Neplatný řádek — bude přeskočen",
       "matched_result": "{n} plateb přiřazeno k existující faktuře.",
-      "single_match_result": "Zaznamenáno jako platba k přiřazené faktuře."
+      "single_match_result": "Zaznamenáno jako platba k přiřazené faktuře.",
+      "label_assigned": "Přiřazení",
+      "assigned_all": "Vše",
+      "assigned_yes": "Přiřazeno k faktuře",
+      "assigned_no": "Nepřiřazeno"
     },
     "item_template_list": {
       "title": "Katalog položek",

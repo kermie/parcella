@@ -57,6 +57,14 @@
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_amount_max') }}</label>
                         <input type="text" name="amount_max" value="{{ filters.amount_max }}" class="form-control form-control-sm" placeholder="0,00">
                     </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_assigned') }}</label>
+                        <select name="assigned" class="form-select form-select-sm">
+                            <option value="" {% if not filters.assigned %}selected{% endif %}>{{ t('finances.account_bookings.assigned_all') }}</option>
+                            <option value="yes" {% if filters.assigned == 'yes' %}selected{% endif %}>{{ t('finances.account_bookings.assigned_yes') }}</option>
+                            <option value="no" {% if filters.assigned == 'no' %}selected{% endif %}>{{ t('finances.account_bookings.assigned_no') }}</option>
+                        </select>
+                    </div>
                     <div class="col-12 d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-sm btn-primary">
                             <i class="bi bi-search me-1"></i>{{ t('finances.account_bookings.filter_button') }}
@@ -101,12 +109,14 @@
                                 <td class="text-nowrap">{{ r.booking_date.strftime('%d.%m.%Y') }}</td>
                                 <td class="text-end text-nowrap {{ 'text-danger' if r.amount < 0 else '' }}">{{ r.amount|float|money }}</td>
                                 <td>
-                                    {% if r.invoice_id %}<a href="/finances/invoices/{{ r.invoice_id }}">{{ r.reference }}</a>{% else %}{{ r.reference or '—' }}{% endif %}
+                                    {% if r.invoice_id %}<a href="/finances/invoices/{{ r.invoice_id }}">{{ r.reference }}</a>
+                                    {% elif r.incoming_invoice_id %}<a href="/finances/incoming-invoices/{{ r.incoming_invoice_id }}">{{ r.reference or '—' }}</a>
+                                    {% else %}{{ r.reference or '—' }}{% endif %}
                                 </td>
                                 <td class="text-muted">{{ r.description or '' }}</td>
                                 <td class="text-muted">{{ r.counterparty or '—' }}</td>
                                 <td class="text-end">
-                                    {% if r.source != 'invoice_payment' and has_perm(request, 'finances', 'delete') %}
+                                    {% if r.source not in ('invoice_payment', 'incoming_invoice_payment') and has_perm(request, 'finances', 'delete') %}
                                     <form method="post" action="/finances/accounts/{{ account.id }}/bookings/{{ r.id }}/delete" class="d-inline">
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('finances.account_bookings.delete_confirm') }}')">
