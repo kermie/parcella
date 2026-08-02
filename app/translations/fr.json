@@ -2045,7 +2045,8 @@
       "categories_hint": "{n} catégorie(s) définie(s)",
       "item_templates_hint": "{n} modèle(s) d'article défini(s)",
       "reminders_hint": "{n} facture(s) en retard",
-      "incoming_invoices_hint": "{n} facture(s) entrante(s)"
+      "incoming_invoices_hint": "{n} facture(s) entrante(s)",
+      "accounting_statement_hint": "État de trésorerie pour l'administration fiscale"
     },
     "coming_soon": {
       "message": "Cette fonctionnalité sera bientôt disponible.",
@@ -2229,6 +2230,21 @@
       "back": "Retour aux factures entrantes",
       "info_header": "Facture",
       "positions_header": "Postes"
+    },
+    "accounting_statement": {
+      "title": "État comptable",
+      "pdf_heading": "État de trésorerie {year}",
+      "pdf_button": "Exporter en PDF",
+      "col_category": "Catégorie",
+      "col_amount": "Montant",
+      "section_income": "Recettes",
+      "section_expenses": "Dépenses",
+      "row_total": "Total",
+      "row_net_result": "Résultat net",
+      "empty_state": "Aucune entrée pour cette année.",
+      "income_note": "Les recettes sont réparties par catégorie selon la facture réglée par chaque paiement ; les paiements liés à des factures générées avant l'introduction de cette fonctionnalité apparaissent comme non catégorisés.",
+      "expense_note": "Les dépenses sont comptabilisées à la date d'enregistrement de la facture, les factures reçues n'ayant pas de date de paiement suivie séparément.",
+      "pdf_note": "Les recettes sont réparties par catégorie selon les postes de la facture réglée (disponible uniquement pour les factures générées après l'introduction de cette fonctionnalité) ; les dépenses sont comptabilisées à la date d'enregistrement de la facture."
     }
   },
   "pdf": {

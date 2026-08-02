@@ -293,6 +293,25 @@ downloading reuses the same `get_nextcloud_provider()` connection
 attachment is left in the cloud folder untouched (this app's own data
 is never the source of truth for the file itself).
 
+## Cash-based accounting statement
+
+`/finances/accounting-statement` (issue #179) is a per-calendar-year
+income/expense breakdown by `FinanceCategory`, for handing to the tax
+office -- built entirely in `app/accounting_statement.py`, no new
+tables. Expenses are `IncomingInvoiceLineItem.amount` grouped by
+`category_id`, using `invoice_date` as the cash-out date. Income is
+harder: `InvoicePayment` has no category of its own, so each payment's
+amount is split proportionally across its invoice's line-item
+categories, weighted by each category's share of the invoice subtotal
+-- which only works for invoices finalized after `InvoiceLineItem`
+started carrying `category_id`; older payments show as
+"Uncategorized." `AccountTransaction` (issue #174's ledger) is
+deliberately excluded -- it has no category either. See
+[ADR 0060](./ADR/0060-cash-accounting-statement-income-categorization.md)
+for the full reasoning and its accepted limitations. Exportable as PDF
+(`app/accounting_statement_pdf.py`), same shared page chrome as every
+other PDF in this app.
+
 ## Key decisions
 
 **Person-scoped billing is not a special case of parcel billing** --

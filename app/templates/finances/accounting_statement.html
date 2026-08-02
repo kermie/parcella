@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.accounting_statement.title') }} {{ year }}{% endblock %}
+{% block page_title %}{{ t('finances.accounting_statement.title') }} {{ year }}{% endblock %}
+
+{% block topbar_actions %}
+<div class="d-flex gap-2 align-items-center">
+    <form method="get" class="d-flex gap-2">
+        <select name="year" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto;">
+            {% for j in available_years %}
+            <option value="{{ j }}" {% if j == year %}selected{% endif %}>{{ j }}</option>
+            {% endfor %}
+        </select>
+    </form>
+    <a href="/finances/accounting-statement/pdf?year={{ year }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-file-earmark-pdf me-1"></i>{{ t('finances.accounting_statement.pdf_button') }}
+    </a>
+    <a href="/finances/" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>{{ t('finances.coming_soon.back') }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-graph-up-arrow me-2"></i>{{ t('finances.accounting_statement.section_income') }}</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        {% for row in statement.income_by_category %}
+                        <tr>
+                            <td>{{ row.category.code ~ ' · ' ~ row.category.title if row.category else t('finances.incoming_invoices.no_category') }}</td>
+                            <td class="text-end">{{ row.amount|money }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td class="text-center text-muted py-3" colspan="2">{{ t('finances.accounting_statement.empty_state') }}</td></tr>
+                        {% endfor %}
+                        <tr class="fw-bold">
+                            <td>{{ t('finances.accounting_statement.row_total') }}</td>
+                            <td class="text-end">{{ statement.income_total|money }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer text-muted" style="font-size: 0.8rem;">{{ t('finances.accounting_statement.income_note') }}</div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-graph-down-arrow me-2"></i>{{ t('finances.accounting_statement.section_expenses') }}</div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        {% for row in statement.expense_by_category %}
+                        <tr>
+                            <td>{{ row.category.code ~ ' · ' ~ row.category.title if row.category else t('finances.incoming_invoices.no_category') }}</td>
+                            <td class="text-end">{{ row.amount|money }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td class="text-center text-muted py-3" colspan="2">{{ t('finances.accounting_statement.empty_state') }}</td></tr>
+                        {% endfor %}
+                        <tr class="fw-bold">
+                            <td>{{ t('finances.accounting_statement.row_total') }}</td>
+                            <td class="text-end">{{ statement.expense_total|money }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer text-muted" style="font-size: 0.8rem;">{{ t('finances.accounting_statement.expense_note') }}</div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">{{ t('finances.accounting_statement.row_net_result') }}</span>
+                <span class="fw-bold {% if statement.net_result < 0 %}text-danger{% else %}text-success{% endif %}" style="font-size: 1.3rem;">
+                    {{ statement.net_result|money }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -2045,7 +2045,8 @@
       "categories_hint": "zdefiniowano {n} kategorii",
       "item_templates_hint": "zdefiniowano {n} szablonów pozycji",
       "reminders_hint": "Zaległych faktur: {n}",
-      "incoming_invoices_hint": "zarejestrowano {n} faktur przychodzących"
+      "incoming_invoices_hint": "zarejestrowano {n} faktur przychodzących",
+      "accounting_statement_hint": "Zestawienie kasowe dla urzędu skarbowego"
     },
     "coming_soon": {
       "message": "Ta funkcja będzie wkrótce dostępna.",
@@ -2229,6 +2230,21 @@
       "back": "Powrót do faktur przychodzących",
       "info_header": "Faktura",
       "positions_header": "Pozycje"
+    },
+    "accounting_statement": {
+      "title": "Zestawienie księgowe",
+      "pdf_heading": "Rozliczenie kasowe {year}",
+      "pdf_button": "Eksportuj jako PDF",
+      "col_category": "Kategoria",
+      "col_amount": "Kwota",
+      "section_income": "Przychody",
+      "section_expenses": "Wydatki",
+      "row_total": "Razem",
+      "row_net_result": "Wynik",
+      "empty_state": "Brak wpisów w tym roku.",
+      "income_note": "Przychód jest przypisywany do kategorii na podstawie faktury, której dotyczy dana płatność; płatności do faktur wystawionych przed wprowadzeniem tej funkcji są nieskategoryzowane.",
+      "expense_note": "Wydatki są liczone według daty zarejestrowania faktury, ponieważ faktury przychodzące nie mają osobno śledzonej daty zapłaty.",
+      "pdf_note": "Przychód jest dzielony na kategorie na podstawie pozycji opłaconej faktury (dostępne tylko dla faktur wystawionych po wprowadzeniu tej funkcji); wydatki liczone są według daty zarejestrowania faktury."
     }
   },
   "pdf": {

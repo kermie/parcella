@@ -63,3 +63,4 @@ in chronological order.
 57. [Communal parcel status: excluded from Area A, Area B stays a manual figure](./0057-communal-parcel-status-excluded-from-area-a.md)
 58. [Invoice-address CHECK constraint dropped: it broke future-dated terminations](./0058-invoice-address-check-constraint-dropped-for-future-terminations.md)
 59. [FinanceAccount becomes a real (light) ledger: AccountTransaction](./0059-account-transactions-reopen-not-a-ledger-stance.md)
+60. [Cash-based accounting statement: income categorized via invoice line items, AccountTransaction excluded](./0060-cash-accounting-statement-income-categorization.md)

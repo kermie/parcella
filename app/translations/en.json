@@ -2045,7 +2045,8 @@
       "categories_hint": "{n} categor(y/ies) defined",
       "item_templates_hint": "{n} item template(s) defined",
       "reminders_hint": "{n} invoice(s) overdue",
-      "incoming_invoices_hint": "{n} incoming invoice(s)"
+      "incoming_invoices_hint": "{n} incoming invoice(s)",
+      "accounting_statement_hint": "Cash-based statement for the tax office"
     },
     "coming_soon": {
       "message": "This feature is coming soon.",
@@ -2229,6 +2230,21 @@
       "back": "Back to incoming invoices",
       "info_header": "Invoice",
       "positions_header": "Positions"
+    },
+    "accounting_statement": {
+      "title": "Accounting statement",
+      "pdf_heading": "Cash-based accounting statement {year}",
+      "pdf_button": "Export as PDF",
+      "col_category": "Category",
+      "col_amount": "Amount",
+      "section_income": "Income",
+      "section_expenses": "Expenses",
+      "row_total": "Total",
+      "row_net_result": "Net result",
+      "empty_state": "No entries for this year.",
+      "income_note": "Income is split by category based on the invoice each payment settles; payments against invoices generated before this feature existed show as uncategorized.",
+      "expense_note": "Expenses are counted on the date the bill was recorded, since incoming invoices aren't tracked as paid separately.",
+      "pdf_note": "Income is split by category based on each paid invoice's line items (only available for invoices generated after this feature was added); expenses are counted on the date the bill was recorded."
     }
   },
   "pdf": {

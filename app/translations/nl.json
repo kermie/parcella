@@ -2045,7 +2045,8 @@
       "categories_hint": "{n} categorie(ën) gedefinieerd",
       "item_templates_hint": "{n} artikelsjabloon/sjablonen gedefinieerd",
       "reminders_hint": "{n} factu(u)r(en) achterstallig",
-      "incoming_invoices_hint": "{n} inkomende factu(u)r(en)"
+      "incoming_invoices_hint": "{n} inkomende factu(u)r(en)",
+      "accounting_statement_hint": "Overzicht op kasbasis voor de belastingdienst"
     },
     "coming_soon": {
       "message": "Deze functie is binnenkort beschikbaar.",
@@ -2229,6 +2230,21 @@
       "back": "Terug naar inkomende facturen",
       "info_header": "Factuur",
       "positions_header": "Posten"
+    },
+    "accounting_statement": {
+      "title": "Boekhoudkundig overzicht",
+      "pdf_heading": "Kasstroomoverzicht {year}",
+      "pdf_button": "Exporteren als PDF",
+      "col_category": "Categorie",
+      "col_amount": "Bedrag",
+      "section_income": "Inkomsten",
+      "section_expenses": "Uitgaven",
+      "row_total": "Totaal",
+      "row_net_result": "Resultaat",
+      "empty_state": "Geen posten voor dit jaar.",
+      "income_note": "Inkomsten worden per categorie toegerekend op basis van de factuur waarop de betaling betrekking heeft; betalingen op facturen die zijn aangemaakt vóór deze functie er was, worden als ongecategoriseerd getoond.",
+      "expense_note": "Uitgaven worden geteld op de datum waarop de factuur is vastgelegd, omdat inkomende facturen geen aparte betaaldatum bijhouden.",
+      "pdf_note": "Inkomsten worden per categorie verdeeld op basis van de posten van de betaalde factuur (alleen beschikbaar voor facturen aangemaakt na invoering van deze functie); uitgaven worden geteld op de datum waarop de factuur is vastgelegd."
     }
   },
   "pdf": {

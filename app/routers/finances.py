@@ -28,7 +28,7 @@ from typing import Optional
 from itertools import zip_longest
 from urllib.parse import quote as urlquote
 
-from fastapi import APIRouter, Request, Form, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Request, Form, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, union_all, literal, or_, and_, cast, String
@@ -59,6 +59,8 @@ from app.invoice_pdf import (
 from app.invoice_delivery import (
     send_invoice_email, upload_invoice_to_cloud, build_print_bundle, deliver_reminder, invoice_has_email_recipient,
 )
+from app.accounting_statement import compute_cash_accounting_statement, available_statement_years
+from app.accounting_statement_pdf import render_accounting_statement_pdf
 
 router = APIRouter(
     prefix="/finances",
@@ -494,6 +496,39 @@ async def incoming_invoices_cloud_folder_set(
         db.add(ClubSetting(key=INCOMING_INVOICES_FOLDER_SETTING, value=sanitized, description="Shared cloud folder for incoming invoice attachments"))
     await db.commit()
     return RedirectResponse("/finances/incoming-invoices?cloud_folder_saved=1", status_code=303)
+
+
+@router.get("/accounting-statement", response_class=HTMLResponse)
+async def accounting_statement_page(
+    request: Request, year: Optional[int] = Query(None), db: AsyncSession = Depends(get_db),
+):
+    user = await require_permission(request, db, "finances", "read")
+
+    available_years = await available_statement_years(db)
+    target_year = year if year in available_years else (available_years[0] if available_years else date.today().year)
+
+    statement = await compute_cash_accounting_statement(db, target_year)
+
+    return templates.TemplateResponse("finances/accounting_statement.html", {
+        "request": request, "user": user, "statement": statement,
+        "available_years": available_years, "year": target_year,
+    })
+
+
+@router.get("/accounting-statement/pdf")
+async def accounting_statement_pdf(
+    request: Request, year: int = Query(...), db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "finances", "read")
+
+    statement = await compute_cash_accounting_statement(db, year)
+    ctx = await _pdf_context(db)
+    pdf_bytes = render_accounting_statement_pdf(statement, **ctx)
+
+    return Response(
+        content=pdf_bytes, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="accounting_statement_{year}.pdf"'},
+    )
 
 
 @router.post("/runs")

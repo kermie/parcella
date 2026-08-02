@@ -73,6 +73,7 @@ class ComputedLineItem:
     quantity: Decimal
     unit_price: Decimal
     line_total: Decimal
+    category_id: Optional[str] = None
 
 
 @dataclass
@@ -201,6 +202,7 @@ async def _compute_member_invoices(
             lines_by_member.setdefault(member.id, []).append(ComputedLineItem(
                 order_number=definition.order_number, name=definition.name, description=definition.description,
                 quantity=Decimal("1"), unit_price=price, line_total=price,
+                category_id=definition.category_id,
             ))
 
     computed: List[ComputedInvoice] = []
@@ -444,6 +446,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
                     line_items.append(ComputedLineItem(
                         order_number=definition.order_number, name=label, description=None,
                         quantity=Decimal("1"), unit_price=amount, line_total=amount.quantize(Decimal("0.01")),
+                        category_id=definition.category_id,
                     ))
                 continue
 
@@ -454,6 +457,7 @@ async def compute_invoices_for_run(db: AsyncSession, run: InvoiceRun) -> List[Co
             line_items.append(ComputedLineItem(
                 order_number=definition.order_number, name=definition.name, description=definition.description,
                 quantity=Decimal(quantity), unit_price=Decimal(unit_price), line_total=line_total,
+                category_id=definition.category_id,
             ))
 
         if not line_items:
@@ -560,6 +564,7 @@ async def finalize_run(db: AsyncSession, run: InvoiceRun) -> List[Invoice]:
             db.add(InvoiceLineItem(
                 invoice_id=invoice.id, order_number=li.order_number, name=li.name, description=li.description,
                 quantity=li.quantity, unit_price=li.unit_price, line_total=li.line_total,
+                category_id=li.category_id,
             ))
         invoices.append(invoice)
         next_seq += 1

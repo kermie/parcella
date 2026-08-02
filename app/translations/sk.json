@@ -2045,7 +2045,8 @@
       "categories_hint": "definovaných {n} kategórií",
       "item_templates_hint": "definovaných {n} šablón položiek",
       "reminders_hint": "Faktúr po splatnosti: {n}",
-      "incoming_invoices_hint": "zaznamenaných {n} prijatých faktúr"
+      "incoming_invoices_hint": "zaznamenaných {n} prijatých faktúr",
+      "accounting_statement_hint": "Prehľad na hotovostnej báze pre daňový úrad"
     },
     "coming_soon": {
       "message": "Táto funkcia bude čoskoro k dispozícii.",
@@ -2229,6 +2230,21 @@
       "back": "Späť na prijaté faktúry",
       "info_header": "Faktúra",
       "positions_header": "Položky"
+    },
+    "accounting_statement": {
+      "title": "Účtovný prehľad",
+      "pdf_heading": "Prehľad príjmov a výdavkov {year}",
+      "pdf_button": "Exportovať ako PDF",
+      "col_category": "Kategória",
+      "col_amount": "Suma",
+      "section_income": "Príjmy",
+      "section_expenses": "Výdavky",
+      "row_total": "Spolu",
+      "row_net_result": "Výsledok",
+      "empty_state": "Pre tento rok nie sú žiadne záznamy.",
+      "income_note": "Príjem sa rozdeľuje podľa kategórie na základe faktúry, ku ktorej sa platba vzťahuje; platby k faktúram vystaveným pred zavedením tejto funkcie sú nekategorizované.",
+      "expense_note": "Výdavky sa počítajú podľa dátumu zaevidovania faktúry, keďže pri prijatých faktúrach sa dátum úhrady osobitne nesleduje.",
+      "pdf_note": "Príjem sa rozdeľuje podľa kategórie na základe položiek uhradenej faktúry (dostupné iba pre faktúry vystavené po zavedení tejto funkcie); výdavky sa počítajú podľa dátumu zaevidovania faktúry."
     }
   },
   "pdf": {

@@ -2045,7 +2045,8 @@
       "categories_hint": "{n} Kategorie(n) angelegt",
       "item_templates_hint": "{n} Artikelvorlage(n) angelegt",
       "reminders_hint": "{n} Rechnung(en) überfällig",
-      "incoming_invoices_hint": "{n} Eingangsrechnung(en)"
+      "incoming_invoices_hint": "{n} Eingangsrechnung(en)",
+      "accounting_statement_hint": "Kassenbasierte Übersicht für das Finanzamt"
     },
     "coming_soon": {
       "message": "Diese Funktion ist demnächst verfügbar.",
@@ -2229,6 +2230,21 @@
       "back": "Zurück zu den Eingangsrechnungen",
       "info_header": "Rechnung",
       "positions_header": "Positionen"
+    },
+    "accounting_statement": {
+      "title": "Buchhaltungsübersicht",
+      "pdf_heading": "Einnahmen-Überschuss-Rechnung {year}",
+      "pdf_button": "Als PDF exportieren",
+      "col_category": "Kategorie",
+      "col_amount": "Betrag",
+      "section_income": "Einnahmen",
+      "section_expenses": "Ausgaben",
+      "row_total": "Summe",
+      "row_net_result": "Ergebnis",
+      "empty_state": "Keine Einträge für dieses Jahr.",
+      "income_note": "Einnahmen werden anhand der Rechnung aufgeteilt, die durch die jeweilige Zahlung beglichen wird; Zahlungen zu Rechnungen, die vor Einführung dieser Funktion erstellt wurden, erscheinen als nicht kategorisiert.",
+      "expense_note": "Ausgaben werden zum Datum der Rechnungserfassung gezählt, da Eingangsrechnungen nicht separat als bezahlt erfasst werden.",
+      "pdf_note": "Einnahmen werden anhand der Positionen der jeweils bezahlten Rechnung aufgeteilt (nur für Rechnungen ab Einführung dieser Funktion verfügbar); Ausgaben werden zum Datum der Rechnungserfassung gezählt."
     }
   },
   "pdf": {

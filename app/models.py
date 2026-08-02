@@ -2457,7 +2457,16 @@ class Invoice(Base):
 
 
 class InvoiceLineItem(Base):
-    """One priced line on an Invoice, generated from an InvoiceItemDefinition."""
+    """One priced line on an Invoice, generated from an InvoiceItemDefinition.
+
+    category_id is copied from the originating InvoiceItemDefinition at
+    finalize time (issue #179's cash-based accounting statement needs
+    it to attribute income by category) -- nullable, `ON DELETE
+    SET NULL` since a category disappearing later must never invalidate
+    a historical, already-finalized invoice. This field didn't exist
+    before issue #179, so line items on invoices finalized earlier are
+    permanently uncategorized; there was never a link back to the
+    originating definition to backfill from."""
     __tablename__ = "invoice_line_items"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
@@ -2470,8 +2479,12 @@ class InvoiceLineItem(Base):
     quantity: Mapped[float] = mapped_column(Numeric(10, 2), default=1, nullable=False)
     unit_price: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
     line_total: Mapped[float] = mapped_column(Numeric(10, 2), default=0, nullable=False)
+    category_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("finance_categories.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     invoice: Mapped["Invoice"] = relationship("Invoice", back_populates="line_items")
+    category: Mapped[Optional["FinanceCategory"]] = relationship("FinanceCategory")
 
 
 class InvoicePayment(Base):

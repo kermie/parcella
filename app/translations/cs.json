@@ -2045,7 +2045,8 @@
       "categories_hint": "definováno {n} kategorií",
       "item_templates_hint": "definováno {n} šablon položek",
       "reminders_hint": "Faktur po splatnosti: {n}",
-      "incoming_invoices_hint": "zaznamenáno {n} přijatých faktur"
+      "incoming_invoices_hint": "zaznamenáno {n} přijatých faktur",
+      "accounting_statement_hint": "Přehled na hotovostní bázi pro finanční úřad"
     },
     "coming_soon": {
       "message": "Tato funkce bude brzy k dispozici.",
@@ -2229,6 +2230,21 @@
       "back": "Zpět na přijaté faktury",
       "info_header": "Faktura",
       "positions_header": "Položky"
+    },
+    "accounting_statement": {
+      "title": "Účetní přehled",
+      "pdf_heading": "Přehled příjmů a výdajů {year}",
+      "pdf_button": "Exportovat jako PDF",
+      "col_category": "Kategorie",
+      "col_amount": "Částka",
+      "section_income": "Příjmy",
+      "section_expenses": "Výdaje",
+      "row_total": "Celkem",
+      "row_net_result": "Výsledek",
+      "empty_state": "Pro tento rok nejsou žádné záznamy.",
+      "income_note": "Příjem je rozdělen podle kategorie na základě faktury, ke které se platba vztahuje; platby k fakturám vystaveným před zavedením této funkce jsou nekategorizované.",
+      "expense_note": "Výdaje se počítají podle data zaevidování faktury, protože u přijatých faktur se datum úhrady zvlášť nesleduje.",
+      "pdf_note": "Příjem je rozdělen podle kategorie na základě položek uhrazené faktury (dostupné pouze pro faktury vystavené po zavedení této funkce); výdaje se počítají podle data zaevidování faktury."
     }
   },
   "pdf": {
