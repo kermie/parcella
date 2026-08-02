@@ -30,6 +30,7 @@ from typing import Optional
 
 from fastapi import Request
 from jinja2 import pass_context
+from markupsafe import Markup, escape
 from babel.numbers import format_currency, format_decimal, get_currency_symbol
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -164,11 +165,30 @@ def jinja_address(context, street: str, postal_code: str, city: str) -> str:
 @pass_context
 def jinja_address_lines(context, street: str, postal_code: str, city: str) -> list:
     """Registered as a Jinja global: {{ address_lines(street, postal_code, city) }}
-    -- a list of lines (empty lines already removed), e.g. for
-    {{ address_lines(...)|join('<br>')|safe }}."""
+    -- a list of PLAIN (unescaped) lines, empty lines already removed.
+
+    Do NOT render these into a template with `|join('<br>')|safe`: Jinja's
+    `join` returns a plain str when both the items and the separator are
+    plain strs, so `|safe` then marks the raw member data as trusted --
+    which is exactly how a member address containing HTML became a stored
+    XSS vector. Use `address_html(...)` below for HTML output; this global
+    is for non-HTML consumers (PDF generators, CSV export)."""
     request = context.get("request")
     region, _ = _get_state(request)
     return format_address_lines(street, postal_code, city, region)
+
+
+@pass_context
+def jinja_address_html(context, street: str, postal_code: str, city: str) -> Markup:
+    """Registered as a Jinja global: {{ address_html(street, postal_code, city) }}
+    -- the address as ready-to-render HTML with <br> between the lines.
+
+    Escapes every line itself and joins with a Markup separator, so the
+    result can be emitted WITHOUT `|safe` (Markup is rendered as-is by
+    Jinja). Returns an empty Markup when there's no address at all, so
+    templates can still branch on truthiness for their "–" fallback."""
+    lines = jinja_address_lines(context, street, postal_code, city)
+    return Markup("<br>").join(escape(line) for line in lines)
 
 
 @pass_context

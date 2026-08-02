@@ -32,8 +32,8 @@
 
                     <dt class="col-sm-5 text-muted">{{ t('members.detail.label_address') }}</dt>
                     <dd class="col-sm-7">
-                        {% set addr_lines = address_lines(member.street, member.postal_code, member.city) %}
-                        {% if addr_lines %}{{ addr_lines|join('<br>')|safe }}{% else %}–{% endif %}
+                        {% set addr_html = address_html(member.street, member.postal_code, member.city) %}
+                        {% if addr_html %}{{ addr_html }}{% else %}–{% endif %}
                     </dd>
 
                     <dt class="col-sm-5 text-muted">{{ t('members.detail.label_iban') }}</dt>

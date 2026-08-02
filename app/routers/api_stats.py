@@ -8,12 +8,21 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import date
 
+from app.api_auth import get_current_api_user
 from app.database import get_db
 from app.models import Member, Parcel, ParcelStatus, MemberParcel
-from app.auth import get_current_user
-from fastapi import Request
 
-router = APIRouter(prefix="/api/v1/stats", tags=["API: Stats"])
+# Same JWT bearer authentication as every other /api/v1 router (see
+# app/api_auth.py). Declared on the router rather than per endpoint so a
+# second stats endpoint can't be added unauthenticated by omission --
+# which is exactly how this one shipped reachable without any login,
+# handing out member/parcel counts and total areas to anyone who could
+# reach the port.
+router = APIRouter(
+    prefix="/api/v1/stats",
+    tags=["API: Stats"],
+    dependencies=[Depends(get_current_api_user)],
+)
 
 
 class DashboardStats(BaseModel):
