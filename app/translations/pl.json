@@ -2047,7 +2047,8 @@
       "item_templates_hint": "zdefiniowano {n} szablonów pozycji",
       "reminders_hint": "Zaległych faktur: {n}",
       "incoming_invoices_hint": "zarejestrowano {n} faktur przychodzących",
-      "accounting_statement_hint": "Zestawienie kasowe dla urzędu skarbowego"
+      "accounting_statement_hint": "Zestawienie kasowe dla urzędu skarbowego",
+      "bookings_hint": "Wszystkie płatności z faktur przychodzących i wychodzących"
     },
     "coming_soon": {
       "message": "Ta funkcja będzie wkrótce dostępna.",
@@ -2247,6 +2248,31 @@
       "income_note": "Przychód jest przypisywany do kategorii na podstawie faktury, której dotyczy dana płatność, liczony według daty płatności; płatności do faktur wystawionych przed wprowadzeniem kategoryzacji są nieskategoryzowane.",
       "expense_note": "Wydatki są dzielone w ten sam sposób, liczone według daty faktycznej zapłaty faktury przychodzącej; niezapłacona faktura przychodząca nie liczy się, dopóki nie zarejestrowano do niej płatności.",
       "pdf_note": "Przychody i wydatki liczą się dopiero po faktycznej zapłacie, według daty płatności, podzielone na kategorie na podstawie pozycji danej faktury; niezapłacone pozycje są pomijane, a płatności sprzed wprowadzenia kategoryzacji są nieskategoryzowane."
+    },
+    "bookings": {
+      "title": "Wszystkie księgowania",
+      "label_search": "Szukaj",
+      "search_placeholder": "Nadawca, odbiorca, opis...",
+      "label_date_from": "Od",
+      "label_date_to": "Do",
+      "label_category": "Kategoria",
+      "all_categories": "Wszystkie kategorie",
+      "label_direction": "Typ",
+      "all_directions": "Przychody i wydatki",
+      "direction_income": "Przychód",
+      "direction_expense": "Wydatek",
+      "label_amount_min": "Kwota od",
+      "label_amount_max": "Kwota do",
+      "filter_button": "Filtruj",
+      "reset_button": "Wyczyść",
+      "list_header": "{n} księgowań",
+      "col_date": "Data",
+      "col_direction": "Typ",
+      "col_counterparty": "Nadawca / odbiorca",
+      "col_categories": "Kategorie",
+      "col_description": "Opis",
+      "col_amount": "Kwota",
+      "no_bookings": "Żadne księgowania nie pasują do tych filtrów."
     }
   },
   "pdf": {

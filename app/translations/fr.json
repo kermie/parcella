@@ -2047,7 +2047,8 @@
       "item_templates_hint": "{n} modèle(s) d'article défini(s)",
       "reminders_hint": "{n} facture(s) en retard",
       "incoming_invoices_hint": "{n} facture(s) entrante(s)",
-      "accounting_statement_hint": "État de trésorerie pour l'administration fiscale"
+      "accounting_statement_hint": "État de trésorerie pour l'administration fiscale",
+      "bookings_hint": "Tous les paiements des factures reçues et émises"
     },
     "coming_soon": {
       "message": "Cette fonctionnalité sera bientôt disponible.",
@@ -2247,6 +2248,31 @@
       "income_note": "Les recettes sont réparties par catégorie selon la facture réglée par chaque paiement, comptabilisées à la date du paiement ; les paiements liés à des factures générées avant l'introduction de la catégorisation apparaissent comme non catégorisés.",
       "expense_note": "Les dépenses sont réparties de la même façon, comptabilisées à la date de règlement effectif de la facture reçue ; une facture reçue impayée ne compte pas tant qu'aucun paiement n'y est enregistré.",
       "pdf_note": "Les recettes et les dépenses ne comptent qu'une fois réellement réglées, à la date du paiement, réparties par catégorie selon les postes de la facture concernée ; ce qui n'est pas payé est exclu, et les paiements antérieurs à l'introduction de la catégorisation apparaissent comme non catégorisés."
+    },
+    "bookings": {
+      "title": "Toutes les écritures",
+      "label_search": "Rechercher",
+      "search_placeholder": "Expéditeur, destinataire, description...",
+      "label_date_from": "Du",
+      "label_date_to": "Au",
+      "label_category": "Catégorie",
+      "all_categories": "Toutes les catégories",
+      "label_direction": "Type",
+      "all_directions": "Recettes et dépenses",
+      "direction_income": "Recette",
+      "direction_expense": "Dépense",
+      "label_amount_min": "Montant min.",
+      "label_amount_max": "Montant max.",
+      "filter_button": "Filtrer",
+      "reset_button": "Réinitialiser",
+      "list_header": "{n} écriture(s)",
+      "col_date": "Date",
+      "col_direction": "Type",
+      "col_counterparty": "Expéditeur / destinataire",
+      "col_categories": "Catégories",
+      "col_description": "Description",
+      "col_amount": "Montant",
+      "no_bookings": "Aucune écriture ne correspond à ces filtres."
     }
   },
   "pdf": {

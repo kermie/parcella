@@ -2047,7 +2047,8 @@
       "item_templates_hint": "{n} Artikelvorlage(n) angelegt",
       "reminders_hint": "{n} Rechnung(en) überfällig",
       "incoming_invoices_hint": "{n} Eingangsrechnung(en)",
-      "accounting_statement_hint": "Kassenbasierte Übersicht für das Finanzamt"
+      "accounting_statement_hint": "Kassenbasierte Übersicht für das Finanzamt",
+      "bookings_hint": "Alle Zahlungen aus Eingangs- und Ausgangsrechnungen"
     },
     "coming_soon": {
       "message": "Diese Funktion ist demnächst verfügbar.",
@@ -2247,6 +2248,31 @@
       "income_note": "Einnahmen werden anhand der Rechnung aufgeteilt, die durch die jeweilige Zahlung beglichen wird, gezählt zum Zahlungsdatum; Zahlungen zu Rechnungen, die vor Einführung der Kategorisierung erstellt wurden, erscheinen als nicht kategorisiert.",
       "expense_note": "Ausgaben werden ebenso aufgeteilt, gezählt zum Datum der tatsächlichen Zahlung der Eingangsrechnung; eine unbezahlte Eingangsrechnung zählt erst, wenn eine Zahlung dazu erfasst wurde.",
       "pdf_note": "Einnahmen und Ausgaben werden erst bei tatsächlicher Zahlung gezählt, zum Zahlungsdatum, aufgeteilt nach Kategorie anhand der Positionen der jeweiligen Rechnung; Unbezahltes bleibt unberücksichtigt, und Zahlungen von vor Einführung der Kategorisierung erscheinen als nicht kategorisiert."
+    },
+    "bookings": {
+      "title": "Alle Buchungen",
+      "label_search": "Suche",
+      "search_placeholder": "Absender, Empfänger, Beschreibung...",
+      "label_date_from": "Von",
+      "label_date_to": "Bis",
+      "label_category": "Kategorie",
+      "all_categories": "Alle Kategorien",
+      "label_direction": "Art",
+      "all_directions": "Einnahmen & Ausgaben",
+      "direction_income": "Einnahme",
+      "direction_expense": "Ausgabe",
+      "label_amount_min": "Betrag von",
+      "label_amount_max": "Betrag bis",
+      "filter_button": "Filtern",
+      "reset_button": "Zurücksetzen",
+      "list_header": "{n} Buchung(en)",
+      "col_date": "Datum",
+      "col_direction": "Art",
+      "col_counterparty": "Absender / Empfänger",
+      "col_categories": "Kategorien",
+      "col_description": "Beschreibung",
+      "col_amount": "Betrag",
+      "no_bookings": "Keine Buchungen entsprechen diesen Filtern."
     }
   },
   "pdf": {

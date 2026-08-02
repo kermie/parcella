@@ -327,6 +327,23 @@ for the full reasoning and accepted limitations. Exportable as PDF
 (`app/accounting_statement_pdf.py`), same shared page chrome as every
 other PDF in this app.
 
+## All bookings (club-wide)
+
+`/finances/bookings` (issue #180) lists every invoice payment across
+the whole club -- `InvoicePayment` and `IncomingInvoicePayment`
+combined into one chronological, filterable list (date range,
+category, free-text search across sender/recipient/description,
+amount range, income/expense direction). Built in `app/bookings.py`,
+entirely in Python rather than a SQL `UNION ALL` (contrast with the
+per-account bookings list, issue #174's `_account_bookings_base` in
+`app/routers/finances.py`) because a single payment can touch several
+categories via its invoice's line items -- a one-to-many relationship
+that doesn't collapse into one row cleanly. Fine at real-world club
+scale; would need a proper paginated SQL query if that ever stops
+holding. `AccountTransaction` is excluded here too, same reasoning as
+[ADR 0060](./ADR/0060-cash-accounting-statement-income-categorization.md):
+no sender/recipient, no category.
+
 ## Key decisions
 
 **Person-scoped billing is not a special case of parcel billing** --

@@ -61,6 +61,7 @@ from app.invoice_delivery import (
 )
 from app.accounting_statement import compute_cash_accounting_statement, available_statement_years
 from app.accounting_statement_pdf import render_accounting_statement_pdf
+from app.bookings import list_bookings
 
 router = APIRouter(
     prefix="/finances",
@@ -590,6 +591,46 @@ async def accounting_statement_pdf(
         content=pdf_bytes, media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="accounting_statement_{year}.pdf"'},
     )
+
+
+@router.get("/bookings", response_class=HTMLResponse)
+async def bookings_list(request: Request, db: AsyncSession = Depends(get_db)):
+    """Issue #180: every invoice payment across the club (incoming and
+    outgoing), sorted by date descending, filterable by time frame,
+    counterparty, category, description/amount -- see app/bookings.py
+    for why this is club-wide rather than the per-account bookings
+    list from issue #174."""
+    user = await require_permission(request, db, "finances", "read")
+
+    q = request.query_params
+    search = q.get("search", "")
+    date_from_str = q.get("date_from", "")
+    date_to_str = q.get("date_to", "")
+    amount_min_str = q.get("amount_min", "")
+    amount_max_str = q.get("amount_max", "")
+    direction = q.get("direction", "")
+    category_id = q.get("category_id", "")
+
+    rows = await list_bookings(
+        db,
+        date_from=_parse_date_flexible(date_from_str) if date_from_str.strip() else None,
+        date_to=_parse_date_flexible(date_to_str) if date_to_str.strip() else None,
+        category_id=category_id.strip() or None,
+        search=search,
+        amount_min=float(_parse_decimal(amount_min_str)) if amount_min_str.strip() and _parse_decimal(amount_min_str) is not None else None,
+        amount_max=float(_parse_decimal(amount_max_str)) if amount_max_str.strip() and _parse_decimal(amount_max_str) is not None else None,
+        direction=direction.strip() or None,
+    )
+
+    categories_result = await db.execute(select(FinanceCategory).order_by(FinanceCategory.code))
+    categories = list(categories_result.scalars().all())
+
+    return templates.TemplateResponse("finances/bookings_list.html", {
+        "request": request, "user": user, "rows": rows, "categories": categories,
+        "search": search, "date_from": date_from_str, "date_to": date_to_str,
+        "amount_min": amount_min_str, "amount_max": amount_max_str,
+        "direction": direction, "category_id": category_id,
+    })
 
 
 @router.post("/runs")

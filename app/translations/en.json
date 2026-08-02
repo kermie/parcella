@@ -2047,7 +2047,8 @@
       "item_templates_hint": "{n} item template(s) defined",
       "reminders_hint": "{n} invoice(s) overdue",
       "incoming_invoices_hint": "{n} incoming invoice(s)",
-      "accounting_statement_hint": "Cash-based statement for the tax office"
+      "accounting_statement_hint": "Cash-based statement for the tax office",
+      "bookings_hint": "Every payment across incoming and outgoing invoices"
     },
     "coming_soon": {
       "message": "This feature is coming soon.",
@@ -2247,6 +2248,31 @@
       "income_note": "Income is split by category based on the invoice each payment settles, counted on the payment date; payments against invoices generated before category tracking existed show as uncategorized.",
       "expense_note": "Expenses are split by category the same way, counted on the date each incoming invoice was actually paid; an unpaid incoming invoice doesn't count until a payment is recorded against it.",
       "pdf_note": "Both income and expenses only count once actually paid, on the payment date, split by category based on each invoice's positions; anything unpaid is excluded, and payments predating category tracking show as uncategorized."
+    },
+    "bookings": {
+      "title": "All bookings",
+      "label_search": "Search",
+      "search_placeholder": "Sender, recipient, description...",
+      "label_date_from": "From",
+      "label_date_to": "To",
+      "label_category": "Category",
+      "all_categories": "All categories",
+      "label_direction": "Type",
+      "all_directions": "Income & expenses",
+      "direction_income": "Income",
+      "direction_expense": "Expense",
+      "label_amount_min": "Min. amount",
+      "label_amount_max": "Max. amount",
+      "filter_button": "Filter",
+      "reset_button": "Reset",
+      "list_header": "{n} booking(s)",
+      "col_date": "Date",
+      "col_direction": "Type",
+      "col_counterparty": "Sender / recipient",
+      "col_categories": "Categories",
+      "col_description": "Description",
+      "col_amount": "Amount",
+      "no_bookings": "No bookings match these filters."
     }
   },
   "pdf": {

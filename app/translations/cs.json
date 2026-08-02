@@ -2047,7 +2047,8 @@
       "item_templates_hint": "definováno {n} šablon položek",
       "reminders_hint": "Faktur po splatnosti: {n}",
       "incoming_invoices_hint": "zaznamenáno {n} přijatých faktur",
-      "accounting_statement_hint": "Přehled na hotovostní bázi pro finanční úřad"
+      "accounting_statement_hint": "Přehled na hotovostní bázi pro finanční úřad",
+      "bookings_hint": "Všechny platby z přijatých i vydaných faktur"
     },
     "coming_soon": {
       "message": "Tato funkce bude brzy k dispozici.",
@@ -2247,6 +2248,31 @@
       "income_note": "Příjem je rozdělen podle kategorie na základě faktury, ke které se platba vztahuje, počítáno k datu platby; platby k fakturám vystaveným před zavedením kategorizace jsou nekategorizované.",
       "expense_note": "Výdaje se dělí stejným způsobem, počítáno k datu skutečné úhrady přijaté faktury; neuhrazená přijatá faktura se nepočítá, dokud k ní není zaznamenána platba.",
       "pdf_note": "Příjmy i výdaje se počítají až po skutečné úhradě, k datu platby, rozdělené podle kategorie na základě položek dané faktury; neuhrazené položky se nezapočítávají a platby předcházející zavedení kategorizace jsou nekategorizované."
+    },
+    "bookings": {
+      "title": "Všechny platby",
+      "label_search": "Hledat",
+      "search_placeholder": "Odesílatel, příjemce, popis...",
+      "label_date_from": "Od",
+      "label_date_to": "Do",
+      "label_category": "Kategorie",
+      "all_categories": "Všechny kategorie",
+      "label_direction": "Typ",
+      "all_directions": "Příjmy a výdaje",
+      "direction_income": "Příjem",
+      "direction_expense": "Výdaj",
+      "label_amount_min": "Částka od",
+      "label_amount_max": "Částka do",
+      "filter_button": "Filtrovat",
+      "reset_button": "Obnovit",
+      "list_header": "{n} plateb",
+      "col_date": "Datum",
+      "col_direction": "Typ",
+      "col_counterparty": "Odesílatel / příjemce",
+      "col_categories": "Kategorie",
+      "col_description": "Popis",
+      "col_amount": "Částka",
+      "no_bookings": "Žádné platby neodpovídají těmto filtrům."
     }
   },
   "pdf": {

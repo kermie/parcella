@@ -2047,7 +2047,8 @@
       "item_templates_hint": "definovaných {n} šablón položiek",
       "reminders_hint": "Faktúr po splatnosti: {n}",
       "incoming_invoices_hint": "zaznamenaných {n} prijatých faktúr",
-      "accounting_statement_hint": "Prehľad na hotovostnej báze pre daňový úrad"
+      "accounting_statement_hint": "Prehľad na hotovostnej báze pre daňový úrad",
+      "bookings_hint": "Všetky platby z prijatých a vydaných faktúr"
     },
     "coming_soon": {
       "message": "Táto funkcia bude čoskoro k dispozícii.",
@@ -2247,6 +2248,31 @@
       "income_note": "Príjem sa rozdeľuje podľa kategórie na základe faktúry, ku ktorej sa platba vzťahuje, počítané k dátumu platby; platby k faktúram vystaveným pred zavedením kategorizácie sú nekategorizované.",
       "expense_note": "Výdavky sa delia rovnakým spôsobom, počítané k dátumu skutočnej úhrady prijatej faktúry; neuhradená prijatá faktúra sa nepočíta, kým k nej nie je zaznamenaná platba.",
       "pdf_note": "Príjmy aj výdavky sa počítajú až po skutočnej úhrade, k dátumu platby, rozdelené podľa kategórie na základe položiek danej faktúry; neuhradené položky sa nezapočítavajú a platby spred zavedenia kategorizácie sú nekategorizované."
+    },
+    "bookings": {
+      "title": "Všetky platby",
+      "label_search": "Hľadať",
+      "search_placeholder": "Odosielateľ, príjemca, popis...",
+      "label_date_from": "Od",
+      "label_date_to": "Do",
+      "label_category": "Kategória",
+      "all_categories": "Všetky kategórie",
+      "label_direction": "Typ",
+      "all_directions": "Príjmy a výdavky",
+      "direction_income": "Príjem",
+      "direction_expense": "Výdavok",
+      "label_amount_min": "Suma od",
+      "label_amount_max": "Suma do",
+      "filter_button": "Filtrovať",
+      "reset_button": "Obnoviť",
+      "list_header": "{n} platieb",
+      "col_date": "Dátum",
+      "col_direction": "Typ",
+      "col_counterparty": "Odosielateľ / príjemca",
+      "col_categories": "Kategórie",
+      "col_description": "Popis",
+      "col_amount": "Suma",
+      "no_bookings": "Žiadne platby nezodpovedajú týmto filtrom."
     }
   },
   "pdf": {

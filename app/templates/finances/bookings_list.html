@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.bookings.title') }}{% endblock %}
+{% block page_title %}{{ t('finances.bookings.title') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/finances/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.coming_soon.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.bookings.label_search') }}</label>
+                        <input type="text" name="search" class="form-control form-control-sm" value="{{ search }}"
+                               placeholder="{{ t('finances.bookings.search_placeholder') }}">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.bookings.label_date_from') }}</label>
+                        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.bookings.label_date_to') }}</label>
+                        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.bookings.label_category') }}</label>
+                        <select name="category_id" class="form-select form-select-sm">
+                            <option value="">{{ t('finances.bookings.all_categories') }}</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id == category_id %}selected{% endif %}>{{ category.code }} · {{ category.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.bookings.label_direction') }}</label>
+                        <select name="direction" class="form-select form-select-sm">
+                            <option value="" {% if not direction %}selected{% endif %}>{{ t('finances.bookings.all_directions') }}</option>
+                            <option value="income" {% if direction == 'income' %}selected{% endif %}>{{ t('finances.bookings.direction_income') }}</option>
+                            <option value="expense" {% if direction == 'expense' %}selected{% endif %}>{{ t('finances.bookings.direction_expense') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.bookings.label_amount_min') }}</label>
+                        <input type="text" name="amount_min" class="form-control form-control-sm" value="{{ amount_min }}" placeholder="0,00">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.bookings.label_amount_max') }}</label>
+                        <input type="text" name="amount_max" class="form-control form-control-sm" value="{{ amount_max }}" placeholder="0,00">
+                    </div>
+                    <div class="col-sm-2">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-funnel me-1"></i>{{ t('finances.bookings.filter_button') }}
+                        </button>
+                        <a href="/finances/bookings" class="btn btn-sm btn-outline-secondary">{{ t('finances.bookings.reset_button') }}</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-journal-text me-2"></i>{{ t('finances.bookings.list_header', n=rows|length) }}</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('finances.bookings.col_date') }}</th>
+                                <th>{{ t('finances.bookings.col_direction') }}</th>
+                                <th>{{ t('finances.bookings.col_counterparty') }}</th>
+                                <th>{{ t('finances.bookings.col_categories') }}</th>
+                                <th>{{ t('finances.bookings.col_description') }}</th>
+                                <th class="text-end">{{ t('finances.bookings.col_amount') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+                                <td class="text-nowrap">{{ row.booking_date.strftime('%d.%m.%Y') }}</td>
+                                <td class="text-nowrap">
+                                    {% if row.direction == 'income' %}
+                                    <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('finances.bookings.direction_income') }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('finances.bookings.direction_expense') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td><a href="{{ row.detail_url }}" style="white-space: pre-line;">{{ row.counterparty }}</a></td>
+                                <td class="text-muted">
+                                    {% for category in row.categories %}
+                                    <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">{{ category.title }}</span>
+                                    {% else %}
+                                    {{ t('finances.incoming_invoices.no_category') }}
+                                    {% endfor %}
+                                </td>
+                                <td class="text-muted">{{ row.description }}</td>
+                                <td class="text-end {% if row.direction == 'expense' %}text-danger{% else %}text-success{% endif %}">
+                                    {{ row.amount|money }}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.bookings.no_bookings') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

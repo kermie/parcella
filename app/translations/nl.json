@@ -2047,7 +2047,8 @@
       "item_templates_hint": "{n} artikelsjabloon/sjablonen gedefinieerd",
       "reminders_hint": "{n} factu(u)r(en) achterstallig",
       "incoming_invoices_hint": "{n} inkomende factu(u)r(en)",
-      "accounting_statement_hint": "Overzicht op kasbasis voor de belastingdienst"
+      "accounting_statement_hint": "Overzicht op kasbasis voor de belastingdienst",
+      "bookings_hint": "Alle betalingen van inkomende en uitgaande facturen"
     },
     "coming_soon": {
       "message": "Deze functie is binnenkort beschikbaar.",
@@ -2247,6 +2248,31 @@
       "income_note": "Inkomsten worden per categorie toegerekend op basis van de factuur waarop de betaling betrekking heeft, geteld op de betaaldatum; betalingen op facturen die zijn aangemaakt vóór de invoering van categorisering worden als ongecategoriseerd getoond.",
       "expense_note": "Uitgaven worden op dezelfde manier verdeeld, geteld op de datum waarop de inkomende factuur daadwerkelijk is betaald; een onbetaalde inkomende factuur telt niet mee totdat er een betaling voor is geregistreerd.",
       "pdf_note": "Inkomsten en uitgaven tellen pas mee zodra ze daadwerkelijk zijn betaald, op de betaaldatum, verdeeld per categorie op basis van de posten van de betreffende factuur; onbetaalde posten worden niet meegeteld en betalingen van vóór de invoering van categorisering worden als ongecategoriseerd getoond."
+    },
+    "bookings": {
+      "title": "Alle boekingen",
+      "label_search": "Zoeken",
+      "search_placeholder": "Afzender, ontvanger, omschrijving...",
+      "label_date_from": "Van",
+      "label_date_to": "Tot",
+      "label_category": "Categorie",
+      "all_categories": "Alle categorieën",
+      "label_direction": "Type",
+      "all_directions": "Inkomsten & uitgaven",
+      "direction_income": "Inkomsten",
+      "direction_expense": "Uitgaven",
+      "label_amount_min": "Bedrag vanaf",
+      "label_amount_max": "Bedrag tot",
+      "filter_button": "Filteren",
+      "reset_button": "Resetten",
+      "list_header": "{n} boeking(en)",
+      "col_date": "Datum",
+      "col_direction": "Type",
+      "col_counterparty": "Afzender / ontvanger",
+      "col_categories": "Categorieën",
+      "col_description": "Omschrijving",
+      "col_amount": "Bedrag",
+      "no_bookings": "Geen boekingen komen overeen met deze filters."
     }
   },
   "pdf": {
