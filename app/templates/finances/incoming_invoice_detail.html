@@ -45,7 +45,10 @@
                     <tbody>
                         {% for li in invoice.line_items %}
                         <tr>
-                            <td>{{ li.category.code ~ ' · ' ~ li.category.title if li.category else t('finances.incoming_invoices.no_category') }}</td>
+                            <td>
+                                {{ li.category.code ~ ' · ' ~ li.category.title if li.category else t('finances.incoming_invoices.no_category') }}
+                                {% if li.description %}<div class="text-muted" style="font-size: 0.85rem;">{{ li.description }}</div>{% endif %}
+                            </td>
                             <td class="text-end">{{ li.amount|float|money }}</td>
                         </tr>
                         {% endfor %}

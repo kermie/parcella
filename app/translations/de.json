@@ -2089,6 +2089,7 @@
       "label_invoice_date": "Rechnungsdatum",
       "label_note": "Notiz",
       "label_positions": "Positionen",
+      "label_position_description": "Beschreibung (was wurde gekauft)",
       "add_position_button": "Position hinzufügen",
       "label_file": "Anhang",
       "file_help": "Wird in den oben angegebenen gemeinsamen Cloud-Ordner hochgeladen.",

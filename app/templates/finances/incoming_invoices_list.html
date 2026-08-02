@@ -79,7 +79,7 @@
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_positions') }}</label>
                         <div id="line-items">
                             <div class="row g-2 mb-2 line-item-row">
-                                <div class="col-sm-6">
+                                <div class="col-sm-3">
                                     <select name="category_id" class="form-select form-select-sm">
                                         <option value="">—</option>
                                         {% for category in categories %}
@@ -87,10 +87,14 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-sm-5">
+                                    <input type="text" name="description" class="form-control form-control-sm"
+                                           placeholder="{{ t('finances.incoming_invoices.label_position_description') }}">
+                                </div>
+                                <div class="col-sm-3">
                                     <input type="text" name="amount" class="form-control form-control-sm" placeholder="0,00">
                                 </div>
-                                <div class="col-sm-2">
+                                <div class="col-sm-1">
                                     <button type="button" class="btn btn-sm btn-outline-danger remove-line-item-btn" style="display: none;">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -145,8 +149,9 @@
                                 <td class="text-muted">{{ invoice.invoice_number or '' }}</td>
                                 <td class="text-muted">
                                     {% for li in invoice.line_items %}
-                                    <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);">
-                                        {{ li.category.title if li.category else t('finances.incoming_invoices.no_category') }}
+                                    <span class="badge" style="background: var(--gv-gruen-blass); color: var(--gv-gruen);"
+                                          title="{{ li.description or '' }}">
+                                        {{ li.category.title if li.category else t('finances.incoming_invoices.no_category') }}{% if li.description %} · {{ li.description }}{% endif %}
                                     </span>
                                     {% endfor %}
                                 </td>

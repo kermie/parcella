@@ -2089,6 +2089,7 @@
       "label_invoice_date": "Factuurdatum",
       "label_note": "Notitie",
       "label_positions": "Posten",
+      "label_position_description": "Omschrijving (wat is er gekocht)",
       "add_position_button": "Post toevoegen",
       "label_file": "Bijlage",
       "file_help": "Wordt geüpload naar de hierboven gedeelde cloudmap.",

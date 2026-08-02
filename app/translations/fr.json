@@ -2089,6 +2089,7 @@
       "label_invoice_date": "Date de facture",
       "label_note": "Note",
       "label_positions": "Postes",
+      "label_position_description": "Description (ce qui a été acheté)",
       "add_position_button": "Ajouter un poste",
       "label_file": "Pièce jointe",
       "file_help": "Téléchargé vers le dossier cloud partagé ci-dessus.",

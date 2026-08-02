@@ -2089,6 +2089,7 @@
       "label_invoice_date": "Invoice date",
       "label_note": "Note",
       "label_positions": "Positions",
+      "label_position_description": "Description (what was purchased)",
       "add_position_button": "Add position",
       "label_file": "Attachment",
       "file_help": "Uploaded to the shared cloud folder above.",

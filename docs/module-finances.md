@@ -270,8 +270,11 @@ bill the club *received* from a supplier/vendor -- but far simpler:
 recorded directly by hand at `/finances/incoming-invoices`, no
 generation/finalization phases, no payment/reminder tracking. A single
 invoice can carry several cost positions (`IncomingInvoiceLineItem`),
-each tagged with its own `FinanceCategory` (`category_id`, nullable,
-`ON DELETE SET NULL` -- same historization-over-deletion precedent as
+each with its own free-text `description` (what was actually bought --
+distinct from the category, since e.g. three positions can all fall
+under the same category yet describe different purchases) and tagged
+with its own `FinanceCategory` (`category_id`, nullable, `ON DELETE
+SET NULL` -- same historization-over-deletion precedent as
 `InvoiceItemDefinition.category_id`: deleting a category later must
 never destroy a historical bookkeeping record).
 

@@ -25,6 +25,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Optional
+from itertools import zip_longest
 from urllib.parse import quote as urlquote
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, UploadFile, File
@@ -350,15 +351,15 @@ async def incoming_invoices_list(request: Request, db: AsyncSession = Depends(ge
 async def incoming_invoice_create(
     request: Request,
     sender: str = Form(...), invoice_number: str = Form(""), invoice_date: str = Form(...), note: str = Form(""),
-    category_id: list[str] = Form([]), amount: list[str] = Form([]),
+    category_id: list[str] = Form([]), description: list[str] = Form([]), amount: list[str] = Form([]),
     file: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
 ):
-    """One or more (category_id, amount) positions, submitted as
-    same-named repeated fields (issue #178: "there might be more than
-    one position with different categories/amounts") -- paired up by
-    index, same convention as the scope-picker lists elsewhere in this
-    router."""
+    """One or more (category_id, description, amount) positions,
+    submitted as same-named repeated fields (issue #178: "there might
+    be more than one position with different categories/amounts") --
+    paired up by index, same convention as the scope-picker lists
+    elsewhere in this router."""
     user = await require_permission(request, db, "finances", "write")
 
     parsed_date = _parse_date_flexible(invoice_date)
@@ -372,12 +373,13 @@ async def incoming_invoice_create(
     db.add(invoice)
     await db.flush()
 
-    for cat_id, amt in zip(category_id, amount):
+    for cat_id, desc, amt in zip_longest(category_id, description, amount, fillvalue=""):
         parsed_amount = _parse_decimal(amt)
         if parsed_amount is None:
             continue
         db.add(IncomingInvoiceLineItem(
-            incoming_invoice_id=invoice.id, category_id=cat_id.strip() or None, amount=parsed_amount,
+            incoming_invoice_id=invoice.id, category_id=cat_id.strip() or None,
+            description=desc.strip() or None, amount=parsed_amount,
         ))
 
     if file is not None and file.filename and _cloud_storage_enabled(request):

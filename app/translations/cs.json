@@ -2089,6 +2089,7 @@
       "label_invoice_date": "Datum faktury",
       "label_note": "Poznámka",
       "label_positions": "Položky",
+      "label_position_description": "Popis (co bylo zakoupeno)",
       "add_position_button": "Přidat položku",
       "label_file": "Příloha",
       "file_help": "Nahráno do sdílené cloudové složky výše.",

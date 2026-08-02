@@ -2089,6 +2089,7 @@
       "label_invoice_date": "Data faktury",
       "label_note": "Notatka",
       "label_positions": "Pozycje",
+      "label_position_description": "Opis (co zakupiono)",
       "add_position_button": "Dodaj pozycję",
       "label_file": "Załącznik",
       "file_help": "Przesyłany do współdzielonego folderu w chmurze powyżej.",

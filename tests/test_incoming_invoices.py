@@ -43,7 +43,7 @@ async def test_incoming_invoice_create_with_single_position(client, admin_user):
     response = await client.post("/finances/incoming-invoices", data={
         "sender": "Gartenbau Müller GmbH", "invoice_number": "R-2026-042",
         "invoice_date": "2026-07-15", "note": "Annual liability insurance",
-        "category_id": [category_id], "amount": ["123.45"],
+        "category_id": [category_id], "description": ["Annual premium 2026"], "amount": ["123.45"],
     })
     assert response.status_code in (302, 303)
 
@@ -60,7 +60,32 @@ async def test_incoming_invoice_create_with_single_position(client, admin_user):
     assert len(invoice.line_items) == 1
     assert float(invoice.line_items[0].amount) == 123.45
     assert invoice.line_items[0].category_id == category_id
+    assert invoice.line_items[0].description == "Annual premium 2026"
     assert invoice.total_amount == 123.45
+
+
+async def test_incoming_invoice_position_without_description_is_optional(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    category_id = await _make_category()
+
+    response = await client.post("/finances/incoming-invoices", data={
+        "sender": "No Description Ltd", "invoice_number": "", "invoice_date": "2026-07-01", "note": "",
+        "category_id": [category_id], "amount": ["7.00"],
+    })
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(IncomingInvoice)
+            .options(selectinload(IncomingInvoice.line_items))
+            .where(IncomingInvoice.sender == "No Description Ltd")
+        )
+        invoice = result.scalar_one()
+
+    assert len(invoice.line_items) == 1
+    assert invoice.line_items[0].description is None
+    assert float(invoice.line_items[0].amount) == 7.00
 
 
 async def test_incoming_invoice_create_with_multiple_positions(client, admin_user):
@@ -71,7 +96,9 @@ async def test_incoming_invoice_create_with_multiple_positions(client, admin_use
 
     response = await client.post("/finances/incoming-invoices", data={
         "sender": "Multi Corp", "invoice_number": "", "invoice_date": "2026-07-20", "note": "",
-        "category_id": [category_a, category_b], "amount": ["50.00", "75.50"],
+        "category_id": [category_a, category_b],
+        "description": ["Fire insurance renewal", "Lawnmower repair"],
+        "amount": ["50.00", "75.50"],
     })
     assert response.status_code in (302, 303)
 
@@ -82,6 +109,9 @@ async def test_incoming_invoice_create_with_multiple_positions(client, admin_use
             .where(IncomingInvoice.sender == "Multi Corp")
         )
         invoice = result.scalar_one()
+
+    descriptions = {li.description for li in invoice.line_items}
+    assert descriptions == {"Fire insurance renewal", "Lawnmower repair"}
 
     assert len(invoice.line_items) == 2
     assert invoice.total_amount == 125.50

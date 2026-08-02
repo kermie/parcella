@@ -2603,6 +2603,7 @@ class IncomingInvoiceLineItem(Base):
     category_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("finance_categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
+    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
