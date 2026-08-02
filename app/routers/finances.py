@@ -18,6 +18,7 @@ Accounts (#156): a club's real bank/cash accounts, a reporting tag on
 InvoicePayment with the same "no effect on invoice generation" role as
 categories -- see FinanceAccount's docstring.
 """
+import base64
 import csv
 import io
 import re
@@ -1734,20 +1735,62 @@ async def account_bookings_export_csv(account_id: str, request: Request, db: Asy
     )
 
 
-@router.post("/accounts/{account_id}/bookings/import")
-async def account_bookings_import_csv(
+CSV_IMPORT_TARGET_FIELDS = ["date", "amount", "description", "counterparty", "iban"]
+CSV_IMPORT_PREVIEW_ROWS = 5
+
+
+def _decode_csv_upload(content: bytes) -> str:
+    try:
+        return content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return content.decode("latin-1")
+
+
+def _sniff_csv_delimiter(text: str) -> str:
+    try:
+        return csv.Sniffer().sniff(text[:2048], delimiters=";,").delimiter
+    except csv.Error:
+        return ";"
+
+
+def _guess_column_mapping(headers: list) -> dict:
+    """Best-effort default mapping from common header names, so the
+    mapping step usually needs no manual adjustment for a
+    Date/Amount/Description/Counterparty(/IBAN)-shaped export --
+    still fully overridable, since issue #186 wants "any CSV of any
+    structure", not just this one."""
+    guesses = {
+        "date": {"date", "datum", "buchungsdatum"},
+        "amount": {"amount", "betrag"},
+        "description": {"description", "beschreibung", "verwendungszweck", "note"},
+        "counterparty": {"counterparty", "sender", "recipient", "empfänger", "auftraggeber", "name"},
+        "iban": {"iban"},
+    }
+    mapping = {}
+    for i, header in enumerate(headers):
+        key = (header or "").strip().lower()
+        for field, candidates in guesses.items():
+            if key in candidates and field not in mapping.values():
+                mapping[i] = field
+                break
+    return mapping
+
+
+@router.post(
+    "/accounts/{account_id}/bookings/import/preview",
+    response_class=HTMLResponse,
+)
+async def account_bookings_import_preview(
     account_id: str, request: Request,
     datei: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    """CSV columns: Date;Amount;Description;Counterparty (semicolon or
-    comma, auto-detected -- same convention as /members/import/csv);
-    Counterparty is optional (issue #185: who sent/received the
-    money). Every imported row becomes an AccountTransaction tagged
-    source="csv_import" -- this never creates or matches an
-    InvoicePayment; reconciling an import against outstanding invoices
-    is a different, harder problem, deliberately out of scope (issue
-    #174/ADR 0059)."""
+    """Issue #186: "import any CSV of any structure" -- step 1 just
+    detects the header row and lets the user map each column to a
+    Parcella field (or ignore it) before anything is written. The raw
+    CSV is round-tripped to step 2 as a hidden base64 field rather than
+    kept in server-side session state, matching this app's stateless-
+    request style elsewhere."""
     user = await require_permission(request, db, "finances", "write")
 
     result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
@@ -1756,40 +1799,106 @@ async def account_bookings_import_csv(
         raise HTTPException(status_code=404)
 
     content = await datei.read()
-    try:
-        text = content.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        text = content.decode("latin-1")
+    text = _decode_csv_upload(content)
+    delimiter = _sniff_csv_delimiter(text)
 
-    try:
-        delimiter = csv.Sniffer().sniff(text[:2048], delimiters=";,").delimiter
-    except csv.Error:
-        delimiter = ";"
+    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    rows = list(reader)
+    if not rows:
+        return RedirectResponse(
+            f"/finances/accounts/{account_id}/bookings?error={urlquote(t_for(request, 'finances.account_bookings.csv_empty_error'))}",
+            status_code=303,
+        )
+    headers = [h.strip() for h in rows[0]]
+    preview_rows = rows[1:1 + CSV_IMPORT_PREVIEW_ROWS]
+    default_mapping = _guess_column_mapping(headers)
 
-    reader = csv.DictReader(io.StringIO(text), delimiter=delimiter)
-    if reader.fieldnames:
-        reader.fieldnames = [f.strip() if f else f for f in reader.fieldnames]
+    return templates.TemplateResponse("finances/account_bookings_import_preview.html", {
+        "request": request, "user": user, "account": account,
+        "headers": headers, "preview_rows": preview_rows,
+        "default_mapping": default_mapping, "target_fields": CSV_IMPORT_TARGET_FIELDS,
+        "csv_content_b64": base64.b64encode(content).decode("ascii"), "delimiter": delimiter,
+    })
+
+
+@router.post("/accounts/{account_id}/bookings/import/confirm")
+async def account_bookings_import_confirm(
+    account_id: str, request: Request,
+    csv_content_b64: str = Form(...), delimiter: str = Form(";"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Step 2: applies the column mapping chosen in step 1 and actually
+    creates AccountTransaction rows -- never creates or matches an
+    InvoicePayment; reconciling an import against outstanding invoices
+    is a different, harder problem, deliberately out of scope (issue
+    #174/ADR 0059). Also backfills a matched member's IBAN (issue
+    #187) when a "counterparty" and "iban" column were both mapped."""
+    user = await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    form = await request.form()
+    column_mapping: dict = {}
+    for key, value in form.items():
+        if key.startswith("map_") and value in CSV_IMPORT_TARGET_FIELDS:
+            column_mapping[int(key.removeprefix("map_"))] = value
+
+    if "date" not in column_mapping.values() or "amount" not in column_mapping.values():
+        return RedirectResponse(
+            f"/finances/accounts/{account_id}/bookings?error={urlquote(t_for(request, 'finances.account_bookings.csv_mapping_required_error'))}",
+            status_code=303,
+        )
+
+    text = base64.b64decode(csv_content_b64).decode("utf-8")
+    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    rows = list(reader)[1:]  # header row already consumed in the preview step
+
+    members_by_name: dict = {}
+    if "iban" in column_mapping.values() and "counterparty" in column_mapping.values():
+        members_result = await db.execute(select(Member))
+        for member in members_result.scalars().all():
+            forward = f"{member.first_name} {member.last_name}".strip().lower()
+            reverse = f"{member.last_name} {member.first_name}".strip().lower()
+            members_by_name[forward] = member
+            members_by_name[reverse] = member
 
     imported = 0
     skipped = 0
-    for row in reader:
-        parsed_date = _parse_date_flexible(row.get("Date") or "")
-        parsed_amount = _parse_decimal(row.get("Amount") or "")
+    iban_updated = 0
+    for row in rows:
+        values = {
+            field: (row[i].strip() if i < len(row) else "")
+            for i, field in column_mapping.items()
+        }
+        parsed_date = _parse_date_flexible(values.get("date", ""))
+        parsed_amount = _parse_decimal(values.get("amount", ""))
         if parsed_date is None or parsed_amount is None:
             skipped += 1
             continue
 
         db.add(AccountTransaction(
             account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
-            description=(row.get("Description") or "").strip() or None,
-            counterparty=(row.get("Counterparty") or "").strip() or None,
+            description=values.get("description") or None,
+            counterparty=values.get("counterparty") or None,
             source="csv_import", recorded_by_id=user.id,
         ))
         imported += 1
 
+        iban_value = values.get("iban")
+        counterparty_value = values.get("counterparty")
+        if iban_value and counterparty_value:
+            member = members_by_name.get(counterparty_value.lower())
+            if member and not member.iban:
+                member.iban = iban_value
+                iban_updated += 1
+
     await db.commit()
     return RedirectResponse(
-        f"/finances/accounts/{account_id}/bookings?imported={imported}&skipped={skipped}", status_code=302,
+        f"/finances/accounts/{account_id}/bookings?imported={imported}&skipped={skipped}&iban_updated={iban_updated}",
+        status_code=302,
     )
 
 

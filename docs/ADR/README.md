@@ -65,3 +65,4 @@ in chronological order.
 59. [FinanceAccount becomes a real (light) ledger: AccountTransaction](./0059-account-transactions-reopen-not-a-ledger-stance.md)
 60. [Cash-based accounting statement: income categorized via invoice line items, AccountTransaction excluded](./0060-cash-accounting-statement-income-categorization.md)
 61. [Cash-based accounting statement: expenses now use actual payment date, not invoice date](./0061-accounting-statement-fully-cash-based.md)
+62. [Account bookings CSV import: user-driven column mapping, not a fixed header format](./0062-csv-import-column-mapping.md)

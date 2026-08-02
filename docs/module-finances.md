@@ -255,13 +255,24 @@ against the account -- `InvoicePayment` rows `UNION ALL`'d with the new
 `AccountTransaction` rows (any other money movement: a refund, a
 purchase, a bank fee, manually entered or CSV-imported, `ON DELETE
 CASCADE` since a transaction only exists *for* its account). Supports
-CSV export (honoring the current search/filter) and CSV import
-(`Date;Amount;Description;Counterparty`, `Counterparty` optional,
-always creates `AccountTransaction` rows -- never auto-matches or
-creates an `InvoicePayment`; reconciling an import against outstanding
-invoices is a different, harder problem, explicitly out of scope). See
+CSV export (honoring the current search/filter), always creates
+`AccountTransaction` rows -- never auto-matches or creates an
+`InvoicePayment`; reconciling an import against outstanding invoices
+is a different, harder problem, explicitly out of scope. See
 [ADR 0059](./ADR/0059-account-transactions-reopen-not-a-ledger-stance.md)
 for the full reasoning.
+
+CSV import (issue #186) is a two-step upload-then-map flow, not a
+fixed expected header: step 1 (`/import/preview`) detects the file's
+actual columns and lets the user assign each one to a Parcella field
+(Date/Amount required, Description/Counterparty/IBAN optional,
+pre-guessed from common header names but always overridable); step 2
+(`/import/confirm`) applies that mapping to create the rows. If both
+Counterparty and IBAN are mapped, a row whose counterparty exactly
+matches an existing member's full name (either name order) backfills
+that member's `iban` field when it's currently empty (issue #187). See
+[ADR 0062](./ADR/0062-csv-import-column-mapping.md) for the full
+reasoning, including why matching is exact-name rather than fuzzy.
 
 Issue #185 added `AccountTransaction.counterparty` (free text -- who
 sent or received the money) so the bookings list can show and search

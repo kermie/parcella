@@ -13,6 +13,13 @@
 <div class="alert alert-success d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-check-circle-fill"></i>
     {{ t('finances.account_bookings.import_result', imported=request.query_params.get('imported'), skipped=request.query_params.get('skipped', '0')) }}
+    {% if request.query_params.get('iban_updated', '0')|int > 0 %}
+    {{ t('finances.account_bookings.iban_updated_result', n=request.query_params.get('iban_updated')) }}
+    {% endif %}
+</div>
+{% elif request.query_params.get('error') %}
+<div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-exclamation-triangle-fill"></i> {{ request.query_params.get('error') }}
 </div>
 {% endif %}
 
@@ -128,7 +135,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/import" enctype="multipart/form-data"
+                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/import/preview" enctype="multipart/form-data"
                       class="d-flex gap-2 align-items-center flex-wrap">
                     <input type="file" name="datei" accept=".csv" class="form-control form-control-sm" required style="max-width: 300px;">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
@@ -136,10 +143,7 @@
                     </button>
                 </form>
                 <div class="form-text mt-2">
-                    {{ t('finances.account_bookings.csv_format_help') }}
-                    <code>Date;Amount;Description;Counterparty</code><br>
-                    {{ t('finances.account_bookings.csv_counterparty_optional_help') }}<br>
-                    {{ t('finances.account_bookings.csv_date_format_help', iso='YYYY-MM-DD', de='DD.MM.YYYY') }}
+                    {{ t('finances.account_bookings.csv_any_format_help') }}
                 </div>
             </div>
         </div>

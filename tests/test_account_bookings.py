@@ -6,6 +6,7 @@ rows (anything else: refunds, purchases, bank fees, CSV-imported).
 Confirmed with the reporter this deliberately reopens FinanceAccount's
 original "not a ledger" stance from issue #156 -- see ADR 0059.
 """
+import base64
 import io
 from datetime import date
 
@@ -245,14 +246,43 @@ async def test_bookings_csv_export(client, admin_user):
     assert "Counterparty" in response.text.splitlines()[0]
 
 
-async def test_bookings_csv_import_creates_transactions(client, admin_user):
+async def _import_preview(client, account_id, csv_content):
+    files = {"datei": ("import.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
+    return await client.post(f"/finances/accounts/{account_id}/bookings/import/preview", files=files)
+
+
+async def _import_confirm(client, account_id, csv_content, mapping, delimiter=";"):
+    """mapping: dict of {column_index: target_field} -- mirrors what the
+    preview step's mapping form would submit, without needing to parse
+    the rendered HTML in every test."""
+    data = {"csv_content_b64": base64.b64encode(csv_content.encode("utf-8")).decode("ascii"), "delimiter": delimiter}
+    for index, field in mapping.items():
+        data[f"map_{index}"] = field
+    return await client.post(f"/finances/accounts/{account_id}/bookings/import/confirm", data=data)
+
+
+async def test_bookings_csv_import_preview_guesses_mapping(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    csv_content = "Date;Amount;Description\n2026-08-01;-15.50;Supplies\n"
+    response = await _import_preview(client, account_id, csv_content)
+    assert response.status_code == 200
+    assert "UndefinedError" not in response.text
+    assert "Supplies" in response.text
+    assert 'name="map_0"' in response.text
+
+
+async def test_bookings_csv_import_confirm_creates_transactions(client, admin_user):
     await web_login(client)
     await _enable_finances_module()
     account_id = await _make_account()
 
     csv_content = "Date;Amount;Description\n2026-08-01;-15.50;Supplies\n2026-08-02;100.00;Membership refund\ninvalid;abc;Broken row\n"
-    files = {"datei": ("import.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
-    response = await client.post(f"/finances/accounts/{account_id}/bookings/import", files=files)
+    response = await _import_confirm(
+        client, account_id, csv_content, {0: "date", 1: "amount", 2: "description"},
+    )
     assert response.status_code in (302, 303)
     assert "imported=2" in response.headers["location"]
     assert "skipped=1" in response.headers["location"]
@@ -269,14 +299,32 @@ async def test_bookings_csv_import_creates_transactions(client, admin_user):
     assert descriptions == {"Supplies", "Membership refund"}
 
 
+async def test_bookings_csv_import_requires_date_and_amount_mapping(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    csv_content = "Date;Amount;Description\n2026-08-01;-15.50;Supplies\n"
+    response = await _import_confirm(client, account_id, csv_content, {2: "description"})
+    assert response.status_code in (302, 303)
+    assert "error=" in response.headers["location"]
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(AccountTransaction).where(AccountTransaction.account_id == account_id)
+        )
+        assert result.scalar_one_or_none() is None
+
+
 async def test_bookings_csv_import_with_counterparty_column(client, admin_user):
     await web_login(client)
     await _enable_finances_module()
     account_id = await _make_account()
 
     csv_content = "Date;Amount;Description;Counterparty\n2026-08-01;-15.50;Supplies;Hardware Store\n"
-    files = {"datei": ("import.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
-    response = await client.post(f"/finances/accounts/{account_id}/bookings/import", files=files)
+    response = await _import_confirm(
+        client, account_id, csv_content, {0: "date", 1: "amount", 2: "description", 3: "counterparty"},
+    )
     assert response.status_code in (302, 303)
 
     async with AsyncSessionLocal() as session:
@@ -285,6 +333,64 @@ async def test_bookings_csv_import_with_counterparty_column(client, admin_user):
         )
         transaction = result.scalar_one()
         assert transaction.counterparty == "Hardware Store"
+
+
+async def test_bookings_csv_import_backfills_empty_member_iban(client, admin_user):
+    """Issue #187: match by name against the mapped counterparty
+    column, backfill IBAN only when the member's own IBAN is empty."""
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    async with AsyncSessionLocal() as session:
+        member = Member(first_name="Erika", last_name="Musterfrau")
+        session.add(member)
+        await session.commit()
+        member_id = member.id
+
+    csv_content = (
+        "Date;Amount;Description;Counterparty;IBAN\n"
+        "2026-08-01;50.00;Dues;Erika Musterfrau;DE89370400440532013000\n"
+    )
+    response = await _import_confirm(
+        client, account_id, csv_content,
+        {0: "date", 1: "amount", 2: "description", 3: "counterparty", 4: "iban"},
+    )
+    assert response.status_code in (302, 303)
+    assert "iban_updated=1" in response.headers["location"]
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Member).where(Member.id == member_id))
+        refreshed = result.scalar_one()
+        assert refreshed.iban == "DE89370400440532013000"
+
+
+async def test_bookings_csv_import_does_not_overwrite_existing_member_iban(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    async with AsyncSessionLocal() as session:
+        member = Member(first_name="Hans", last_name="Beispiel", iban="DE00000000000000000000")
+        session.add(member)
+        await session.commit()
+        member_id = member.id
+
+    csv_content = (
+        "Date;Amount;Description;Counterparty;IBAN\n"
+        "2026-08-01;50.00;Dues;Hans Beispiel;DE89370400440532013000\n"
+    )
+    response = await _import_confirm(
+        client, account_id, csv_content,
+        {0: "date", 1: "amount", 2: "description", 3: "counterparty", 4: "iban"},
+    )
+    assert response.status_code in (302, 303)
+    assert "iban_updated=0" in response.headers["location"]
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Member).where(Member.id == member_id))
+        refreshed = result.scalar_one()
+        assert refreshed.iban == "DE00000000000000000000"
 
 
 async def test_bookings_manual_add_and_delete(client, admin_user):
