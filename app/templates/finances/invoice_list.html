@@ -15,15 +15,27 @@
         <div class="card">
             <div class="card-body">
                 <form method="get" class="row g-2 align-items-end">
-                    <div class="col-sm-3">
+                    <div class="col-sm-2">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_parcel') }}</label>
                         <input type="text" name="parcel" class="form-control form-control-sm" value="{{ filter_parcel }}">
                     </div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-2">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_invoice_number') }}</label>
                         <input type="text" name="invoice_number" class="form-control form-control-sm" value="{{ filter_invoice_number }}">
                     </div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_recipient') }}</label>
+                        <input type="text" name="recipient" class="form-control form-control-sm" value="{{ filter_recipient }}">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_amount_min') }}</label>
+                        <input type="text" name="amount_min" class="form-control form-control-sm" value="{{ filter_amount_min }}" placeholder="0,00">
+                    </div>
+                    <div class="col-sm-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_amount_max') }}</label>
+                        <input type="text" name="amount_max" class="form-control form-control-sm" value="{{ filter_amount_max }}" placeholder="0,00">
+                    </div>
+                    <div class="col-sm-2">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_list.filter_status') }}</label>
                         <select name="status" class="form-select form-select-sm">
                             <option value="" {% if not filter_status %}selected{% endif %}>{{ t('finances.invoice_list.status_all') }}</option>
@@ -32,10 +44,11 @@
                             <option value="paid" {% if filter_status == 'paid' %}selected{% endif %}>{{ t('finances.invoice_list.status_paid') }}</option>
                         </select>
                     </div>
-                    <div class="col-sm-3">
-                        <button type="submit" class="btn btn-sm btn-primary w-100">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-sm btn-primary">
                             <i class="bi bi-funnel me-1"></i>{{ t('finances.invoice_list.filter_button') }}
                         </button>
+                        <a href="/finances/invoices" class="btn btn-sm btn-outline-secondary">{{ t('finances.invoice_list.reset_button') }}</a>
                     </div>
                 </form>
             </div>

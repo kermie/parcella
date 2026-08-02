@@ -226,6 +226,16 @@ what the invoice owes (`Invoice.reminder_fees_total`) when present, but
 nothing charges one automatically -- a board member decides per
 reminder.
 
+Both invoice lists are searchable/filterable (issue #190):
+`/finances/invoices` (outgoing, across every run) by invoice number,
+recipient, amount range, and payment status; `/finances/incoming-invoices`
+by invoice number, sender, amount range, and payment status. Invoice
+number/recipient/sender filter at the SQL level; amount and status
+filter in Python after loading, since `payment_status` (and, for
+incoming invoices, `total_amount`) are computed properties, not
+columns -- same approach the outgoing list's status filter already
+used before this issue.
+
 ## Bookkeeping categories
 
 `FinanceCategory` (issue #67) is a short code + title + one of

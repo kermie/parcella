@@ -329,10 +329,18 @@ async def _get_incoming_invoices_folder(db: AsyncSession) -> Optional[str]:
 
 
 @router.get("/incoming-invoices", response_class=HTMLResponse)
-async def incoming_invoices_list(request: Request, db: AsyncSession = Depends(get_db)):
+async def incoming_invoices_list(
+    request: Request,
+    invoice_number: str = "", sender: str = "", amount_min: str = "", amount_max: str = "", status: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    """Issue #190: search/filter incoming invoices by invoice number,
+    sender, amount, and payment status. amount and status are applied
+    in Python after loading, same as the outgoing invoice list --
+    total_amount/payment_status are computed properties, not columns."""
     user = await require_permission(request, db, "finances", "read")
 
-    result = await db.execute(
+    query = (
         select(IncomingInvoice)
         .options(
             selectinload(IncomingInvoice.line_items).selectinload(IncomingInvoiceLineItem.category),
@@ -340,7 +348,22 @@ async def incoming_invoices_list(request: Request, db: AsyncSession = Depends(ge
         )
         .order_by(IncomingInvoice.invoice_date.desc(), IncomingInvoice.created_at.desc())
     )
+    if invoice_number.strip():
+        query = query.where(IncomingInvoice.invoice_number.ilike(f"%{invoice_number.strip()}%"))
+    if sender.strip():
+        query = query.where(IncomingInvoice.sender.ilike(f"%{sender.strip()}%"))
+
+    result = await db.execute(query)
     invoices = list(result.scalars().all())
+
+    parsed_amount_min = _parse_decimal(amount_min) if amount_min.strip() else None
+    if parsed_amount_min is not None:
+        invoices = [i for i in invoices if i.total_amount >= float(parsed_amount_min)]
+    parsed_amount_max = _parse_decimal(amount_max) if amount_max.strip() else None
+    if parsed_amount_max is not None:
+        invoices = [i for i in invoices if i.total_amount <= float(parsed_amount_max)]
+    if status in ("open", "partially_paid", "paid"):
+        invoices = [i for i in invoices if i.payment_status == status]
 
     categories_result = await db.execute(select(FinanceCategory).order_by(FinanceCategory.code))
     categories = list(categories_result.scalars().all())
@@ -352,6 +375,8 @@ async def incoming_invoices_list(request: Request, db: AsyncSession = Depends(ge
         "request": request, "user": user, "invoices": invoices, "categories": categories,
         "cloud_storage_enabled": cloud_storage_enabled, "folder_path": folder_path,
         "today": date.today().isoformat(),
+        "filter_invoice_number": invoice_number, "filter_sender": sender,
+        "filter_amount_min": amount_min, "filter_amount_max": amount_max, "filter_status": status,
     })
 
 
@@ -1180,9 +1205,17 @@ async def invoice_list(
     request: Request,
     parcel: str = "",
     invoice_number: str = "",
+    recipient: str = "",
+    amount_min: str = "",
+    amount_max: str = "",
     status: str = "",
     db: AsyncSession = Depends(get_db),
 ):
+    """Issue #190: search/filter outgoing invoices by invoice number,
+    recipient, amount, and payment status. amount and status are still
+    applied in Python after loading (payment_status is a computed
+    property, not a column) -- same precedent status already used
+    here before recipient/amount were added."""
     user = await require_permission(request, db, "finances", "read")
 
     query = (
@@ -1195,6 +1228,14 @@ async def invoice_list(
         query = query.where(Parcel.plot_number.ilike(f"%{parcel.strip()}%"))
     if invoice_number.strip():
         query = query.where(Invoice.invoice_number.ilike(f"%{invoice_number.strip()}%"))
+    if recipient.strip():
+        query = query.where(Invoice.recipient_names.ilike(f"%{recipient.strip()}%"))
+    parsed_amount_min = _parse_decimal(amount_min) if amount_min.strip() else None
+    if parsed_amount_min is not None:
+        query = query.where(Invoice.subtotal >= parsed_amount_min)
+    parsed_amount_max = _parse_decimal(amount_max) if amount_max.strip() else None
+    if parsed_amount_max is not None:
+        query = query.where(Invoice.subtotal <= parsed_amount_max)
 
     result = await db.execute(query)
     invoices = list(result.scalars().all())
@@ -1203,7 +1244,8 @@ async def invoice_list(
 
     return templates.TemplateResponse("finances/invoice_list.html", {
         "request": request, "user": user, "invoices": invoices,
-        "filter_parcel": parcel, "filter_invoice_number": invoice_number, "filter_status": status,
+        "filter_parcel": parcel, "filter_invoice_number": invoice_number, "filter_recipient": recipient,
+        "filter_amount_min": amount_min, "filter_amount_max": amount_max, "filter_status": status,
     })
 
 
