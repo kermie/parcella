@@ -2032,7 +2032,8 @@
       "label_account": "Konto",
       "add_payment_button": "Dodaj płatność",
       "delete_payment_confirm": "Usunąć tę płatność?",
-      "success_message": "Gotowe."
+      "success_message": "Gotowe.",
+      "payments_header": "Płatności"
     },
     "dashboard": {
       "title": "Finanse",
@@ -2101,6 +2102,7 @@
       "col_invoice_number": "Nr faktury",
       "col_categories": "Kategorie",
       "col_amount": "Kwota",
+      "col_payment_status": "Status płatności",
       "no_category": "Bez kategorii",
       "delete_confirm": "Czy na pewno usunąć tę fakturę przychodzącą? Załącznik nie zostanie usunięty z folderu w chmurze.",
       "no_invoices": "Nie zarejestrowano jeszcze żadnych faktur przychodzących.",

@@ -2032,7 +2032,8 @@
       "label_account": "Účet",
       "add_payment_button": "Přidat platbu",
       "delete_payment_confirm": "Smazat tuto platbu?",
-      "success_message": "Hotovo."
+      "success_message": "Hotovo.",
+      "payments_header": "Platby"
     },
     "dashboard": {
       "title": "Finance",
@@ -2101,6 +2102,7 @@
       "col_invoice_number": "Č. faktury",
       "col_categories": "Kategorie",
       "col_amount": "Částka",
+      "col_payment_status": "Stav platby",
       "no_category": "Bez kategorie",
       "delete_confirm": "Opravdu smazat tuto přijatou fakturu? Příloha se tím z cloudové složky nesmaže.",
       "no_invoices": "Zatím nebyly zaznamenány žádné přijaté faktury.",

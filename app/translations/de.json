@@ -2032,7 +2032,8 @@
       "label_account": "Konto",
       "add_payment_button": "Zahlung hinzufügen",
       "delete_payment_confirm": "Diese Zahlung löschen?",
-      "success_message": "Erledigt."
+      "success_message": "Erledigt.",
+      "payments_header": "Zahlungen"
     },
     "dashboard": {
       "title": "Finanzen",
@@ -2101,6 +2102,7 @@
       "col_invoice_number": "Rechnungsnr.",
       "col_categories": "Kategorien",
       "col_amount": "Betrag",
+      "col_payment_status": "Zahlungsstatus",
       "no_category": "Ohne Kategorie",
       "delete_confirm": "Diese Eingangsrechnung wirklich löschen? Der Anhang wird dabei nicht aus dem Cloud-Ordner gelöscht.",
       "no_invoices": "Noch keine Eingangsrechnungen erfasst.",

@@ -2032,7 +2032,8 @@
       "label_account": "Compte",
       "add_payment_button": "Ajouter un paiement",
       "delete_payment_confirm": "Supprimer ce paiement ?",
-      "success_message": "Fait."
+      "success_message": "Fait.",
+      "payments_header": "Paiements"
     },
     "dashboard": {
       "title": "Finances",
@@ -2101,6 +2102,7 @@
       "col_invoice_number": "N° de facture",
       "col_categories": "Catégories",
       "col_amount": "Montant",
+      "col_payment_status": "Statut de paiement",
       "no_category": "Sans catégorie",
       "delete_confirm": "Vraiment supprimer cette facture entrante ? La pièce jointe ne sera pas supprimée du dossier cloud.",
       "no_invoices": "Aucune facture entrante enregistrée pour l'instant.",

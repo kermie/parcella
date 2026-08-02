@@ -41,7 +41,7 @@ from app.models import (
     InvoiceItemTemplate, InvoiceItemTemplateParcel, InvoiceItemTemplateMember,
     InvoicePricingMode, Invoice, InvoicePayment, InvoiceReminder, Parcel, ParcelStatus, Member,
     FinanceCategory, FinanceCategoryGroup, FinanceAccount, FinanceAccountType, AccountTransaction,
-    IncomingInvoice, IncomingInvoiceLineItem, ClubSetting,
+    IncomingInvoice, IncomingInvoiceLineItem, IncomingInvoicePayment, ClubSetting,
 )
 from app.auth import require_admin
 from app.permissions import require_permission
@@ -331,7 +331,10 @@ async def incoming_invoices_list(request: Request, db: AsyncSession = Depends(ge
 
     result = await db.execute(
         select(IncomingInvoice)
-        .options(selectinload(IncomingInvoice.line_items).selectinload(IncomingInvoiceLineItem.category))
+        .options(
+            selectinload(IncomingInvoice.line_items).selectinload(IncomingInvoiceLineItem.category),
+            selectinload(IncomingInvoice.payments),
+        )
         .order_by(IncomingInvoice.invoice_date.desc(), IncomingInvoice.created_at.desc())
     )
     invoices = list(result.scalars().all())
@@ -411,16 +414,25 @@ async def incoming_invoice_detail(invoice_id: str, request: Request, db: AsyncSe
 
     result = await db.execute(
         select(IncomingInvoice)
-        .options(selectinload(IncomingInvoice.line_items).selectinload(IncomingInvoiceLineItem.category))
+        .options(
+            selectinload(IncomingInvoice.line_items).selectinload(IncomingInvoiceLineItem.category),
+            selectinload(IncomingInvoice.payments).selectinload(IncomingInvoicePayment.account),
+        )
         .where(IncomingInvoice.id == invoice_id)
     )
     invoice = result.scalar_one_or_none()
     if not invoice:
         raise HTTPException(status_code=404)
 
+    accounts_result = await db.execute(
+        select(FinanceAccount).where(FinanceAccount.is_active == True).order_by(FinanceAccount.name)  # noqa: E712
+    )
+    accounts = list(accounts_result.scalars().all())
+
     return templates.TemplateResponse("finances/incoming_invoice_detail.html", {
-        "request": request, "user": user, "invoice": invoice,
+        "request": request, "user": user, "invoice": invoice, "accounts": accounts,
         "cloud_storage_enabled": _cloud_storage_enabled(request),
+        "today": date.today().isoformat(),
     })
 
 
@@ -438,6 +450,55 @@ async def incoming_invoice_delete(invoice_id: str, request: Request, db: AsyncSe
         await db.delete(invoice)
         await db.commit()
     return RedirectResponse("/finances/incoming-invoices?deleted=1", status_code=302)
+
+
+@router.post("/incoming-invoices/{invoice_id}/payments")
+async def incoming_invoice_payment_create(
+    invoice_id: str, request: Request,
+    amount: str = Form(...), paid_on: str = Form(...), note: str = Form(""),
+    account_id: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    """Issue #181: "could be the same method as in outgoing invoices" --
+    same fields/route shape as POST /invoices/{id}/payments, just
+    without a from_run redirect target since incoming invoices have no
+    run grouping to return to."""
+    user = await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(IncomingInvoice).where(IncomingInvoice.id == invoice_id))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404)
+
+    parsed_amount = _parse_decimal(amount)
+    if parsed_amount is None:
+        raise HTTPException(status_code=400)
+
+    db.add(IncomingInvoicePayment(
+        incoming_invoice_id=invoice_id, amount=parsed_amount,
+        paid_on=datetime.strptime(paid_on, "%Y-%m-%d").date(),
+        note=note.strip() or None, recorded_by_id=user.id,
+        account_id=account_id.strip() or None,
+    ))
+    await db.commit()
+    return RedirectResponse(f"/finances/incoming-invoices/{invoice_id}", status_code=302)
+
+
+@router.post("/incoming-invoices/{invoice_id}/payments/{payment_id}/delete")
+async def incoming_invoice_payment_delete(
+    invoice_id: str, payment_id: str, request: Request, db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "finances", "delete")
+
+    result = await db.execute(
+        select(IncomingInvoicePayment).where(
+            IncomingInvoicePayment.id == payment_id, IncomingInvoicePayment.incoming_invoice_id == invoice_id,
+        )
+    )
+    payment = result.scalar_one_or_none()
+    if payment:
+        await db.delete(payment)
+        await db.commit()
+    return RedirectResponse(f"/finances/incoming-invoices/{invoice_id}", status_code=302)
 
 
 @router.get(

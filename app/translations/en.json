@@ -2032,7 +2032,8 @@
       "label_account": "Account",
       "add_payment_button": "Add payment",
       "delete_payment_confirm": "Delete this payment?",
-      "success_message": "Done."
+      "success_message": "Done.",
+      "payments_header": "Payments"
     },
     "dashboard": {
       "title": "Finances",
@@ -2101,6 +2102,7 @@
       "col_invoice_number": "Invoice no.",
       "col_categories": "Categories",
       "col_amount": "Amount",
+      "col_payment_status": "Payment status",
       "no_category": "Uncategorized",
       "delete_confirm": "Really delete this incoming invoice? This does not delete the attachment from the cloud folder.",
       "no_invoices": "No incoming invoices recorded yet.",

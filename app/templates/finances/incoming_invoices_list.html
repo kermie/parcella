@@ -138,6 +138,7 @@
                                 <th>{{ t('finances.incoming_invoices.col_invoice_number') }}</th>
                                 <th>{{ t('finances.incoming_invoices.col_categories') }}</th>
                                 <th class="text-end">{{ t('finances.incoming_invoices.col_amount') }}</th>
+                                <th>{{ t('finances.incoming_invoices.col_payment_status') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -156,6 +157,15 @@
                                     {% endfor %}
                                 </td>
                                 <td class="text-end">{{ invoice.total_amount|float|money }}</td>
+                                <td class="text-nowrap">
+                                    {% if invoice.payment_status == 'paid' %}
+                                    <span class="badge" style="background: #d1fae5; color: #065f46;">{{ t('finances.invoice_list.status_paid') }}</span>
+                                    {% elif invoice.payment_status == 'partially_paid' %}
+                                    <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('finances.invoice_list.status_partially_paid') }}</span>
+                                    {% else %}
+                                    <span class="badge" style="background: #fee2e2; color: #991b1b;">{{ t('finances.invoice_list.status_open') }}</span>
+                                    {% endif %}
+                                </td>
                                 <td class="text-end">
                                     {% if invoice.cloud_filename and cloud_storage_enabled %}
                                     <a href="/finances/incoming-invoices/{{ invoice.id }}/download" class="btn btn-sm btn-outline-secondary border-0">
@@ -174,7 +184,7 @@
                             </tr>
                             {% else %}
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-3">{{ t('finances.incoming_invoices.no_invoices') }}</td>
+                                <td colspan="7" class="text-center text-muted py-3">{{ t('finances.incoming_invoices.no_invoices') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

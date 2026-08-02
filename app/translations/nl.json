@@ -2032,7 +2032,8 @@
       "label_account": "Rekening",
       "add_payment_button": "Betaling toevoegen",
       "delete_payment_confirm": "Deze betaling verwijderen?",
-      "success_message": "Klaar."
+      "success_message": "Klaar.",
+      "payments_header": "Betalingen"
     },
     "dashboard": {
       "title": "Financiën",
@@ -2101,6 +2102,7 @@
       "col_invoice_number": "Factuurnr.",
       "col_categories": "Categorieën",
       "col_amount": "Bedrag",
+      "col_payment_status": "Betaalstatus",
       "no_category": "Geen categorie",
       "delete_confirm": "Deze inkomende factuur echt verwijderen? De bijlage wordt niet uit de cloudmap verwijderd.",
       "no_invoices": "Nog geen inkomende facturen geregistreerd.",

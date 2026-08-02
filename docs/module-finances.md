@@ -293,6 +293,15 @@ downloading reuses the same `get_nextcloud_provider()` connection
 attachment is left in the cloud folder untouched (this app's own data
 is never the source of truth for the file itself).
 
+`IncomingInvoicePayment` (issue #181) tracks when a bill was actually
+paid -- same shape as `InvoicePayment` (amount, `paid_on`, optional
+note/`FinanceAccount`), supporting partial payments the same way.
+`IncomingInvoice.payment_status` (`open`/`partially_paid`/`paid`)
+mirrors `Invoice.payment_status` minus the reminder-fee concept, which
+incoming invoices don't have. Recorded directly on the incoming
+invoice's own detail page (there's no "run" grouping several incoming
+invoices together the way outgoing invoices have).
+
 ## Cash-based accounting statement
 
 `/finances/accounting-statement` (issue #179) is a per-calendar-year

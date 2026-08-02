@@ -2591,11 +2591,32 @@ class IncomingInvoice(Base):
         "IncomingInvoiceLineItem", back_populates="incoming_invoice",
         cascade="all, delete-orphan", order_by="IncomingInvoiceLineItem.created_at",
     )
+    payments: Mapped[List["IncomingInvoicePayment"]] = relationship(
+        "IncomingInvoicePayment", back_populates="incoming_invoice",
+        cascade="all, delete-orphan", order_by="IncomingInvoicePayment.paid_on",
+    )
     created_by: Mapped[Optional["User"]] = relationship("User")
 
     @property
     def total_amount(self) -> float:
         return float(sum((li.amount for li in self.line_items), 0))
+
+    @property
+    def paid_total(self) -> float:
+        return float(sum((p.amount for p in self.payments), 0))
+
+    @property
+    def payment_status(self) -> str:
+        """One of "open" / "partially_paid" / "paid" -- same derivation
+        as Invoice.payment_status (issue #181: "could be the same
+        method as in outgoing invoices"), just without a reminder-fee
+        concept since incoming invoices have none."""
+        paid = self.paid_total
+        if paid <= 0:
+            return "open"
+        if paid < self.total_amount:
+            return "partially_paid"
+        return "paid"
 
     def __repr__(self) -> str:
         return f"<IncomingInvoice {self.sender} {self.invoice_number or ''}>"
@@ -2627,6 +2648,37 @@ class IncomingInvoiceLineItem(Base):
 
     def __repr__(self) -> str:
         return f"<IncomingInvoiceLineItem {self.amount}>"
+
+
+class IncomingInvoicePayment(Base):
+    """A single (possibly partial) payment recorded against an
+    IncomingInvoice (issue #181) -- same shape as InvoicePayment,
+    mirrored deliberately per that issue's "could be the same method as
+    in outgoing invoices"."""
+    __tablename__ = "incoming_invoice_payments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    incoming_invoice_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("incoming_invoices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    paid_on: Mapped[date] = mapped_column(Date, nullable=False)
+    note: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    account_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("finance_accounts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    recorded_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    incoming_invoice: Mapped["IncomingInvoice"] = relationship("IncomingInvoice", back_populates="payments")
+    account: Mapped[Optional["FinanceAccount"]] = relationship("FinanceAccount")
+
+    def __repr__(self) -> str:
+        return f"<IncomingInvoicePayment {self.amount}>"
 
 
 class InvoiceReminder(Base):
