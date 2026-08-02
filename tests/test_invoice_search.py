@@ -51,7 +51,7 @@ async def _make_invoice(client, plot_number, unit_price, year="2026"):
 
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(Invoice).where(Invoice.invoice_run_id == run_id))
-        return result.scalar_one()
+        return result.scalar_one(), run_id
 
 
 async def test_outgoing_invoice_search_by_recipient(client, admin_user):
@@ -81,7 +81,7 @@ async def test_outgoing_invoice_search_by_amount_range(client, admin_user):
 async def test_outgoing_invoice_search_by_status(client, admin_user):
     await web_login(client)
     await _enable_finances_module()
-    invoice = await _make_invoice(client, "SEARCH-E", "40.00")
+    invoice, _run_id = await _make_invoice(client, "SEARCH-E", "40.00")
     await client.post(f"/finances/invoices/{invoice.id}/payments", data={
         "amount": "40.00", "paid_on": "2026-03-01", "note": "",
     })
@@ -170,3 +170,65 @@ async def test_incoming_invoice_search_by_status(client, admin_user):
     assert response.status_code == 200
     assert "Paid Status Sender" in response.text
     assert "Open Status Sender" not in response.text
+
+
+async def test_run_detail_search_by_recipient(client, admin_user):
+    """Issue #190 follow-up: the flat /finances/invoices list got
+    filters, but a single run's own invoice table had none at all."""
+    await web_login(client)
+    await _enable_finances_module()
+
+    async def _make_parcel(plot_number):
+        async with AsyncSessionLocal() as session:
+            member = Member(
+                first_name="Search", last_name=plot_number,
+                street="Gartenweg 1", postal_code="12345", city="Testort",
+            )
+            parcel = Parcel(plot_number=plot_number, area_sqm=100)
+            session.add_all([member, parcel])
+            await session.flush()
+            session.add(MemberParcel(member_id=member.id, parcel_id=parcel.id, is_invoice_address=True))
+            await session.commit()
+            return parcel.id
+
+    parcel_a_id = await _make_parcel("RUNSEARCH-A")
+    parcel_b_id = await _make_parcel("RUNSEARCH-B")
+
+    r_create = await client.post("/finances/runs", data={
+        "year": "2027", "subject": "Run search test", "issued_date": "2027-01-01",
+        "due_date": "2027-02-01", "footer_text": "",
+    })
+    assert r_create.status_code in (302, 303)
+    run_id = r_create.headers["location"].rstrip("/").split("/")[-1]
+
+    for order, parcel_id in enumerate([parcel_a_id, parcel_b_id]):
+        r_item = await client.post(f"/finances/runs/{run_id}/items", data={
+            "order_number": str(order), "name": "Fee", "description": "",
+            "pricing_mode": "fixed_per_parcel", "unit_price": "50.00",
+            "parcel_ids": [parcel_id],
+        })
+        assert r_item.status_code in (302, 303)
+
+    r_finalize = await client.post(f"/finances/runs/{run_id}/finalize")
+    assert r_finalize.status_code in (302, 303)
+
+    response = await client.get(f"/finances/runs/{run_id}?recipient=RUNSEARCH-A")
+    assert response.status_code == 200
+    assert "RUNSEARCH-A" in response.text
+    assert "RUNSEARCH-B" not in response.text
+
+
+async def test_run_detail_search_by_amount_and_status(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    invoice, run_id = await _make_invoice(client, "RUNSEARCH-C", "70.00", year="2028")
+    await client.post(f"/finances/invoices/{invoice.id}/payments", data={
+        "amount": "70.00", "paid_on": "2028-03-01", "note": "",
+    })
+
+    response = await client.get(f"/finances/runs/{run_id}?amount_min=60&amount_max=80&status=paid")
+    assert response.status_code == 200
+    assert "RUNSEARCH-C" in response.text
+
+    response_wrong_status = await client.get(f"/finances/runs/{run_id}?status=open")
+    assert "RUNSEARCH-C" not in response_wrong_status.text

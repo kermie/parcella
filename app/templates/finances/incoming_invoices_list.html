@@ -17,10 +17,6 @@
 <div class="alert alert-success d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-check-circle-fill"></i> {{ t('finances.incoming_invoices.deleted') }}
 </div>
-{% elif request.query_params.get('cloud_folder_saved') %}
-<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
-    <i class="bi bi-check-circle-fill"></i> {{ t('finances.incoming_invoices.cloud_folder_saved') }}
-</div>
 {% elif request.query_params.get('cloud_error') %}
 <div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-exclamation-triangle-fill"></i> {{ request.query_params.get('cloud_error') }}
@@ -68,27 +64,6 @@
             </div>
         </div>
     </div>
-
-    {% if cloud_storage_enabled %}
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-cloud me-2"></i>{{ t('finances.incoming_invoices.cloud_folder_header') }}</div>
-            <div class="card-body">
-                <p class="text-muted">{{ t('finances.incoming_invoices.cloud_folder_help') }}</p>
-                <form method="post" action="/finances/incoming-invoices/cloud-folder" class="d-flex gap-2 align-items-end flex-wrap">
-                    <div style="min-width: 300px;">
-                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.cloud_folder_label') }}</label>
-                        <input type="text" name="relative_path" class="form-control form-control-sm"
-                               value="{{ folder_path or '' }}" placeholder="Rechnungen/Eingang">
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-check-lg me-1"></i>{{ t('finances.incoming_invoices.cloud_folder_save_button') }}
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
     {% if has_perm(request, 'finances', 'write') %}
     <div class="col-12">

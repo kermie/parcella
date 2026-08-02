@@ -51,7 +51,6 @@ from app.branding import load_branding
 from app.pdf_chrome import load_org_footer_context
 from app.l10n import load_current_region, load_current_currency
 from app.cloud_storage import get_nextcloud_provider, CloudStorageError
-from app.parcel_cloud_folders import sanitize_relative_path, InvalidCloudPathError
 from app.invoice_generation import compute_invoices_for_run, finalize_run, SequenceCollisionError
 from app.invoice_pdf import (
     InvoicePdfData, InvoicePdfLineItem, render_invoice_pdf, invoice_pdf_data_from_invoice, invoice_pdf_filename,
@@ -562,31 +561,6 @@ async def incoming_invoice_download(invoice_id: str, request: Request, db: Async
     )
 
 
-@router.post(
-    "/incoming-invoices/cloud-folder",
-    dependencies=[Depends(require_module("cloud_storage"))],
-)
-async def incoming_invoices_cloud_folder_set(
-    request: Request, relative_path: str = Form(...), db: AsyncSession = Depends(get_db),
-):
-    await require_admin(request, db)
-
-    try:
-        sanitized = sanitize_relative_path(relative_path)
-    except InvalidCloudPathError as e:
-        message = urlquote(str(e))
-        return RedirectResponse(f"/finances/incoming-invoices?cloud_error={message}", status_code=303)
-
-    result = await db.execute(select(ClubSetting).where(ClubSetting.key == INCOMING_INVOICES_FOLDER_SETTING))
-    entry = result.scalar_one_or_none()
-    if entry:
-        entry.value = sanitized
-    else:
-        db.add(ClubSetting(key=INCOMING_INVOICES_FOLDER_SETTING, value=sanitized, description="Shared cloud folder for incoming invoice attachments"))
-    await db.commit()
-    return RedirectResponse("/finances/incoming-invoices?cloud_folder_saved=1", status_code=303)
-
-
 @router.get("/accounting-statement", response_class=HTMLResponse)
 async def accounting_statement_page(
     request: Request, year: Optional[int] = Query(None), db: AsyncSession = Depends(get_db),
@@ -705,7 +679,16 @@ async def run_delete(run_id: str, request: Request, db: AsyncSession = Depends(g
 # ---------------------------------------------------------------------------
 
 @router.get("/runs/{run_id}", response_class=HTMLResponse)
-async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+async def run_detail(
+    run_id: str, request: Request,
+    invoice_number: str = "", recipient: str = "", parcel: str = "",
+    amount_min: str = "", amount_max: str = "", status: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    """Issue #190 follow-up: the flat /finances/invoices list got
+    search/filter, but a single run's own invoice table (which can
+    still run to one row per parcel) had none at all -- same fields,
+    scoped to this run."""
     user = await require_permission(request, db, "finances", "read")
 
     run = await _get_run_or_404(db, run_id)
@@ -717,17 +700,35 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
     invoices = []
     accounts = []
     if run.status == InvoiceRunStatus.FINALIZED:
-        result = await db.execute(
+        query = (
             select(Invoice)
             .options(
                 selectinload(Invoice.parcel), selectinload(Invoice.member),
                 selectinload(Invoice.payments).selectinload(InvoicePayment.account),
                 selectinload(Invoice.reminders),
             )
+            .outerjoin(Parcel, Invoice.parcel_id == Parcel.id)
             .where(Invoice.invoice_run_id == run.id)
             .order_by(Invoice.invoice_number)
         )
+        if invoice_number.strip():
+            query = query.where(Invoice.invoice_number.ilike(f"%{invoice_number.strip()}%"))
+        if recipient.strip():
+            query = query.where(Invoice.recipient_names.ilike(f"%{recipient.strip()}%"))
+        if parcel.strip():
+            query = query.where(Parcel.plot_number.ilike(f"%{parcel.strip()}%"))
+        parsed_amount_min = _parse_decimal(amount_min) if amount_min.strip() else None
+        if parsed_amount_min is not None:
+            query = query.where(Invoice.subtotal >= parsed_amount_min)
+        parsed_amount_max = _parse_decimal(amount_max) if amount_max.strip() else None
+        if parsed_amount_max is not None:
+            query = query.where(Invoice.subtotal <= parsed_amount_max)
+
+        result = await db.execute(query)
         invoices = list(result.scalars().all())
+        if status in ("open", "partially_paid", "paid"):
+            invoices = [i for i in invoices if i.payment_status == status]
+
         accounts_result = await db.execute(
             select(FinanceAccount).where(FinanceAccount.is_active == True).order_by(FinanceAccount.name)  # noqa: E712
         )
@@ -760,6 +761,8 @@ async def run_detail(run_id: str, request: Request, db: AsyncSession = Depends(g
         "item_templates": item_templates,
         "catalog_all_used": catalog_all_used,
         "categories": categories,
+        "filter_invoice_number": invoice_number, "filter_recipient": recipient, "filter_parcel": parcel,
+        "filter_amount_min": amount_min, "filter_amount_max": amount_max, "filter_status": status,
     })
 
 

@@ -195,15 +195,6 @@ async def test_deleting_category_keeps_line_item_but_clears_category(client, adm
         assert line_item.category_id is None, "the line item itself must survive, only its category link is cleared"
 
 
-async def test_incoming_invoices_without_cloud_storage_module_has_no_folder_form(client, admin_user):
-    await web_login(client)
-    await _enable_finances_module()
-
-    response = await client.get("/finances/incoming-invoices")
-    assert response.status_code == 200
-    assert "cloud-folder" not in response.text
-
-
 async def test_incoming_invoice_upload_and_download_use_configured_folder(client, admin_user, monkeypatch):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -215,10 +206,10 @@ async def test_incoming_invoice_upload_and_download_use_configured_folder(client
     category_id = await _make_category()
 
     r_folder = await client.post(
-        "/finances/incoming-invoices/cloud-folder", data={"relative_path": "buchhaltung/eingangsrechnungen"},
+        "/admin/integrations/nextcloud/incoming-invoices-folder", data={"relative_path": "buchhaltung/eingangsrechnungen"},
     )
     assert r_folder.status_code in (302, 303)
-    assert "cloud_folder_saved" in r_folder.headers["location"]
+    assert "incoming_invoices_folder_saved" in r_folder.headers["location"]
 
     import httpx as httpx_module
     from app.cloud_storage import NextcloudProvider as RealNextcloudProvider

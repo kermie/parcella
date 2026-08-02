@@ -162,6 +162,29 @@
             <div class="text-danger mt-2"><i class="bi bi-x-circle"></i> {{ nextcloud_test_message }}</div>
             {% endif %}
         </form>
+
+        {% if cloud_storage_active %}
+        <hr class="my-3">
+        <h6 class="fw-semibold">{{ t('admin.integrations.incoming_invoices_folder_header') }}</h6>
+        <p class="text-muted">{{ t('admin.integrations.incoming_invoices_folder_help') }}</p>
+
+        {% if incoming_invoices_folder_saved %}
+        <div class="alert alert-success">{{ t('admin.integrations.incoming_invoices_folder_saved') }}</div>
+        {% elif incoming_invoices_folder_error %}
+        <div class="alert alert-danger">{{ incoming_invoices_folder_error }}</div>
+        {% endif %}
+
+        <form method="post" action="/admin/integrations/nextcloud/incoming-invoices-folder" class="d-flex gap-2 align-items-end flex-wrap">
+            <div style="min-width: 300px;">
+                <label class="form-label fw-semibold">{{ t('admin.integrations.incoming_invoices_folder_label') }}</label>
+                <input type="text" name="relative_path" class="form-control"
+                       value="{{ incoming_invoices_folder_path or '' }}" placeholder="Rechnungen/Eingang">
+            </div>
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="bi bi-check-lg me-1"></i>{{ t('admin.integrations.incoming_invoices_folder_save_button') }}
+            </button>
+        </form>
+        {% endif %}
     </div>
     </div>
 </div>

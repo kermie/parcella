@@ -229,8 +229,12 @@ reminder.
 Both invoice lists are searchable/filterable (issue #190):
 `/finances/invoices` (outgoing, across every run) by invoice number,
 recipient, amount range, and payment status; `/finances/incoming-invoices`
-by invoice number, sender, amount range, and payment status. Invoice
-number/recipient/sender filter at the SQL level; amount and status
+by invoice number, sender, amount range, and payment status.
+`/finances/runs/{id}` (a single run's own invoice table) got the same
+invoice-number/recipient/parcel/amount/status filters as a same-session
+follow-up -- the flat cross-run list doesn't replace the run-scoped
+view, which can still run to one row per parcel. Invoice number/
+recipient/sender/parcel filter at the SQL level; amount and status
 filter in Python after loading, since `payment_status` (and, for
 incoming invoices, `total_amount`) are computed properties, not
 columns -- same approach the outgoing list's status filter already
@@ -329,9 +333,12 @@ The scanned/photographed bill itself, if any, is never stored in this
 app's own database or filesystem (the app doesn't store media at all).
 Instead, `cloud_filename` just names a file inside **one shared**
 Nextcloud folder configured for all incoming invoices (`ClubSetting`
-key `incoming_invoices_cloud_folder`, set from the incoming-invoices
-page itself when the `cloud_storage` module is enabled) -- deliberately
-simpler than the per-parcel `ParcelCloudFolder` pattern
+key `incoming_invoices_cloud_folder`; configured on `/admin/integrations`
+-- the "Nextcloud" card, alongside the shared connection credentials
+and the per-parcel documents feature it also powers -- moved there
+from the incoming-invoices page itself in issue #191, since it's a
+system-admin-level setting like every other integration credential)
+-- deliberately simpler than the per-parcel `ParcelCloudFolder` pattern
 (`app/parcel_cloud_folders.py`), since there's no per-entity turnover
 concept here that would need its own history table. Uploading/
 downloading reuses the same `get_nextcloud_provider()` connection
