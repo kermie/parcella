@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ t('finances.account_bookings.import_match_title') }}{% endblock %}
+{% block page_title %}{{ t('finances.account_bookings.import_match_title') }}{% endblock %}
+
+{% block topbar_actions %}
+<a href="/finances/accounts/{{ account.id }}/bookings" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>{{ t('finances.coming_soon.back') }}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-search me-2"></i>{{ t('finances.account_bookings.import_match_header') }}</div>
+            <div class="card-body">
+                <p class="text-muted">{{ t('finances.account_bookings.import_match_help') }}</p>
+                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/import/finalize">
+                    <input type="hidden" name="csv_content_b64" value="{{ csv_content_b64 }}">
+                    <input type="hidden" name="delimiter" value="{{ delimiter }}">
+                    {% for index, field in column_mapping.items() %}
+                    <input type="hidden" name="map_{{ index }}" value="{{ field }}">
+                    {% endfor %}
+
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('finances.account_bookings.col_date') }}</th>
+                                    <th class="text-end">{{ t('finances.account_bookings.col_amount') }}</th>
+                                    <th>{{ t('finances.account_bookings.col_counterparty') }}</th>
+                                    <th>{{ t('finances.account_bookings.col_match') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in row_matches %}
+                                <tr class="{% if not entry.row.valid %}text-muted{% endif %}">
+                                    <td class="text-nowrap">
+                                        {% if entry.row.valid %}{{ entry.row.date.strftime('%d.%m.%Y') }}{% else %}{{ t('finances.account_bookings.invalid_row') }}{% endif %}
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        {% if entry.row.valid %}{{ entry.row.amount|float|money }}{% endif %}
+                                    </td>
+                                    <td>{{ entry.row.counterparty or '—' }}</td>
+                                    <td>
+                                        {% if entry.row.valid %}
+                                        <select name="match_{{ loop.index0 }}" class="form-select form-select-sm">
+                                            <option value="none" {% if entry.best == 'none' %}selected{% endif %}>{{ t('finances.account_bookings.match_none') }}</option>
+                                            {% for match in entry.matches %}
+                                            <option value="{{ match.option_value }}" {% if entry.best == match.option_value %}selected{% endif %}>
+                                                {{ match.label }} ({{ match.amount_due|float|money }}){% if match.name_matches %} ✓{% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-upload me-1"></i>{{ t('finances.account_bookings.import_button') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

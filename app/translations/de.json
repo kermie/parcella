@@ -2198,7 +2198,21 @@
       "map_field_description": "Beschreibung",
       "map_field_counterparty": "Absender / Empfänger",
       "map_field_iban": "IBAN",
-      "iban_updated_result": "{n} Mitglieds-IBAN(s) aus dem Import übernommen."
+      "iban_updated_result": "{n} Mitglieds-IBAN(s) aus dem Import übernommen.",
+      "manual_match_title": "Mögliche passende Rechnungen",
+      "manual_match_header": "Mögliche passende Rechnungen",
+      "manual_match_help": "Diese offenen Rechnungen passen zum Betrag dieser Buchung. Wählen Sie eine aus, um dies als echte Zahlung zu erfassen, oder erfassen Sie es stattdessen als allgemeine Buchung.",
+      "match_none": "Als allgemeine Buchung erfassen",
+      "match_amount_due": "offen: {amount}",
+      "match_name_hint": "Name passt",
+      "match_none_found": "Keine offenen Rechnungen passen zu diesem Betrag.",
+      "import_match_title": "Zeilen Rechnungen zuordnen",
+      "import_match_header": "Mögliche passende Rechnungen",
+      "import_match_help": "Wählen Sie für jede Zeile eine passende offene Rechnung aus, um sie als echte Zahlung zu erfassen, oder belassen Sie sie als allgemeine Buchung.",
+      "col_match": "Zuordnung",
+      "invalid_row": "Ungültige Zeile — wird übersprungen",
+      "matched_result": "{n} Buchung(en) einer bestehenden Rechnung zugeordnet.",
+      "single_match_result": "Als Zahlung gegen die zugeordnete Rechnung erfasst."
     },
     "item_template_list": {
       "title": "Artikelkatalog",

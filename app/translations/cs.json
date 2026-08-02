@@ -2198,7 +2198,21 @@
       "map_field_description": "Popis",
       "map_field_counterparty": "Odesílatel / příjemce",
       "map_field_iban": "IBAN",
-      "iban_updated_result": "Z importu bylo doplněno IBAN u {n} členů."
+      "iban_updated_result": "Z importu bylo doplněno IBAN u {n} členů.",
+      "manual_match_title": "Možné odpovídající faktury",
+      "manual_match_header": "Možné odpovídající faktury",
+      "manual_match_help": "Tyto otevřené faktury odpovídají částce této platby. Vyberte jednu, chcete-li ji zaznamenat jako skutečnou platbu, nebo ji zaznamenejte jako obecnou platbu.",
+      "match_none": "Zaznamenat jako obecnou platbu",
+      "match_amount_due": "zbývá: {amount}",
+      "match_name_hint": "jméno odpovídá",
+      "match_none_found": "Žádná otevřená faktura neodpovídá této částce.",
+      "import_match_title": "Přiřadit řádky k fakturám",
+      "import_match_header": "Možné odpovídající faktury",
+      "import_match_help": "Pro každý řádek vyberte odpovídající otevřenou fakturu, chcete-li ji zaznamenat jako skutečnou platbu, nebo ji ponechte jako obecnou platbu.",
+      "col_match": "Shoda",
+      "invalid_row": "Neplatný řádek — bude přeskočen",
+      "matched_result": "{n} plateb přiřazeno k existující faktuře.",
+      "single_match_result": "Zaznamenáno jako platba k přiřazené faktuře."
     },
     "item_template_list": {
       "title": "Katalog položek",

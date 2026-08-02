@@ -13,9 +13,16 @@
 <div class="alert alert-success d-flex gap-2 align-items-center mb-3">
     <i class="bi bi-check-circle-fill"></i>
     {{ t('finances.account_bookings.import_result', imported=request.query_params.get('imported'), skipped=request.query_params.get('skipped', '0')) }}
+    {% if request.query_params.get('matched', '0')|int > 0 %}
+    {{ t('finances.account_bookings.matched_result', n=request.query_params.get('matched')) }}
+    {% endif %}
     {% if request.query_params.get('iban_updated', '0')|int > 0 %}
     {{ t('finances.account_bookings.iban_updated_result', n=request.query_params.get('iban_updated')) }}
     {% endif %}
+</div>
+{% elif request.query_params.get('matched') %}
+<div class="alert alert-success d-flex gap-2 align-items-center mb-3">
+    <i class="bi bi-check-circle-fill"></i> {{ t('finances.account_bookings.single_match_result') }}
 </div>
 {% elif request.query_params.get('error') %}
 <div class="alert alert-danger d-flex gap-2 align-items-center mb-3">
@@ -158,7 +165,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/manual" class="row g-2 align-items-end">
+                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/manual/preview" class="row g-2 align-items-end">
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.col_date') }}</label>
                         <input type="date" name="booking_date" class="form-control form-control-sm" value="{{ today }}" required>

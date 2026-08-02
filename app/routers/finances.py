@@ -63,6 +63,7 @@ from app.invoice_delivery import (
 from app.accounting_statement import compute_cash_accounting_statement, available_statement_years
 from app.accounting_statement_pdf import render_accounting_statement_pdf
 from app.bookings import list_bookings
+from app.invoice_matching import find_matching_invoices, best_match_option
 
 router = APIRouter(
     prefix="/finances",
@@ -1821,18 +1822,48 @@ async def account_bookings_import_preview(
     })
 
 
-@router.post("/accounts/{account_id}/bookings/import/confirm")
-async def account_bookings_import_confirm(
+def _parse_column_mapping(form) -> dict:
+    column_mapping: dict = {}
+    for key, value in form.items():
+        if key.startswith("map_") and value in CSV_IMPORT_TARGET_FIELDS:
+            column_mapping[int(key.removeprefix("map_"))] = value
+    return column_mapping
+
+
+def _parse_mapped_csv_rows(csv_content_b64: str, delimiter: str, column_mapping: dict) -> list:
+    text = base64.b64decode(csv_content_b64).decode("utf-8")
+    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    rows = list(reader)[1:]  # header row already consumed in the preview step
+
+    parsed_rows = []
+    for row in rows:
+        values = {
+            field: (row[i].strip() if i < len(row) else "")
+            for i, field in column_mapping.items()
+        }
+        parsed_date = _parse_date_flexible(values.get("date", ""))
+        parsed_amount = _parse_decimal(values.get("amount", ""))
+        parsed_rows.append({
+            "date": parsed_date, "amount": parsed_amount,
+            "description": values.get("description", ""), "counterparty": values.get("counterparty", ""),
+            "iban": values.get("iban", ""), "valid": parsed_date is not None and parsed_amount is not None,
+        })
+    return parsed_rows
+
+
+@router.post(
+    "/accounts/{account_id}/bookings/import/match",
+    response_class=HTMLResponse,
+)
+async def account_bookings_import_match(
     account_id: str, request: Request,
     csv_content_b64: str = Form(...), delimiter: str = Form(";"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Step 2: applies the column mapping chosen in step 1 and actually
-    creates AccountTransaction rows -- never creates or matches an
-    InvoicePayment; reconciling an import against outstanding invoices
-    is a different, harder problem, deliberately out of scope (issue
-    #174/ADR 0059). Also backfills a matched member's IBAN (issue
-    #187) when a "counterparty" and "iban" column were both mapped."""
+    """Step 2 (issue #188): before creating anything, show each row's
+    possible open-invoice matches (by amount, then counterparty name)
+    so the user can turn a row into a real payment instead of a
+    generic booking."""
     user = await require_permission(request, db, "finances", "write")
 
     result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
@@ -1841,20 +1872,54 @@ async def account_bookings_import_confirm(
         raise HTTPException(status_code=404)
 
     form = await request.form()
-    column_mapping: dict = {}
-    for key, value in form.items():
-        if key.startswith("map_") and value in CSV_IMPORT_TARGET_FIELDS:
-            column_mapping[int(key.removeprefix("map_"))] = value
-
+    column_mapping = _parse_column_mapping(form)
     if "date" not in column_mapping.values() or "amount" not in column_mapping.values():
         return RedirectResponse(
             f"/finances/accounts/{account_id}/bookings?error={urlquote(t_for(request, 'finances.account_bookings.csv_mapping_required_error'))}",
             status_code=303,
         )
 
-    text = base64.b64decode(csv_content_b64).decode("utf-8")
-    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
-    rows = list(reader)[1:]  # header row already consumed in the preview step
+    parsed_rows = _parse_mapped_csv_rows(csv_content_b64, delimiter, column_mapping)
+
+    row_matches = []
+    for row in parsed_rows:
+        matches = await find_matching_invoices(db, row["amount"], row["counterparty"]) if row["valid"] else []
+        row_matches.append({"row": row, "matches": matches, "best": best_match_option(matches)})
+
+    return templates.TemplateResponse("finances/account_bookings_import_match.html", {
+        "request": request, "user": user, "account": account, "row_matches": row_matches,
+        "csv_content_b64": csv_content_b64, "delimiter": delimiter, "column_mapping": column_mapping,
+    })
+
+
+@router.post("/accounts/{account_id}/bookings/import/finalize")
+async def account_bookings_import_finalize(
+    account_id: str, request: Request,
+    csv_content_b64: str = Form(...), delimiter: str = Form(";"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Step 3: applies each row's chosen match (a real InvoicePayment/
+    IncomingInvoicePayment) or creates a generic AccountTransaction
+    otherwise -- never auto-matches, only what the user picked in step
+    2 (issue #174/ADR 0059's reconciliation-is-out-of-scope stance
+    still holds for anything not explicitly confirmed). Also backfills
+    a matched member's IBAN (issue #187) when "counterparty" and
+    "iban" columns were both mapped."""
+    user = await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    form = await request.form()
+    column_mapping = _parse_column_mapping(form)
+    if "date" not in column_mapping.values() or "amount" not in column_mapping.values():
+        return RedirectResponse(
+            f"/finances/accounts/{account_id}/bookings?error={urlquote(t_for(request, 'finances.account_bookings.csv_mapping_required_error'))}",
+            status_code=303,
+        )
+    parsed_rows = _parse_mapped_csv_rows(csv_content_b64, delimiter, column_mapping)
 
     members_by_name: dict = {}
     if "iban" in column_mapping.values() and "counterparty" in column_mapping.values():
@@ -1868,45 +1933,108 @@ async def account_bookings_import_confirm(
     imported = 0
     skipped = 0
     iban_updated = 0
-    for row in rows:
-        values = {
-            field: (row[i].strip() if i < len(row) else "")
-            for i, field in column_mapping.items()
-        }
-        parsed_date = _parse_date_flexible(values.get("date", ""))
-        parsed_amount = _parse_decimal(values.get("amount", ""))
-        if parsed_date is None or parsed_amount is None:
+    matched = 0
+    for i, row in enumerate(parsed_rows):
+        if not row["valid"]:
             skipped += 1
             continue
 
-        db.add(AccountTransaction(
-            account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
-            description=values.get("description") or None,
-            counterparty=values.get("counterparty") or None,
-            source="csv_import", recorded_by_id=user.id,
-        ))
+        match_choice = form.get(f"match_{i}", "none")
+        did_match = await _create_matched_or_generic_transaction(
+            db, account_id, user.id, row["date"], row["amount"], row["description"], row["counterparty"], match_choice,
+            source="csv_import",
+        )
         imported += 1
+        if did_match:
+            matched += 1
 
-        iban_value = values.get("iban")
-        counterparty_value = values.get("counterparty")
-        if iban_value and counterparty_value:
-            member = members_by_name.get(counterparty_value.lower())
+        if row["iban"] and row["counterparty"]:
+            member = members_by_name.get(row["counterparty"].lower())
             if member and not member.iban:
-                member.iban = iban_value
+                member.iban = row["iban"]
                 iban_updated += 1
 
     await db.commit()
     return RedirectResponse(
-        f"/finances/accounts/{account_id}/bookings?imported={imported}&skipped={skipped}&iban_updated={iban_updated}",
+        f"/finances/accounts/{account_id}/bookings?imported={imported}&skipped={skipped}"
+        f"&iban_updated={iban_updated}&matched={matched}",
         status_code=302,
     )
 
 
-@router.post("/accounts/{account_id}/bookings/manual")
-async def account_bookings_add_manual(
+async def _create_matched_or_generic_transaction(
+    db: AsyncSession, account_id: str, user_id: str,
+    parsed_date, parsed_amount: Decimal, description: str, counterparty: str, match_choice: str,
+    source: str = "manual",
+) -> bool:
+    """Creates either a real InvoicePayment/IncomingInvoicePayment
+    against the invoice named in match_choice ("invoice:<id>" /
+    "incoming_invoice:<id>"), or a generic AccountTransaction when
+    match_choice is "none"/unrecognized (issue #188). Returns True if
+    a match was applied."""
+    if match_choice.startswith("invoice:"):
+        invoice_id = match_choice.removeprefix("invoice:")
+        result = await db.execute(select(Invoice).where(Invoice.id == invoice_id))
+        if result.scalar_one_or_none() is not None:
+            db.add(InvoicePayment(
+                invoice_id=invoice_id, amount=abs(parsed_amount), paid_on=parsed_date,
+                note=description or None, account_id=account_id, recorded_by_id=user_id,
+            ))
+            return True
+    elif match_choice.startswith("incoming_invoice:"):
+        incoming_invoice_id = match_choice.removeprefix("incoming_invoice:")
+        result = await db.execute(select(IncomingInvoice).where(IncomingInvoice.id == incoming_invoice_id))
+        if result.scalar_one_or_none() is not None:
+            db.add(IncomingInvoicePayment(
+                incoming_invoice_id=incoming_invoice_id, amount=abs(parsed_amount), paid_on=parsed_date,
+                note=description or None, account_id=account_id, recorded_by_id=user_id,
+            ))
+            return True
+
+    db.add(AccountTransaction(
+        account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
+        description=description or None, counterparty=counterparty or None,
+        source=source, recorded_by_id=user_id,
+    ))
+    return False
+
+
+@router.post("/accounts/{account_id}/bookings/manual/preview", response_class=HTMLResponse)
+async def account_bookings_manual_preview(
     account_id: str, request: Request,
     booking_date: str = Form(...), amount: str = Form(...), description: str = Form(""),
     counterparty: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    """Issue #188: before creating a generic booking, show any open
+    invoices whose amount (and ideally counterparty name) matches, so
+    the user can record this as a real payment instead."""
+    user = await require_permission(request, db, "finances", "write")
+
+    result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404)
+
+    parsed_date = _parse_date_flexible(booking_date)
+    parsed_amount = _parse_decimal(amount)
+    if parsed_date is None or parsed_amount is None:
+        raise HTTPException(status_code=400)
+
+    matches = await find_matching_invoices(db, parsed_amount, counterparty)
+
+    return templates.TemplateResponse("finances/account_bookings_manual_match.html", {
+        "request": request, "user": user, "account": account, "matches": matches,
+        "best_match": best_match_option(matches),
+        "booking_date": booking_date, "amount": amount, "description": description, "counterparty": counterparty,
+    })
+
+
+@router.post("/accounts/{account_id}/bookings/manual/confirm")
+async def account_bookings_manual_confirm(
+    account_id: str, request: Request,
+    booking_date: str = Form(...), amount: str = Form(...), description: str = Form(""),
+    counterparty: str = Form(""), match_choice: str = Form("none"),
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_permission(request, db, "finances", "write")
@@ -1921,13 +2049,13 @@ async def account_bookings_add_manual(
     if parsed_date is None or parsed_amount is None:
         raise HTTPException(status_code=400)
 
-    db.add(AccountTransaction(
-        account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
-        description=description.strip() or None, counterparty=counterparty.strip() or None,
-        source="manual", recorded_by_id=user.id,
-    ))
+    did_match = await _create_matched_or_generic_transaction(
+        db, account_id, user.id, parsed_date, parsed_amount,
+        description.strip(), counterparty.strip(), match_choice,
+    )
     await db.commit()
-    return RedirectResponse(f"/finances/accounts/{account_id}/bookings", status_code=302)
+    suffix = "?matched=1" if did_match else ""
+    return RedirectResponse(f"/finances/accounts/{account_id}/bookings{suffix}", status_code=302)
 
 
 @router.post("/accounts/{account_id}/bookings/{transaction_id}/delete")

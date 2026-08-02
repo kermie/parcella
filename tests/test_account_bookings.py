@@ -38,9 +38,8 @@ async def _make_account(name="Vereinskonto") -> str:
         return account.id
 
 
-async def _make_invoice_payment(client, account_id: str, amount: str, paid_on: str, plot_number: str) -> None:
-    """Creates a finalized invoice and records a payment against it,
-    tagged to account_id."""
+async def _make_open_invoice(client, amount: str, plot_number: str, year: str = "2026"):
+    """Creates a finalized, still-unpaid Invoice -- returns (invoice_id, recipient_names)."""
     async with AsyncSessionLocal() as session:
         member = Member(
             first_name="Booking", last_name=plot_number,
@@ -53,8 +52,8 @@ async def _make_invoice_payment(client, account_id: str, amount: str, paid_on: s
         await session.commit()
 
     r_create = await client.post("/finances/runs", data={
-        "year": "2026", "subject": "Booking test", "issued_date": "2026-08-01",
-        "due_date": "2026-09-01", "footer_text": "",
+        "year": year, "subject": "Booking test", "issued_date": f"{year}-08-01",
+        "due_date": f"{year}-09-01", "footer_text": "",
     })
     assert r_create.status_code in (302, 303)
     run_id = r_create.headers["location"].rstrip("/").split("/")[-1]
@@ -72,8 +71,15 @@ async def _make_invoice_payment(client, account_id: str, amount: str, paid_on: s
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(Invoice).where(Invoice.invoice_run_id == run_id))
         invoice = result.scalar_one()
+        return invoice.id, invoice.recipient_names
 
-    r_pay = await client.post(f"/finances/invoices/{invoice.id}/payments", data={
+
+async def _make_invoice_payment(client, account_id: str, amount: str, paid_on: str, plot_number: str) -> None:
+    """Creates a finalized invoice and records a payment against it,
+    tagged to account_id."""
+    invoice_id, _ = await _make_open_invoice(client, amount, plot_number)
+
+    r_pay = await client.post(f"/finances/invoices/{invoice_id}/payments", data={
         "amount": amount, "paid_on": paid_on, "note": "", "account_id": account_id,
     })
     assert r_pay.status_code in (302, 303)
@@ -170,15 +176,23 @@ async def test_bookings_search_matches_counterparty(client, admin_user):
     assert "Gartenbau Müller" not in response.text
 
 
+async def _manual_confirm(client, account_id, booking_date, amount, description="", counterparty="", match_choice="none"):
+    """Bypasses the intermediate match-preview page (issue #188) --
+    mirrors what confirming "no match" on that page would submit."""
+    return await client.post(f"/finances/accounts/{account_id}/bookings/manual/confirm", data={
+        "booking_date": booking_date, "amount": amount, "description": description,
+        "counterparty": counterparty, "match_choice": match_choice,
+    })
+
+
 async def test_bookings_manual_add_with_counterparty(client, admin_user):
     await web_login(client)
     await _enable_finances_module()
     account_id = await _make_account()
 
-    response = await client.post(f"/finances/accounts/{account_id}/bookings/manual", data={
-        "booking_date": "2026-08-03", "amount": "-15.00", "description": "Repair",
-        "counterparty": "Repair Shop GmbH",
-    })
+    response = await _manual_confirm(
+        client, account_id, "2026-08-03", "-15.00", description="Repair", counterparty="Repair Shop GmbH",
+    )
     assert response.status_code in (302, 303)
 
     async with AsyncSessionLocal() as session:
@@ -187,6 +201,46 @@ async def test_bookings_manual_add_with_counterparty(client, admin_user):
         )
         transaction = result.scalar_one()
         assert transaction.counterparty == "Repair Shop GmbH"
+
+
+async def test_manual_booking_preview_shows_matching_invoice(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+    invoice_id, recipient_names = await _make_open_invoice(client, "77.00", "MATCHPREVIEW")
+
+    response = await client.post(f"/finances/accounts/{account_id}/bookings/manual/preview", data={
+        "booking_date": "2026-08-10", "amount": "77.00", "description": "", "counterparty": recipient_names,
+    })
+    assert response.status_code == 200
+    assert f"value=\"invoice:{invoice_id}\"" in response.text
+
+
+async def test_manual_booking_confirm_with_match_creates_invoice_payment(client, admin_user):
+    """Issue #188: picking a suggested match creates a real
+    InvoicePayment against that invoice, not a generic AccountTransaction."""
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+    invoice_id, recipient_names = await _make_open_invoice(client, "88.00", "MATCHCONFIRM")
+
+    response = await _manual_confirm(
+        client, account_id, "2026-08-11", "88.00", counterparty=recipient_names,
+        match_choice=f"invoice:{invoice_id}",
+    )
+    assert response.status_code in (302, 303)
+    assert "matched=1" in response.headers["location"]
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(InvoicePayment).where(InvoicePayment.invoice_id == invoice_id))
+        payment = result.scalar_one()
+        assert float(payment.amount) == 88.00
+        assert payment.account_id == account_id
+
+        no_transaction = await session.execute(
+            select(AccountTransaction).where(AccountTransaction.account_id == account_id)
+        )
+        assert no_transaction.scalar_one_or_none() is None
 
 
 async def test_bookings_page_no_longer_shows_source_filter(client, admin_user):
@@ -251,14 +305,27 @@ async def _import_preview(client, account_id, csv_content):
     return await client.post(f"/finances/accounts/{account_id}/bookings/import/preview", files=files)
 
 
-async def _import_confirm(client, account_id, csv_content, mapping, delimiter=";"):
+async def _import_match(client, account_id, csv_content, mapping, delimiter=";"):
     """mapping: dict of {column_index: target_field} -- mirrors what the
     preview step's mapping form would submit, without needing to parse
-    the rendered HTML in every test."""
+    the rendered HTML in every test. Hits the step-2 "match" route,
+    which renders per-row invoice-match suggestions."""
     data = {"csv_content_b64": base64.b64encode(csv_content.encode("utf-8")).decode("ascii"), "delimiter": delimiter}
     for index, field in mapping.items():
         data[f"map_{index}"] = field
-    return await client.post(f"/finances/accounts/{account_id}/bookings/import/confirm", data=data)
+    return await client.post(f"/finances/accounts/{account_id}/bookings/import/match", data=data)
+
+
+async def _import_finalize(client, account_id, csv_content, mapping, match_choices=None, delimiter=";"):
+    """match_choices: dict of {row_index: "invoice:<id>"/"incoming_invoice:<id>"},
+    defaults to "none" (generic booking) for every row -- mirrors what
+    the step-3 "finalize" form would submit."""
+    data = {"csv_content_b64": base64.b64encode(csv_content.encode("utf-8")).decode("ascii"), "delimiter": delimiter}
+    for index, field in mapping.items():
+        data[f"map_{index}"] = field
+    for row_index, choice in (match_choices or {}).items():
+        data[f"match_{row_index}"] = choice
+    return await client.post(f"/finances/accounts/{account_id}/bookings/import/finalize", data=data)
 
 
 async def test_bookings_csv_import_preview_guesses_mapping(client, admin_user):
@@ -280,7 +347,7 @@ async def test_bookings_csv_import_confirm_creates_transactions(client, admin_us
     account_id = await _make_account()
 
     csv_content = "Date;Amount;Description\n2026-08-01;-15.50;Supplies\n2026-08-02;100.00;Membership refund\ninvalid;abc;Broken row\n"
-    response = await _import_confirm(
+    response = await _import_finalize(
         client, account_id, csv_content, {0: "date", 1: "amount", 2: "description"},
     )
     assert response.status_code in (302, 303)
@@ -305,7 +372,7 @@ async def test_bookings_csv_import_requires_date_and_amount_mapping(client, admi
     account_id = await _make_account()
 
     csv_content = "Date;Amount;Description\n2026-08-01;-15.50;Supplies\n"
-    response = await _import_confirm(client, account_id, csv_content, {2: "description"})
+    response = await _import_finalize(client, account_id, csv_content, {2: "description"})
     assert response.status_code in (302, 303)
     assert "error=" in response.headers["location"]
 
@@ -322,7 +389,7 @@ async def test_bookings_csv_import_with_counterparty_column(client, admin_user):
     account_id = await _make_account()
 
     csv_content = "Date;Amount;Description;Counterparty\n2026-08-01;-15.50;Supplies;Hardware Store\n"
-    response = await _import_confirm(
+    response = await _import_finalize(
         client, account_id, csv_content, {0: "date", 1: "amount", 2: "description", 3: "counterparty"},
     )
     assert response.status_code in (302, 303)
@@ -352,7 +419,7 @@ async def test_bookings_csv_import_backfills_empty_member_iban(client, admin_use
         "Date;Amount;Description;Counterparty;IBAN\n"
         "2026-08-01;50.00;Dues;Erika Musterfrau;DE89370400440532013000\n"
     )
-    response = await _import_confirm(
+    response = await _import_finalize(
         client, account_id, csv_content,
         {0: "date", 1: "amount", 2: "description", 3: "counterparty", 4: "iban"},
     )
@@ -380,7 +447,7 @@ async def test_bookings_csv_import_does_not_overwrite_existing_member_iban(clien
         "Date;Amount;Description;Counterparty;IBAN\n"
         "2026-08-01;50.00;Dues;Hans Beispiel;DE89370400440532013000\n"
     )
-    response = await _import_confirm(
+    response = await _import_finalize(
         client, account_id, csv_content,
         {0: "date", 1: "amount", 2: "description", 3: "counterparty", 4: "iban"},
     )
@@ -393,14 +460,51 @@ async def test_bookings_csv_import_does_not_overwrite_existing_member_iban(clien
         assert refreshed.iban == "DE00000000000000000000"
 
 
+async def test_csv_import_match_step_shows_candidate_invoices(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+    invoice_id, recipient_names = await _make_open_invoice(client, "66.00", "CSVMATCH")
+
+    csv_content = f"Date;Amount;Counterparty\n2026-08-01;66.00;{recipient_names}\n"
+    response = await _import_match(
+        client, account_id, csv_content, {0: "date", 1: "amount", 2: "counterparty"},
+    )
+    assert response.status_code == 200
+    assert f"invoice:{invoice_id}" in response.text
+
+
+async def test_csv_import_finalize_with_match_creates_invoice_payment(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+    invoice_id, recipient_names = await _make_open_invoice(client, "55.00", "CSVFINALIZE")
+
+    csv_content = f"Date;Amount;Counterparty\n2026-08-01;55.00;{recipient_names}\n"
+    response = await _import_finalize(
+        client, account_id, csv_content, {0: "date", 1: "amount", 2: "counterparty"},
+        match_choices={0: f"invoice:{invoice_id}"},
+    )
+    assert response.status_code in (302, 303)
+    assert "matched=1" in response.headers["location"]
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(InvoicePayment).where(InvoicePayment.invoice_id == invoice_id))
+        payment = result.scalar_one()
+        assert float(payment.amount) == 55.00
+
+        no_transaction = await session.execute(
+            select(AccountTransaction).where(AccountTransaction.account_id == account_id)
+        )
+        assert no_transaction.scalar_one_or_none() is None
+
+
 async def test_bookings_manual_add_and_delete(client, admin_user):
     await web_login(client)
     await _enable_finances_module()
     account_id = await _make_account()
 
-    r_add = await client.post(f"/finances/accounts/{account_id}/bookings/manual", data={
-        "booking_date": "2026-08-01", "amount": "-3.33", "description": "Coffee for the meeting",
-    })
+    r_add = await _manual_confirm(client, account_id, "2026-08-01", "-3.33", description="Coffee for the meeting")
     assert r_add.status_code in (302, 303)
 
     async with AsyncSessionLocal() as session:

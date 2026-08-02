@@ -2198,7 +2198,21 @@
       "map_field_description": "Opis",
       "map_field_counterparty": "Nadawca / odbiorca",
       "map_field_iban": "IBAN",
-      "iban_updated_result": "Uzupełniono IBAN dla {n} członków z importu."
+      "iban_updated_result": "Uzupełniono IBAN dla {n} członków z importu.",
+      "manual_match_title": "Możliwe pasujące faktury",
+      "manual_match_header": "Możliwe pasujące faktury",
+      "manual_match_help": "Te otwarte faktury pasują do kwoty tego księgowania. Wybierz jedną, aby zarejestrować to jako rzeczywistą płatność, lub zarejestruj jako zwykłe księgowanie.",
+      "match_none": "Zarejestruj jako zwykłe księgowanie",
+      "match_amount_due": "pozostało: {amount}",
+      "match_name_hint": "nazwa pasuje",
+      "match_none_found": "Żadna otwarta faktura nie pasuje do tej kwoty.",
+      "import_match_title": "Dopasuj wiersze do faktur",
+      "import_match_header": "Możliwe pasujące faktury",
+      "import_match_help": "Dla każdego wiersza wybierz pasującą otwartą fakturę, aby zarejestrować rzeczywistą płatność, lub pozostaw jako zwykłe księgowanie.",
+      "col_match": "Dopasowanie",
+      "invalid_row": "Nieprawidłowy wiersz — zostanie pominięty",
+      "matched_result": "Dopasowano {n} księgowań do istniejącej faktury.",
+      "single_match_result": "Zarejestrowano jako płatność do dopasowanej faktury."
     },
     "item_template_list": {
       "title": "Katalog pozycji",

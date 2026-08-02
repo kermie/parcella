@@ -15,7 +15,7 @@
             <div class="card-header"><i class="bi bi-diagram-3 me-2"></i>{{ t('finances.account_bookings.import_preview_header') }}</div>
             <div class="card-body">
                 <p class="text-muted">{{ t('finances.account_bookings.import_preview_help') }}</p>
-                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/import/confirm">
+                <form method="post" action="/finances/accounts/{{ account.id }}/bookings/import/match">
                     <input type="hidden" name="csv_content_b64" value="{{ csv_content_b64 }}">
                     <input type="hidden" name="delimiter" value="{{ delimiter }}">
                     <div class="table-responsive">

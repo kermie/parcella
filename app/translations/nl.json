@@ -2198,7 +2198,21 @@
       "map_field_description": "Omschrijving",
       "map_field_counterparty": "Afzender / ontvanger",
       "map_field_iban": "IBAN",
-      "iban_updated_result": "IBAN ingevuld voor {n} lid/leden vanuit de import."
+      "iban_updated_result": "IBAN ingevuld voor {n} lid/leden vanuit de import.",
+      "manual_match_title": "Mogelijk overeenkomende facturen",
+      "manual_match_header": "Mogelijk overeenkomende facturen",
+      "manual_match_help": "Deze openstaande facturen komen overeen met het bedrag van deze boeking. Kies er een om dit als een echte betaling te registreren, of registreer het als een gewone boeking.",
+      "match_none": "Registreren als gewone boeking",
+      "match_amount_due": "nog open: {amount}",
+      "match_name_hint": "naam komt overeen",
+      "match_none_found": "Geen openstaande facturen komen overeen met dit bedrag.",
+      "import_match_title": "Rijen koppelen aan facturen",
+      "import_match_header": "Mogelijk overeenkomende facturen",
+      "import_match_help": "Kies voor elke rij een overeenkomende openstaande factuur om als echte betaling te registreren, of laat de rij als gewone boeking.",
+      "col_match": "Koppeling",
+      "invalid_row": "Ongeldige rij — wordt overgeslagen",
+      "matched_result": "{n} boeking(en) gekoppeld aan een bestaande factuur.",
+      "single_match_result": "Geregistreerd als betaling voor de gekoppelde factuur."
     },
     "item_template_list": {
       "title": "Artikelcatalogus",

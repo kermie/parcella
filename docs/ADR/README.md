@@ -66,3 +66,4 @@ in chronological order.
 60. [Cash-based accounting statement: income categorized via invoice line items, AccountTransaction excluded](./0060-cash-accounting-statement-income-categorization.md)
 61. [Cash-based accounting statement: expenses now use actual payment date, not invoice date](./0061-accounting-statement-fully-cash-based.md)
 62. [Account bookings CSV import: user-driven column mapping, not a fixed header format](./0062-csv-import-column-mapping.md)
+63. [Account bookings can be matched against open invoices, creating a real payment](./0063-invoice-payment-matching-for-bookings.md)

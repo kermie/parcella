@@ -2198,7 +2198,21 @@
       "map_field_description": "Popis",
       "map_field_counterparty": "Odosielateľ / príjemca",
       "map_field_iban": "IBAN",
-      "iban_updated_result": "Z importu bolo doplnené IBAN pre {n} členov."
+      "iban_updated_result": "Z importu bolo doplnené IBAN pre {n} členov.",
+      "manual_match_title": "Možné zodpovedajúce faktúry",
+      "manual_match_header": "Možné zodpovedajúce faktúry",
+      "manual_match_help": "Tieto otvorené faktúry zodpovedajú sume tejto platby. Vyberte jednu, ak chcete túto platbu zaznamenať ako skutočnú platbu, alebo ju zaznamenajte ako všeobecnú platbu.",
+      "match_none": "Zaznamenať ako všeobecnú platbu",
+      "match_amount_due": "zostáva: {amount}",
+      "match_name_hint": "meno zodpovedá",
+      "match_none_found": "Žiadna otvorená faktúra nezodpovedá tejto sume.",
+      "import_match_title": "Priradiť riadky k faktúram",
+      "import_match_header": "Možné zodpovedajúce faktúry",
+      "import_match_help": "Pre každý riadok vyberte zodpovedajúcu otvorenú faktúru na zaznamenanie skutočnej platby, alebo ho ponechajte ako všeobecnú platbu.",
+      "col_match": "Zhoda",
+      "invalid_row": "Neplatný riadok — bude preskočený",
+      "matched_result": "{n} platieb priradených k existujúcej faktúre.",
+      "single_match_result": "Zaznamenané ako platba k priradenej faktúre."
     },
     "item_template_list": {
       "title": "Katalóg položiek",

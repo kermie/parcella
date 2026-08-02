@@ -2198,7 +2198,21 @@
       "map_field_description": "Description",
       "map_field_counterparty": "Sender / recipient",
       "map_field_iban": "IBAN",
-      "iban_updated_result": "{n} member IBAN(s) filled in from the import."
+      "iban_updated_result": "{n} member IBAN(s) filled in from the import.",
+      "manual_match_title": "Possible matching invoices",
+      "manual_match_header": "Possible matching invoices",
+      "manual_match_help": "These open invoices match this booking's amount. Pick one to record this as a real payment, or record it as a generic booking instead.",
+      "match_none": "Record as a generic booking",
+      "match_amount_due": "due {amount}",
+      "match_name_hint": "name matches",
+      "match_none_found": "No open invoices match this amount.",
+      "import_match_title": "Match rows to invoices",
+      "import_match_header": "Possible matching invoices",
+      "import_match_help": "For each row, pick a matching open invoice to record it as a real payment, or leave it as a generic booking.",
+      "col_match": "Match",
+      "invalid_row": "Invalid row — will be skipped",
+      "matched_result": "{n} booking(s) matched to an existing invoice.",
+      "single_match_result": "Recorded as a payment against the matched invoice."
     },
     "item_template_list": {
       "title": "Item catalog",

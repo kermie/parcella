@@ -2198,7 +2198,21 @@
       "map_field_description": "Description",
       "map_field_counterparty": "Expéditeur / destinataire",
       "map_field_iban": "IBAN",
-      "iban_updated_result": "IBAN renseigné pour {n} membre(s) à partir de l'import."
+      "iban_updated_result": "IBAN renseigné pour {n} membre(s) à partir de l'import.",
+      "manual_match_title": "Factures correspondantes possibles",
+      "manual_match_header": "Factures correspondantes possibles",
+      "manual_match_help": "Ces factures ouvertes correspondent au montant de cette écriture. Choisissez-en une pour l'enregistrer comme un vrai paiement, ou enregistrez-la comme une écriture générique.",
+      "match_none": "Enregistrer comme écriture générique",
+      "match_amount_due": "restant dû : {amount}",
+      "match_name_hint": "nom correspondant",
+      "match_none_found": "Aucune facture ouverte ne correspond à ce montant.",
+      "import_match_title": "Associer les lignes aux factures",
+      "import_match_header": "Factures correspondantes possibles",
+      "import_match_help": "Pour chaque ligne, choisissez une facture ouverte correspondante pour l'enregistrer comme un vrai paiement, ou laissez-la comme écriture générique.",
+      "col_match": "Correspondance",
+      "invalid_row": "Ligne invalide — sera ignorée",
+      "matched_result": "{n} écriture(s) associée(s) à une facture existante.",
+      "single_match_result": "Enregistré comme paiement pour la facture associée."
     },
     "item_template_list": {
       "title": "Catalogue d'articles",

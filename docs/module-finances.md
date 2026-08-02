@@ -365,6 +365,27 @@ holding. `AccountTransaction` is excluded here too, same reasoning as
 [ADR 0060](./ADR/0060-cash-accounting-statement-income-categorization.md):
 no sender/recipient, no category.
 
+## Matching a booking to an open invoice
+
+Recording a manual booking or importing a CSV (issue #188) now offers
+a match step before creating anything: `app/invoice_matching.py`'s
+`find_matching_invoices()` looks for open (`payment_status != paid`)
+invoices whose amount matches -- outgoing `Invoice`s for a positive
+booking amount, `IncomingInvoice`s for a negative one -- and flags
+whether the counterparty name overlaps the invoice's recipient/sender.
+Picking a suggested match creates a real `InvoicePayment`/
+`IncomingInvoicePayment` (tagged to the account) instead of a generic
+`AccountTransaction`; declining (or no candidates existing) falls back
+to the same generic-booking behavior as before. Manual add is a
+three-step flow (`/manual/preview` -> `/manual/confirm`); CSV import
+gained a middle "match" step between column mapping and actually
+creating rows (`/import/match` -> `/import/finalize`), reviewed one
+row at a time. See
+[ADR 0063](./ADR/0063-invoice-payment-matching-for-bookings.md) for
+why this is a deliberate, user-confirmed reopening of ADR 0059's
+reconciliation-is-out-of-scope stance, not a general auto-matching
+feature.
+
 ## Key decisions
 
 **Person-scoped billing is not a special case of parcel billing** --
