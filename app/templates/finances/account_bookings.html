@@ -43,15 +43,6 @@
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_amount_max') }}</label>
                         <input type="text" name="amount_max" value="{{ filters.amount_max }}" class="form-control form-control-sm" placeholder="0,00">
                     </div>
-                    <div class="col-sm-2">
-                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.label_source') }}</label>
-                        <select name="source" class="form-select form-select-sm">
-                            <option value="">{{ t('finances.account_bookings.source_all') }}</option>
-                            <option value="invoice_payment" {% if filters.source == 'invoice_payment' %}selected{% endif %}>{{ t('finances.account_bookings.source_invoice_payment') }}</option>
-                            <option value="manual" {% if filters.source == 'manual' %}selected{% endif %}>{{ t('finances.account_bookings.source_manual') }}</option>
-                            <option value="csv_import" {% if filters.source == 'csv_import' %}selected{% endif %}>{{ t('finances.account_bookings.source_csv_import') }}</option>
-                        </select>
-                    </div>
                     <div class="col-12 d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-sm btn-primary">
                             <i class="bi bi-search me-1"></i>{{ t('finances.account_bookings.filter_button') }}
@@ -86,7 +77,7 @@
                                 <th class="text-end">{{ t('finances.account_bookings.col_amount') }}</th>
                                 <th>{{ t('finances.account_bookings.col_reference') }}</th>
                                 <th>{{ t('finances.account_bookings.col_description') }}</th>
-                                <th>{{ t('finances.account_bookings.col_source') }}</th>
+                                <th>{{ t('finances.account_bookings.col_counterparty') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -99,7 +90,7 @@
                                     {% if r.invoice_id %}<a href="/finances/invoices/{{ r.invoice_id }}">{{ r.reference }}</a>{% else %}{{ r.reference or '—' }}{% endif %}
                                 </td>
                                 <td class="text-muted">{{ r.description or '' }}</td>
-                                <td class="text-muted">{{ t('finances.account_bookings.source_' ~ r.source) }}</td>
+                                <td class="text-muted">{{ r.counterparty or '—' }}</td>
                                 <td class="text-end">
                                     {% if r.source != 'invoice_payment' and has_perm(request, 'finances', 'delete') %}
                                     <form method="post" action="/finances/accounts/{{ account.id }}/bookings/{{ r.id }}/delete" class="d-inline">
@@ -146,7 +137,8 @@
                 </form>
                 <div class="form-text mt-2">
                     {{ t('finances.account_bookings.csv_format_help') }}
-                    <code>Date;Amount;Description</code><br>
+                    <code>Date;Amount;Description;Counterparty</code><br>
+                    {{ t('finances.account_bookings.csv_counterparty_optional_help') }}<br>
                     {{ t('finances.account_bookings.csv_date_format_help', iso='YYYY-MM-DD', de='DD.MM.YYYY') }}
                 </div>
             </div>
@@ -174,6 +166,10 @@
                     <div class="col-12">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.col_description') }}</label>
                         <input type="text" name="description" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.col_counterparty') }}</label>
+                        <input type="text" name="counterparty" class="form-control form-control-sm">
                     </div>
                     <div class="col-12">
                         <button type="submit" class="btn btn-sm btn-primary">
@@ -220,15 +216,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return div.innerHTML;
     }
 
-    function sourceLabel(source) {
-        var labels = {
-            'invoice_payment': {{ t('finances.account_bookings.source_invoice_payment')|tojson }},
-            'manual': {{ t('finances.account_bookings.source_manual')|tojson }},
-            'csv_import': {{ t('finances.account_bookings.source_csv_import')|tojson }}
-        };
-        return labels[source] || source;
-    }
-
     function appendRows(rows) {
         if (emptyRow) { emptyRow.remove(); emptyRow = null; }
         rows.forEach(function (r) {
@@ -241,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 '<td class="text-end text-nowrap' + (r.amount < 0 ? ' text-danger' : '') + '">' + moneyFormat(r.amount) + '</td>' +
                 '<td>' + referenceHtml + '</td>' +
                 '<td class="text-muted">' + escapeHtml(r.description) + '</td>' +
-                '<td class="text-muted">' + escapeHtml(sourceLabel(r.source)) + '</td>' +
+                '<td class="text-muted">' + escapeHtml(r.counterparty || '—') + '</td>' +
                 '<td></td>';
             tbody.appendChild(tr);
         });

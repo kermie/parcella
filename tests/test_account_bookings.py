@@ -143,7 +143,11 @@ async def test_bookings_date_range_filter(client, admin_user):
     assert "January entry" not in response.text
 
 
-async def test_bookings_source_filter(client, admin_user):
+async def test_bookings_search_matches_counterparty(client, admin_user):
+    """Issue #185: "I want to know who send me the money or who
+    received this money from me. I want to filter for this sender or
+    recipient" -- counterparty is searchable via the same free-text box
+    as reference/description."""
     await web_login(client)
     await _enable_finances_module()
     account_id = await _make_account()
@@ -151,18 +155,50 @@ async def test_bookings_source_filter(client, admin_user):
     async with AsyncSessionLocal() as session:
         session.add(AccountTransaction(
             account_id=account_id, booking_date=date.fromisoformat("2026-08-01"), amount="-1.00",
-            description="Manual entry", source="manual",
+            description="Bank fee", counterparty="Sparkasse Musterstadt", source="manual",
         ))
         session.add(AccountTransaction(
             account_id=account_id, booking_date=date.fromisoformat("2026-08-02"), amount="-2.00",
-            description="Imported entry", source="csv_import",
+            description="Refund", counterparty="Gartenbau Müller", source="manual",
         ))
         await session.commit()
 
-    response = await client.get(f"/finances/accounts/{account_id}/bookings?source=csv_import")
+    response = await client.get(f"/finances/accounts/{account_id}/bookings?search=Sparkasse")
     assert response.status_code == 200
-    assert "Imported entry" in response.text
-    assert "Manual entry" not in response.text
+    assert "Sparkasse Musterstadt" in response.text
+    assert "Gartenbau Müller" not in response.text
+
+
+async def test_bookings_manual_add_with_counterparty(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    response = await client.post(f"/finances/accounts/{account_id}/bookings/manual", data={
+        "booking_date": "2026-08-03", "amount": "-15.00", "description": "Repair",
+        "counterparty": "Repair Shop GmbH",
+    })
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(AccountTransaction).where(AccountTransaction.account_id == account_id)
+        )
+        transaction = result.scalar_one()
+        assert transaction.counterparty == "Repair Shop GmbH"
+
+
+async def test_bookings_page_no_longer_shows_source_filter(client, admin_user):
+    """Issue #184: "I do not need the field sources ... It does not
+    matter if it is a paid invoice / manually added or added by CSV
+    import." -- the source filter/column is gone from this page."""
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    response = await client.get(f"/finances/accounts/{account_id}/bookings")
+    assert response.status_code == 200
+    assert 'name="source"' not in response.text
 
 
 async def test_bookings_pagination_json_endpoint(client, admin_user):
@@ -196,7 +232,7 @@ async def test_bookings_csv_export(client, admin_user):
     async with AsyncSessionLocal() as session:
         session.add(AccountTransaction(
             account_id=account_id, booking_date=date.fromisoformat("2026-08-01"), amount="-9.99",
-            description="Export me", source="manual",
+            description="Export me", counterparty="Export Counterparty Ltd", source="manual",
         ))
         await session.commit()
 
@@ -205,6 +241,8 @@ async def test_bookings_csv_export(client, admin_user):
     assert response.headers["content-type"].startswith("text/csv")
     assert "Export me" in response.text
     assert "-9.99" in response.text
+    assert "Export Counterparty Ltd" in response.text
+    assert "Counterparty" in response.text.splitlines()[0]
 
 
 async def test_bookings_csv_import_creates_transactions(client, admin_user):
@@ -229,6 +267,24 @@ async def test_bookings_csv_import_creates_transactions(client, admin_user):
     assert all(t.source == "csv_import" for t in transactions)
     descriptions = {t.description for t in transactions}
     assert descriptions == {"Supplies", "Membership refund"}
+
+
+async def test_bookings_csv_import_with_counterparty_column(client, admin_user):
+    await web_login(client)
+    await _enable_finances_module()
+    account_id = await _make_account()
+
+    csv_content = "Date;Amount;Description;Counterparty\n2026-08-01;-15.50;Supplies;Hardware Store\n"
+    files = {"datei": ("import.csv", io.BytesIO(csv_content.encode("utf-8")), "text/csv")}
+    response = await client.post(f"/finances/accounts/{account_id}/bookings/import", files=files)
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(AccountTransaction).where(AccountTransaction.account_id == account_id)
+        )
+        transaction = result.scalar_one()
+        assert transaction.counterparty == "Hardware Store"
 
 
 async def test_bookings_manual_add_and_delete(client, admin_user):

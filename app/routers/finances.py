@@ -1547,10 +1547,14 @@ async def account_delete(account_id: str, request: Request, db: AsyncSession = D
 # everything ever booked against one account -- InvoicePayment rows
 # (always tied to an invoice) UNION ALL'd with AccountTransaction rows
 # (anything else: refunds, purchases, bank fees, CSV-imported), see
-# ADR 0059. Both are normalized to the same
-# (id, booking_date, amount, reference, description, source) shape so
-# search/filtering/pagination only has to be written once, against the
-# combined result.
+# ADR 0059. Both are normalized to the same (id, booking_date, amount,
+# reference, description, source, counterparty) shape so search/
+# filtering/pagination only has to be written once, against the
+# combined result. counterparty (issue #185) is Invoice.recipient_names
+# for invoice_payment rows, AccountTransaction.counterparty (manual/
+# CSV, optional) for everything else. source is kept internally (it
+# still decides whether a row is deletable here) but is no longer
+# shown or filterable in the UI (issue #184).
 # ---------------------------------------------------------------------------
 
 BOOKINGS_PAGE_SIZE = 50
@@ -1565,6 +1569,7 @@ def _account_bookings_base(account_id: str):
             Invoice.invoice_number.label("reference"),
             InvoicePayment.note.label("description"),
             cast(literal("invoice_payment"), String(20)).label("source"),
+            Invoice.recipient_names.label("counterparty"),
             Invoice.id.label("invoice_id"),
         )
         .join(Invoice, Invoice.id == InvoicePayment.invoice_id)
@@ -1578,6 +1583,7 @@ def _account_bookings_base(account_id: str):
             cast(literal(None), String(50)).label("reference"),
             AccountTransaction.description.label("description"),
             AccountTransaction.source.label("source"),
+            AccountTransaction.counterparty.label("counterparty"),
             cast(literal(None), String(36)).label("invoice_id"),
         )
         .where(AccountTransaction.account_id == account_id)
@@ -1587,18 +1593,24 @@ def _account_bookings_base(account_id: str):
 
 def _account_bookings_filtered(
     account_id: str, search: str, date_from: str, date_to: str,
-    amount_min: str, amount_max: str, source: str,
+    amount_min: str, amount_max: str,
 ):
     """Returns the filtered/searched (but not yet ordered, limited, or
     offset) bookings query -- shared by the HTML page, the JSON
     pagination endpoint, and the CSV export, so all three always agree
-    on exactly which rows match the current filters."""
+    on exactly which rows match the current filters. search also
+    matches counterparty (issue #185: "I want to filter for this
+    sender or recipient") -- there's no separate filter control for it,
+    same free-text box already used for reference/description."""
     bookings = _account_bookings_base(account_id)
     query = select(bookings)
 
     if search.strip():
         like = f"%{search.strip()}%"
-        query = query.where(or_(bookings.c.reference.ilike(like), bookings.c.description.ilike(like)))
+        query = query.where(or_(
+            bookings.c.reference.ilike(like), bookings.c.description.ilike(like),
+            bookings.c.counterparty.ilike(like),
+        ))
     if date_from.strip():
         parsed = _parse_date_flexible(date_from)
         if parsed:
@@ -1615,8 +1627,6 @@ def _account_bookings_filtered(
         parsed = _parse_decimal(amount_max)
         if parsed is not None:
             query = query.where(bookings.c.amount <= parsed)
-    if source in ("invoice_payment", "manual", "csv_import"):
-        query = query.where(bookings.c.source == source)
 
     return bookings, query
 
@@ -1635,7 +1645,7 @@ def _bookings_filter_params(request: Request) -> dict:
     q = request.query_params
     return {
         "search": q.get("search", ""), "date_from": q.get("date_from", ""), "date_to": q.get("date_to", ""),
-        "amount_min": q.get("amount_min", ""), "amount_max": q.get("amount_max", ""), "source": q.get("source", ""),
+        "amount_min": q.get("amount_min", ""), "amount_max": q.get("amount_max", ""),
     }
 
 
@@ -1685,7 +1695,7 @@ async def account_bookings_json(
                 "amount": float(r.amount),
                 "reference": r.reference,
                 "description": r.description,
-                "source": r.source,
+                "counterparty": r.counterparty,
                 "invoice_url": f"/finances/invoices/{r.invoice_id}" if r.invoice_id else None,
             }
             for r in rows
@@ -1710,11 +1720,11 @@ async def account_bookings_export_csv(account_id: str, request: Request, db: Asy
 
     output = io.StringIO()
     writer = csv.writer(output, delimiter=";")
-    writer.writerow(["Date", "Amount", "Reference", "Description", "Source"])
+    writer.writerow(["Date", "Amount", "Reference", "Description", "Counterparty"])
     for r in rows:
         writer.writerow([
             r.booking_date.strftime("%Y-%m-%d"), f"{float(r.amount):.2f}",
-            r.reference or "", r.description or "", r.source,
+            r.reference or "", r.description or "", r.counterparty or "",
         ])
 
     filename = f"{account.name.replace(' ', '_')}_bookings.csv"
@@ -1730,12 +1740,14 @@ async def account_bookings_import_csv(
     datei: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ):
-    """CSV columns: Date;Amount;Description (semicolon or comma,
-    auto-detected -- same convention as /members/import/csv). Every
-    imported row becomes an AccountTransaction tagged source=
-    "csv_import" -- this never creates or matches an InvoicePayment;
-    reconciling an import against outstanding invoices is a different,
-    harder problem, deliberately out of scope (issue #174/ADR 0059)."""
+    """CSV columns: Date;Amount;Description;Counterparty (semicolon or
+    comma, auto-detected -- same convention as /members/import/csv);
+    Counterparty is optional (issue #185: who sent/received the
+    money). Every imported row becomes an AccountTransaction tagged
+    source="csv_import" -- this never creates or matches an
+    InvoicePayment; reconciling an import against outstanding invoices
+    is a different, harder problem, deliberately out of scope (issue
+    #174/ADR 0059)."""
     user = await require_permission(request, db, "finances", "write")
 
     result = await db.execute(select(FinanceAccount).where(FinanceAccount.id == account_id))
@@ -1770,6 +1782,7 @@ async def account_bookings_import_csv(
         db.add(AccountTransaction(
             account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
             description=(row.get("Description") or "").strip() or None,
+            counterparty=(row.get("Counterparty") or "").strip() or None,
             source="csv_import", recorded_by_id=user.id,
         ))
         imported += 1
@@ -1784,6 +1797,7 @@ async def account_bookings_import_csv(
 async def account_bookings_add_manual(
     account_id: str, request: Request,
     booking_date: str = Form(...), amount: str = Form(...), description: str = Form(""),
+    counterparty: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     user = await require_permission(request, db, "finances", "write")
@@ -1800,7 +1814,8 @@ async def account_bookings_add_manual(
 
     db.add(AccountTransaction(
         account_id=account_id, booking_date=parsed_date, amount=parsed_amount,
-        description=description.strip() or None, source="manual", recorded_by_id=user.id,
+        description=description.strip() or None, counterparty=counterparty.strip() or None,
+        source="manual", recorded_by_id=user.id,
     ))
     await db.commit()
     return RedirectResponse(f"/finances/accounts/{account_id}/bookings", status_code=302)

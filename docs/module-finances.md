@@ -256,12 +256,22 @@ against the account -- `InvoicePayment` rows `UNION ALL`'d with the new
 purchase, a bank fee, manually entered or CSV-imported, `ON DELETE
 CASCADE` since a transaction only exists *for* its account). Supports
 CSV export (honoring the current search/filter) and CSV import
-(`Date;Amount;Description`, always creates `AccountTransaction` rows --
-never auto-matches or creates an `InvoicePayment`; reconciling an
-import against outstanding invoices is a different, harder problem,
-explicitly out of scope). See
+(`Date;Amount;Description;Counterparty`, `Counterparty` optional,
+always creates `AccountTransaction` rows -- never auto-matches or
+creates an `InvoicePayment`; reconciling an import against outstanding
+invoices is a different, harder problem, explicitly out of scope). See
 [ADR 0059](./ADR/0059-account-transactions-reopen-not-a-ledger-stance.md)
 for the full reasoning.
+
+Issue #185 added `AccountTransaction.counterparty` (free text -- who
+sent or received the money) so the bookings list can show and search
+by it; for `InvoicePayment` rows the counterparty is simply
+`Invoice.recipient_names`, no new field needed. Issue #184 removed the
+`source` filter/column (`invoice_payment`/`manual`/`csv_import`) from
+this same list -- the user found it added noise without adding value;
+`source` still exists on `AccountTransaction` internally (it decides
+whether a row is deletable from this list at all) but is no longer
+shown or filterable.
 
 ## Incoming invoices
 

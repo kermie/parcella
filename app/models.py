@@ -2539,9 +2539,14 @@ class AccountTransaction(Base):
     booking_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    # "manual" (entered by hand) or "csv_import" -- purely informational,
-    # shown in the list so an imported row can be told apart from one
-    # typed in directly; no behavioral difference between the two.
+    # Who sent or received the money (issue #185) -- entered by hand or
+    # via an optional CSV column, free text since a bank statement's
+    # counterparty name has no fixed structure to validate against.
+    counterparty: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    # "manual" (entered by hand) or "csv_import" -- kept for internal
+    # bookkeeping (e.g. only non-invoice rows are deletable from the
+    # bookings list) but no longer shown or filterable in the UI itself
+    # (issue #184: "it does not matter").
     source: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")
     recorded_by_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
