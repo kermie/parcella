@@ -10,7 +10,11 @@ of the parcel, capacity is enforced against however many that turns
 out to be, and duplicate participations are avoided across repeated
 submissions.
 """
+from datetime import date, timedelta
+
 from tests.conftest import login, auth_header
+
+_FUTURE_SESSION_DATE = (date.today() + timedelta(days=30)).isoformat()
 
 
 async def _enable_module(client, headers):
@@ -58,8 +62,8 @@ async def _assign_member_to_parcel(client, headers, member_id, parcel_id):
     return response.json()
 
 
-async def _create_session(client, headers, title="Standardarbeitseinsatz", max_participants=None, date="2026-08-01"):
-    payload = {"title": title, "type": "STANDARD", "date": date}
+async def _create_session(client, headers, title="Standardarbeitseinsatz", max_participants=None, date=None):
+    payload = {"title": title, "type": "STANDARD", "date": date or _FUTURE_SESSION_DATE}
     if max_participants is not None:
         payload["max_participants"] = max_participants
     response = await client.post("/api/v1/work-hours/sessions", json=payload, headers=headers)
