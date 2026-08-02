@@ -11,6 +11,7 @@ Stack: Python 3.12 + FastAPI, Jinja2 (server-rendered, Bootstrap 5), PostgreSQL 
 
 ## Before touching anything: got to plan mode and find the relevant doc
 
+- call me by my name when asking me something
 - offer to go to /plan mode first
 - **`docs/ADR/README.md`** - 40+ numbered Architecture Decision Records, "why things are built the way they are." Check here before assuming a design is accidental or before reverting something that looks odd - it's very likely a deliberate call with a documented reason.
 - **`docs/module-*.md`** -- one file per module (data model, key
