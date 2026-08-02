@@ -1,17 +1,19 @@
 """
-Issue #179: a cash-based accounting statement for the tax office,
-broken down by FinanceCategory. Expenses come from
-IncomingInvoiceLineItem (already categorized, issue #178); income has
-no category of its own, so a payment's amount is split proportionally
-across its invoice's line-item categories -- see
-docs/ADR/0060-cash-accounting-statement-income-categorization.md.
+Issue #179/#182: a cash-based accounting statement for the tax office,
+broken down by FinanceCategory. Nothing counts until actually paid --
+income from InvoicePayment, expenses from IncomingInvoicePayment, both
+dated by paid_on. Neither payment type has a category of its own, so
+each payment's amount is split proportionally across its invoice's
+line-item categories -- see
+docs/ADR/0060-cash-accounting-statement-income-categorization.md and
+docs/ADR/0061-accounting-statement-fully-cash-based.md.
 """
 from sqlalchemy import select
 
 from app.accounting_statement import compute_cash_accounting_statement, available_statement_years
 from app.database import AsyncSessionLocal
 from app.models import (
-    ClubSetting, FinanceCategory, FinanceCategoryGroup, Invoice,
+    ClubSetting, FinanceCategory, FinanceCategoryGroup, IncomingInvoice, Invoice,
     Member, MemberParcel, Parcel,
 )
 
@@ -76,6 +78,25 @@ async def _make_run_with_invoice(client, plot_number, year, item_defs):
 
 async def _record_payment(client, invoice_id, amount, paid_on):
     response = await client.post(f"/finances/invoices/{invoice_id}/payments", data={
+        "amount": amount, "paid_on": paid_on, "note": "",
+    })
+    assert response.status_code in (302, 303)
+
+
+async def _make_incoming_invoice(client, sender, invoice_date, category_id, amount):
+    response = await client.post("/finances/incoming-invoices", data={
+        "sender": sender, "invoice_number": "", "invoice_date": invoice_date, "note": "",
+        "category_id": [category_id], "amount": [amount],
+    })
+    assert response.status_code in (302, 303)
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(IncomingInvoice).where(IncomingInvoice.sender == sender))
+        return result.scalar_one()
+
+
+async def _record_incoming_payment(client, incoming_invoice_id, amount, paid_on):
+    response = await client.post(f"/finances/incoming-invoices/{incoming_invoice_id}/payments", data={
         "amount": amount, "paid_on": paid_on, "note": "",
     })
     assert response.status_code in (302, 303)
@@ -149,25 +170,42 @@ async def test_income_excludes_payments_from_other_years(client, admin_user):
     assert _amount_for(statement_2034.income_by_category, "Other income") == 60.0
 
 
-async def test_expenses_grouped_by_category_and_year_filtered(client, admin_user):
+async def test_expenses_grouped_by_category_and_paid_year_filtered(client, admin_user):
+    """Issue #182: an incoming invoice's expense lands in the year it
+    was actually PAID, not the year it was recorded (invoice_date)."""
     await web_login(client)
     await _enable_finances_module()
     cat = await _make_category("50100", "Maintenance", group=FinanceCategoryGroup.EXPENSE)
 
-    await client.post("/finances/incoming-invoices", data={
-        "sender": "Repair Co", "invoice_number": "", "invoice_date": "2035-06-01", "note": "",
-        "category_id": [cat], "amount": ["45.00"],
-    })
-    await client.post("/finances/incoming-invoices", data={
-        "sender": "Repair Co", "invoice_number": "", "invoice_date": "2036-06-01", "note": "",
-        "category_id": [cat], "amount": ["999.00"],
-    })
+    invoice_a = await _make_incoming_invoice(client, "Repair Co A", "2035-12-20", cat, "45.00")
+    await _record_incoming_payment(client, invoice_a.id, "45.00", "2036-01-05")
+
+    invoice_b = await _make_incoming_invoice(client, "Repair Co B", "2036-06-01", cat, "999.00")
+    await _record_incoming_payment(client, invoice_b.id, "999.00", "2037-01-01")
 
     async with AsyncSessionLocal() as session:
-        statement = await compute_cash_accounting_statement(session, 2035)
+        statement_2035 = await compute_cash_accounting_statement(session, 2035)
+        statement_2036 = await compute_cash_accounting_statement(session, 2036)
 
-    assert _amount_for(statement.expense_by_category, "Maintenance") == 45.0
-    assert statement.expense_total == 45.0
+    # invoice_a was recorded in 2035 but paid in 2036 -- it counts in 2036, not 2035.
+    assert statement_2035.expense_total == 0.0
+    assert _amount_for(statement_2036.expense_by_category, "Maintenance") == 45.0
+    assert statement_2036.expense_total == 45.0
+
+
+async def test_unpaid_incoming_invoice_never_counts_as_an_expense(client, admin_user):
+    """Issue #182: "incoming invoices cannot be added as long as they
+    are not paid yet"."""
+    await web_login(client)
+    await _enable_finances_module()
+    cat = await _make_category("50300", "Unpaid Test", group=FinanceCategoryGroup.EXPENSE)
+    await _make_incoming_invoice(client, "Never Paid Inc", "2038-03-01", cat, "500.00")
+
+    async with AsyncSessionLocal() as session:
+        statement = await compute_cash_accounting_statement(session, 2038)
+
+    assert statement.expense_total == 0.0
+    assert _amount_for(statement.expense_by_category, "Unpaid Test") is None
 
 
 async def test_net_result_is_income_minus_expenses(client, admin_user):
@@ -180,10 +218,9 @@ async def test_net_result_is_income_minus_expenses(client, admin_user):
         ("Dues", "200.00", income_cat),
     ])
     await _record_payment(client, invoice_id, "200.00", "2037-04-01")
-    await client.post("/finances/incoming-invoices", data={
-        "sender": "Supplier", "invoice_number": "", "invoice_date": "2037-05-01", "note": "",
-        "category_id": [expense_cat], "amount": ["75.00"],
-    })
+
+    incoming = await _make_incoming_invoice(client, "Supplier", "2037-05-01", expense_cat, "75.00")
+    await _record_incoming_payment(client, incoming.id, "75.00", "2037-05-10")
 
     async with AsyncSessionLocal() as session:
         statement = await compute_cash_accounting_statement(session, 2037)

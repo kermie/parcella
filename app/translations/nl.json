@@ -2244,9 +2244,9 @@
       "row_total": "Totaal",
       "row_net_result": "Resultaat",
       "empty_state": "Geen posten voor dit jaar.",
-      "income_note": "Inkomsten worden per categorie toegerekend op basis van de factuur waarop de betaling betrekking heeft; betalingen op facturen die zijn aangemaakt vóór deze functie er was, worden als ongecategoriseerd getoond.",
-      "expense_note": "Uitgaven worden geteld op de datum waarop de factuur is vastgelegd, omdat inkomende facturen geen aparte betaaldatum bijhouden.",
-      "pdf_note": "Inkomsten worden per categorie verdeeld op basis van de posten van de betaalde factuur (alleen beschikbaar voor facturen aangemaakt na invoering van deze functie); uitgaven worden geteld op de datum waarop de factuur is vastgelegd."
+      "income_note": "Inkomsten worden per categorie toegerekend op basis van de factuur waarop de betaling betrekking heeft, geteld op de betaaldatum; betalingen op facturen die zijn aangemaakt vóór de invoering van categorisering worden als ongecategoriseerd getoond.",
+      "expense_note": "Uitgaven worden op dezelfde manier verdeeld, geteld op de datum waarop de inkomende factuur daadwerkelijk is betaald; een onbetaalde inkomende factuur telt niet mee totdat er een betaling voor is geregistreerd.",
+      "pdf_note": "Inkomsten en uitgaven tellen pas mee zodra ze daadwerkelijk zijn betaald, op de betaaldatum, verdeeld per categorie op basis van de posten van de betreffende factuur; onbetaalde posten worden niet meegeteld en betalingen van vóór de invoering van categorisering worden als ongecategoriseerd getoond."
     }
   },
   "pdf": {

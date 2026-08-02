@@ -2244,9 +2244,9 @@
       "row_total": "Total",
       "row_net_result": "Net result",
       "empty_state": "No entries for this year.",
-      "income_note": "Income is split by category based on the invoice each payment settles; payments against invoices generated before this feature existed show as uncategorized.",
-      "expense_note": "Expenses are counted on the date the bill was recorded, since incoming invoices aren't tracked as paid separately.",
-      "pdf_note": "Income is split by category based on each paid invoice's line items (only available for invoices generated after this feature was added); expenses are counted on the date the bill was recorded."
+      "income_note": "Income is split by category based on the invoice each payment settles, counted on the payment date; payments against invoices generated before category tracking existed show as uncategorized.",
+      "expense_note": "Expenses are split by category the same way, counted on the date each incoming invoice was actually paid; an unpaid incoming invoice doesn't count until a payment is recorded against it.",
+      "pdf_note": "Both income and expenses only count once actually paid, on the payment date, split by category based on each invoice's positions; anything unpaid is excluded, and payments predating category tracking show as uncategorized."
     }
   },
   "pdf": {

@@ -2244,9 +2244,9 @@
       "row_total": "Total",
       "row_net_result": "Résultat net",
       "empty_state": "Aucune entrée pour cette année.",
-      "income_note": "Les recettes sont réparties par catégorie selon la facture réglée par chaque paiement ; les paiements liés à des factures générées avant l'introduction de cette fonctionnalité apparaissent comme non catégorisés.",
-      "expense_note": "Les dépenses sont comptabilisées à la date d'enregistrement de la facture, les factures reçues n'ayant pas de date de paiement suivie séparément.",
-      "pdf_note": "Les recettes sont réparties par catégorie selon les postes de la facture réglée (disponible uniquement pour les factures générées après l'introduction de cette fonctionnalité) ; les dépenses sont comptabilisées à la date d'enregistrement de la facture."
+      "income_note": "Les recettes sont réparties par catégorie selon la facture réglée par chaque paiement, comptabilisées à la date du paiement ; les paiements liés à des factures générées avant l'introduction de la catégorisation apparaissent comme non catégorisés.",
+      "expense_note": "Les dépenses sont réparties de la même façon, comptabilisées à la date de règlement effectif de la facture reçue ; une facture reçue impayée ne compte pas tant qu'aucun paiement n'y est enregistré.",
+      "pdf_note": "Les recettes et les dépenses ne comptent qu'une fois réellement réglées, à la date du paiement, réparties par catégorie selon les postes de la facture concernée ; ce qui n'est pas payé est exclu, et les paiements antérieurs à l'introduction de la catégorisation apparaissent comme non catégorisés."
     }
   },
   "pdf": {

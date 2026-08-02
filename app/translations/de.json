@@ -2244,9 +2244,9 @@
       "row_total": "Summe",
       "row_net_result": "Ergebnis",
       "empty_state": "Keine Einträge für dieses Jahr.",
-      "income_note": "Einnahmen werden anhand der Rechnung aufgeteilt, die durch die jeweilige Zahlung beglichen wird; Zahlungen zu Rechnungen, die vor Einführung dieser Funktion erstellt wurden, erscheinen als nicht kategorisiert.",
-      "expense_note": "Ausgaben werden zum Datum der Rechnungserfassung gezählt, da Eingangsrechnungen nicht separat als bezahlt erfasst werden.",
-      "pdf_note": "Einnahmen werden anhand der Positionen der jeweils bezahlten Rechnung aufgeteilt (nur für Rechnungen ab Einführung dieser Funktion verfügbar); Ausgaben werden zum Datum der Rechnungserfassung gezählt."
+      "income_note": "Einnahmen werden anhand der Rechnung aufgeteilt, die durch die jeweilige Zahlung beglichen wird, gezählt zum Zahlungsdatum; Zahlungen zu Rechnungen, die vor Einführung der Kategorisierung erstellt wurden, erscheinen als nicht kategorisiert.",
+      "expense_note": "Ausgaben werden ebenso aufgeteilt, gezählt zum Datum der tatsächlichen Zahlung der Eingangsrechnung; eine unbezahlte Eingangsrechnung zählt erst, wenn eine Zahlung dazu erfasst wurde.",
+      "pdf_note": "Einnahmen und Ausgaben werden erst bei tatsächlicher Zahlung gezählt, zum Zahlungsdatum, aufgeteilt nach Kategorie anhand der Positionen der jeweiligen Rechnung; Unbezahltes bleibt unberücksichtigt, und Zahlungen von vor Einführung der Kategorisierung erscheinen als nicht kategorisiert."
     }
   },
   "pdf": {

@@ -2244,9 +2244,9 @@
       "row_total": "Spolu",
       "row_net_result": "Výsledok",
       "empty_state": "Pre tento rok nie sú žiadne záznamy.",
-      "income_note": "Príjem sa rozdeľuje podľa kategórie na základe faktúry, ku ktorej sa platba vzťahuje; platby k faktúram vystaveným pred zavedením tejto funkcie sú nekategorizované.",
-      "expense_note": "Výdavky sa počítajú podľa dátumu zaevidovania faktúry, keďže pri prijatých faktúrach sa dátum úhrady osobitne nesleduje.",
-      "pdf_note": "Príjem sa rozdeľuje podľa kategórie na základe položiek uhradenej faktúry (dostupné iba pre faktúry vystavené po zavedení tejto funkcie); výdavky sa počítajú podľa dátumu zaevidovania faktúry."
+      "income_note": "Príjem sa rozdeľuje podľa kategórie na základe faktúry, ku ktorej sa platba vzťahuje, počítané k dátumu platby; platby k faktúram vystaveným pred zavedením kategorizácie sú nekategorizované.",
+      "expense_note": "Výdavky sa delia rovnakým spôsobom, počítané k dátumu skutočnej úhrady prijatej faktúry; neuhradená prijatá faktúra sa nepočíta, kým k nej nie je zaznamenaná platba.",
+      "pdf_note": "Príjmy aj výdavky sa počítajú až po skutočnej úhrade, k dátumu platby, rozdelené podľa kategórie na základe položiek danej faktúry; neuhradené položky sa nezapočítavajú a platby spred zavedenia kategorizácie sú nekategorizované."
     }
   },
   "pdf": {

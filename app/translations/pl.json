@@ -2244,9 +2244,9 @@
       "row_total": "Razem",
       "row_net_result": "Wynik",
       "empty_state": "Brak wpisów w tym roku.",
-      "income_note": "Przychód jest przypisywany do kategorii na podstawie faktury, której dotyczy dana płatność; płatności do faktur wystawionych przed wprowadzeniem tej funkcji są nieskategoryzowane.",
-      "expense_note": "Wydatki są liczone według daty zarejestrowania faktury, ponieważ faktury przychodzące nie mają osobno śledzonej daty zapłaty.",
-      "pdf_note": "Przychód jest dzielony na kategorie na podstawie pozycji opłaconej faktury (dostępne tylko dla faktur wystawionych po wprowadzeniu tej funkcji); wydatki liczone są według daty zarejestrowania faktury."
+      "income_note": "Przychód jest przypisywany do kategorii na podstawie faktury, której dotyczy dana płatność, liczony według daty płatności; płatności do faktur wystawionych przed wprowadzeniem kategoryzacji są nieskategoryzowane.",
+      "expense_note": "Wydatki są dzielone w ten sam sposób, liczone według daty faktycznej zapłaty faktury przychodzącej; niezapłacona faktura przychodząca nie liczy się, dopóki nie zarejestrowano do niej płatności.",
+      "pdf_note": "Przychody i wydatki liczą się dopiero po faktycznej zapłacie, według daty płatności, podzielone na kategorie na podstawie pozycji danej faktury; niezapłacone pozycje są pomijane, a płatności sprzed wprowadzenia kategoryzacji są nieskategoryzowane."
     }
   },
   "pdf": {

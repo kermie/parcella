@@ -307,17 +307,23 @@ invoices together the way outgoing invoices have).
 `/finances/accounting-statement` (issue #179) is a per-calendar-year
 income/expense breakdown by `FinanceCategory`, for handing to the tax
 office -- built entirely in `app/accounting_statement.py`, no new
-tables. Expenses are `IncomingInvoiceLineItem.amount` grouped by
-`category_id`, using `invoice_date` as the cash-out date. Income is
-harder: `InvoicePayment` has no category of its own, so each payment's
-amount is split proportionally across its invoice's line-item
-categories, weighted by each category's share of the invoice subtotal
--- which only works for invoices finalized after `InvoiceLineItem`
-started carrying `category_id`; older payments show as
-"Uncategorized." `AccountTransaction` (issue #174's ledger) is
-deliberately excluded -- it has no category either. See
+tables. Genuinely cash-based on both sides (issue #182): nothing
+counts until it has actually been paid. Income comes from
+`InvoicePayment`, expenses from `IncomingInvoicePayment` -- both dated
+by `paid_on`, not by when the invoice was created/recorded. Neither
+payment type has a category of its own, so each payment's amount is
+split proportionally across its invoice's line-item categories,
+weighted by each category's share of the invoice/incoming-invoice
+total (shared logic: `_split_payment_by_category`) -- which only works
+for invoices whose line items carry `category_id`
+(`InvoiceLineItem.category_id` since #179) and incoming invoices that
+have a payment recorded at all (`IncomingInvoicePayment` since #181);
+anything predating those changes shows as "Uncategorized" or simply
+doesn't appear until paid. `AccountTransaction` (issue #174's ledger)
+is deliberately excluded -- it has no category either. See
 [ADR 0060](./ADR/0060-cash-accounting-statement-income-categorization.md)
-for the full reasoning and its accepted limitations. Exportable as PDF
+and [ADR 0061](./ADR/0061-accounting-statement-fully-cash-based.md)
+for the full reasoning and accepted limitations. Exportable as PDF
 (`app/accounting_statement_pdf.py`), same shared page chrome as every
 other PDF in this app.
 
