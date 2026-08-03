@@ -21,6 +21,7 @@ decisions and reasoning are still fresh.
 
 - [Architecture Decisions](./ADR/README.md) -- why certain things are built the way they are
 - [Operations](./operations.md) -- Docker, migrations, SMTP setup, troubleshooting
+- [Security](./security.md) -- what protects the app, what a review fixed, what's still open
 - [Automated Tests](./testing.md) -- testing philosophy, execution, known limits
 - [i18n & l10n](./i18n-l10n.md) -- languages, region/currency, how to add a new one
 - [Responsive Design](./responsive-design.md) -- mobile layout patterns for new templates

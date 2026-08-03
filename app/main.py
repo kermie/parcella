@@ -278,7 +278,12 @@ async def password_change_middleware(request: Request, call_next):
     an account in this state simply doesn't get a token, which is a
     clearer answer to an API client than a redirect to an HTML form.
     """
-    path = request.url.path
+    # scope["path"], not request.url.path: the latter is rebuilt by
+    # concatenating scheme/host/path and re-parsing, which known
+    # Starlette issues can make disagree with the path that routing
+    # actually used. Anything that decides whether a check applies must
+    # read the same value the router does.
+    path = request.scope.get("path", "")
     if path.startswith("/api/") or path.startswith(_PASSWORD_CHANGE_EXEMPT_PREFIXES):
         return await call_next(request)
 
@@ -333,12 +338,17 @@ async def csrf_middleware(request: Request, call_next):
     token = cookie_token or csrf.new_token()
     request.state.csrf_token = token
 
-    if request.method in csrf.UNSAFE_METHODS and not csrf.is_exempt(request.url.path):
+    # scope["path"] rather than request.url.path -- see the note in
+    # password_change_middleware below. Here it decides whether the
+    # exemption applies, so a disagreement would mean skipping the
+    # check on a route that needs it.
+    path = request.scope.get("path", "")
+    if request.method in csrf.UNSAFE_METHODS and not csrf.is_exempt(path):
         submitted = await csrf.submitted_token(request)
         if not csrf.tokens_match(submitted, cookie_token or ""):
             logger.warning(
                 "Rejected %s %s: missing or invalid CSRF token",
-                request.method, request.url.path,
+                request.method, path,
             )
             # request.state.language isn't loaded yet at this point (that
             # middleware runs further in), so the club's language is
