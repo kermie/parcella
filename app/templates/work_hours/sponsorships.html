@@ -16,6 +16,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.sponsorships.create_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/sponsorships/new">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.sponsorships.area_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="area" class="form-control" list="bereiche-liste"
@@ -142,6 +143,7 @@
                                     <form method="post"
                                           action="/work-hours/sponsorships/{{ p.id }}/delete"
                                           class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('work_hours.sponsorships.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

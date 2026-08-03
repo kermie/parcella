@@ -27,6 +27,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.club_roles.new_role_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/club-roles/new">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.club_roles.name_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control"
@@ -112,6 +113,7 @@
                                     <form method="post"
                                           action="/work-hours/club-roles/{{ r.id }}/delete"
                                           class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('work_hours.club_roles.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
@@ -146,6 +148,7 @@
             <div class="card-body border-bottom">
                 <form method="post" action="/work-hours/club-roles/assign-member"
                       class="row g-2 align-items-end">
+                    {{ csrf_field() }}
                     <input type="hidden" name="year" value="{{ year }}">
                     <div class="col-sm-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.club_roles.member_label') }} <span class="text-danger">*</span></label>
@@ -231,6 +234,7 @@
                                     <form method="post"
                                           action="/work-hours/club-roles/assignment/{{ z.id }}/remove"
                                           class="d-inline">
+                                        {{ csrf_field() }}
                                         <input type="hidden" name="year" value="{{ year }}">
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('work_hours.club_roles.remove_confirm') }}')">

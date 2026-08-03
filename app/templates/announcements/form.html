@@ -18,6 +18,7 @@
 
 <form method="post" enctype="multipart/form-data"
       action="{% if announcement %}/announcements/{{ announcement.id }}/edit{% else %}/announcements/new{% endif %}">
+    {{ csrf_field() }}
     <div class="card mb-3">
         <div class="card-body">
             <div class="mb-3">
@@ -90,6 +91,7 @@
         <h6 class="card-title">{{ t('announcements.form.test_email_title') }}</h6>
         <p class="text-muted" style="font-size: 0.85rem;">{{ t('announcements.form.test_email_hint') }}</p>
         <form method="post" action="/announcements/{{ announcement.id }}/send/test-email" class="d-flex gap-2">
+            {{ csrf_field() }}
             <input type="email" name="test_email" class="form-control" placeholder="you@example.com" required style="max-width: 320px;">
             <button type="submit" class="btn btn-outline-secondary">{{ t('announcements.form.test_email_button') }}</button>
         </form>
@@ -126,6 +128,7 @@
             {% else %}
             <form method="post" action="/announcements/{{ announcement.id }}/send/email"
                   onsubmit="return confirm('{{ t('announcements.form.send_email_confirm') }}');">
+                {{ csrf_field() }}
                 <button type="submit" class="btn btn-sm btn-outline-primary">{{ t('announcements.form.send_email_button') }}</button>
             </form>
             {% endif %}
@@ -148,6 +151,7 @@
                 {% endif %}
             </div>
             <form method="post" action="/announcements/{{ announcement.id }}/send/blog">
+                {{ csrf_field() }}
                 <button type="submit" class="btn btn-sm btn-outline-primary">{{ t('announcements.form.send_blog_button') }}</button>
             </form>
         </div>
@@ -169,6 +173,7 @@
                 {% endif %}
             </div>
             <form method="post" action="/announcements/{{ announcement.id }}/print">
+                {{ csrf_field() }}
                 <button type="submit" class="btn btn-sm btn-outline-primary">{{ t('announcements.form.print_generate_button') }}</button>
             </form>
         </div>

@@ -97,6 +97,7 @@
                     </div>
                     {% else %}
                     <form method="post" action="/purchase-requests/{{ pr.id }}/approve" class="mb-3">
+                        {{ csrf_field() }}
                         <button type="submit" class="btn btn-success w-100">
                             <i class="bi bi-check-lg me-1"></i>{{ t('purchase_requests.detail.approve_button') }}
                         </button>
@@ -109,6 +110,7 @@
                     </button>
                     <div class="collapse mt-2" id="ablehnen-formular">
                         <form method="post" action="/purchase-requests/{{ pr.id }}/reject">
+                            {{ csrf_field() }}
                             <textarea name="rejection_reason" class="form-control form-control-sm mb-2" rows="3"
                                       placeholder="{{ t('purchase_requests.detail.reject_reason_placeholder') }}" required></textarea>
                             <button type="submit" class="btn btn-sm btn-danger w-100">

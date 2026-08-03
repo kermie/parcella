@@ -11,6 +11,7 @@
     {% if not item.retired_at %}
     <form method="post" action="/inventory/{{ item.id }}/retire" class="d-inline"
           onsubmit="return confirm('{{ t('inventory.detail.retire_confirm') }}');">
+        {{ csrf_field() }}
         <button type="submit" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-archive me-1"></i>{{ t('inventory.detail.retire_button') }}
         </button>
@@ -20,6 +21,7 @@
     {% if has_perm(request, 'inventory', 'delete') %}
     <form method="post" action="/inventory/{{ item.id }}/delete" class="d-inline"
           onsubmit="return confirm('{{ t('inventory.detail.delete_confirm') }}');">
+        {{ csrf_field() }}
         <button type="submit" class="btn btn-sm btn-outline-danger">
             <i class="bi bi-trash me-1"></i>{{ t('inventory.detail.delete_button') }}
         </button>
@@ -113,6 +115,7 @@
                 {% if item.available_quantity > 0 %}
                 {% if has_perm(request, 'inventory', 'write') %}
                 <form method="post" action="/inventory/{{ item.id }}/loans/checkout">
+                    {{ csrf_field() }}
                     <div class="row g-2">
                         <div class="col-md-6">
                             <label class="form-label">{{ t('inventory.detail.checkout_member') }}</label>
@@ -182,6 +185,7 @@
                             <td class="text-end">
                                 {% if not loan.returned_date and has_perm(request, 'inventory', 'write') %}
                                 <form method="post" action="/inventory/loans/{{ loan.id }}/return" class="d-inline">
+                                    {{ csrf_field() }}
                                     <button type="submit" class="btn btn-sm btn-outline-secondary">{{ t('inventory.detail.mark_returned_button') }}</button>
                                 </form>
                                 {% endif %}

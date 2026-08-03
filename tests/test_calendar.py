@@ -180,11 +180,17 @@ async def test_council_absence_self_service_permissions(client, admin_user):
         session.add(other_user)
         await session.commit()
 
-    from httpx import AsyncClient, ASGITransport
+    from httpx import ASGITransport
     from app.main import app as fastapi_app
+    from tests.conftest import CsrfAwareClient
 
+    # CsrfAwareClient, not a bare AsyncClient: this second user posts a
+    # form, so it needs the same CSRF token any browser would carry
+    # (app/csrf.py). The point of the assertion below is the 403 from the
+    # permission check -- a 403 from a missing token would look identical
+    # and prove nothing.
     transport = ASGITransport(app=fastapi_app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as other_client:
+    async with CsrfAwareClient(transport=transport, base_url="http://testserver") as other_client:
         await web_login(other_client, "member@example.com")
         forbidden = await other_client.post(f"/calendar/council-absence/{entry_id}/delete")
         assert forbidden.status_code == 403

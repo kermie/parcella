@@ -71,6 +71,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.incoming_invoices.new_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/finances/incoming-invoices" enctype="multipart/form-data" id="new-incoming-invoice-form">
+                    {{ csrf_field() }}
                     <div class="row g-2">
                         <div class="col-sm-3">
                             <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.incoming_invoices.label_sender') }}</label>
@@ -189,6 +190,7 @@
                                     {% endif %}
                                     {% if has_perm(request, 'finances', 'delete') %}
                                     <form method="post" action="/finances/incoming-invoices/{{ invoice.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('finances.incoming_invoices.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

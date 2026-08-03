@@ -24,6 +24,7 @@
             <div class="card-header"><i class="bi bi-folder-plus me-2"></i>{{ t('admin.groups.create_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/admin/groups/create">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('admin.groups.label_name') }}</label>
                         <input type="text" name="name" class="form-control" required>
@@ -67,6 +68,7 @@
         <div class="d-flex align-items-center gap-2">
             <form method="post" action="/admin/groups/{{ group.id }}/delete" class="d-inline" onclick="event.stopPropagation()"
                   onsubmit="return confirm('{{ t('admin.groups.delete_confirm') }}')">
+                {{ csrf_field() }}
                 <button type="submit" class="btn btn-sm btn-outline-danger">
                     <i class="bi bi-trash"></i>
                 </button>
@@ -77,6 +79,7 @@
     <div class="collapse" id="group-card-{{ group.id }}" data-bs-parent="#groups-accordion">
     <div class="card-body">
         <form method="post" action="/admin/groups/{{ group.id }}/update">
+            {{ csrf_field() }}
             <div class="row g-3 mb-3">
                 <div class="col-md-5">
                     <label class="form-label fw-semibold">{{ t('admin.groups.label_name') }}</label>
@@ -158,6 +161,7 @@
                     </span>
                 </div>
                 <form method="post" action="/admin/groups/{{ group.id }}/members/{{ membership.id }}/remove">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-x-lg"></i>
                     </button>
@@ -173,6 +177,7 @@
         {% set candidates = assignable_users | rejectattr('id', 'in', member_ids) | list %}
         {% if candidates %}
         <form method="post" action="/admin/groups/{{ group.id }}/members/add" class="d-flex gap-2">
+            {{ csrf_field() }}
             <select name="user_id" class="form-select" required>
                 <option value="" disabled selected>{{ t('admin.groups.label_add_member') }}</option>
                 {% for candidate in candidates %}

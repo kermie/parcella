@@ -224,6 +224,29 @@ existing, unnoticed ones.
   configuration (returns `False`) -- that's intended, already-handled
   behavior in the code, not a test failure.
 
+## The test client carries a CSRF token for you
+
+Since [ADR 0064](./ADR/0064-csrf-and-security-response-headers.md) every
+state-changing request from the web UI needs a CSRF token. The `client`
+fixture is a `CsrfAwareClient` (`tests/conftest.py`) that holds the
+cookie and mirrors the token back on every POST/PUT/PATCH/DELETE, the
+same way a browser submitting a rendered form does -- so existing tests
+didn't have to change and new ones don't have to think about it.
+
+Two things worth knowing:
+
+- A test that builds its **own** `AsyncClient` (a few do, to act as a
+  second, differently-permissioned user) must use `CsrfAwareClient` too,
+  or its POSTs get a 403 that looks exactly like a failed permission
+  check. `tests/test_calendar.py` has an example.
+- To test what happens **without** a token, use the `raw_client`
+  fixture, which does none of this. That's what
+  `tests/test_security.py` uses for the forgery cases.
+
+`tests/test_security.py` also walks every template and fails if a
+`method="post"` form is missing `{{ csrf_field() }}` -- so a forgotten
+token shows up as a red test, not as a 403 in production.
+
 ## New module? Don't forget new tests
 
 When building a new module (see also the checklist in

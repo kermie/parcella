@@ -30,6 +30,7 @@
             <div class="card-header"><i class="bi bi-envelope-plus me-2"></i>{{ t('admin.dashboard.invite_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/admin/invite">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('admin.dashboard.label_email') }}</label>
                         <input type="email" name="email" class="form-control"
@@ -79,12 +80,14 @@
                     <div class="d-flex align-items-center gap-2 flex-shrink-0">
                         <span class="badge" style="background: #fef3c7; color: #92400e;">{{ t('admin.dashboard.status_pending') }}</span>
                         <form method="post" action="/admin/invitations/{{ e.id }}/resend" class="d-inline">
+                            {{ csrf_field() }}
                             <button type="submit" class="btn btn-sm btn-outline-secondary" title="{{ t('admin.dashboard.button_resend_invitation') }}">
                                 <i class="bi bi-arrow-repeat"></i>
                             </button>
                         </form>
                         <form method="post" action="/admin/invitations/{{ e.id }}/delete" class="d-inline"
                               onsubmit="return confirm('{{ t('admin.dashboard.delete_invitation_confirm') }}')">
+                            {{ csrf_field() }}
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ t('admin.dashboard.button_delete_invitation') }}">
                                 <i class="bi bi-trash"></i>
                             </button>
@@ -146,6 +149,7 @@
                                 </a>
                                 {% if b.id != user.id %}
                                 <form method="post" action="/admin/users/{{ b.id }}/deactivate" class="d-inline">
+                                    {{ csrf_field() }}
                                     <button type="submit" class="btn btn-sm btn-outline-secondary"
                                             title="{{ t('admin.dashboard.button_deactivate') if b.is_active else t('admin.dashboard.button_activate') }}">
                                         <i class="bi bi-{{ 'toggle-on' if b.is_active else 'toggle-off' }}"></i>

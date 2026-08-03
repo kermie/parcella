@@ -81,7 +81,10 @@
     "group_not_found": "Groep niet gevonden",
     "user_already_in_group": "Deze gebruiker is al toegewezen aan deze groep",
     "member_added": "Gebruiker toegevoegd",
-    "member_removed": "Gebruiker verwijderd"
+    "member_removed": "Gebruiker verwijderd",
+    "too_many_login_attempts": "Te veel mislukte inlogpogingen. Wacht een paar minuten en probeer het opnieuw.",
+    "password_must_differ": "Het nieuwe wachtwoord moet verschillen van het huidige.",
+    "csrf_invalid": "Beveiligingscontrole mislukt. De pagina stond waarschijnlijk te lang open -- ga terug, herlaad de pagina en probeer het opnieuw."
   },
   "tickets": {
     "overview": {
@@ -175,7 +178,8 @@
       "label_new_password": "Nieuw wachtwoord",
       "label_new_password_confirm": "Bevestig nieuw wachtwoord",
       "button_save": "Wachtwoord wijzigen",
-      "success_message": "Wachtwoord succesvol gewijzigd."
+      "success_message": "Wachtwoord succesvol gewijzigd.",
+      "forced_notice": "Dit account gebruikt nog het standaardwachtwoord van de eerste installatie. Kies een nieuw wachtwoord -- tot die tijd blijft de rest van de applicatie vergrendeld."
     },
     "avatar": {
       "heading": "Avatar",

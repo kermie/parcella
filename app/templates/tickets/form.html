@@ -15,6 +15,7 @@
 </div>
 
 <form method="post" action="/tickets/new">
+    {{ csrf_field() }}
 <div class="row g-3" style="max-width: 640px;">
     <div class="col-12">
         <div class="card">

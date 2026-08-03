@@ -17,6 +17,7 @@ from app.l10n import (
 from app.html_sanitizer import sanitize_email_html
 from app.permissions import jinja_has_perm, jinja_is_full_access, jinja_is_system_admin
 from app.avatars import avatar_url
+from app.csrf import jinja_csrf_field, jinja_csrf_token
 
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["t"] = jinja_t
@@ -28,6 +29,10 @@ templates.env.globals["has_perm"] = jinja_has_perm
 templates.env.globals["is_full_access"] = jinja_is_full_access
 templates.env.globals["is_system_admin"] = jinja_is_system_admin
 templates.env.globals["avatar_url"] = avatar_url
+# Every state-changing <form> needs {{ csrf_field() }}; the fetch()-based
+# actions read {{ csrf_token() }} from the <meta> tag in base.html.
+templates.env.globals["csrf_field"] = jinja_csrf_field
+templates.env.globals["csrf_token"] = jinja_csrf_token
 templates.env.filters["money"] = jinja_money
 templates.env.filters["number"] = jinja_number
 # Second sanitization layer at render time (see app/html_sanitizer.py) --

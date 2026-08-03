@@ -7,6 +7,7 @@
 <div class="d-flex gap-2">
     {% if has_perm(request, 'tickets', 'write') %}
     <form method="post" action="/tickets/inbox/fetch-now" class="d-inline">
+        {{ csrf_field() }}
         <button type="submit" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-clockwise me-1"></i>{{ t('tickets.overview.fetch_inbox_now') }}
         </button>
@@ -60,6 +61,7 @@
 </div>
 
 <form method="post" id="bulk-form">
+    {{ csrf_field() }}
     <input type="hidden" name="filter" value="{{ filter }}">
 
     <!-- Bulk editing -->

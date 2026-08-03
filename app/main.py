@@ -7,7 +7,7 @@ import asyncio
 import logging
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -23,7 +23,9 @@ from app.birthdays import upcoming_birthdays
 from app.auth import hash_password, get_current_user
 from app.module_flags import load_module_flags
 from app.nav_order import load_nav_order
-from app.i18n import load_translations, load_current_language, t_for
+from app.i18n import load_translations, load_current_language, translate, t_for
+from app import csrf
+from app.security_headers import security_headers
 from app.l10n import load_current_region, load_current_currency
 from app.branding import load_branding
 from app.update_check import refresh_update_check_cache
@@ -121,12 +123,16 @@ async def lifespan(app: FastAPI):
                 name="Administrator",
                 password_hash=hash_password("admin1234"),
                 role=UserRole.ADMIN,
+                # This password is documented in the README and identical
+                # on every fresh installation, so the account is unusable
+                # until it's changed -- see password_change_middleware.
+                must_change_password=True,
             )
             db.add(erster_admin)
             await db.commit()
             logger.warning(
                 "First admin user created: admin@parcella.local / admin1234 "
-                "-- PLEASE CHANGE THE PASSWORD IMMEDIATELY!"
+                "-- you will be asked to set a new password on first login."
             )
 
     polling_task = asyncio.create_task(_ticket_inbox_polling_loop())
@@ -253,6 +259,38 @@ async def permissions_middleware(request: Request, call_next):
     return response
 
 
+CHANGE_PASSWORD_PATH = "/auth/change-password"
+# Reachable while a forced password change is pending: the change form
+# itself, logging out, and static assets (the page needs its CSS).
+_PASSWORD_CHANGE_EXEMPT_PREFIXES = (CHANGE_PASSWORD_PATH, "/auth/logout", "/static/")
+
+
+@app.middleware("http")
+async def password_change_middleware(request: Request, call_next):
+    """
+    Sends a logged-in user whose account is flagged must_change_password
+    (today: the bootstrap admin, whose password is the same documented
+    default on every installation) to the change-password form, whatever
+    page they asked for.
+
+    Web UI only -- /api/v1 uses its own JWT auth, and the API side of the
+    same rule lives where tokens are issued (app/routers/api_auth.py):
+    an account in this state simply doesn't get a token, which is a
+    clearer answer to an API client than a redirect to an HTML form.
+    """
+    path = request.url.path
+    if path.startswith("/api/") or path.startswith(_PASSWORD_CHANGE_EXEMPT_PREFIXES):
+        return await call_next(request)
+
+    async with AsyncSessionLocal() as db:
+        user = await get_current_user(request, db)
+        must_change = bool(user and user.must_change_password)
+
+    if must_change:
+        return RedirectResponse(CHANGE_PASSWORD_PATH, status_code=302)
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def branding_middleware(request: Request, call_next):
     """Loads the club's display name and custom logo once per request
@@ -271,6 +309,70 @@ async def branding_middleware(request: Request, call_next):
         )
     response = await call_next(request)
     return response
+
+
+# NOTE ON ORDERING: Starlette runs the LAST-REGISTERED middleware
+# FIRST. The two below are therefore deliberately the last ones in this
+# file -- CSRF has to reject a forged request before any of the
+# per-request loaders above do their DB work, and the security headers
+# have to be attached to every response, including that rejection and
+# anything else short-circuited further in.
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next):
+    """Double-submit CSRF protection for the cookie-authenticated web UI
+    -- see app/csrf.py for the mechanism and why /api/** is exempt.
+
+    Rejecting here rather than in a per-route dependency means no
+    handler can forget the check. Minting the token here for every
+    request that doesn't have one is what makes it available to
+    `csrf_field()` in the very first form a visitor sees -- the login
+    form, whose POST is protected like any other.
+    """
+    cookie_token = request.cookies.get(csrf.COOKIE_NAME)
+    token = cookie_token or csrf.new_token()
+    request.state.csrf_token = token
+
+    if request.method in csrf.UNSAFE_METHODS and not csrf.is_exempt(request.url.path):
+        submitted = await csrf.submitted_token(request)
+        if not csrf.tokens_match(submitted, cookie_token or ""):
+            logger.warning(
+                "Rejected %s %s: missing or invalid CSRF token",
+                request.method, request.url.path,
+            )
+            # request.state.language isn't loaded yet at this point (that
+            # middleware runs further in), so the club's language is
+            # fetched here -- only on the rejection path, which is rare.
+            async with AsyncSessionLocal() as db:
+                language = await load_current_language(db)
+            return PlainTextResponse(
+                translate("errors.csrf_invalid", language), status_code=403,
+            )
+
+    response = await call_next(request)
+    if cookie_token != token:
+        response.set_cookie(
+            csrf.COOKIE_NAME, token,
+            max_age=csrf.COOKIE_MAX_AGE,
+            httponly=True,  # compared server-side, so JS never needs to read it
+            samesite="lax",
+            secure=not settings.is_development,
+        )
+    return response
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    """Attaches the security response headers (CSP, nosniff, frame
+    options, referrer policy, HSTS outside development) to every
+    response, static files and error pages included. See
+    app/security_headers.py for what the policy does and does not
+    promise."""
+    response = await call_next(request)
+    for header, value in security_headers().items():
+        response.headers.setdefault(header, value)
+    return response
+
 
 # Register routers -- Web UI (Jinja2)
 app.include_router(auth.router)

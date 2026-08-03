@@ -11,6 +11,7 @@
 
 {% block content %}
 <form method="post" action="{% if task %}/tasks/{{ task.id }}/edit{% else %}/tasks/new{% endif %}">
+    {{ csrf_field() }}
 <div class="row g-3" style="max-width: 640px;">
 
     <div class="col-12">
@@ -111,6 +112,7 @@
                     <div style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content }}</div>
                     <form method="post" action="/tasks/{{ task.id }}/comments/{{ comment.id }}/delete"
                           onsubmit="return confirm('{{ t('tasks.form.delete_comment_confirm') }}')" class="mt-1">
+                        {{ csrf_field() }}
                         <button type="submit" class="btn btn-sm btn-link text-danger p-0" style="font-size: 0.78rem;">
                             <i class="bi bi-trash me-1"></i>{{ t('tasks.form.button_delete') }}
                         </button>
@@ -122,6 +124,7 @@
                 {% endif %}
 
                 <form method="post" action="/tasks/{{ task.id }}/comments">
+                    {{ csrf_field() }}
                     <label class="form-label fw-semibold">{{ t('tasks.form.label_new_comment') }}</label>
                     <textarea name="content" class="form-control mb-2" rows="3" required></textarea>
                     <button type="submit" class="btn btn-primary btn-sm">
@@ -142,6 +145,7 @@
             <div class="card-body">
                 <form method="post" action="/tasks/{{ task.id }}/delete"
                       onsubmit="return confirm('{{ t('tasks.form.delete_confirm') }}')">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-outline-danger">
                         <i class="bi bi-trash me-1"></i>{{ t('tasks.form.button_delete') }}
                     </button>

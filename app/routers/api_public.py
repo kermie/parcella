@@ -28,10 +28,8 @@ docs/module-public-api.md for the full rationale and the reference
 WordPress connector under integrations/wordpress/.
 """
 import re
-import time
 import logging
-from collections import defaultdict, deque
-from typing import Dict, Deque, List
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,6 +43,7 @@ from app.models import (
 )
 from app.module_flags import require_module
 from app.public_api_auth import require_public_api_token
+from app.rate_limit import check_and_record, client_ip_key
 from app.schemas import (
     PublicWorkSessionOut, PublicParcelOut, PublicSignupCreate,
     PublicSignupResult, PublicSignupSessionResult,
@@ -59,29 +58,21 @@ router = APIRouter(
 )
 
 # ---------------------------------------------------------------------------
-# Simple in-memory sliding-window rate limit for the write endpoint, keyed
-# by client IP. Deliberately not a new dependency (no Redis/slowapi) --
-# this is a small, single-process app; a per-process in-memory limiter
-# resets on deploy and doesn't share state across workers, which is an
-# accepted tradeoff for a lightweight deterrent layered on top of the
-# actual access control (the API token).
+# Sliding-window rate limit for the write endpoint, keyed by client IP.
+# The implementation moved to app/rate_limit.py when login got a limiter
+# too -- see that module for why it's in-memory and what that implies.
 # ---------------------------------------------------------------------------
 _RATE_LIMIT_WINDOW_SECONDS = 3600
 _RATE_LIMIT_MAX_REQUESTS = 20
-_recent_requests: Dict[str, Deque[float]] = defaultdict(deque)
 
 
-def _check_rate_limit(client_ip: str) -> None:
-    now = time.monotonic()
-    window = _recent_requests[client_ip]
-    while window and now - window[0] > _RATE_LIMIT_WINDOW_SECONDS:
-        window.popleft()
-    if len(window) >= _RATE_LIMIT_MAX_REQUESTS:
+def _check_rate_limit(request: Request) -> None:
+    key = client_ip_key(request, "public_signup")
+    if not check_and_record(key, _RATE_LIMIT_MAX_REQUESTS, _RATE_LIMIT_WINDOW_SECONDS):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many signup requests from this address, please try again later",
         )
-    window.append(now)
 
 
 def _normalize_name(value: str) -> str:
@@ -182,7 +173,7 @@ async def submit_signup(
             PublicSignupSessionResult(session_id=sid, accepted=True) for sid in payload.session_ids
         ])
 
-    _check_rate_limit(request.client.host if request.client else "unknown")
+    _check_rate_limit(request)
 
     parcel_result = await db.execute(
         select(Parcel).where(Parcel.plot_number == payload.parcel_number)

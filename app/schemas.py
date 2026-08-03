@@ -37,6 +37,10 @@ class UserOut(BaseModel):
     role: UserRole
     is_active: bool
     avatar_filename: Optional[str] = None
+    # True while the account is still on the initial-setup password and
+    # can neither use the web UI nor obtain an API token (see
+    # app/routers/api_auth.py).
+    must_change_password: bool = False
 
 
 # ---------------------------------------------------------------------------

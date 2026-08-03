@@ -57,6 +57,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.item_template_list.new_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/finances/item-templates" class="row g-2 align-items-end">
+                    {{ csrf_field() }}
                     <div class="col-sm-1">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.run_detail.label_order') }}</label>
                         <input type="number" name="order_number" class="form-control form-control-sm" value="{{ next_order }}">
@@ -152,7 +153,8 @@
                         <tbody>
                             {% if has_perm(request, 'finances', 'write') %}
                             {% for template in item_templates %}
-                            <form method="post" action="/finances/item-templates/{{ template.id }}/edit" id="edit-template-{{ template.id }}"></form>
+                            <form method="post" action="/finances/item-templates/{{ template.id }}/edit" id="edit-template-{{ template.id }}">
+                                {{ csrf_field() }}</form>
                             {% endfor %}
                             {% endif %}
                             {% for template in item_templates %}
@@ -234,6 +236,7 @@
                                     </button>
                                     {% if has_perm(request, 'finances', 'delete') %}
                                     <form method="post" action="/finances/item-templates/{{ template.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('finances.item_template_list.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

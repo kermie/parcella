@@ -15,6 +15,7 @@
             <div class="card-header"><i class="bi bi-pencil me-2"></i>{{ t('work_hours.configuration_form.card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/configuration/{{ configuration.id }}/edit">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.configuration_form.year_label') }} <span class="text-danger">*</span></label>
                         <input type="number" name="year" class="form-control"

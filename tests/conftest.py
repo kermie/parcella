@@ -80,9 +80,45 @@ async def _tabellen_leeren(_frische_verbindung):
     yield
 
 
+class CsrfAwareClient(AsyncClient):
+    """Behaves like a browser that actually loaded the form it submits:
+    it holds the CSRF cookie and mirrors the token back on every unsafe
+    request (see app/csrf.py).
+
+    Without this, adding CSRF protection would have meant editing every
+    POST in the whole test suite to fetch a token first -- which tests
+    the plumbing, not the behaviour each test is about. The rejection
+    path itself is covered explicitly in tests/test_security.py using
+    `raw_client` below, which does none of this.
+    """
+
+    _UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
+
+    async def request(self, method, url, **kwargs):
+        if method.upper() in self._UNSAFE and not str(url).startswith("/api/"):
+            token = self.cookies.get("csrf")
+            if token is None:
+                # Any GET mints one; the login page needs no auth.
+                await super().request("GET", "/auth/login")
+                token = self.cookies.get("csrf")
+            headers = dict(kwargs.get("headers") or {})
+            headers.setdefault("X-CSRF-Token", token or "")
+            kwargs["headers"] = headers
+        return await super().request(method, url, **kwargs)
+
+
 @pytest_asyncio.fixture
 async def client():
     """HTTP client that talks directly to the FastAPI app (no real server needed)."""
+    transport = ASGITransport(app=app)
+    async with CsrfAwareClient(transport=transport, base_url="http://testserver") as ac:
+        yield ac
+
+
+@pytest_asyncio.fixture
+async def raw_client():
+    """Like `client`, but without the automatic CSRF token -- for tests
+    that check what happens to a request that doesn't carry one."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
         yield ac

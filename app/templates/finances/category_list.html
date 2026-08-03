@@ -28,6 +28,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.category_list.new_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/finances/categories" class="row g-2 align-items-end">
+                    {{ csrf_field() }}
                     <div class="col-sm-3">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.category_list.label_code') }}</label>
                         <input type="text" name="code" class="form-control form-control-sm" maxlength="5" pattern="\d{5}" placeholder="40000" required>
@@ -62,6 +63,7 @@
                     {{ t('finances.category_list.import_help') }}
                 </p>
                 <form method="post" action="/finances/categories/import" enctype="multipart/form-data" class="d-flex gap-2 align-items-end">
+                    {{ csrf_field() }}
                     <div class="flex-grow-1">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.category_list.label_file') }}</label>
                         <input type="file" name="file" accept=".csv,text/csv" class="form-control form-control-sm" required>
@@ -92,7 +94,8 @@
                         <tbody>
                             {% if has_perm(request, 'finances', 'write') %}
                             {% for category in categories %}
-                            <form method="post" action="/finances/categories/{{ category.id }}/edit" id="edit-category-{{ category.id }}"></form>
+                            <form method="post" action="/finances/categories/{{ category.id }}/edit" id="edit-category-{{ category.id }}">
+                                {{ csrf_field() }}</form>
                             {% endfor %}
                             {% endif %}
                             {% for category in categories %}
@@ -121,6 +124,7 @@
                                     </button>
                                     {% if has_perm(request, 'finances', 'delete') %}
                                     <form method="post" action="/finances/categories/{{ category.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('finances.category_list.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

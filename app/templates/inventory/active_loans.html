@@ -33,6 +33,7 @@
                     <td class="text-end">
                         {% if has_perm(request, 'inventory', 'write') %}
                         <form method="post" action="/inventory/loans/{{ loan.id }}/return" class="d-inline">
+                            {{ csrf_field() }}
                             <button type="submit" class="btn btn-sm btn-outline-secondary">{{ t('inventory.detail.mark_returned_button') }}</button>
                         </form>
                         {% endif %}

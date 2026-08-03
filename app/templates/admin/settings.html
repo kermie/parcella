@@ -85,6 +85,7 @@
 </div>
 
 <form method="post" action="/admin/settings" id="settings-form" enctype="multipart/form-data">
+    {{ csrf_field() }}
 <!-- Every card below is col-12 (issue #70) -- deliberately one column,
      not split into two side-by-side halves, so cards read top to
      bottom in one clear order regardless of which one is folded open. -->

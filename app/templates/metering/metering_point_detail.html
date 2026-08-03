@@ -45,6 +45,7 @@
                 {% if has_perm(request, modul_name, 'write') %}
                 <hr>
                 <form method="post" action="{{ url_prefix }}/metering-points/{{ metering_point.id }}/edit">
+                    {{ csrf_field() }}
                     <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('metering.point_detail.label_label') }}</label>
                     <input type="text" name="label" class="form-control form-control-sm mb-2"
                            value="{{ metering_point.label or '' }}"
@@ -97,6 +98,7 @@
                 <div class="collapse mt-3" id="tausch-formular">
                     <div class="card card-body bg-light">
                         <form method="post" action="{{ url_prefix }}/metering-points/{{ metering_point.id }}/meter/exchange">
+                            {{ csrf_field() }}
                             <div class="row g-2">
                                 <div class="col-sm-6">
                                     <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('metering.point_detail.exchange_old_removed_label') }}</label>
@@ -173,6 +175,7 @@
                                 <td class="text-end">
                                     {% if has_perm(request, modul_name, 'delete') %}
                                     <form method="post" action="{{ url_prefix }}/readings/{{ eintrag.reading.id }}/delete">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('metering.point_detail.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
@@ -194,6 +197,7 @@
             <div class="card-footer">
                 <form method="post" action="{{ url_prefix }}/metering-points/{{ metering_point.id }}/readings/new"
                       class="d-flex gap-2 flex-wrap align-items-end">
+                    {{ csrf_field() }}
                     <input type="hidden" name="return_url" value="{{ url_prefix }}/metering-points/{{ metering_point.id }}">
                     <div>
                         <label class="form-label small mb-0">{{ t('metering.point_detail.label_year') }}</label>

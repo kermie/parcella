@@ -81,7 +81,10 @@
     "group_not_found": "Nie znaleziono grupy",
     "user_already_in_group": "Ten użytkownik jest już przypisany do tej grupy",
     "member_added": "Użytkownik dodany",
-    "member_removed": "Użytkownik usunięty"
+    "member_removed": "Użytkownik usunięty",
+    "too_many_login_attempts": "Zbyt wiele nieudanych prób logowania. Odczekaj kilka minut i spróbuj ponownie.",
+    "password_must_differ": "Nowe hasło musi różnić się od obecnego.",
+    "csrf_invalid": "Kontrola bezpieczeństwa nie powiodła się. Strona była prawdopodobnie otwarta zbyt długo -- wróć, odśwież ją i spróbuj ponownie."
   },
   "tickets": {
     "overview": {
@@ -175,7 +178,8 @@
       "label_new_password": "Nowe hasło",
       "label_new_password_confirm": "Potwierdź nowe hasło",
       "button_save": "Zmień hasło",
-      "success_message": "Hasło zostało pomyślnie zmienione."
+      "success_message": "Hasło zostało pomyślnie zmienione.",
+      "forced_notice": "To konto nadal używa domyślnego hasła z pierwszej konfiguracji. Ustaw nowe -- do tego czasu reszta aplikacji pozostaje zablokowana."
     },
     "avatar": {
       "heading": "Awatar",

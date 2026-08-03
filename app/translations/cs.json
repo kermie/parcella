@@ -81,7 +81,10 @@
     "group_not_found": "Skupina nenalezena",
     "user_already_in_group": "Tento uživatel je již přiřazen k této skupině",
     "member_added": "Uživatel přidán",
-    "member_removed": "Uživatel odebrán"
+    "member_removed": "Uživatel odebrán",
+    "too_many_login_attempts": "Příliš mnoho neúspěšných pokusů o přihlášení. Počkejte několik minut a zkuste to znovu.",
+    "password_must_differ": "Nové heslo se musí lišit od současného.",
+    "csrf_invalid": "Bezpečnostní kontrola selhala. Stránka byla pravděpodobně otevřená příliš dlouho -- vraťte se, načtěte ji znovu a zkuste to znovu."
   },
   "tickets": {
     "overview": {
@@ -175,7 +178,8 @@
       "label_new_password": "Nové heslo",
       "label_new_password_confirm": "Potvrďte nové heslo",
       "button_save": "Změnit heslo",
-      "success_message": "Heslo bylo úspěšně změněno."
+      "success_message": "Heslo bylo úspěšně změněno.",
+      "forced_notice": "Tento účet stále používá výchozí heslo z prvotního nastavení. Zvolte prosím nové -- do té doby zůstává zbytek aplikace uzamčen."
     },
     "avatar": {
       "heading": "Avatar",

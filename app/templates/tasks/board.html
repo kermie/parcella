@@ -250,6 +250,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" action="/tasks/lists/new">
+                {{ csrf_field() }}
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-layout-three-columns me-2"></i>{{ t('tasks.lists.add_modal_title') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -272,6 +273,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" id="renameListForm" action="/tasks/lists/placeholder/edit">
+                {{ csrf_field() }}
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>{{ t('tasks.lists.rename_modal_title') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -296,6 +298,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post" id="deleteListForm" action="/tasks/lists/placeholder/delete">
+                {{ csrf_field() }}
                 <div class="modal-header">
                     <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-2"></i>{{ t('tasks.lists.delete_modal_title') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -322,6 +325,10 @@
 
 <script>
 (function () {
+    // Drag-and-drop moves are POSTs like any other, so they carry the
+    // same CSRF token -- read from the <meta> tag base.html renders,
+    // since the cookie itself is HttpOnly (see app/csrf.py).
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').content;
     let draggedCard = null;
     // Search/filter (issue #119): while any filter is active, card
     // reordering is disabled rather than attempted -- with some cards
@@ -397,7 +404,7 @@
             try {
                 const response = await fetch(`/tasks/${draggedCard.dataset.taskId}/move`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                     body: JSON.stringify({ list_id: newListId, position: newPosition }),
                 });
                 if (!response.ok) throw new Error('move failed');
@@ -458,7 +465,7 @@
         try {
             const response = await fetch(`/tasks/lists/${listId}/move`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                 body: JSON.stringify({ position: newPosition }),
             });
             if (!response.ok) throw new Error('move failed');

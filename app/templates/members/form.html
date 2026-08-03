@@ -17,6 +17,7 @@
 {% endif %}
 
 <form method="post" action="{% if member %}/members/{{ member.id }}/edit{% else %}/members/new{% endif %}">
+    {{ csrf_field() }}
 <div class="row g-3">
 
     <div class="col-lg-6">

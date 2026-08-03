@@ -74,6 +74,14 @@ class User(Base):
         SAEnum(UserRole), default=UserRole.READONLY, nullable=False
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Set on the bootstrap admin created at first startup (app/main.py),
+    # whose password is the documented, identical-everywhere default. As
+    # long as it's True the account can't use the app: the web UI
+    # redirects every page to /auth/change-password and the REST API
+    # refuses to issue a token. Cleared by a successful password change.
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     # Just the filename under app/static/uploads/avatars/, not the image
     # itself -- same "store filename, not URL" convention as ClubSetting's

@@ -25,6 +25,7 @@
             <div class="card-body">
                 <p class="text-muted" style="font-size: 0.82rem;">{{ t('calendar.council_absence.new_card_help') }}</p>
                 <form method="post" action="/calendar/council-absence/new">
+                    {{ csrf_field() }}
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
                             <label class="form-label fw-semibold">{{ t('calendar.council_absence.start_date_label') }} <span class="text-danger">*</span></label>
@@ -75,6 +76,7 @@
                                 <td class="text-end">
                                     {% if e.user_id == user.id or is_full_access(request) %}
                                     <form method="post" action="/calendar/council-absence/{{ e.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('calendar.council_absence.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

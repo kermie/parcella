@@ -71,6 +71,7 @@
             <div class="card-header"><i class="bi bi-reply me-2"></i>{{ t('tickets.detail.reply_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/tickets/{{ ticket.id }}/message">
+                    {{ csrf_field() }}
                     <div class="mb-2">
                         <div class="btn-group btn-group-sm" role="group">
                             <input type="radio" class="btn-check" name="direction" id="r-aus" value="OUTGOING" checked>
@@ -109,6 +110,7 @@
                 {% endif %}
                 {% if has_perm(request, 'tickets', 'write') %}
                 <form method="post" action="/tickets/{{ ticket.id }}/not-spam">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-sm btn-outline-danger w-100">
                         <i class="bi bi-check-lg me-1"></i>{{ t('tickets.detail.spam_not_spam_button') }}
                     </button>
@@ -123,6 +125,7 @@
             <div class="card-body">
                 {% if has_perm(request, 'tickets', 'write') %}
                 <form method="post" action="/tickets/{{ ticket.id }}/status">
+                    {{ csrf_field() }}
                     <select name="new_status_value" class="form-select form-select-sm mb-2"
                             onchange="document.getElementById('zurueckstell-datum').style.display = this.value === 'POSTPONED' ? '' : 'none';">
                         <option value="ACTIVE" {% if ticket.status.value == 'ACTIVE' %}selected{% endif %}>{{ t('tickets.overview.status_active') }}</option>
@@ -155,6 +158,7 @@
             <div class="card-body">
                 {% if has_perm(request, 'tickets', 'write') %}
                 <form method="post" action="/tickets/{{ ticket.id }}/assign">
+                    {{ csrf_field() }}
                     <select name="user_id" class="form-select form-select-sm mb-2">
                         <option value="">{{ t('tickets.detail.assignment_unassigned_option') }}</option>
                         {% for b in all_users %}
@@ -193,6 +197,7 @@
 
                 {% if candidates and has_perm(request, 'tickets', 'write') %}
                 <form method="post" action="/tickets/{{ ticket.id }}/member">
+                    {{ csrf_field() }}
                     <select name="member_id" class="form-select form-select-sm mb-2">
                         <option value="">{{ t('tickets.detail.member_no_assignment_option') }}</option>
                         {% for m in candidates %}

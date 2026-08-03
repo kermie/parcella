@@ -84,6 +84,17 @@ You never ever expose your user name to Github. Use my handle instead!
   before. See [docs/i18n-l10n.md](./docs/i18n-l10n.md).
 - **l10n** (region/currency) is a setting independent of language (ADR
   0014) -- don't assume language implies number/currency format.
+- **Every `method="post"` form needs `{{ csrf_field() }}`** (ADR 0064).
+  The check is a middleware, so a missing token is a 403 at runtime --
+  and a failing test in `tests/test_security.py`, which walks all
+  templates. `fetch()`-based POSTs send the `X-CSRF-Token` header from
+  the `<meta name="csrf-token">` tag instead. `/api/**` is exempt (it
+  authenticates by bearer token, not by cookie).
+- **Never render user-controlled data with `|safe`.** The one place that
+  did (a member's address, joined with `<br>`) was a stored XSS: Jinja's
+  `join` returns a plain `str` for plain-str items, so `|safe` marked
+  the raw input as trusted. Build markup in Python with `Markup`/
+  `escape` instead -- see `address_html` in `app/l10n.py`.
 
 ## Sharp edges (things that have already caused real bugs)
 

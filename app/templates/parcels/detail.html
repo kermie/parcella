@@ -114,6 +114,7 @@
                                     <form method="post"
                                           action="/parcels/{{ parcel.id }}/member/{{ z.id }}/remove"
                                           class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('parcels.detail.end_tenancy_confirm') }}')"
                                                 title="{{ t('parcels.detail.end_tenancy_tooltip') }}">
@@ -138,6 +139,7 @@
             <div class="card-footer">
                 <form method="post" action="/parcels/{{ parcel.id }}/member/assign"
                       class="d-flex gap-2 flex-wrap align-items-center" id="form-assign-member">
+                    {{ csrf_field() }}
                     <div class="position-relative" style="max-width: 220px;">
                         <input type="text" id="assign-member-search" class="form-control form-control-sm"
                                placeholder="{{ t('parcels.detail.select_member_placeholder') }}"
@@ -273,6 +275,7 @@
                                     <form method="post"
                                           action="/parcels/{{ parcel.id }}/member/{{ z.id }}/delete-history"
                                           class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('parcels.detail.delete_history_confirm') }}')"
                                                 title="{{ t('parcels.detail.delete_history_tooltip') }}">
@@ -313,6 +316,7 @@
                 {% endif %}
 
                 <form method="post" action="/parcels/{{ parcel.id }}/cloud-folder" class="mb-3">
+                    {{ csrf_field() }}
                     <label class="form-label fw-semibold">{{ t('parcels.detail.cloud_folder_path_label') }}</label>
                     <div class="input-group">
                         <input type="text" name="relative_path" class="form-control"
@@ -362,6 +366,7 @@
                 </div>
 
                 <form method="post" action="/parcels/{{ parcel.id }}/cloud-folder/upload" enctype="multipart/form-data">
+                    {{ csrf_field() }}
                     <div class="input-group">
                         <input type="file" name="file" class="form-control" required>
                         <button type="submit" class="btn btn-primary">

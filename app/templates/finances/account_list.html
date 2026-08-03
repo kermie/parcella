@@ -27,6 +27,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('finances.account_list.new_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/finances/accounts" class="row g-2 align-items-end">
+                    {{ csrf_field() }}
                     <div class="col-sm-3">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_list.label_name') }}</label>
                         <input type="text" name="name" class="form-control form-control-sm" required>
@@ -82,7 +83,8 @@
                         <tbody>
                             {% if has_perm(request, 'finances', 'write') %}
                             {% for account in accounts %}
-                            <form method="post" action="/finances/accounts/{{ account.id }}/edit" id="edit-account-{{ account.id }}"></form>
+                            <form method="post" action="/finances/accounts/{{ account.id }}/edit" id="edit-account-{{ account.id }}">
+                                {{ csrf_field() }}</form>
                             {% endfor %}
                             {% endif %}
                             {% for account in accounts %}
@@ -123,6 +125,7 @@
                                     </button>
                                     {% if has_perm(request, 'finances', 'delete') %}
                                     <form method="post" action="/finances/accounts/{{ account.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('finances.account_list.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

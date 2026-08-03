@@ -25,6 +25,7 @@
                 </dl>
 
                 <form method="post" action="/finances/accounts/{{ account.id }}/bookings/manual/confirm">
+                    {{ csrf_field() }}
                     <input type="hidden" name="booking_date" value="{{ booking_date }}">
                     <input type="hidden" name="amount" value="{{ amount }}">
                     <input type="hidden" name="description" value="{{ description }}">

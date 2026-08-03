@@ -19,6 +19,7 @@
 {% endif %}
 
 <form method="post" action="/insurance/parcels/{{ parcel.id }}/save">
+    {{ csrf_field() }}
 <input type="hidden" name="year" value="{{ year }}">
 <div class="row g-3">
 

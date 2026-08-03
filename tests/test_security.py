@@ -94,3 +94,272 @@ async def test_api_stats_works_with_token(client, admin_user):
     response = await client.get("/api/v1/stats", headers=auth_header(token))
     assert response.status_code == 200
     assert "members_total" in response.json()
+
+
+# ---------------------------------------------------------------------------
+# 3. Login brute-force throttling
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _reset_login_throttle():
+    """The counters are module-level and would otherwise leak between
+    tests (and into the rest of the suite, which logs in constantly)."""
+    from app.rate_limit import reset_all
+    reset_all()
+    yield
+    reset_all()
+
+
+async def test_web_login_throttles_repeated_failures(client, admin_user):
+    from app.login_throttle import MAX_FAILURES_PER_ACCOUNT
+
+    for _ in range(MAX_FAILURES_PER_ACCOUNT):
+        response = await client.post(
+            "/auth/login", data={"email": admin_user.email, "password": "wrong"}
+        )
+        assert response.status_code == 401
+
+    blocked = await client.post(
+        "/auth/login", data={"email": admin_user.email, "password": "wrong"}
+    )
+    assert blocked.status_code == 429
+
+    # ... and the throttle holds even once the RIGHT password shows up:
+    # otherwise an attacker's final, successful guess would sail through.
+    with_correct_password = await client.post(
+        "/auth/login", data={"email": admin_user.email, "password": "testpasswort123"}
+    )
+    assert with_correct_password.status_code == 429
+
+
+async def test_api_login_shares_the_same_throttle(client, admin_user):
+    """The API must not be a way around the web limit -- both entry
+    points count into the same buckets."""
+    from app.login_throttle import MAX_FAILURES_PER_ACCOUNT
+
+    for _ in range(MAX_FAILURES_PER_ACCOUNT):
+        response = await client.post(
+            "/api/v1/auth/login", json={"email": admin_user.email, "password": "wrong"}
+        )
+        assert response.status_code == 401
+
+    blocked = await client.post(
+        "/auth/login", data={"email": admin_user.email, "password": "wrong"}
+    )
+    assert blocked.status_code == 429
+
+
+async def test_successful_login_clears_the_failure_counter(client, admin_user):
+    from app.login_throttle import MAX_FAILURES_PER_ACCOUNT
+
+    for _ in range(MAX_FAILURES_PER_ACCOUNT - 1):
+        await client.post("/auth/login", data={"email": admin_user.email, "password": "wrong"})
+
+    ok = await client.post(
+        "/auth/login", data={"email": admin_user.email, "password": "testpasswort123"}
+    )
+    assert ok.status_code in (302, 303)
+
+    # A fresh budget: the earlier near-miss must not leave the user one
+    # typo away from being locked out.
+    again = await client.post("/auth/login", data={"email": admin_user.email, "password": "wrong"})
+    assert again.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# 4. The published default SECRET_KEY must not boot in production
+# ---------------------------------------------------------------------------
+
+def test_default_secret_key_rejected_outside_development():
+    from app.config import DEFAULT_SECRET_KEY, Settings
+
+    with pytest.raises(ValueError, match="SECRET_KEY"):
+        Settings(environment="production", secret_key=DEFAULT_SECRET_KEY)
+
+
+def test_default_secret_key_allowed_in_development():
+    from app.config import DEFAULT_SECRET_KEY, Settings
+
+    assert Settings(environment="development", secret_key=DEFAULT_SECRET_KEY).secret_key
+
+
+def test_own_secret_key_accepted_in_production():
+    from app.config import Settings
+
+    assert Settings(environment="production", secret_key="a-real-and-sufficiently-long-secret")
+
+
+# ---------------------------------------------------------------------------
+# 5. Forced password change for the bootstrap admin
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+async def must_change_user(admin_user):
+    async with AsyncSessionLocal() as session:
+        user = await session.get(type(admin_user), admin_user.id)
+        user.must_change_password = True
+        await session.commit()
+    return admin_user
+
+
+async def test_bootstrap_admin_is_redirected_to_change_password(client, must_change_user):
+    await web_login(client, must_change_user.email)
+
+    for path in ("/", "/members/", "/admin/users/"):
+        response = await client.get(path)
+        assert response.status_code == 302, path
+        assert response.headers["location"] == "/auth/change-password", path
+
+    # The change form itself and logging out have to stay reachable, or
+    # the account would be stuck in a redirect loop.
+    form = await client.get("/auth/change-password")
+    assert form.status_code == 200
+
+
+async def test_password_change_lifts_the_lock(client, must_change_user):
+    await web_login(client, must_change_user.email)
+
+    response = await client.post("/auth/change-password", data={
+        "current_password": "testpasswort123",
+        "new_password": "ein-neues-passwort",
+        "new_password_confirm": "ein-neues-passwort",
+    })
+    assert response.status_code == 200
+
+    dashboard = await client.get("/")
+    assert dashboard.status_code == 200
+
+
+async def test_reusing_the_same_password_is_rejected(client, must_change_user):
+    await web_login(client, must_change_user.email)
+
+    response = await client.post("/auth/change-password", data={
+        "current_password": "testpasswort123",
+        "new_password": "testpasswort123",
+        "new_password_confirm": "testpasswort123",
+    })
+    assert response.status_code == 400
+
+    still_locked = await client.get("/")
+    assert still_locked.status_code == 302
+
+
+async def test_api_refuses_tokens_while_a_password_change_is_pending(client, must_change_user):
+    """Otherwise the forced change would be a web-only gate that any API
+    client could walk straight past with the default credentials."""
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": must_change_user.email, "password": "testpasswort123"},
+    )
+    assert response.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# 6. Security response headers
+# ---------------------------------------------------------------------------
+
+async def test_security_headers_present_on_every_response(client):
+    for path in ("/auth/login", "/static/uploads/logo.png"):
+        response = await client.get(path)
+        headers = response.headers
+        assert headers["x-content-type-options"] == "nosniff", path
+        assert headers["x-frame-options"] == "DENY", path
+        assert headers["referrer-policy"] == "same-origin", path
+        csp = headers["content-security-policy"]
+        assert "frame-ancestors 'none'" in csp, path
+        assert "form-action 'self'" in csp, path
+        assert "object-src 'none'" in csp, path
+
+
+async def test_hsts_only_outside_development(client):
+    """A local http:// instance must not pin the browser to https for a
+    year; a production one should."""
+    from app.security_headers import security_headers
+    from app.config import settings
+
+    assert "Strict-Transport-Security" not in security_headers()
+
+    original = settings.environment
+    try:
+        settings.environment = "production"
+        assert "Strict-Transport-Security" in security_headers()
+    finally:
+        settings.environment = original
+
+
+# ---------------------------------------------------------------------------
+# 7. CSRF protection
+# ---------------------------------------------------------------------------
+
+async def test_form_post_without_csrf_token_is_rejected(raw_client, admin_user):
+    """The cross-site forgery case: a request that carries the session
+    cookie but no token. Simulated here by a client that never renders a
+    form -- exactly what an attacker's page can produce."""
+    await raw_client.post("/auth/login", data={"email": admin_user.email, "password": "testpasswort123"})
+    response = await raw_client.post("/members/new", data={"first_name": "Mallory", "last_name": "Test"})
+    assert response.status_code == 403
+
+
+async def test_csrf_cookie_is_httponly(raw_client):
+    """The token is compared server-side, so the cookie never has to be
+    readable by JavaScript -- an XSS still can't lift it."""
+    response = await raw_client.get("/auth/login")
+    set_cookie = response.headers.get("set-cookie", "")
+    assert "csrf=" in set_cookie
+    assert "HttpOnly" in set_cookie
+
+
+async def test_csrf_token_in_form_body_is_accepted(raw_client, admin_user):
+    """The path a real browser takes: render the login form, submit the
+    hidden field that came with it."""
+    page = await raw_client.get("/auth/login")
+    assert 'name="csrf_token"' in page.text, "the login form must carry the hidden field"
+
+    import re
+    token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+    response = await raw_client.post(
+        "/auth/login",
+        data={"email": admin_user.email, "password": "testpasswort123", "csrf_token": token},
+    )
+    assert response.status_code in (302, 303)
+
+
+async def test_mismatched_csrf_token_is_rejected(raw_client, admin_user):
+    await raw_client.get("/auth/login")
+    response = await raw_client.post(
+        "/auth/login",
+        data={"email": admin_user.email, "password": "testpasswort123", "csrf_token": "not-the-token"},
+    )
+    assert response.status_code == 403
+
+
+async def test_api_endpoints_stay_exempt(raw_client, admin_user):
+    """The REST API authenticates with a bearer token, never with an
+    ambient cookie, so requiring CSRF there would break every client
+    without adding protection."""
+    response = await raw_client.post(
+        "/api/v1/auth/login",
+        json={"email": admin_user.email, "password": "testpasswort123"},
+    )
+    assert response.status_code == 200
+
+
+async def test_every_post_form_in_the_templates_carries_a_token():
+    """Catches the next form somebody adds without one -- which would
+    otherwise only surface as a 403 in production."""
+    import pathlib
+    import re
+
+    form_open = re.compile(r'<form\b[^>]*>', re.I | re.S)
+    missing = []
+    for path in sorted(pathlib.Path("app/templates").rglob("*.html")):
+        source = path.read_text()
+        for match in form_open.finditer(source):
+            method = re.search(r'method\s*=\s*["\']?(\w+)', match.group(0), re.I)
+            if not method or method.group(1).lower() != "post":
+                continue
+            if "csrf_field()" not in source[match.end():match.end() + 200]:
+                line = source[:match.start()].count("\n") + 1
+                missing.append(f"{path}:{line}")
+
+    assert not missing, "POST forms without {{ csrf_field() }}:\n" + "\n".join(missing)

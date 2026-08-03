@@ -58,6 +58,7 @@
     {% elif has_perm(request, modul_name, 'write') %}
     <form method="post" action="{{ url_prefix }}/metering-points/{{ z.metering_point.id }}/readings/new"
           class="d-flex gap-2 align-items-center">
+        {{ csrf_field() }}
         <input type="hidden" name="year" value="{{ year }}">
         <input type="hidden" name="date" value="{{ today }}">
         <input type="hidden" name="return_url" value="{{ url_prefix }}/readings?year={{ year }}">

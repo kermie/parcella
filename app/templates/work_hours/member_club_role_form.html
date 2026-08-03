@@ -15,6 +15,7 @@
             <div class="card-header"><i class="bi bi-person-badge me-2"></i>{{ t('work_hours.member_club_role_form.card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/club-roles/assignment/{{ assignment.id }}/edit">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.member_club_role_form.member_label') }} <span class="text-danger">*</span></label>
                         <select name="member_id" class="form-select" required>

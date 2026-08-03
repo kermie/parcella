@@ -118,6 +118,7 @@
                                 <td class="text-end">
                                     {% if r.source not in ('invoice_payment', 'incoming_invoice_payment') and has_perm(request, 'finances', 'delete') %}
                                     <form method="post" action="/finances/accounts/{{ account.id }}/bookings/{{ r.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('finances.account_bookings.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
@@ -154,6 +155,7 @@
             <div class="modal-body">
                 <form method="post" action="/finances/accounts/{{ account.id }}/bookings/import/preview" enctype="multipart/form-data"
                       class="d-flex gap-2 align-items-center flex-wrap">
+                    {{ csrf_field() }}
                     <input type="file" name="datei" accept=".csv" class="form-control form-control-sm" required style="max-width: 300px;">
                     <button type="submit" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-upload me-1"></i>{{ t('finances.account_bookings.import_button') }}
@@ -176,6 +178,7 @@
             </div>
             <div class="modal-body">
                 <form method="post" action="/finances/accounts/{{ account.id }}/bookings/manual/preview" class="row g-2 align-items-end">
+                    {{ csrf_field() }}
                     <div class="col-sm-6">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.account_bookings.col_date') }}</label>
                         <input type="date" name="booking_date" class="form-control form-control-sm" value="{{ today }}" required>

@@ -34,6 +34,7 @@
             <div class="card-header"><i class="bi bi-cloud-arrow-up me-2"></i>{{ t('admin.cloud_backup.settings_header') }}</div>
             <div class="card-body">
                 <form method="post" action="/admin/backup/cloud/settings">
+                    {{ csrf_field() }}
                     <div class="form-check form-switch mb-3">
                         <input class="form-check-input" type="checkbox" role="switch"
                                name="enabled" id="cloud-backup-enabled" {% if cfg.enabled %}checked{% endif %}>
@@ -88,6 +89,7 @@
                     </div>
                 </form>
                 <form method="post" action="/admin/backup/cloud/run-now" class="mt-2">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-outline-secondary">
                         <i class="bi bi-cloud-arrow-up me-1"></i>{{ t('admin.cloud_backup.run_now_button') }}
                     </button>
@@ -120,6 +122,7 @@
                                 <form method="post" action="/admin/backup/restore-from-cloud"
                                       class="d-flex gap-2 align-items-center justify-content-end"
                                       onsubmit="return confirm('{{ t('admin.restore.submit_confirm') }}');">
+                                    {{ csrf_field() }}
                                     <input type="hidden" name="filename" value="{{ b.name }}">
                                     <input type="text" name="confirm_phrase" class="form-control form-control-sm"
                                            style="max-width: 140px;" autocomplete="off"

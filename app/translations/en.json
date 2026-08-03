@@ -81,7 +81,10 @@
     "group_not_found": "Group not found",
     "user_already_in_group": "This user is already assigned to this group",
     "member_added": "User added",
-    "member_removed": "User removed"
+    "member_removed": "User removed",
+    "too_many_login_attempts": "Too many failed login attempts. Please wait a few minutes and try again.",
+    "password_must_differ": "The new password must be different from the current one.",
+    "csrf_invalid": "Security check failed. The page was probably open for too long -- please go back, reload it and try again."
   },
   "tickets": {
     "overview": {
@@ -175,7 +178,8 @@
       "label_new_password": "New password",
       "label_new_password_confirm": "Confirm new password",
       "button_save": "Change password",
-      "success_message": "Password changed successfully."
+      "success_message": "Password changed successfully.",
+      "forced_notice": "This account still uses the default password from the initial setup. Please choose a new one -- the rest of the application stays locked until you do."
     },
     "avatar": {
       "heading": "Avatar",

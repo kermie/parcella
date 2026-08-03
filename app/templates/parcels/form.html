@@ -17,6 +17,7 @@
 {% endif %}
 
 <form method="post" action="{% if parcel %}/parcels/{{ parcel.id }}/edit{% else %}/parcels/new{% endif %}">
+    {{ csrf_field() }}
 <div class="row g-3" style="max-width: 640px;">
 
     <div class="col-12">
@@ -94,6 +95,7 @@
                 </p>
                 <form method="post" action="/parcels/{{ parcel.id }}/permanently-delete"
                       onsubmit="return confirm('{{ t('parcels.form.delete_confirm', plot_number=parcel.plot_number) }}')">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-outline-danger">
                         <i class="bi bi-trash me-1"></i>{{ t('parcels.form.button_delete_permanently') }}
                     </button>

@@ -8,6 +8,7 @@
         <p class="text-muted">{{ t('members.signin_sheet.description') }}</p>
 
         <form method="post" action="/members/signin-sheet">
+            {{ csrf_field() }}
             <div class="mb-3">
                 <label class="form-label fw-semibold">{{ t('members.signin_sheet.label_headline') }}</label>
                 <input type="text" name="headline" class="form-control" value="{{ default_headline }}">

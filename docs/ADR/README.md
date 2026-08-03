@@ -67,3 +67,5 @@ in chronological order.
 61. [Cash-based accounting statement: expenses now use actual payment date, not invoice date](./0061-accounting-statement-fully-cash-based.md)
 62. [Account bookings CSV import: user-driven column mapping, not a fixed header format](./0062-csv-import-column-mapping.md)
 63. [Account bookings can be matched against open invoices, creating a real payment](./0063-invoice-payment-matching-for-bookings.md)
+64. [CSRF protection (double-submit cookie) and security response headers](./0064-csrf-and-security-response-headers.md)
+65. [Credential hardening: default SECRET_KEY refuses to boot, logins are throttled, the bootstrap admin must change its password](./0065-credential-and-deployment-hardening.md)

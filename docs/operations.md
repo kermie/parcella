@@ -163,7 +163,53 @@ created automatically:
 - Email: `admin@parcella.local`
 - Password: `admin1234`
 
-Please change it immediately after your first login.
+This account is flagged `must_change_password`, so the first login lands
+on the change-password form and every other page redirects back to it
+until a new password is set. The REST API refuses to issue a token for
+the account in that state as well -- see
+[ADR 0065](./ADR/0065-credential-and-deployment-hardening.md).
+
+## Security-relevant settings
+
+- **`SECRET_KEY` is mandatory outside development.** With
+  `ENVIRONMENT` set to anything other than `development`, the app
+  refuses to start while `SECRET_KEY` is still the built-in default
+  (that value is published in the public repository, and it signs
+  session cookies, signs API tokens, and encrypts stored SMTP/Nextcloud/
+  WordPress passwords). Generate one with:
+
+  ```bash
+  python -c 'import secrets; print(secrets.token_urlsafe(48))'
+  ```
+
+  Changing it later logs everyone out and makes already-encrypted
+  settings unreadable -- keep it with your backups (see ADR 0006/0053).
+
+- **Set `ENVIRONMENT=production` on any real installation.** Beyond the
+  key check, it is what makes the session and CSRF cookies `Secure`
+  (HTTPS-only) and what enables the HSTS response header.
+
+- **Run behind the reverse proxy with forwarded headers.** Login
+  throttling and the public signup API's rate limit key on the client
+  IP. Behind a proxy, every request appears to come from the proxy
+  unless uvicorn runs with `--proxy-headers` *and* the proxy sets the
+  header:
+
+  ```nginx
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  ```
+
+  Only enable `--proxy-headers` when a trusted proxy really is in front:
+  a directly-exposed app would then believe whatever IP a client claims.
+
+- **Content Security Policy.** Bootstrap and Bootstrap Icons load from
+  `cdn.jsdelivr.net`, which is pinned in the policy
+  (`app/security_headers.py`). Serving those assets from somewhere else
+  -- or self-hosting them -- means editing the policy, otherwise the
+  browser silently refuses to load them.
+
+## Common failure patterns
 
 ## Common failure patterns
 
@@ -175,3 +221,7 @@ Please change it immediately after your first login.
 | `MissingGreenlet` on a single page | Lazy-load on a freshly created object without eagerly loaded relationships |
 | CSV import: every row shows "error" | Delimiter mismatch (Excel may save with comma instead of semicolon) |
 | Docker: root-owned files in the project folder | Container ran as root; set `UID`/`GID` in `.env` (see `docker-compose.yml`) |
+| Every form POST answers 403 "Security check failed" | CSRF cookie missing or stale -- reload the page; if it persists on a fresh page, check that the reverse proxy isn't stripping cookies |
+| A new form works locally but 403s for everyone else | The form is missing `{{ csrf_field() }}` (see ADR 0064) |
+| Login answers 429 | Too many failed attempts from this address; wait 15 minutes (see ADR 0065) |
+| App won't start: "SECRET_KEY is still the built-in development default" | `ENVIRONMENT` is not `development` and no real `SECRET_KEY` is set |

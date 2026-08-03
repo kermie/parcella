@@ -19,6 +19,7 @@
         <div class="card shadow-sm">
             <div class="card-body p-4">
                 <form method="post" action="/auth/invitation/{{ token }}">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('auth.invitation.label_name') }}</label>
                         <input type="text" name="name" class="form-control"

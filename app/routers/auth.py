@@ -18,6 +18,9 @@ from app.auth import (
 from app.avatars import save_avatar_upload, remove_avatar_file
 from app.config import settings
 from app.i18n import t_for
+from app.login_throttle import (
+    login_is_throttled, record_failed_login, clear_login_failures,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 from app.templating import templates
@@ -38,10 +41,20 @@ async def login(
     password: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
+    # Throttling comes first: an attempt that's already over the limit
+    # must not even reach the password check (see app/login_throttle.py).
+    if login_is_throttled(request, email):
+        return templates.TemplateResponse(
+            "auth/login.html",
+            {"request": request, "error": t_for(request, "errors.too_many_login_attempts")},
+            status_code=429,
+        )
+
     result = await db.execute(select(User).where(User.email == email.lower()))
     user = result.scalar_one_or_none()
 
     if not user or not user.password_hash or not verify_password(password, user.password_hash):
+        record_failed_login(request, email)
         return templates.TemplateResponse(
             "auth/login.html",
             {"request": request, "error": t_for(request, "errors.invalid_credentials")},
@@ -54,6 +67,8 @@ async def login(
             {"request": request, "error": t_for(request, "errors.account_deactivated")},
             status_code=403,
         )
+
+    clear_login_failures(request, email)
 
     # Update last login timestamp
     user.last_login = datetime.now(timezone.utc)
@@ -116,7 +131,14 @@ async def change_password(
     if len(new_password) < 8:
         return _error(t_for(request, "errors.password_too_short"))
 
+    if new_password == current_password:
+        return _error(t_for(request, "errors.password_must_differ"))
+
     user.password_hash = hash_password(new_password)
+    # Whatever forced the change (today: the bootstrap admin's default
+    # password) is now resolved -- see app/main.py's
+    # password_change_middleware.
+    user.must_change_password = False
     await db.commit()
 
     return templates.TemplateResponse(

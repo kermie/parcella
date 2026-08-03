@@ -81,7 +81,10 @@
     "group_not_found": "Groupe introuvable",
     "user_already_in_group": "Cet utilisateur est déjà assigné à ce groupe",
     "member_added": "Utilisateur ajouté",
-    "member_removed": "Utilisateur retiré"
+    "member_removed": "Utilisateur retiré",
+    "too_many_login_attempts": "Trop de tentatives de connexion échouées. Veuillez patienter quelques minutes et réessayer.",
+    "password_must_differ": "Le nouveau mot de passe doit être différent de l'actuel.",
+    "csrf_invalid": "Échec du contrôle de sécurité. La page est probablement restée ouverte trop longtemps -- revenez en arrière, rechargez-la et réessayez."
   },
   "tickets": {
     "overview": {
@@ -175,7 +178,8 @@
       "label_new_password": "Nouveau mot de passe",
       "label_new_password_confirm": "Confirmer le nouveau mot de passe",
       "button_save": "Changer le mot de passe",
-      "success_message": "Mot de passe changé avec succès."
+      "success_message": "Mot de passe changé avec succès.",
+      "forced_notice": "Ce compte utilise encore le mot de passe par défaut de l'installation initiale. Veuillez en choisir un nouveau -- le reste de l'application reste verrouillé jusque-là."
     },
     "avatar": {
       "heading": "Avatar",

@@ -16,6 +16,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.configuration.create_update_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/configuration/new">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.configuration.year_label') }} <span class="text-danger">*</span></label>
                         <input type="number" name="year" class="form-control"
@@ -104,6 +105,7 @@
                                     <form method="post"
                                           action="/work-hours/configuration/{{ k.id }}/delete"
                                           class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('work_hours.configuration.delete_confirm', year=k.year) }}')">
                                             <i class="bi bi-trash"></i>

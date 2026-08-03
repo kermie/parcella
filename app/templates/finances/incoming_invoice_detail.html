@@ -88,6 +88,7 @@
                             <td class="text-end">
                                 {% if has_perm(request, 'finances', 'delete') %}
                                 <form method="post" action="/finances/incoming-invoices/{{ invoice.id }}/payments/{{ payment.id }}/delete" class="d-inline">
+                                    {{ csrf_field() }}
                                     <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                             onclick="return confirm('{{ t('finances.invoice_detail.delete_payment_confirm') }}')">
                                         <i class="bi bi-trash"></i>
@@ -105,6 +106,7 @@
 
                 {% if has_perm(request, 'finances', 'write') %}
                 <form method="post" action="/finances/incoming-invoices/{{ invoice.id }}/payments" class="row g-2 align-items-end">
+                    {{ csrf_field() }}
                     <div class="col-sm-3">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('finances.invoice_detail.label_amount') }}</label>
                         <input type="text" name="amount" class="form-control form-control-sm" placeholder="0,00" required>

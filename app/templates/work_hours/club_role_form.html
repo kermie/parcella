@@ -15,6 +15,7 @@
             <div class="card-header"><i class="bi bi-pencil me-2"></i>{{ t('work_hours.club_role_form.card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/club-roles/{{ role.id }}/edit">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.club_role_form.name_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control"

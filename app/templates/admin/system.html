@@ -28,6 +28,7 @@
 docker compose pull
 docker compose up -d</pre>
                 <form method="post" action="/admin/updates/check-now" class="d-inline">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-arrow-clockwise me-1"></i>{{ t('admin.dashboard.update_check_now_button') }}
                     </button>
@@ -46,6 +47,7 @@ docker compose up -d</pre>
                     {% endif %}
                 </div>
                 <form method="post" action="/admin/updates/check-now">
+                    {{ csrf_field() }}
                     <button type="submit" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-arrow-clockwise me-1"></i>{{ t('admin.dashboard.update_check_now_button') }}
                     </button>
@@ -72,6 +74,7 @@ docker compose up -d</pre>
                         <i class="bi bi-arrow-counterclockwise me-1"></i>{{ t('admin.dashboard.restore_link') }}
                     </a>
                     <form method="post" action="/admin/backup/download">
+                        {{ csrf_field() }}
                         <button type="submit" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-download me-1"></i>{{ t('admin.dashboard.backup_button') }}
                         </button>

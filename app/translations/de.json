@@ -81,7 +81,10 @@
     "group_not_found": "Gruppe nicht gefunden",
     "user_already_in_group": "Dieser Benutzer ist dieser Gruppe bereits zugewiesen",
     "member_added": "Benutzer hinzugefügt",
-    "member_removed": "Benutzer entfernt"
+    "member_removed": "Benutzer entfernt",
+    "too_many_login_attempts": "Zu viele fehlgeschlagene Anmeldeversuche. Bitte einige Minuten warten und erneut versuchen.",
+    "password_must_differ": "Das neue Passwort muss sich vom aktuellen unterscheiden.",
+    "csrf_invalid": "Sicherheitsprüfung fehlgeschlagen. Die Seite war vermutlich zu lange geöffnet -- bitte zurückgehen, neu laden und erneut versuchen."
   },
   "tickets": {
     "overview": {
@@ -175,7 +178,8 @@
       "label_new_password": "Neues Passwort",
       "label_new_password_confirm": "Neues Passwort bestätigen",
       "button_save": "Passwort ändern",
-      "success_message": "Passwort erfolgreich geändert."
+      "success_message": "Passwort erfolgreich geändert.",
+      "forced_notice": "Dieses Konto verwendet noch das Standardpasswort aus der Ersteinrichtung. Bitte ein neues vergeben -- bis dahin bleibt der Rest der Anwendung gesperrt."
     },
     "avatar": {
       "heading": "Avatar",

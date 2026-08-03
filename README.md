@@ -304,10 +304,19 @@ For an existing installation predating Alembic: see
 For production, set `ENVIRONMENT=production`:
 
 ```bash
-SECRET_KEY=<long-random-string>
+SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(48))')
 ENVIRONMENT=production
 POSTGRES_PASSWORD=<secure-password>
 ```
+
+Both are enforced, not just recommended: with `ENVIRONMENT` set to
+anything other than `development`, the app refuses to start while
+`SECRET_KEY` is still the built-in default (which is published in this
+repository and signs every session cookie and API token). Setting
+`ENVIRONMENT=production` is also what makes the session and CSRF cookies
+HTTPS-only and enables HSTS. Keep `SECRET_KEY` with your backups --
+changing it later logs everyone out and makes stored SMTP/Nextcloud
+credentials unreadable.
 
 Recommended: put Nginx in front as a reverse proxy with Let's Encrypt
 (Certbot).
@@ -320,6 +329,11 @@ server {
         proxy_pass http://localhost:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
+        # Needed for login throttling and the signup API's rate limit to
+        # see the real client address; run uvicorn with --proxy-headers
+        # to trust it (only ever behind a proxy you control).
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```

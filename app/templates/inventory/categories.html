@@ -20,6 +20,7 @@
 <div class="card mb-3">
     <div class="card-body">
         <form method="post" action="/inventory/categories/new" class="row g-2">
+            {{ csrf_field() }}
             <div class="col-md-4">
                 <input type="text" name="name" class="form-control" placeholder="{{ t('inventory.categories.name_placeholder') }}" required>
             </div>
@@ -51,6 +52,7 @@
                     <td class="text-end">
                         <form method="post" action="/inventory/categories/{{ category.id }}/delete" class="d-inline"
                               onsubmit="return confirm('{{ t('inventory.categories.delete_confirm') }}');">
+                            {{ csrf_field() }}
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 <i class="bi bi-trash"></i>
                             </button>

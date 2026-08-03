@@ -18,6 +18,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('work_hours.tasks.new_task_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/work-hours/tasks/new">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('work_hours.tasks.title_label') }} <span class="text-danger">*</span></label>
                         <input type="text" name="title" class="form-control"
@@ -92,6 +93,7 @@
                                 <td>
                                     {% if has_perm(request, 'work_hours', 'write') %}
                                     <form method="post" action="/work-hours/tasks/{{ task.id }}/schedule" class="d-flex gap-1">
+                                        {{ csrf_field() }}
                                         <select name="session_id" class="form-select form-select-sm" onchange="this.form.submit()">
                                             <option value="">{{ t('work_hours.tasks.backlog_option') }}</option>
                                             {% for s in upcoming_sessions %}
@@ -104,6 +106,7 @@
                                 <td class="text-end">
                                     {% if has_perm(request, 'work_hours', 'delete') %}
                                     <form method="post" action="/work-hours/tasks/{{ task.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('work_hours.tasks.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
@@ -174,6 +177,7 @@
                                 <td class="text-end">
                                     {% if has_perm(request, 'work_hours', 'write') %}
                                     <form method="post" action="/work-hours/tasks/{{ task.id }}/toggle-done" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-secondary border-0" title="{{ t('work_hours.tasks.toggle_done_tooltip') }}">
                                             <i class="bi {% if task.is_done %}bi-arrow-counterclockwise{% else %}bi-check-lg{% endif %}"></i>
                                         </button>
@@ -183,6 +187,7 @@
                                 <td class="text-end">
                                     {% if has_perm(request, 'work_hours', 'delete') %}
                                     <form method="post" action="/work-hours/tasks/{{ task.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('work_hours.tasks.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

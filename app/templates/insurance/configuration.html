@@ -27,6 +27,7 @@
             <div class="card-body">
                 {% if has_perm(request, 'insurance', 'write') %}
                 <form method="post" action="/insurance/configuration/save">
+                    {{ csrf_field() }}
                     <input type="hidden" name="year" value="{{ year }}">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('insurance.configuration.label_base_amount') }}</label>
@@ -76,6 +77,7 @@
             <div class="card-body">
                 <form method="post" action="/insurance/configuration/packages/new"
                       class="row g-2 align-items-end">
+                    {{ csrf_field() }}
                     <input type="hidden" name="year" value="{{ year }}">
                     <div class="col-sm-4">
                         <label class="form-label fw-semibold" style="font-size: 0.85rem;">{{ t('insurance.configuration.label_name') }}</label>
@@ -122,6 +124,7 @@
                                 <td>
                                     <form method="post" action="/insurance/configuration/packages/{{ p.id }}/edit"
                                           class="d-flex gap-2 align-items-center">
+                                        {{ csrf_field() }}
                                         <input type="text" name="name" class="form-control form-control-sm"
                                                value="{{ p.name }}" style="max-width: 140px;" required>
                                 </td>
@@ -140,6 +143,7 @@
                                     </form>
                                     {% if has_perm(request, 'insurance', 'delete') %}
                                     <form method="post" action="/insurance/configuration/packages/{{ p.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('insurance.configuration.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
@@ -153,6 +157,7 @@
                                 <td class="text-end">
                                     {% if has_perm(request, 'insurance', 'delete') %}
                                     <form method="post" action="/insurance/configuration/packages/{{ p.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('insurance.configuration.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>

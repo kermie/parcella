@@ -24,6 +24,7 @@
             <div class="card-header"><i class="bi bi-plus-lg me-2"></i>{{ t('calendar.community.new_card_title') }}</div>
             <div class="card-body">
                 <form method="post" action="/calendar/community/new">
+                    {{ csrf_field() }}
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ t('calendar.community.event_type_label') }}</label>
                         <select name="event_type" class="form-select">
@@ -122,6 +123,7 @@
                                 <td class="text-end">
                                     {% if kind == 'event' and has_perm(request, 'calendar', 'delete') %}
                                     <form method="post" action="/calendar/community/{{ item.id }}/delete" class="d-inline">
+                                        {{ csrf_field() }}
                                         <button type="submit" class="btn btn-sm btn-outline-danger border-0"
                                                 onclick="return confirm('{{ t('calendar.community.delete_confirm') }}')">
                                             <i class="bi bi-trash"></i>
