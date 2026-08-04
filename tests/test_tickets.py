@@ -123,6 +123,83 @@ async def test_ticket_overview_first_page_is_capped(client, admin_user):
     assert "var hasMore = true;" in response.text
 
 
+# ---------------------------------------------------------------------------
+# Manual spam marking (the automated check only ever runs once, on
+# arrival -- anything it misses needs a manual escape hatch)
+# ---------------------------------------------------------------------------
+
+async def test_web_ui_can_mark_and_unmark_a_ticket_as_spam(client, admin_user):
+    from app.database import AsyncSessionLocal
+    from app.models import Ticket
+    from sqlalchemy import select
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    ticket = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Totally normal", "sender_email": "someone@example.com", "message": "Hi"},
+        headers=headers,
+    )).json()
+
+    await web_login(client)
+
+    mark = await client.post(f"/tickets/{ticket['id']}/mark-spam")
+    assert mark.status_code == 302
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Ticket).where(Ticket.id == ticket["id"]))
+        assert result.scalar_one().spam_suspected is True
+
+    filtered = await client.get("/tickets/", params={"filter": "spam"})
+    assert "Totally normal" in filtered.text
+
+    clear = await client.post(f"/tickets/{ticket['id']}/not-spam")
+    assert clear.status_code == 302
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Ticket).where(Ticket.id == ticket["id"]))
+        assert result.scalar_one().spam_suspected is False
+
+
+async def test_bulk_mark_and_unmark_tickets_as_spam(client, admin_user):
+    from app.database import AsyncSessionLocal
+    from app.models import Ticket
+    from sqlalchemy import select
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    t1 = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "First", "sender_email": "a@example.com", "message": "Hi"},
+        headers=headers,
+    )).json()
+    t2 = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Second", "sender_email": "b@example.com", "message": "Hi"},
+        headers=headers,
+    )).json()
+
+    await web_login(client)
+
+    mark = await client.post(
+        "/tickets/bulk/mark-spam", data={"ticket_ids": [t1["id"], t2["id"]], "filter": "active"},
+    )
+    assert mark.status_code == 302
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Ticket).where(Ticket.id.in_([t1["id"], t2["id"]])))
+        assert all(t.spam_suspected for t in result.scalars().all())
+
+    clear = await client.post(
+        "/tickets/bulk/not-spam", data={"ticket_ids": [t1["id"], t2["id"]], "filter": "spam"},
+    )
+    assert clear.status_code == 302
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Ticket).where(Ticket.id.in_([t1["id"], t2["id"]])))
+        assert not any(t.spam_suspected for t in result.scalars().all())
+
+
 async def test_tickets_list_json_returns_the_remaining_page(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)

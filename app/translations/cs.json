@@ -121,7 +121,10 @@
       "bulk_apply_button": "Použít",
       "bulk_unassign_option": "– Zrušit přiřazení –",
       "bulk_delete_confirm": "Opravdu označit {count} tiket(y) jako smazané?",
-      "bulk_postponed_date_required": "Zadejte prosím datum pro stav „Odloženo“."
+      "bulk_postponed_date_required": "Zadejte prosím datum pro stav „Odloženo“.",
+      "bulk_mark_spam_button": "Označit jako spam",
+      "bulk_not_spam_button": "Není spam",
+      "bulk_mark_spam_confirm": "Opravdu označit {count} tiket(y) jako spam?"
     },
     "form": {
       "title": "Nový ticket",
@@ -146,6 +149,7 @@
       "spam_header": "Podezřelý spam",
       "spam_score_label": "Skóre:",
       "spam_not_spam_button": "Není spam – zrušit podezření",
+      "spam_mark_button": "Označit jako spam",
       "status_header": "Stav",
       "status_save_button": "Uložit stav",
       "assignment_header": "Přidělení",

@@ -333,6 +333,36 @@ async def tickets_bulk_assign(
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
 
 
+@router.post("/bulk/mark-spam")
+async def tickets_bulk_mark_spam(
+    request: Request,
+    ticket_ids: list[str] = Form(...),
+    filter: str = Form("active"),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "tickets", "write")
+    result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
+    for ticket in result.scalars().all():
+        ticket.spam_suspected = True
+    await db.commit()
+    return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
+
+
+@router.post("/bulk/not-spam")
+async def tickets_bulk_not_spam(
+    request: Request,
+    ticket_ids: list[str] = Form(...),
+    filter: str = Form("active"),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_permission(request, db, "tickets", "write")
+    result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
+    for ticket in result.scalars().all():
+        ticket.spam_suspected = False
+    await db.commit()
+    return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
+
+
 # ---------------------------------------------------------------------------
 # Detail
 # ---------------------------------------------------------------------------
@@ -488,8 +518,29 @@ async def ticket_member_assign(
 
 
 # ---------------------------------------------------------------------------
-# Clear spam suspicion (false positive)
+# Spam suspicion: mark manually, or clear a false positive
 # ---------------------------------------------------------------------------
+
+@router.post("/{ticket_id}/mark-spam")
+async def ticket_mark_spam(
+    ticket_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Lets staff flag a ticket the automated check (heuristics + the
+    optional external API, app/spam_filter.py) missed -- the filter
+    only ever runs once, on arrival, so anything it doesn't catch stays
+    unflagged forever without a manual escape hatch."""
+    await require_permission(request, db, "tickets", "write")
+    result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
+    ticket = result.scalar_one_or_none()
+    if not ticket:
+        raise HTTPException(status_code=404)
+
+    ticket.spam_suspected = True
+    await db.commit()
+    return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
+
 
 @router.post("/{ticket_id}/not-spam")
 async def ticket_mark_not_spam(

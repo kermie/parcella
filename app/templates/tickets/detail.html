@@ -118,6 +118,17 @@
                 {% endif %}
             </div>
         </div>
+        {% elif has_perm(request, 'tickets', 'write') %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="post" action="/tickets/{{ ticket.id }}/mark-spam">
+                    {{ csrf_field() }}
+                    <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-shield-exclamation me-1"></i>{{ t('tickets.detail.spam_mark_button') }}
+                    </button>
+                </form>
+            </div>
+        </div>
         {% endif %}
 
         <div class="card mb-3">

@@ -121,7 +121,10 @@
       "bulk_apply_button": "Anwenden",
       "bulk_unassign_option": "– Zuweisung aufheben –",
       "bulk_delete_confirm": "{count} Ticket(s) wirklich als gelöscht markieren?",
-      "bulk_postponed_date_required": "Bitte ein Datum für „Zurückgestellt“ angeben."
+      "bulk_postponed_date_required": "Bitte ein Datum für „Zurückgestellt“ angeben.",
+      "bulk_mark_spam_button": "Als Spam markieren",
+      "bulk_not_spam_button": "Kein Spam",
+      "bulk_mark_spam_confirm": "{count} Ticket(s) wirklich als Spam markieren?"
     },
     "form": {
       "title": "Neues Ticket",
@@ -146,6 +149,7 @@
       "spam_header": "Spam-Verdacht",
       "spam_score_label": "Score:",
       "spam_not_spam_button": "Kein Spam – Verdacht aufheben",
+      "spam_mark_button": "Als Spam markieren",
       "status_header": "Status",
       "status_save_button": "Status speichern",
       "assignment_header": "Zuweisung",

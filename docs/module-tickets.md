@@ -47,6 +47,17 @@ including the score and a traceable justification (`spam_reasoning`, e.g.
 heuristics are never perfect, and an association should never accidentally
 lose a genuine inquiry forever.
 
+**Marking is also manual, not just automatic.** The check
+(`app/spam_filter.py`) only ever runs once, on arrival -- anything it
+misses stays unflagged forever with no automated second chance. Staff
+can flag a ticket the filter missed via a "Mark as spam" button on the
+ticket detail page, or in bulk from the overview's multi-select
+toolbar (`POST /tickets/{id}/mark-spam`, `POST /tickets/bulk/mark-spam`
+-- symmetric to the existing `.../not-spam` clear-the-flag routes). A
+manually-flagged ticket is indistinguishable from an automatically-
+flagged one afterward except that `spam_score`/`spam_reasoning` stay
+empty -- there's no score to show for a human judgment call.
+
 **Spam checking only runs on new tickets, not replies.** If someone
 replies to an already-existing (thread-matched) ticket, no new spam check
 runs -- this avoids unnecessary (potentially paid) external calls and is

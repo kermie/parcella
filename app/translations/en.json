@@ -121,7 +121,10 @@
       "bulk_apply_button": "Apply",
       "bulk_unassign_option": "– Unassign –",
       "bulk_delete_confirm": "Really mark {count} ticket(s) as deleted?",
-      "bulk_postponed_date_required": "Please provide a date for \"Postponed\"."
+      "bulk_postponed_date_required": "Please provide a date for \"Postponed\".",
+      "bulk_mark_spam_button": "Mark as spam",
+      "bulk_not_spam_button": "Not spam",
+      "bulk_mark_spam_confirm": "Really mark {count} ticket(s) as spam?"
     },
     "form": {
       "title": "New ticket",
@@ -146,6 +149,7 @@
       "spam_header": "Suspected spam",
       "spam_score_label": "Score:",
       "spam_not_spam_button": "Not spam – clear suspicion",
+      "spam_mark_button": "Mark as spam",
       "status_header": "Status",
       "status_save_button": "Save status",
       "assignment_header": "Assignment",

@@ -121,7 +121,10 @@
       "bulk_apply_button": "Zastosuj",
       "bulk_unassign_option": "– Cofnij przypisanie –",
       "bulk_delete_confirm": "Czy na pewno oznaczyć {count} zgłoszenie/-a jako usunięte?",
-      "bulk_postponed_date_required": "Proszę podać datę dla statusu „Odroczone”."
+      "bulk_postponed_date_required": "Proszę podać datę dla statusu „Odroczone”.",
+      "bulk_mark_spam_button": "Oznacz jako spam",
+      "bulk_not_spam_button": "To nie spam",
+      "bulk_mark_spam_confirm": "Czy na pewno oznaczyć {count} zgłoszenie/-a jako spam?"
     },
     "form": {
       "title": "Nowe zgłoszenie",
@@ -146,6 +149,7 @@
       "spam_header": "Podejrzenie spamu",
       "spam_score_label": "Wynik:",
       "spam_not_spam_button": "To nie spam – zdejmij podejrzenie",
+      "spam_mark_button": "Oznacz jako spam",
       "status_header": "Status",
       "status_save_button": "Zapisz status",
       "assignment_header": "Przypisanie",

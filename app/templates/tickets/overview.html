@@ -100,6 +100,17 @@
                     class="btn btn-sm btn-outline-primary" disabled>
                 {{ t('tickets.overview.bulk_apply_button') }}
             </button>
+
+            <span class="text-muted d-none d-md-inline">|</span>
+
+            <button type="submit" formaction="/tickets/bulk/mark-spam" id="bulk-mark-spam-apply"
+                    class="btn btn-sm btn-outline-danger" disabled>
+                <i class="bi bi-shield-exclamation me-1"></i>{{ t('tickets.overview.bulk_mark_spam_button') }}
+            </button>
+            <button type="submit" formaction="/tickets/bulk/not-spam" id="bulk-not-spam-apply"
+                    class="btn btn-sm btn-outline-secondary" disabled>
+                {{ t('tickets.overview.bulk_not_spam_button') }}
+            </button>
         </div>
     </div>
     {% endif %}
@@ -200,6 +211,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var postponedDate = document.getElementById('bulk-postponed-date');
     var statusApplyBtn = document.getElementById('bulk-status-apply');
     var assignApplyBtn = document.getElementById('bulk-assign-apply');
+    var markSpamApplyBtn = document.getElementById('bulk-mark-spam-apply');
+    var notSpamApplyBtn = document.getElementById('bulk-not-spam-apply');
 
     function checkboxes() {
         // Queried fresh every time rather than cached once: infinite
@@ -221,6 +234,8 @@ document.addEventListener('DOMContentLoaded', function () {
             : '{{ t("tickets.overview.bulk_none_selected") }}';
         statusApplyBtn.disabled = (n === 0 || !statusSelect.value);
         assignApplyBtn.disabled = (n === 0);
+        markSpamApplyBtn.disabled = (n === 0);
+        notSpamApplyBtn.disabled = (n === 0);
         selectAll.checked = (n > 0 && n === checkboxes().length);
     }
 
@@ -255,6 +270,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!confirm('{{ t("tickets.overview.bulk_delete_confirm", count="__N__") }}'.replace('__N__', checkedCount()))) {
                         e.preventDefault();
                     }
+                }
+            }
+
+            if (submitter.id === 'bulk-mark-spam-apply') {
+                if (!confirm('{{ t("tickets.overview.bulk_mark_spam_confirm", count="__N__") }}'.replace('__N__', checkedCount()))) {
+                    e.preventDefault();
                 }
             }
         });

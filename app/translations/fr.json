@@ -121,7 +121,10 @@
       "bulk_apply_button": "Appliquer",
       "bulk_unassign_option": "– Retirer l'attribution –",
       "bulk_delete_confirm": "Vraiment marquer {count} ticket(s) comme supprimé(s) ?",
-      "bulk_postponed_date_required": "Veuillez indiquer une date pour le statut « Reporté »."
+      "bulk_postponed_date_required": "Veuillez indiquer une date pour le statut « Reporté ».",
+      "bulk_mark_spam_button": "Marquer comme spam",
+      "bulk_not_spam_button": "Pas un spam",
+      "bulk_mark_spam_confirm": "Vraiment marquer {count} ticket(s) comme spam ?"
     },
     "form": {
       "title": "Nouveau ticket",
@@ -146,6 +149,7 @@
       "spam_header": "Spam suspecté",
       "spam_score_label": "Score :",
       "spam_not_spam_button": "Pas un spam – lever le soupçon",
+      "spam_mark_button": "Marquer comme spam",
       "status_header": "Statut",
       "status_save_button": "Enregistrer le statut",
       "assignment_header": "Attribution",
