@@ -58,6 +58,25 @@ manually-flagged ticket is indistinguishable from an automatically-
 flagged one afterward except that `spam_score`/`spam_reasoning` stay
 empty -- there's no score to show for a human judgment call.
 
+**A backlog re-scan catches tickets the filter never saw.** Because the
+check only ever runs once, on arrival, a ticket created before the
+filter was configured (or before a later configuration change, e.g.
+adding an external API) never gets a second chance automatically.
+"Re-scan for spam" in the overview's topbar (`POST
+/tickets/rescan-spam`) runs the check against every ticket that's
+still open (not `CLOSED`/`DELETED`), not already `spam_suspected`, and
+-- critically -- that no human has ever made a spam call on. That last
+condition is `tickets.spam_reviewed_by_id`/`spam_reviewed_at`, set by
+every human-driven path (the mark/not-spam buttons, their bulk
+equivalents, and the API's `PUT /spam-status`) but never by the
+automated check itself. Without it, re-running the scan could
+re-flag a ticket a board member deliberately cleared as a false
+positive, using the same heuristics/API that were wrong about it the
+first time. Capped at `RESCAN_SPAM_BATCH_LIMIT` (200) tickets per run
+to keep the request bounded when an external API is configured (each
+call has its own 5s timeout) -- run it again for the next batch if the
+result message suggests there's more backlog left.
+
 **Spam checking only runs on new tickets, not replies.** If someone
 replies to an already-existing (thread-matched) ticket, no new spam check
 runs -- this avoids unnecessary (potentially paid) external calls and is

@@ -214,6 +214,8 @@ async def spam_status_update(
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     ticket.spam_suspected = daten.spam_suspected
+    ticket.spam_reviewed_by_id = user.id
+    ticket.spam_reviewed_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(ticket)
     return ticket

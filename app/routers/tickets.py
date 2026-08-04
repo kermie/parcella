@@ -24,6 +24,7 @@ from app.module_flags import require_module
 from app.change_tracker import ChangeTracker
 from app.ticket_utils import find_members_by_email
 from app.ticket_mailer import send_ticket_reply, process_incoming_mails
+from app.spam_filter import check_for_spam
 from app.avatars import avatar_url
 from app.email_service import send_email
 from app.i18n import t_for
@@ -340,10 +341,13 @@ async def tickets_bulk_mark_spam(
     filter: str = Form("active"),
     db: AsyncSession = Depends(get_db),
 ):
-    await require_permission(request, db, "tickets", "write")
+    current_user = await require_permission(request, db, "tickets", "write")
     result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
+    now = datetime.now(timezone.utc)
     for ticket in result.scalars().all():
         ticket.spam_suspected = True
+        ticket.spam_reviewed_by_id = current_user.id
+        ticket.spam_reviewed_at = now
     await db.commit()
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
 
@@ -355,10 +359,13 @@ async def tickets_bulk_not_spam(
     filter: str = Form("active"),
     db: AsyncSession = Depends(get_db),
 ):
-    await require_permission(request, db, "tickets", "write")
+    current_user = await require_permission(request, db, "tickets", "write")
     result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
+    now = datetime.now(timezone.utc)
     for ticket in result.scalars().all():
         ticket.spam_suspected = False
+        ticket.spam_reviewed_by_id = current_user.id
+        ticket.spam_reviewed_at = now
     await db.commit()
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
 
@@ -531,13 +538,15 @@ async def ticket_mark_spam(
     optional external API, app/spam_filter.py) missed -- the filter
     only ever runs once, on arrival, so anything it doesn't catch stays
     unflagged forever without a manual escape hatch."""
-    await require_permission(request, db, "tickets", "write")
+    current_user = await require_permission(request, db, "tickets", "write")
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=404)
 
     ticket.spam_suspected = True
+    ticket.spam_reviewed_by_id = current_user.id
+    ticket.spam_reviewed_at = datetime.now(timezone.utc)
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -548,13 +557,15 @@ async def ticket_mark_not_spam(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    await require_permission(request, db, "tickets", "write")
+    current_user = await require_permission(request, db, "tickets", "write")
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=404)
 
     ticket.spam_suspected = False
+    ticket.spam_reviewed_by_id = current_user.id
+    ticket.spam_reviewed_at = datetime.now(timezone.utc)
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -604,4 +615,57 @@ async def inbox_fetch_now(request: Request, db: AsyncSession = Depends(get_db)):
     count = await process_incoming_mails(db)
     import urllib.parse
     message = urllib.parse.quote(f"{count} neue E-Mail(s) verarbeitet.")
+    return RedirectResponse(f"/tickets/?message={message}", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# Backlog re-scan: the spam check (app/spam_filter.py) only ever runs
+# once, on arrival of a new incoming mail -- this is the catch-up pass
+# for tickets that predate the filter being configured, or a
+# configuration change since (e.g. an external API added later).
+# ---------------------------------------------------------------------------
+
+RESCAN_SPAM_BATCH_LIMIT = 200
+
+
+@router.post("/rescan-spam")
+async def tickets_rescan_spam(request: Request, db: AsyncSession = Depends(get_db)):
+    await require_permission(request, db, "tickets", "write")
+
+    result = await db.execute(
+        select(Ticket)
+        .options(selectinload(Ticket.messages))
+        .where(
+            Ticket.spam_suspected == False,
+            # Never touches a ticket a human already made a call on --
+            # only tickets the automated check has effectively never
+            # seen a verdict stick for.
+            Ticket.spam_reviewed_by_id.is_(None),
+            Ticket.status.not_in([TicketStatus.CLOSED, TicketStatus.DELETED]),
+        )
+        .order_by(Ticket.created_at)
+        .limit(RESCAN_SPAM_BATCH_LIMIT)
+    )
+    tickets = result.scalars().all()
+
+    flagged = 0
+    for ticket in tickets:
+        content = next(
+            (m.content for m in ticket.messages if m.direction == MessageDirection.INCOMING), "",
+        )
+        spam_result = await check_for_spam(ticket.sender_email, ticket.subject, content, db)
+        if spam_result.is_spam_suspected:
+            ticket.spam_suspected = True
+            ticket.spam_score = spam_result.score
+            ticket.spam_reasoning = spam_result.reasoning
+            flagged += 1
+    await db.commit()
+
+    import urllib.parse
+    message_key = (
+        "tickets.overview.rescan_result_message_more"
+        if len(tickets) == RESCAN_SPAM_BATCH_LIMIT
+        else "tickets.overview.rescan_result_message"
+    )
+    message = urllib.parse.quote(t_for(request, message_key, scanned=len(tickets), flagged=flagged))
     return RedirectResponse(f"/tickets/?message={message}", status_code=302)

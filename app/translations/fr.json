@@ -90,6 +90,9 @@
     "overview": {
       "title": "Tickets",
       "fetch_inbox_now": "Récupérer la boîte de réception maintenant",
+      "rescan_spam_button": "Rechercher à nouveau le spam",
+      "rescan_result_message": "{scanned} ticket(s) analysé(s), {flagged} marqué(s) comme spam.",
+      "rescan_result_message_more": "{scanned} ticket(s) analysé(s), {flagged} marqué(s) comme spam. Il en reste peut-être -- relancez l'opération.",
       "new_ticket": "Nouveau ticket",
       "filter_active": "Actif",
       "filter_mine": "Les miens",

@@ -90,6 +90,9 @@
     "overview": {
       "title": "Zgłoszenia",
       "fetch_inbox_now": "Pobierz skrzynkę teraz",
+      "rescan_spam_button": "Ponownie sprawdź pod kątem spamu",
+      "rescan_result_message": "Sprawdzono {scanned} zgłoszenie/-a, oznaczono {flagged} jako spam.",
+      "rescan_result_message_more": "Sprawdzono {scanned} zgłoszenie/-a, oznaczono {flagged} jako spam. Może zostać więcej -- uruchom ponownie.",
       "new_ticket": "Nowe zgłoszenie",
       "filter_active": "Aktywne",
       "filter_mine": "Moje",

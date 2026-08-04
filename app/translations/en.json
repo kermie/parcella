@@ -90,6 +90,9 @@
     "overview": {
       "title": "Tickets",
       "fetch_inbox_now": "Fetch inbox now",
+      "rescan_spam_button": "Re-scan for spam",
+      "rescan_result_message": "Scanned {scanned} ticket(s), flagged {flagged} as spam.",
+      "rescan_result_message_more": "Scanned {scanned} ticket(s), flagged {flagged} as spam. There may be more left to scan -- run it again.",
       "new_ticket": "New ticket",
       "filter_active": "Active",
       "filter_mine": "Mine",

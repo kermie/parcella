@@ -148,7 +148,12 @@ async def test_web_ui_can_mark_and_unmark_a_ticket_as_spam(client, admin_user):
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Ticket).where(Ticket.id == ticket["id"]))
-        assert result.scalar_one().spam_suspected is True
+        marked = result.scalar_one()
+        assert marked.spam_suspected is True
+        # A human decision must be recorded -- the rescan routine relies
+        # on this to never overwrite a staff call.
+        assert marked.spam_reviewed_by_id == admin_user.id
+        assert marked.spam_reviewed_at is not None
 
     filtered = await client.get("/tickets/", params={"filter": "spam"})
     assert "Totally normal" in filtered.text
@@ -198,6 +203,78 @@ async def test_bulk_mark_and_unmark_tickets_as_spam(client, admin_user):
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(Ticket).where(Ticket.id.in_([t1["id"], t2["id"]])))
         assert not any(t.spam_suspected for t in result.scalars().all())
+
+
+# ---------------------------------------------------------------------------
+# Backlog re-scan (POST /tickets/rescan-spam): the automated check only
+# ever runs once, on arrival -- this is the catch-up pass for tickets
+# that predate the filter being configured or a later config change.
+# ---------------------------------------------------------------------------
+
+async def test_rescan_spam_flags_matches_but_skips_reviewed_and_closed_tickets(client, admin_user):
+    from app.database import AsyncSessionLocal
+    from app.models import ClubSetting, Ticket, TicketStatus
+    from sqlalchemy import select
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    async with AsyncSessionLocal() as db:
+        db.add(ClubSetting(key="spam_keyword_blocklist", value="casino", description="test"))
+        db.add(ClubSetting(key="spam_schwellenwert", value="0.1", description="test"))
+        await db.commit()
+
+    # A: never touched, still open -- should get flagged.
+    never_reviewed = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Casino night", "sender_email": "a@example.com", "message": "Come play"},
+        headers=headers,
+    )).json()
+
+    # B: matches the same keyword, but staff already cleared it as a
+    # false positive -- the rescan must leave that decision alone.
+    already_reviewed = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Casino night", "sender_email": "b@example.com", "message": "Come play"},
+        headers=headers,
+    )).json()
+    await client.put(
+        f"/api/v1/tickets/{already_reviewed['id']}/spam-status",
+        json={"spam_suspected": False},
+        headers=headers,
+    )
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Ticket).where(Ticket.id == already_reviewed["id"]))
+        reviewed = result.scalar_one()
+        assert reviewed.spam_reviewed_by_id == admin_user.id
+        assert reviewed.spam_reviewed_at is not None
+
+    # C: matches the keyword too, but the ticket is closed -- out of scope.
+    closed_ticket = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Casino night", "sender_email": "c@example.com", "message": "Come play"},
+        headers=headers,
+    )).json()
+    await client.put(
+        f"/api/v1/tickets/{closed_ticket['id']}/status", json={"status": "CLOSED"}, headers=headers,
+    )
+
+    await web_login(client)
+    response = await client.post("/tickets/rescan-spam")
+    assert response.status_code == 302
+    assert "message=" in response.headers["location"]
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Ticket).where(
+                Ticket.id.in_([never_reviewed["id"], already_reviewed["id"], closed_ticket["id"]])
+            )
+        )
+        by_id = {t.id: t for t in result.scalars().all()}
+
+    assert by_id[never_reviewed["id"]].spam_suspected is True
+    assert by_id[already_reviewed["id"]].spam_suspected is False
+    assert by_id[closed_ticket["id"]].spam_suspected is False
 
 
 async def test_tickets_list_json_returns_the_remaining_page(client, admin_user):

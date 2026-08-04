@@ -12,6 +12,12 @@
             <i class="bi bi-arrow-clockwise me-1"></i>{{ t('tickets.overview.fetch_inbox_now') }}
         </button>
     </form>
+    <form method="post" action="/tickets/rescan-spam" class="d-inline">
+        {{ csrf_field() }}
+        <button type="submit" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-shield-exclamation me-1"></i>{{ t('tickets.overview.rescan_spam_button') }}
+        </button>
+    </form>
     <a href="/tickets/new" class="btn btn-sm btn-primary">
         <i class="bi bi-plus-lg me-1"></i>{{ t('tickets.overview.new_ticket') }}
     </a>

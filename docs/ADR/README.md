@@ -70,3 +70,4 @@ in chronological order.
 64. [CSRF protection (double-submit cookie) and security response headers](./0064-csrf-and-security-response-headers.md)
 65. [Credential hardening: default SECRET_KEY refuses to boot, logins are throttled, the bootstrap admin must change its password](./0065-credential-and-deployment-hardening.md)
 66. [Spam filter external API: back to a generic contract](./0066-spam-filter-external-api-back-to-a-generic-contract.md)
+67. [Manual spam marking and backlog re-scan: track human review to protect it from automation](./0067-ticket-spam-manual-marking-and-backlog-rescan.md)

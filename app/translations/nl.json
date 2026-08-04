@@ -90,6 +90,9 @@
     "overview": {
       "title": "Tickets",
       "fetch_inbox_now": "Inbox nu ophalen",
+      "rescan_spam_button": "Opnieuw scannen op spam",
+      "rescan_result_message": "{scanned} ticket(s) gescand, {flagged} als spam gemarkeerd.",
+      "rescan_result_message_more": "{scanned} ticket(s) gescand, {flagged} als spam gemarkeerd. Er kunnen er nog meer zijn -- voer het opnieuw uit.",
       "new_ticket": "Nieuw ticket",
       "filter_active": "Actief",
       "filter_mine": "Mijn",

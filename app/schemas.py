@@ -626,6 +626,8 @@ class TicketOut(BaseModel):
     spam_suspected: bool
     spam_score: Optional[Decimal] = None
     spam_reasoning: Optional[str] = None
+    spam_reviewed_by_id: Optional[str] = None
+    spam_reviewed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
     closed_at: Optional[datetime] = None

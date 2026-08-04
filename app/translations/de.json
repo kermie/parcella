@@ -90,6 +90,9 @@
     "overview": {
       "title": "Tickets",
       "fetch_inbox_now": "Postfach jetzt abrufen",
+      "rescan_spam_button": "Auf Spam erneut prüfen",
+      "rescan_result_message": "{scanned} Ticket(s) geprüft, {flagged} als Spam markiert.",
+      "rescan_result_message_more": "{scanned} Ticket(s) geprüft, {flagged} als Spam markiert. Es könnten noch mehr übrig sein -- erneut ausführen.",
       "new_ticket": "Neues Ticket",
       "filter_active": "Aktiv",
       "filter_mine": "Meine",

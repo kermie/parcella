@@ -1273,6 +1273,16 @@ class Ticket(Base):
     spam_reasoning: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, comment="Traceable reasoning for why it was flagged as spam (transparency)"
     )
+    # Set only by a human decision (the "mark as spam"/"not spam"
+    # buttons, their bulk equivalents, or the API's PUT /spam-status) --
+    # never by the automated check. Distinguishes "a person already
+    # decided this" from "spam_suspected is just whatever the automated
+    # check left it at (or never touched)", so the bulk backlog re-scan
+    # (POST /tickets/rescan-spam) never overwrites a staff decision.
+    spam_reviewed_by_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    spam_reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -1282,7 +1292,8 @@ class Ticket(Base):
     )
     closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    assigned_to: Mapped[Optional["User"]] = relationship("User")
+    assigned_to: Mapped[Optional["User"]] = relationship("User", foreign_keys=[assigned_to_id])
+    spam_reviewed_by: Mapped[Optional["User"]] = relationship("User", foreign_keys=[spam_reviewed_by_id])
     member: Mapped[Optional["Member"]] = relationship("Member")
     messages: Mapped[List["TicketMessage"]] = relationship(
         "TicketMessage", back_populates="ticket", cascade="all, delete-orphan",

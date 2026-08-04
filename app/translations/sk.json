@@ -90,6 +90,9 @@
     "overview": {
       "title": "Tikety",
       "fetch_inbox_now": "Načítať doručenú poštu teraz",
+      "rescan_spam_button": "Znova skontrolovať spam",
+      "rescan_result_message": "Skontrolovaných {scanned} tiket(y), {flagged} označených ako spam.",
+      "rescan_result_message_more": "Skontrolovaných {scanned} tiket(y), {flagged} označených ako spam. Možno ich zostáva viac -- spustite to znova.",
       "new_ticket": "Nový ticket",
       "filter_active": "Aktívne",
       "filter_mine": "Moje",
