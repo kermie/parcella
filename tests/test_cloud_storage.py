@@ -181,6 +181,32 @@ def test_sanitize_relative_path_normalizes_slashes():
     assert sanitize_relative_path("parcels//G016") == "parcels/G016"
 
 
+def test_join_dav_path_rejects_parent_traversal_in_filename():
+    """sanitize_relative_path only ever sees the board-entered folder
+    path -- the filename passed to download_file/upload_file comes
+    straight from a query parameter / uploaded filename with no such
+    check, so _join_dav_path itself must reject '..' (flagged by an
+    external pentest)."""
+    from app.cloud_storage import _join_dav_path, CloudStorageError
+
+    with pytest.raises(CloudStorageError):
+        _join_dav_path("parcels/G016", "../../etc/passwd")
+
+
+async def test_nextcloud_download_rejects_traversal_filename():
+    import httpx as httpx_module
+    from app.cloud_storage import NextcloudProvider, CloudStorageError
+
+    mock_client = httpx_module.AsyncClient(transport=_nextcloud_mock_transport())
+    provider = NextcloudProvider(
+        base_url="https://cloud.example.org", username="board", app_password="secret",
+        client=mock_client,
+    )
+    with pytest.raises(CloudStorageError):
+        await provider.download_file("parcels/G016", "../../other-parcel/secret.pdf")
+    await provider.aclose()
+
+
 # ---------------------------------------------------------------------------
 # End-to-end: module flag, admin config, folder lifecycle, upload/download
 # ---------------------------------------------------------------------------

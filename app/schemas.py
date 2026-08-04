@@ -701,8 +701,13 @@ class PublicWorkSessionOut(BaseModel):
 
 
 class PublicParcelOut(BaseModel):
+    """No 'id' field, deliberately: this is the unauthenticated public
+    signup endpoint, matched by plot_number string (see
+    PublicSignupCreate) -- the reference WordPress connector never uses
+    the parcel's internal UUID, so there's no reason to hand it to every
+    unauthenticated caller (flagged by an external pentest as IDOR
+    reconnaissance value)."""
     model_config = ConfigDict(from_attributes=True)
-    id: str
     plot_number: str
 
 

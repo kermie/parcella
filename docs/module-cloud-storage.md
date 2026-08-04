@@ -70,7 +70,12 @@ confusingly.
 `sanitize_relative_path()` normalizes a board-entered path and rejects
 anything containing a `..` segment -- the path is later joined onto a
 WebDAV URL, so path traversal here isn't just a UI nuisance, it could
-reach outside the intended folder tree on the Nextcloud side.
+reach outside the intended folder tree on the Nextcloud side. That
+covers the folder path, but not the `filename` that
+`download_file`/`upload_file` take directly from a query parameter /
+uploaded filename with no equivalent check -- so `_join_dav_path()`
+itself (`app/cloud_storage.py`) also rejects `..` segments, as the
+choke point both callers go through (flagged by an external pentest).
 
 `deactivate_if_vacant(db, parcel_id)` is the one safety-relevant rule:
 called after any action that can end a resident's tenancy (setting

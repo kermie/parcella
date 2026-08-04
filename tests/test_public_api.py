@@ -96,6 +96,11 @@ async def test_upcoming_sessions_and_parcels_are_unauthenticated(client, admin_u
     parcels_response = await client.get("/api/v1/public/parcels")
     assert parcels_response.status_code == 200
     assert parcels_response.json()[0]["plot_number"] == "G042"
+    # No internal UUID for an unauthenticated caller -- the reference
+    # WordPress connector matches by plot_number alone, so handing out
+    # the id is pure IDOR reconnaissance value with no legitimate use
+    # (flagged by an external pentest).
+    assert "id" not in parcels_response.json()[0]
 
 
 async def test_signup_requires_valid_api_token(client, admin_user):

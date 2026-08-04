@@ -95,7 +95,12 @@ The two GET endpoints are intentionally unauthenticated -- the same
 posture as the public community ICS feed (`app/ics_utils.py`): an
 external site's frontend can't send this app's session cookie, and the
 data exposed (session dates/times, plot numbers) isn't sensitive on its
-own.
+own. `GET /parcels` deliberately omits the parcel's internal id from
+`PublicParcelOut` (`app/schemas.py`) -- the reference WordPress
+connector matches by `plot_number` string alone, so there's no reason
+to hand every unauthenticated caller a UUID that's usable elsewhere in
+the app as `parcel_id` (flagged by an external pentest as IDOR
+reconnaissance value).
 
 The POST endpoint requires the installation's shared API token (see
 `app/public_api_auth.py`, same shared-secret pattern as the private ICS

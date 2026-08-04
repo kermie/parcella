@@ -106,8 +106,21 @@ def _join_dav_path(*segments: str) -> str:
     but spaces, umlauts, parentheses etc. in folder/file names are
     encoded correctly. Each segment may itself be a multi-part relative
     path (e.g. "parcels/G016") -- it's split on "/" before quoting, so
-    the separator isn't percent-encoded into "%2F" along with it."""
-    parts = [part for s in segments if s for part in s.strip("/").split("/") if part]
+    the separator isn't percent-encoded into "%2F" along with it.
+
+    Rejects '..' segments: the folder path is validated before it gets
+    here (sanitize_relative_path), but the filename passed to
+    download_file/upload_file comes straight from a query parameter /
+    uploaded filename with no such check, and could otherwise walk this
+    join outside the intended folder within the Nextcloud account
+    (flagged by an external pentest)."""
+    parts = [
+        part for s in segments if s
+        for part in s.strip("/").split("/")
+        if part and part != "."
+    ]
+    if any(part == ".." for part in parts):
+        raise CloudStorageError("Invalid path: '..' is not allowed.")
     return "/".join(quote(part, safe="") for part in parts)
 
 
