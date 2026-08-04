@@ -5,17 +5,25 @@ Two layers, combined:
 1. Built-in heuristics (domain/keyword blocklist, link count) -- work
    immediately, no external service, configurable under
    /admin/settings.
-2. Optional external API (apilayer.com's Spam Check API) -- only
-   active when a URL is configured. If the external call fails, it
-   silently falls back to the heuristics; an outage of the external
-   service must never block ticket creation.
+2. Optional external API -- only active when a URL is configured. If
+   the external call fails, it silently falls back to the heuristics;
+   an outage of the external service must never block ticket creation.
+
+The external API is a generic contract, not tied to one vendor -- see
+`_external_check` below for the exact request/response shape, and
+`integrations/spam-check-adapter/` for a runnable reference
+implementation any admin can adapt to front a real provider (Akismet,
+a self-hosted filter like rspamd, or a paid API). This used to be
+hard-wired to apilayer.com's Spam Check API specifically; see
+docs/ADR/0038-spam-filter-external-api-tied-to-apilayer-for-now.md for
+why that happened and docs/ADR/0066-spam-filter-external-api-back-to-a-generic-contract.md
+for why it moved back to a generic one (apilayer's API stopped working
+and there was no fallback, since nothing else could speak its
+vendor-specific contract).
 
 The final score is the maximum of the heuristic and external scores.
 If the score is >= the threshold, the message is flagged as suspected
 spam.
-
-NOTE: the external check is currently tied to one closed, commercial
-vendor -- a pre-open-source loose end. See ADR 0038 before shipping.
 """
 import logging
 import re
@@ -102,26 +110,39 @@ async def _external_check(
     config: dict, sender_email: str, subject: str, content: str
 ) -> Optional[float]:
     """
-    Calls apilayer.com's Spam Check API (https://apilayer.com/marketplace/spamchecker-api).
-    It takes the message as a plain-text body and returns whether it
-    considers it spam, already weighed against the threshold configured
-    in the API URL's query string (e.g. ?threshold=3.5). Returns None if
-    no external API is configured or the call fails.
+    Calls the external spam-check API configured under Admin ->
+    Settings, if any. Generic contract, so any provider can be wired up
+    behind a thin adapter without touching this code (see
+    integrations/spam-check-adapter/ for a runnable reference):
+
+        POST {api_url}
+        Authorization: Bearer {api_key}   (only sent if a key is set)
+        Content-Type: application/json
+        {"sender_email": "...", "subject": "...", "content": "..."}
+
+        -> 200 OK
+           {"spam_score": 0.0-1.0}
+
+    Any mismatch (timeout, non-2xx, missing/non-numeric spam_score) is
+    treated as "no external signal" -- returns None, same as no API
+    being configured at all. An outage or misconfiguration of the
+    external service must never block ticket creation.
     """
     if not config["api_url"]:
         return None
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            headers = {"apikey": config["api_key"]} if config["api_key"] else {}
+            headers = {"Authorization": f"Bearer {config['api_key']}"} if config["api_key"] else {}
             response = await client.post(
                 config["api_url"],
                 headers=headers,
-                content=f"{subject}\n\n{content}".encode("utf-8"),
+                json={"sender_email": sender_email, "subject": subject, "content": content},
             )
             response.raise_for_status()
             data = response.json()
-            return 1.0 if data.get("is_spam") else 0.0
+            score = float(data.get("spam_score"))
+            return max(0.0, min(1.0, score))
     except Exception as e:
         logger.warning(f"External spam check failed, falling back to heuristics only: {e}")
         return None
@@ -145,7 +166,7 @@ async def check_for_spam(
     external_score = await _external_check(config, sender_email, subject, content)
     if external_score is not None and external_score > heuristic_score:
         final_score = external_score
-        reasons.append("External check (apilayer.com) flagged this message as spam")
+        reasons.append(f"External spam-check API scored this message {final_score:.2f}")
     else:
         final_score = heuristic_score
 

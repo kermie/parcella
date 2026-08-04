@@ -1,5 +1,13 @@
 # Spam filter external API: tied to apilayer.com for now
 
+**Note: superseded.** apilayer.com's API stopped working, with no
+fallback since the integration was hard-wired to its specific
+contract -- exactly the risk this ADR flagged below. See
+[ADR 0066](./0066-spam-filter-external-api-back-to-a-generic-contract.md)
+for the generic contract + reference adapter that replaced it. Left
+as-is here rather than edited, so the reasoning that led to the
+apilayer-specific version in the first place stays visible.
+
 **Context:** `app/spam_filter.py` (ticket system stage 3) combines
 built-in heuristics with an optional external spam-check API,
 configured under `/admin/settings` as a URL + API key. The module's

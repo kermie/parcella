@@ -23,13 +23,20 @@ Module flag: `tickets`
 **Two combined layers.** Built-in heuristics run immediately, with no
 external service: sender-domain blocklist, keyword blocklist, number of
 links in the text. An optional external API (`app/spam_filter.py`,
-`_externe_pruefung()`) is only used if a URL is configured -- it merely
-needs to return `{"spam_score": 0.0-1.0}` as JSON, so that any service
-(Akismet, a self-hosted filter, a small adapter in front of a paid
-service) can be connected without touching caller code. The final score
-is the maximum of the heuristic and the external score; if the external
-call fails, it silently falls back to the heuristics -- an outage of the
-external service must never block ticket creation.
+`_external_check()`) is only used if a URL is configured under Admin ->
+Settings -- Parcella POSTs `{"sender_email", "subject", "content"}` as
+JSON and expects back `{"spam_score": 0.0-1.0}`, a generic contract any
+service can be connected to via a thin adapter, without touching caller
+code (see `integrations/spam-check-adapter/` for a runnable reference
+implementation). The final score is the maximum of the heuristic and
+the external score; if the external call fails or its response doesn't
+match the contract, it silently falls back to the heuristics -- an
+outage or misconfiguration of the external service must never block
+ticket creation. This contract briefly detoured to being hard-wired to
+one specific commercial vendor (apilayer.com) and back -- see
+[ADR 0038](./ADR/0038-spam-filter-external-api-tied-to-apilayer-for-now.md)
+and [ADR 0066](./ADR/0066-spam-filter-external-api-back-to-a-generic-contract.md)
+for why.
 
 **Transparency instead of silently sorting things out.** Tickets marked
 as spam are not deleted, only hidden from the default "Active" filter. A
