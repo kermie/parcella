@@ -17,12 +17,20 @@ were fixed:
    before it can use the app.
 6. Security response headers.
 7. CSRF protection for cookie-authenticated form POSTs.
+8. CSV formula injection in the finance bookings, member, parcel, and
+   work-hours evaluation exports (flagged by an external pentest, not
+   found in-house -- see docs/security.md).
 """
+from datetime import date
+
 import pytest
 from httpx import AsyncClient
 
 from app.database import AsyncSessionLocal
-from app.models import Member
+from app.models import (
+    Member, ClubSetting, FinanceAccount, FinanceAccountType, AccountTransaction,
+    Parcel, ParcelStatus, MemberParcel, WorkHoursConfiguration, WorkHoursMode,
+)
 from tests.conftest import auth_header, login
 
 
@@ -363,3 +371,81 @@ async def test_every_post_form_in_the_templates_carries_a_token():
                 missing.append(f"{path}:{line}")
 
     assert not missing, "POST forms without {{ csrf_field() }}:\n" + "\n".join(missing)
+
+
+# ---------------------------------------------------------------------------
+# 8. CSV formula injection in export paths
+# ---------------------------------------------------------------------------
+# A cell that starts with =, +, -, or @ is interpreted as a formula by
+# Excel/LibreOffice Calc when the exported file is opened. These exports
+# wrote user-entered free text straight into cells -- fixed with
+# app/csv_utils.csv_safe(), which prefixes such cells with a single quote.
+
+FORMULA_PAYLOAD = "=cmd|'/c calc'!A1"
+
+
+async def test_finance_bookings_csv_export_sanitizes_formula_injection(client, admin_user):
+    await web_login(client, admin_user.email)
+
+    async with AsyncSessionLocal() as session:
+        session.add(ClubSetting(key="modul_finances", value="true", description="test"))
+        account = FinanceAccount(name="Vereinskonto", account_type=FinanceAccountType.BANK, is_active=True)
+        session.add(account)
+        await session.commit()
+        account_id = account.id
+
+    async with AsyncSessionLocal() as session:
+        session.add(AccountTransaction(
+            account_id=account_id, booking_date=date.fromisoformat("2026-08-01"), amount="-9.99",
+            description=FORMULA_PAYLOAD, counterparty="+1;DDE payload", source="manual",
+        ))
+        await session.commit()
+
+    response = await client.get(f"/finances/accounts/{account_id}/bookings/export.csv")
+    assert response.status_code == 200
+    assert f"'{FORMULA_PAYLOAD}" in response.text
+    assert "'+1;DDE payload" in response.text
+
+
+async def test_members_csv_export_sanitizes_formula_injection(client, admin_user):
+    await web_login(client, admin_user.email)
+
+    async with AsyncSessionLocal() as session:
+        session.add(Member(first_name=FORMULA_PAYLOAD, last_name="Gardener", notes="@SUM(1+1)"))
+        await session.commit()
+
+    response = await client.get("/members/export/csv")
+    assert response.status_code == 200
+    assert f"'{FORMULA_PAYLOAD}" in response.text
+    assert "'@SUM(1+1)" in response.text
+
+
+async def test_parcels_csv_export_sanitizes_formula_injection(client, admin_user):
+    await web_login(client, admin_user.email)
+
+    async with AsyncSessionLocal() as session:
+        session.add(Parcel(plot_number="G999", status=ParcelStatus.ACTIVE, termination_note=FORMULA_PAYLOAD))
+        await session.commit()
+
+    response = await client.get("/parcels/export/csv")
+    assert response.status_code == 200
+    assert f"'{FORMULA_PAYLOAD}" in response.text
+
+
+async def test_work_hours_evaluation_csv_sanitizes_formula_injection(client, admin_user):
+    await web_login(client, admin_user.email)
+
+    async with AsyncSessionLocal() as session:
+        session.add(WorkHoursConfiguration(
+            year=2026, hours_required="5.0", rate_per_hour_eur="25.00", mode=WorkHoursMode.PER_PARCEL,
+        ))
+        member = Member(first_name=FORMULA_PAYLOAD, last_name="Tenant")
+        parcel = Parcel(plot_number="G998", status=ParcelStatus.ACTIVE)
+        session.add_all([member, parcel])
+        await session.commit()
+        session.add(MemberParcel(member_id=member.id, parcel_id=parcel.id, is_invoice_address=True))
+        await session.commit()
+
+    response = await client.get("/work-hours/evaluation/csv", params={"year": "2026"})
+    assert response.status_code == 200
+    assert f"'{FORMULA_PAYLOAD}" in response.text

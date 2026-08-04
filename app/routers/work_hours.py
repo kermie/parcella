@@ -14,6 +14,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
+from app.csv_utils import csv_safe
 from app.models import (
     WorkSession, SessionParticipation, SessionType, ParticipationStatus,
     Sponsorship, ClubRole, MemberClubRole, ExemptionReason,
@@ -1269,7 +1270,7 @@ async def evaluation_export_csv(
             amount_due = outstanding * float(config.rate_per_hour_eur)
             writer.writerow([
                 parcel.plot_number,
-                "; ".join(names),
+                csv_safe("; ".join(names)),
                 f"{required:.1f}",
                 f"{session_hours:.1f}",
                 f"{sponsorship_hours:.1f}",

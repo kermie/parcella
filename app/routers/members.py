@@ -15,6 +15,7 @@ from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter, current_tenant_filter
+from app.csv_utils import csv_safe
 from app.models import Member, MemberPhone, MemberEmail, MemberParcel, Parcel
 from app.permissions import require_permission
 from app.i18n import t_for, load_current_language
@@ -507,14 +508,15 @@ async def members_export_csv(request: Request, db: AsyncSession = Depends(get_db
         phones = "; ".join(t.number for t in m.phone_numbers)
         parcels = "; ".join(z.parcel.plot_number for z in m.parcel_assignments)
         writer.writerow([
-            m.first_name, m.last_name, m.street or "", m.postal_code or "", m.city or "",
+            csv_safe(m.first_name), csv_safe(m.last_name), csv_safe(m.street or ""),
+            csv_safe(m.postal_code or ""), csv_safe(m.city or ""),
             m.date_of_birth.isoformat() if m.date_of_birth else "",
-            m.iban or "",
+            csv_safe(m.iban or ""),
             m.member_since.isoformat() if m.member_since else "",
             m.member_until.isoformat() if m.member_until else "",
             "Ja" if m.email_notifications else "Nein",
-            emails, phones, parcels,
-            m.notes or "",
+            csv_safe(emails), csv_safe(phones), parcels,
+            csv_safe(m.notes or ""),
         ])
 
     output.seek(0)

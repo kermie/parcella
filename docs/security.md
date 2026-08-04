@@ -43,6 +43,18 @@ current when you touch anything below.
    to the residual list below. The one that mattered most: `bleach`
    6.1.0 carried two XSS-bypass advisories, and bleach is what sanitizes
    ticket email HTML from arbitrary external senders.
+8. **CSV formula injection in the finance bookings export** (flagged by
+   an external pentest of the deployed instance, not found in-house).
+   `reference`/`description`/`counterparty` were written to the export
+   verbatim; a value starting with `=`, `+`, `-`, or `@` is read as a
+   formula by Excel/LibreOffice Calc when the file is opened, letting
+   whoever entered the booking run code on the workstation of the
+   finance user who opens it. The same pattern existed in the member,
+   parcel, and work-hours-evaluation CSV exports (free-text notes,
+   addresses, member names). Fixed with `app/csv_utils.csv_safe()`,
+   applied to every free-text cell in those four exports; the insurance
+   CSV export was audited too but only ever writes numbers and
+   admin-picked package names, so it was left alone.
 
 Regression tests for all of these live in `tests/test_security.py`.
 

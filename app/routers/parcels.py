@@ -14,6 +14,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
+from app.csv_utils import csv_safe
 from app.models import (
     Parcel, ParcelStatus, MemberParcel, Member, ChangeHistory
 )
@@ -589,9 +590,9 @@ async def parcels_export_csv(request: Request, db: AsyncSession = Depends(get_db
             p.plot_number,
             str(p.area_sqm).replace(".", ",") if p.area_sqm else "",
             p.status.value,
-            p.termination_note or "",
-            members_str,
-            p.notes or "",
+            csv_safe(p.termination_note or ""),
+            csv_safe(members_str),
+            csv_safe(p.notes or ""),
         ])
 
     output.seek(0)

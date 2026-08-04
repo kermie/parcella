@@ -36,6 +36,7 @@ from sqlalchemy import select, func, union_all, literal, or_, and_, cast, String
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
+from app.csv_utils import csv_safe
 from app.i18n import t_for, load_current_language
 from app.models import (
     InvoiceRun, InvoiceRunStatus, InvoiceItemDefinition, InvoiceItemDefinitionParcel, InvoiceItemDefinitionMember,
@@ -1809,7 +1810,7 @@ async def account_bookings_export_csv(account_id: str, request: Request, db: Asy
     for r in rows:
         writer.writerow([
             r.booking_date.strftime("%Y-%m-%d"), f"{float(r.amount):.2f}",
-            r.reference or "", r.description or "", r.counterparty or "",
+            csv_safe(r.reference or ""), csv_safe(r.description or ""), csv_safe(r.counterparty or ""),
         ])
 
     filename = f"{account.name.replace(' ', '_')}_bookings.csv"
