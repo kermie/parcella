@@ -24,6 +24,7 @@ from app.module_flags import require_module
 from app.change_tracker import ChangeTracker
 from app.ticket_utils import find_members_by_email
 from app.ticket_mailer import send_ticket_reply, process_incoming_mails
+from app.avatars import avatar_url
 from app.email_service import send_email
 from app.i18n import t_for
 from app.config import settings
@@ -76,22 +77,16 @@ async def _reactivate_due_tickets(db: AsyncSession) -> int:
 # Overview
 # ---------------------------------------------------------------------------
 
-@router.get("/", response_class=HTMLResponse)
-async def tickets_overview(
-    request: Request,
-    filter: str = "active",  # active | mine | waiting | postponed | closed | spam | all
-    search: str = "",
-    db: AsyncSession = Depends(get_db),
-):
-    user = await require_permission(request, db, "tickets", "read")
+TICKETS_PAGE_SIZE = 50
 
-    reactivated_count = await _reactivate_due_tickets(db)
 
-    query = (
-        select(Ticket)
-        .options(selectinload(Ticket.assigned_to), selectinload(Ticket.member))
-        .order_by(Ticket.created_at.desc())
-    )
+def _tickets_filtered_query(filter: str, search: str, user_id: str):
+    """Shared between the HTML overview (first page) and the JSON
+    endpoint the infinite scroll polls for every page after that --
+    both must agree on exactly which tickets match the current filter/
+    search, and on a stable order (created_at ties broken by id,
+    otherwise offset-based paging can skip or repeat rows)."""
+    query = select(Ticket).options(selectinload(Ticket.assigned_to), selectinload(Ticket.member))
 
     # "Active" and "Mine" deliberately show ONLY operationally open
     # tickets (ACTIVE/ASSIGNED/WAITING) -- POSTPONED tickets are
@@ -105,7 +100,7 @@ async def tickets_overview(
         query = query.where(Ticket.status.in_(open_statuses), Ticket.spam_suspected == False)
     elif filter == "mine":
         query = query.where(
-            Ticket.assigned_to_id == user.id, Ticket.status.in_(open_statuses)
+            Ticket.assigned_to_id == user_id, Ticket.status.in_(open_statuses)
         )
     elif filter == "waiting":
         query = query.where(Ticket.status == TicketStatus.WAITING)
@@ -127,6 +122,21 @@ async def tickets_overview(
             )
         )
 
+    return query.order_by(Ticket.created_at.desc(), Ticket.id.desc())
+
+
+@router.get("/", response_class=HTMLResponse)
+async def tickets_overview(
+    request: Request,
+    filter: str = "active",  # active | mine | waiting | postponed | closed | spam | all
+    search: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    user = await require_permission(request, db, "tickets", "read")
+
+    reactivated_count = await _reactivate_due_tickets(db)
+
+    query = _tickets_filtered_query(filter, search, user.id).limit(TICKETS_PAGE_SIZE)
     result = await db.execute(query)
     tickets = result.scalars().all()
 
@@ -156,7 +166,46 @@ async def tickets_overview(
         "postponed_count": postponed_count, "waiting_count": waiting_count,
         "spam_count": spam_count, "all_active_users": all_active_users,
         "TicketStatus": TicketStatus,
+        "page_size": TICKETS_PAGE_SIZE,
+        "has_more": len(tickets) == TICKETS_PAGE_SIZE,
     })
+
+
+@router.get("/list.json")
+async def tickets_list_json(
+    request: Request,
+    filter: str = "active",
+    search: str = "",
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+):
+    """Fetched by the ticket overview's infinite scroll for every page
+    after the first (which the HTML route above already renders)."""
+    user = await require_permission(request, db, "tickets", "read")
+
+    query = _tickets_filtered_query(filter, search, user.id).limit(TICKETS_PAGE_SIZE).offset(offset)
+    result = await db.execute(query)
+    tickets = result.scalars().all()
+
+    return {
+        "rows": [
+            {
+                "id": t.id,
+                "subject": t.subject,
+                "spam_suspected": t.spam_suspected,
+                "member_name": t.member.full_name if t.member else None,
+                "sender": t.sender_name or t.sender_email,
+                "status": t.status.value,
+                "assigned_to_name": t.assigned_to.name if t.assigned_to else None,
+                "assigned_to_avatar_url": (
+                    avatar_url(t.assigned_to.avatar_filename) if t.assigned_to else None
+                ),
+                "created_at": t.created_at.strftime("%d.%m.%Y %H:%M"),
+            }
+            for t in tickets
+        ],
+        "has_more": len(tickets) == TICKETS_PAGE_SIZE,
+    }
 
 
 

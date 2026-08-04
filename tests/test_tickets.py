@@ -7,6 +7,21 @@ here (see docs/testing.md for the reasoning behind this boundary).
 from tests.conftest import login, auth_header
 
 
+async def web_login(client, email: str = "admin@example.com", password: str = "testpasswort123") -> None:
+    response = await client.post("/auth/login", data={"email": email, "password": password})
+    assert response.status_code in (302, 303)
+
+
+async def _create_tickets(client, headers, count: int) -> None:
+    for i in range(count):
+        response = await client.post(
+            "/api/v1/tickets",
+            json={"subject": f"Ticket {i}", "sender_email": f"sender{i}@example.com", "message": "Hallo"},
+            headers=headers,
+        )
+        assert response.status_code == 201, response.text
+
+
 async def test_ticket_create_and_automatic_member_matching(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
@@ -83,3 +98,39 @@ async def test_ticket_status_zurueckgestellt_erfordert_datum(client, admin_user)
         headers=headers,
     )
     assert mit_datum.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Overview: infinite-scroll pagination
+# ---------------------------------------------------------------------------
+
+async def test_ticket_overview_first_page_is_capped(client, admin_user):
+    """The list used to render every matching ticket in one unbounded
+    HTML table -- now capped to TICKETS_PAGE_SIZE (50), with the rest
+    fetched by the overview's infinite scroll from /tickets/list.json."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _create_tickets(client, headers, 55)
+
+    await web_login(client)
+    response = await client.get("/tickets/", params={"filter": "all"})
+    assert response.status_code == 200
+    # Only count rendered ticket rows, not the "bi-eye" substring that
+    # also appears in the page's own inline <script> (row-templating JS
+    # for infinite scroll) further down.
+    rendered_rows = response.text.split("<script>")[0]
+    assert rendered_rows.count("bi-eye") == 50
+    assert "var hasMore = true;" in response.text
+
+
+async def test_tickets_list_json_returns_the_remaining_page(client, admin_user):
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    await _create_tickets(client, headers, 55)
+
+    await web_login(client)
+    response = await client.get("/tickets/list.json", params={"filter": "all", "offset": 50})
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["rows"]) == 5
+    assert data["has_more"] is False

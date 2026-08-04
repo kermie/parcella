@@ -121,7 +121,7 @@
                             <th></th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tickets-tbody">
                         {% for t_row in tickets %}
                         <tr class="{% if t_row.spam_suspected %}table-danger{% endif %}">
                             {% if has_perm(request, 'tickets', 'write') %}
@@ -172,7 +172,7 @@
                             </td>
                         </tr>
                         {% else %}
-                        <tr>
+                        <tr id="tickets-empty-row">
                             <td colspan="7" class="text-center py-5 text-muted">
                                 <i class="bi bi-inbox d-block mb-2" style="font-size: 1.5rem;"></i>
                                 {{ t('tickets.overview.empty_state') }}
@@ -182,12 +182,10 @@
                     </tbody>
                 </table>
             </div>
+            <div id="tickets-sentinel" class="text-center text-muted py-3">
+                <div id="tickets-spinner" class="spinner-border spinner-border-sm" role="status" style="visibility: hidden;"></div>
+            </div>
         </div>
-        {% if tickets %}
-        <div class="card-footer text-muted" style="font-size: 0.82rem;">
-            {{ tickets | length }} {{ t('tickets.overview.count_suffix') }}
-        </div>
-        {% endif %}
     </div>
 </form>
 
@@ -195,61 +193,169 @@
 document.addEventListener('DOMContentLoaded', function () {
     var selectAll = document.getElementById('select-all');
     var form = document.getElementById('bulk-form');
-    if (!selectAll || !form) return;  // bulk editing UI isn't rendered without tickets:write
-    var checkboxes = document.querySelectorAll('.ticket-checkbox');
+    var canWrite = !!selectAll;  // bulk editing UI (and its checkbox column) isn't rendered without tickets:write
+
     var selectedCountEl = document.getElementById('bulk-selected-count');
     var statusSelect = document.getElementById('bulk-status-select');
     var postponedDate = document.getElementById('bulk-postponed-date');
     var statusApplyBtn = document.getElementById('bulk-status-apply');
     var assignApplyBtn = document.getElementById('bulk-assign-apply');
 
+    function checkboxes() {
+        // Queried fresh every time rather than cached once: infinite
+        // scroll appends new checkboxes into the same tbody after
+        // load, so a NodeList captured at DOMContentLoaded would go
+        // stale the moment the first extra page loads.
+        return document.querySelectorAll('.ticket-checkbox');
+    }
+
     function checkedCount() {
-        return Array.prototype.filter.call(checkboxes, function (cb) { return cb.checked; }).length;
+        return Array.prototype.filter.call(checkboxes(), function (cb) { return cb.checked; }).length;
     }
 
     function updateButtons() {
+        if (!canWrite) return;
         var n = checkedCount();
         selectedCountEl.textContent = n > 0
             ? '{{ t("tickets.overview.bulk_selected_count", count="__N__") }}'.replace('__N__', n)
             : '{{ t("tickets.overview.bulk_none_selected") }}';
         statusApplyBtn.disabled = (n === 0 || !statusSelect.value);
         assignApplyBtn.disabled = (n === 0);
-        selectAll.checked = (n > 0 && n === checkboxes.length);
+        selectAll.checked = (n > 0 && n === checkboxes().length);
     }
 
-    selectAll.addEventListener('change', function () {
-        checkboxes.forEach(function (cb) { cb.checked = selectAll.checked; });
-        updateButtons();
-    });
+    if (canWrite) {
+        selectAll.addEventListener('change', function () {
+            checkboxes().forEach(function (cb) { cb.checked = selectAll.checked; });
+            updateButtons();
+        });
 
-    checkboxes.forEach(function (cb) {
-        cb.addEventListener('change', updateButtons);
-    });
+        // Event delegation on the form, not a listener per checkbox --
+        // covers checkboxes appended later by infinite scroll too.
+        form.addEventListener('change', function (e) {
+            if (e.target.classList.contains('ticket-checkbox')) updateButtons();
+        });
 
-    statusSelect.addEventListener('change', function () {
-        postponedDate.style.display = (statusSelect.value === 'POSTPONED') ? '' : 'none';
-        updateButtons();
-    });
+        statusSelect.addEventListener('change', function () {
+            postponedDate.style.display = (statusSelect.value === 'POSTPONED') ? '' : 'none';
+            updateButtons();
+        });
 
-    form.addEventListener('submit', function (e) {
-        var submitter = e.submitter;
-        if (!submitter) return;
+        form.addEventListener('submit', function (e) {
+            var submitter = e.submitter;
+            if (!submitter) return;
 
-        if (submitter.id === 'bulk-status-apply') {
-            if (statusSelect.value === 'POSTPONED' && !postponedDate.value) {
-                e.preventDefault();
-                alert('{{ t("tickets.overview.bulk_postponed_date_required") }}');
-                return;
-            }
-            if (statusSelect.value === 'DELETED') {
-                if (!confirm('{{ t("tickets.overview.bulk_delete_confirm", count="__N__") }}'.replace('__N__', checkedCount()))) {
+            if (submitter.id === 'bulk-status-apply') {
+                if (statusSelect.value === 'POSTPONED' && !postponedDate.value) {
                     e.preventDefault();
+                    alert('{{ t("tickets.overview.bulk_postponed_date_required") }}');
+                    return;
+                }
+                if (statusSelect.value === 'DELETED') {
+                    if (!confirm('{{ t("tickets.overview.bulk_delete_confirm", count="__N__") }}'.replace('__N__', checkedCount()))) {
+                        e.preventDefault();
+                    }
                 }
             }
-        }
-    });
+        });
 
-    updateButtons();
+        updateButtons();
+    }
+
+    // -----------------------------------------------------------------
+    // Infinite scroll: the HTML route above renders the first page
+    // (TICKETS_PAGE_SIZE rows); this fetches subsequent pages from
+    // /tickets/list.json as the sentinel at the bottom of the table
+    // scrolls into view, matching the finances account-bookings pattern.
+    // -----------------------------------------------------------------
+    var tbody = document.getElementById('tickets-tbody');
+    var sentinel = document.getElementById('tickets-sentinel');
+    var spinner = document.getElementById('tickets-spinner');
+    var emptyRow = document.getElementById('tickets-empty-row');
+    var offset = {{ tickets|length }};
+    var hasMore = {{ 'true' if has_more else 'false' }};
+    var loading = false;
+
+    var statusStyles = {
+        ACTIVE: {cls: '', style: 'background: #fee2e2; color: #991b1b;', label: {{ t('tickets.overview.status_active')|tojson }}},
+        ASSIGNED: {cls: 'badge-aktiv', style: '', label: {{ t('tickets.overview.status_assigned')|tojson }}},
+        WAITING: {cls: '', style: 'background: #dbeafe; color: #1e40af;', label: {{ t('tickets.overview.status_waiting')|tojson }}},
+        POSTPONED: {cls: '', style: 'background: #fef3c7; color: #92400e;', label: {{ t('tickets.overview.status_postponed')|tojson }}},
+        DELETED: {cls: '', style: 'background: #1f2937; color: #f9fafb;', label: {{ t('tickets.overview.status_deleted')|tojson }}},
+        CLOSED: {cls: '', style: 'background: #f3f4f6; color: #6b7280;', label: {{ t('tickets.overview.status_closed')|tojson }}}
+    };
+    var spamBadgeLabel = {{ t('tickets.overview.spam_suspected_badge')|tojson }};
+
+    function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s == null ? '' : s;
+        return div.innerHTML;
+    }
+
+    function statusBadgeHtml(status) {
+        var s = statusStyles[status] || statusStyles.CLOSED;
+        return '<span class="badge ' + s.cls + '" style="' + s.style + '">' + escapeHtml(s.label) + '</span>';
+    }
+
+    function appendRows(rows) {
+        if (emptyRow) { emptyRow.remove(); emptyRow = null; }
+        rows.forEach(function (t) {
+            var tr = document.createElement('tr');
+            if (t.spam_suspected) tr.className = 'table-danger';
+
+            var checkboxTd = canWrite
+                ? '<td><input type="checkbox" name="ticket_ids" value="' + escapeHtml(t.id) + '" class="ticket-checkbox"></td>'
+                : '';
+            var subjectTd =
+                '<td><a href="/tickets/' + escapeHtml(t.id) + '" class="text-decoration-none fw-semibold" style="color: var(--gv-gruen);">' +
+                escapeHtml(t.subject) + '</a>' +
+                (t.spam_suspected ? ' <span class="badge bg-danger ms-1" style="font-size: 0.68rem;">' + escapeHtml(spamBadgeLabel) + '</span>' : '') +
+                (t.member_name ? '<div class="text-muted" style="font-size: 0.78rem;"><i class="bi bi-person"></i> ' + escapeHtml(t.member_name) + '</div>' : '') +
+                '</td>';
+            var senderTd = '<td class="text-muted" style="font-size: 0.85rem;">' + escapeHtml(t.sender) + '</td>';
+            var statusTd = '<td>' + statusBadgeHtml(t.status) + '</td>';
+            var assignedTd = '<td>' + (t.assigned_to_name
+                ? '<span class="d-inline-flex align-items-center gap-1">' +
+                  (t.assigned_to_avatar_url
+                      ? '<img src="' + escapeHtml(t.assigned_to_avatar_url) + '" alt="" class="rounded-circle flex-shrink-0" style="width: 20px; height: 20px; object-fit: cover;">'
+                      : '<i class="bi bi-person-circle flex-shrink-0" style="font-size: 20px; line-height: 1;"></i>') +
+                  escapeHtml(t.assigned_to_name) + '</span>'
+                : '–') + '</td>';
+            var createdTd = '<td class="text-muted" style="font-size: 0.82rem;">' + escapeHtml(t.created_at) + '</td>';
+            var actionsTd = '<td class="text-end"><a href="/tickets/' + escapeHtml(t.id) + '" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a></td>';
+
+            tr.innerHTML = checkboxTd + subjectTd + senderTd + statusTd + assignedTd + createdTd + actionsTd;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function loadMore() {
+        if (loading || !hasMore) return;
+        loading = true;
+        spinner.style.visibility = 'visible';
+        var params = new URLSearchParams(window.location.search);
+        params.set('offset', offset);
+        fetch('/tickets/list.json?' + params.toString())
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                appendRows(data.rows);
+                offset += data.rows.length;
+                hasMore = data.has_more;
+                spinner.style.visibility = 'hidden';
+                loading = false;
+                if (!hasMore) { observer.disconnect(); sentinel.style.display = 'none'; }
+            })
+            .catch(function () { loading = false; spinner.style.visibility = 'hidden'; });
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) { loadMore(); }
+    });
+    if (hasMore) {
+        observer.observe(sentinel);
+    } else {
+        sentinel.style.display = 'none';
+    }
 });
 </script>
 {% endblock %}

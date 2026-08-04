@@ -156,6 +156,19 @@ messages received before this feature only have `content` (plain text)
 -- there was no way to recover the original HTML after the fact, since
 it was never stored.
 
+## Overview pagination
+
+The ticket list (`GET /tickets/`) renders the first `TICKETS_PAGE_SIZE`
+(50) matching tickets and loads the rest via infinite scroll against
+`GET /tickets/list.json`, same pattern as the finance account-bookings
+page (`app/routers/finances.py`). Both routes share
+`_tickets_filtered_query()` so the HTML page and the JSON continuation
+always agree on which tickets match the current filter/search, ordered
+by `created_at` with `id` as a tiebreaker (needed for stable offset
+paging -- without it, two tickets created in the same instant could be
+skipped or duplicated across pages). Previously the list had no limit
+at all and rendered every matching row in one table.
+
 ## Data model (stage 1)
 
 ```
