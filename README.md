@@ -7,26 +7,18 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://postgresql.org)
 
-An open-source web application for managing allotment garden associations
-("Kleingartenverein" / "Schrebergarten" associations): members, parcels,
-lease administration, and mandatory work hours.
+Parcella is an open-source web application for managing allotment garden associations AKA ("Kleingartenverein" / "Schrebergarten" associations): members, parcels,
+lease administration, mandatory work hours and much more.
 
-Started as a vibe-coding project with the goal of replacing proprietary
-association software -- generic enough for any allotment garden
-association, in any country.
+Started as a vibe-coding project with the goal of replacing proprietary association software - hopefully generic enough for any allotment garden association, in any country.
 
-📖 **Detailed documentation in the [Wiki](../../wiki)**
+📖 **Detailed [documentation](https://github.com/kermie/parcella/tree/main/docs), which later will become an HTTP online help.**
 
 ---
 
 ## License
 
-This project is licensed under the **GNU Affero General Public License
-v3.0** (see [LICENSE](./LICENSE)). In particular, this means: anyone who
-runs a modified version of this software as a network service (e.g. SaaS
-for other associations) must make the source code of that modified
-version publicly available. Details and contribution guidelines in
-[CONTRIBUTING.md](./CONTRIBUTING.md).
+This project is licensed under the **GNU Affero General Public License v3.0** (see [LICENSE](./LICENSE)). In particular, this means: anyone who runs a modified version of this software as a network service (e.g. SaaS for other associations) must make the source code of that modified version publicly available. Details and contribution guidelines in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
@@ -34,115 +26,37 @@ version publicly available. Details and contribution guidelines in
 
 - ✅ Session-based login (cookie-based)
 - ✅ Invitation system (no public sign-up)
-- ✅ Role system: Admin, Board, Treasurer, Read-only
-- ✅ Member management (core data, multiple phone numbers, multiple email
-  addresses, IBAN, soft delete for Admin/Board)
+- ✅ Group system: Admin, board and other users can have fine-grained access to modules.
+- ✅ Member management (core data, multiple phone numbers, multiple email addresses, IBAN, soft delete for Admin/Board)
 - ✅ Parcel management (status: active/terminated/deleted, area, termination)
-- ✅ Many-to-many member ↔ parcel assignment, multiple parcels per member;
-  every resident of a parcel is held jointly responsible, with no
-  hierarchy between them
+- ✅ Many-to-many member ↔ parcel assignment, multiple parcels per member; every resident of a parcel is held jointly responsible, with no hierarchy between them
 - ✅ CSV export and import (members, parcels) with duplicate detection
-- ✅ Club settings (A/B/C area sizes, SMTP configuration)
-- ✅ Dashboard with live statistics (members, parcels, areas, plus open
-  purchase requests and open tickets when those modules are enabled)
-- ✅ Work-hours system (year-based configuration, configurable per parcel
-  or per member)
-- ✅ Work sessions (standard and special), participant management with
-  hours tracking
-- ✅ Task backlog for work sessions: create tasks, optionally schedule
-  to a session, optionally assign to a specific signed-up participant
-  (workload label only -- no member ability/health data stored, task
-  matching stays a manual coordinator decision)
+- ✅ Club settings (A/B/C area sizes, SMTP configuration and much more)
+- ✅ Dashboard with live statistics (members, parcels, areas, plus open purchase requests and open tickets when those modules are enabled)
+- ✅ Work-hours system (year-based configuration, configurable per parcel or per member)
+- ✅ Work sessions (standard and special), participant management with hours tracking
+- ✅ Task backlog for work sessions: create tasks, optionally schedule to a session, optionally assign to a specific signed-up participant (workload label only -- no member ability/health data stored, task matching stays a manual coordinator decision)
 - ✅ Sponsorships (flat-rate hour credit for area coordinators)
 - ✅ Club roles / extended board with work-hours exemption
 - ✅ Annual work-hours report with CSV export
-- ✅ Water and electricity metering (metering points, meters, readings,
-  consumption reports)
-- ✅ Property and accident insurance tracking per parcel, with annual
-  report
-- ✅ Ticket system with automatic member matching, spam heuristics, IMAP
-  inbox polling, six explicit statuses (Active/Assigned/Waiting/
-  Postponed/Closed/Deleted), bulk status-change and bulk-assign from the
-  ticket list, and safely rendered HTML emails (allowlist-based
-  sanitization, no tracking pixels, no script execution)
-- ✅ Purchase requests with a two-person approval principle (two distinct
-  board members must approve before a purchase is made)
+- ✅ Water and electricity metering (metering points, meters, readings, consumption reports)
+- ✅ Property and accident insurance tracking per parcel, with annual report
+- ✅ Ticket system with automatic member matching, spam heuristics, IMAP inbox polling, six explicit statuses (Active/Assigned/Waiting/Postponed/Closed/Deleted), bulk status-change and bulk-assign from the ticket list, and safely rendered HTML emails (allowlist-based sanitization, no tracking pixels, no script execution)
+- ✅ Purchase requests with a two-person approval principle (two distinct board members must approve before a purchase is made)
 - ✅ REST API with JWT authentication and Swagger documentation
 - ✅ Database migrations via Alembic
-- ✅ Custom club branding: upload your own logo and set your club's
-  display name from Admin -> Settings, replacing the default tree icon
-  and "Parcella" placeholder everywhere in the sidebar
-- ✅ i18n: 7 languages (German, English, Polish, Czech, Slovak, French,
-  Dutch), one language per installation, switchable in admin settings,
-  every module and the navigation fully translated. JSON translation
-  catalogs, English as the base/authoring language and the runtime
-  fallback for any missing key.
-- ✅ l10n: region and currency are independent settings from language
-  (e.g. an English-language UI can still show German number formatting
-  and EUR). Number and money formatting via Babel (correct
-  decimal/thousands separators and currency symbol position per
-  region); address display order adapts per region (continental
-  postcode-before-city vs. UK-style postcode-last).
-- ✅ Responsive/mobile layout: off-canvas navigation on narrow screens,
-  wide tables scroll independently of the page; sidebar module groups
-  behave as an accordion (only one open at a time) to stay usable as
-  more modules get added
-- ✅ Calendar module: community calendar (member meetings, parcel
-  inspections, work sessions -- all in one simple upcoming-items list,
-  no full calendar-grid UI), member birthdays (with a dashboard "this
-  week" widget highlighting round-number birthdays), council on-site
-  presence scheduling, and self-service council absence logging (anyone
-  with a login can enter their own). Each with its own ICS export --
-  the community calendar's feed is public (embeddable on your public
-  website), the other three require a private access token since they
-  contain more sensitive information
-- ✅ Public signup API: lets an external CMS (WordPress, TYPO3, Contao,
-  or anything else) submit work-session signups without a Parcella
-  login, identifying only by parcel number (never a member name -- the
-  public site must not expose who lives where). Parcella matches the
-  optional submitted name against the parcel's current residents and
-  registers just that member if it's unambiguous, or every current
-  resident as a precaution if it isn't, creating real participants the
-  board can review and correct like any other signup. Off by default
-  (it opens a public write endpoint) and protected by a regenerable
-  shared token; a reference WordPress connector plugin
-  (`parcella-connector`) is included under `integrations/wordpress/`,
-  consolidating every WordPress <-> Parcella integration (currently
-  signup; more planned) behind one shared settings screen
-- ✅ Announcements module: author a piece of club news once (Markdown
-  body, image, optional print override) and deliver it to all three
-  channels -- a paced email send to current members with notifications
-  enabled (plus a one-off test send), a WordPress blog draft via the
-  site's REST API (credentials on Admin -> Integrations), and a
-  one-page branded PDF that auto-shortens and adds a QR code to the
-  published blog post if the full text doesn't fit. Off by default,
-  admin/board only. See `docs/module-announcements.md`.
-- ✅ Inventory module: an asset register for everything the club owns
-  (and personal items members store on club property, tracked with
-  the same financial fields for insurance/liability purposes), grouped
-  into freely-configurable categories, with a quantity-aware lending
-  system for borrowable items (checkout/return, a suggested per-loan
-  fee, a board-wide "who has what out right now" view). Full REST API
-  alongside the web UI. See `docs/module-inventory.md`.
-- ✅ Cloud storage module: lets board/admin browse, upload to, and
-  download from a per-parcel document folder in the club's own
-  Nextcloud instance (lease agreements, membership paperwork). Off by
-  default, admin/board only; who can see a folder's contents is managed
-  directly in Nextcloud, not by Parcella. See `docs/module-cloud-storage.md`.
-- ✅ Task board module: a general kanban board (To Do / In Progress /
-  Done) for club business that isn't tied to a work session, with
-  drag-and-drop reordering. Admin/board only, separate from the
-  work-hours module's session-scoped task backlog. Full REST API
-  alongside the web UI. See `docs/module-tasks.md`.
-
-## Planned (next phases)
-
-- Password change for logged-in users
-- Assign a member to a club role (UI)
-- Invoicing (per parcel, area, or member)
-- Document management
-- Mail merge / email campaigns
-- WordPress integration (work-session sign-up via API)
+- ✅ Custom club branding: upload your own logo and set your club's display name from Admin -> Settings, replacing the default tree icon and "Parcella" placeholder everywhere in the sidebar 
+- ✅ i18n: 7 languages (German, English, Polish, Czech, Slovak, French, Dutch), one language per installation, switchable in admin settings, every module and the navigation fully translated. JSON translation catalogs, English as the base/authoring language and the runtime fallback for any missing key.
+- ✅ l10n: region and currency are independent settings from language (e.g. an English-language UI can still show German number formatting and EUR). Number and money formatting (correct decimal/thousands separators and currency symbol position per
+region); address display order adapts per region (continental
+postcode-before-city vs. UK-style postcode-last).
+- ✅ Responsive/mobile layout: off-canvas navigation on narrow screens, wide tables scroll independently of the page; sidebar module groups behave as an accordion (only one open at a time) to stay usable as more modules get added
+- ✅ Calendar module: community calendar (member meetings, parcel inspections, work sessions - all in one simple upcoming-items list,  no full calendar-grid UI), member birthdays (with a dashboard "this week" widget highlighting round-number birthdays), council on-site presence scheduling, and self-service council absence logging (anyone with a login can enter their own). Each with its own ICS export - the community calendar's feed is public (embeddable on your public website), the other three require a private access token since they contain more sensitive information
+- ✅ Public signup API: lets an external CMS (WordPress, TYPO3, Contao, or anything else) submit work-session signups without a Parcella login, identifying only by parcel number (never a member name - the public site must not expose who lives where). Parcella matches the optional submitted name against the parcel's current residents and registers just that member if it's unambiguous, or every current resident as a precaution if it isn't, creating real participants the board can review and correct like any other signup. Off by default (it opens a public write endpoint) and protected by a regenerable shared token; a reference WordPress connector plugin (`parcella-connector`) is included under `integrations/wordpress/`, consolidating every WordPress <-> Parcella integration (currently signup; more planned) behind one shared settings screen
+- ✅ Announcements module: author a piece of club news once (Markdown body, image, optional print override) and deliver it to all three channels - a paced email send to current members with notifications enabled (plus a one-off test send), a WordPress blog draft via the site's REST API (credentials on Admin -> Integrations), and a one-page branded PDF that auto-shortens and adds a QR code to the published blog post if the full text doesn't fit. Off by default, admin/board only. See `docs/module-announcements.md`.
+- ✅ Inventory module: an asset register for everything the club owns (and personal items members store on club property, tracked with the same financial fields for insurance/liability purposes), grouped into freely-configurable categories, with a quantity-aware lending system for borrowable items (checkout/return, a suggested per-loan fee, a board-wide "who has what out right now" view). Full REST API alongside the web UI. See `docs/module-inventory.md`.
+- ✅ Cloud storage module: lets board/admin browse, upload to, and download from a per-parcel document folder in the club's own Nextcloud instance (lease agreements, membership paperwork). Off by default, admin/board only; who can see a folder's contents is managed directly in Nextcloud, not by Parcella. See `docs/module-cloud-storage.md`.
+- ✅ Task board module: a general kanban board (To Do / In Progress / Done) for club business that isn't tied to a work session, with drag-and-drop reordering. Admin/board only, separate from the work-hours module's session-scoped task backlog. Full REST API alongside the web UI. See `docs/module-tasks.md`.
 
 ---
 
@@ -188,8 +102,7 @@ docker compose run --rm --entrypoint alembic web upgrade head
 docker compose up -d
 ```
 
-The application is now available at **http://localhost:8000**.
-API documentation: **http://localhost:8000/api/docs**
+The application is now available at **http://localhost:8000**; documentation: **https://github.com/kermie/parcella/tree/main/docs**
 
 ### 4. First login
 
@@ -198,7 +111,7 @@ An admin account is created automatically on first startup:
 - **Email:** `admin@parcella.local`
 - **Password:** `admin1234`
 
-⚠️ **Please change the password immediately after your first login!**
+⚠️ **Please change the password immediately after your first login! Create yourself a new admin user and delete admin@parcella.local**
 
 ---
 
@@ -207,6 +120,7 @@ An admin account is created automatically on first startup:
 Alongside the web UI, there is a full REST API under `/api/v1/`.
 
 **Interactive documentation:**
+
 - Swagger UI: http://localhost:8000/api/docs
 - ReDoc: http://localhost:8000/api/redoc
 - OpenAPI schema (JSON): http://localhost:8000/api/openapi.json
@@ -226,8 +140,7 @@ curl http://localhost:8000/api/v1/members \
   -H "Authorization: Bearer <access_token>"
 ```
 
-Tokens are valid for 24 hours. The Swagger UI has an "Authorize" button
-for convenient testing.
+Tokens are valid for 24 hours. The Swagger UI has an "Authorize" button for convenient testing.
 
 ### Key endpoints
 
@@ -295,7 +208,7 @@ docker compose run --rm web alembic revision --autogenerate -m "Short descriptio
 ```
 
 For an existing installation predating Alembic: see
-[MIGRATION-NOTE.md](./MIGRATION-NOTE.md).
+[MIGRATION-NOTE.md](https://github.com/kermie/parcella/blob/main/MIGRATION-NOTE.md).
 
 ---
 
@@ -309,17 +222,9 @@ ENVIRONMENT=production
 POSTGRES_PASSWORD=<secure-password>
 ```
 
-Both are enforced, not just recommended: with `ENVIRONMENT` set to
-anything other than `development`, the app refuses to start while
-`SECRET_KEY` is still the built-in default (which is published in this
-repository and signs every session cookie and API token). Setting
-`ENVIRONMENT=production` is also what makes the session and CSRF cookies
-HTTPS-only and enables HSTS. Keep `SECRET_KEY` with your backups --
-changing it later logs everyone out and makes stored SMTP/Nextcloud
-credentials unreadable.
+Both are enforced, not just recommended: with `ENVIRONMENT` set to anything other than `development`, the app refuses to start while `SECRET_KEY` is still the built-in default (which is published in this repository and signs every session cookie and API token). Setting `ENVIRONMENT=production` is also what makes the session and CSRF cookies HTTPS-only and enables HSTS. Keep `SECRET_KEY` with your backups - changing it later logs everyone out and makes stored SMTP/Nextcloud credentials unreadable.
 
-Recommended: put Nginx in front as a reverse proxy with Let's Encrypt
-(Certbot).
+Recommended: put Nginx in front as a reverse proxy with Let's Encrypt (Certbot).
 
 ```nginx
 server {
