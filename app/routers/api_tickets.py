@@ -122,6 +122,12 @@ async def status_update(
 
     neuer_status = TicketStatus(daten.status)
 
+    if neuer_status == TicketStatus.ASSIGNED:
+        raise HTTPException(
+            status_code=422,
+            detail="ASSIGNED cannot be set directly; assign a user via PUT /{ticket_id}/assignment instead",
+        )
+
     if neuer_status == TicketStatus.POSTPONED and not daten.postponed_until:
         raise HTTPException(status_code=422, detail="postponed_until is required for status POSTPONED")
 

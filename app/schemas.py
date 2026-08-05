@@ -597,7 +597,11 @@ class TicketCreate(BaseModel):
 
 
 class TicketStatusUpdate(BaseModel):
-    status: str = Field(..., description="ACTIVE, ASSIGNED, WAITING, POSTPONED, CLOSED or DELETED")
+    status: str = Field(
+        ...,
+        description="ACTIVE, WAITING, POSTPONED, CLOSED or DELETED. "
+        "ASSIGNED is set automatically via PUT /{ticket_id}/assignment and cannot be set directly.",
+    )
     postponed_until: Optional[date] = None
 
 

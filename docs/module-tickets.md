@@ -234,6 +234,18 @@ bulk-actions UI that came with it). When a ticket is assigned, the
 status automatically jumps to `ASSIGNED`; when the assignment is
 cleared, it goes back to `ACTIVE`.
 
+**`ASSIGNED` is the one exception to "explicit state machine": it's not
+manually selectable.** Both status dropdowns (`tickets/detail.html`,
+the bulk-status picker in `tickets/overview.html`) omit it from their
+options, and `_apply_status()` / the `PUT /api/v1/tickets/{id}/status`
+endpoint reject it outright (400/422) if a client tries anyway --
+`ASSIGNED` only ever makes sense with a real `assigned_to_id`, so it's
+exclusively set as a side effect of `PUT .../assignment`, never picked
+directly. When a ticket's current status is `ASSIGNED`, `detail.html`
+shows a read-only badge instead of the dropdown; unassigning (which
+reverts to `ACTIVE`) is the only way out short of picking one of the
+other five.
+
 **"Postponed until" is a real status flip, not just a computed
 display.** Earlier, `DEFERRED` was purely computed on every view
 (`status == DEFERRED and deferred_until <= today`) without ever writing

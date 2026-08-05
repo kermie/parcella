@@ -462,6 +462,9 @@ def _apply_status(ticket: Ticket, new_status: TicketStatus, postponed_until_str:
     single-ticket and bulk status changes, so both are guaranteed to
     apply the same rules.
     """
+    if new_status == TicketStatus.ASSIGNED:
+        raise HTTPException(status_code=400, detail=t_for(request, "errors.ticket_status_assigned_manual"))
+
     ticket.status = new_status
 
     if new_status == TicketStatus.POSTPONED:

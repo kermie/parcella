@@ -75,6 +75,37 @@ async def test_ticket_zuweisung_aendert_status(client, admin_user):
     assert aufgehoben["status"] == "ACTIVE"
 
 
+async def test_ticket_status_assigned_nicht_manuell_setzbar(client, admin_user):
+    """ASSIGNED is derived from assigned_to_id (see test_ticket_zuweisung_aendert_status)
+    and must not be settable directly via either the REST API or the HTML status form --
+    otherwise a ticket can end up "assigned" with nobody actually assigned to it."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    ticket = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Test", "sender_email": "x@example.com", "message": "Hallo"},
+        headers=headers,
+    )).json()
+
+    api_response = await client.put(
+        f"/api/v1/tickets/{ticket['id']}/status",
+        json={"status": "ASSIGNED"},
+        headers=headers,
+    )
+    assert api_response.status_code == 422
+
+    await web_login(client)
+    html_response = await client.post(
+        f"/tickets/{ticket['id']}/status",
+        data={"new_status_value": "ASSIGNED"},
+    )
+    assert html_response.status_code == 400
+
+    unverändert = (await client.get(f"/api/v1/tickets/{ticket['id']}", headers=headers)).json()
+    assert unverändert["status"] == "ACTIVE"
+
+
 async def test_ticket_status_zurueckgestellt_erfordert_datum(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)
