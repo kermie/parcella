@@ -79,6 +79,17 @@ http://localhost:8000/api/docs.
   with at least one happy-path test (see [docs/testing.md](./docs/testing.md)
   for the testing philosophy and how to run the suite).
 
+## Releasing (maintainers)
+
+1. Bump `app_version` in `app/config.py` to the new version number.
+2. Commit that change.
+3. `git tag vX.Y.Z` (must match `app_version` exactly) and `git push origin vX.Y.Z`.
+
+Pushing the tag triggers `.github/workflows/release.yml`: it runs the full
+test suite, then (only if that passes and the tag matches `app_version`)
+builds and pushes `ghcr.io/kermie/parcella:X.Y.Z` and `:latest`. See
+[ADR 0068](./docs/ADR/0068-publish-web-image-to-ghcr-prod-compose-split.md).
+
 ## What helps us most
 
 - Translating module UI text into English (the i18n foundation exists --

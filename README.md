@@ -218,6 +218,29 @@ For an existing installation predating Alembic: see
 
 ## Production
 
+### Using the published image
+
+Running a club's own instance doesn't require cloning the whole repo or
+building the image yourself. Versioned images are published to
+[GHCR](https://github.com/kermie/parcella/pkgs/container/parcella) on every
+release. Grab just the two files you need:
+
+```bash
+mkdir parcella && cd parcella
+curl -O https://raw.githubusercontent.com/kermie/parcella/main/docker-compose.prod.yml
+curl -o .env https://raw.githubusercontent.com/kermie/parcella/main/.env.example
+# edit .env: passwords, SECRET_KEY, ENVIRONMENT=production, SMTP, etc.
+docker compose -f docker-compose.prod.yml run --rm --entrypoint alembic web upgrade head
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The admin panel's "update available" notice (`/admin/system`) uses this
+same `docker-compose.prod.yml` for its `pull`/`up` instructions. Pin
+`PARCELLA_VERSION` in `.env` to a specific release for a reproducible
+deploy instead of always tracking `latest`.
+
+### Environment
+
 For production, set `ENVIRONMENT=production`:
 
 ```bash

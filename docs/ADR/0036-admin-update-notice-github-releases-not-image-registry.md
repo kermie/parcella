@@ -1,5 +1,10 @@
 # Admin update notice: GitHub releases, not an image registry
 
+**Update (2026-08-06):** the image-registry gap this ADR flagged (no
+published image for the notice's `docker compose pull` instructions to
+actually fetch) is now closed -- see
+[ADR 0068](./0068-publish-web-image-to-ghcr-prod-compose-split.md).
+
 **Context:** Admins have no way to know a newer Parcella version exists
 short of watching the GitHub repo themselves. Added a background check
 (`app/update_check.py`) that periodically compares the running
