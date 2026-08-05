@@ -22,6 +22,10 @@ This project is licensed under the **GNU Affero General Public License v3.0** (s
 
 ---
 
+## Screenshot of the dashboard
+
+![parcella dashboard](dashboard_screenshot.png "parcella screenshot")
+
 ## Features (current state)
 
 - ✅ Session-based login (cookie-based)
