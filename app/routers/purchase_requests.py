@@ -6,7 +6,7 @@ Four-eyes principle: two different board members must agree before a
 PurchaseRequest counts as approved. The requester themselves may not
 give either of the two approvals.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
@@ -34,6 +34,16 @@ router = APIRouter(
 from app.templating import templates
 
 _REQUIRED_APPROVALS = 2
+
+# How long a requester has to confirm via the emailed deep link before it
+# stops working. The token itself never expires cryptographically (it's
+# just an itsdangerous signature, looked up verbatim in the DB), so this
+# is enforced against PurchaseRequest.created_at instead.
+_CONFIRMATION_TOKEN_MAX_AGE_DAYS = 30
+
+
+def _confirmation_token_expired(pr: PurchaseRequest) -> bool:
+    return datetime.now(timezone.utc) - pr.created_at > timedelta(days=_CONFIRMATION_TOKEN_MAX_AGE_DAYS)
 
 
 async def _load_with_details(db: AsyncSession, request_id: str) -> Optional[PurchaseRequest]:
@@ -254,7 +264,7 @@ async def purchase_request_reject(
 async def confirm_page(token: str, request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.confirmation_token == token))
     pr = result.scalar_one_or_none()
-    if not pr:
+    if not pr or _confirmation_token_expired(pr):
         return templates.TemplateResponse(
             "purchase_requests/confirmation_invalid.html", {"request": request}
         )
@@ -268,7 +278,7 @@ async def confirm_page(token: str, request: Request, db: AsyncSession = Depends(
 async def confirm(token: str, request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(PurchaseRequest).where(PurchaseRequest.confirmation_token == token))
     pr = result.scalar_one_or_none()
-    if not pr:
+    if not pr or _confirmation_token_expired(pr):
         return templates.TemplateResponse(
             "purchase_requests/confirmation_invalid.html", {"request": request}
         )

@@ -21,7 +21,7 @@ were fixed:
    work-hours evaluation exports (flagged by an external pentest, not
    found in-house -- see docs/security.md).
 """
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 from httpx import AsyncClient
@@ -30,6 +30,7 @@ from app.database import AsyncSessionLocal
 from app.models import (
     Member, ClubSetting, FinanceAccount, FinanceAccountType, AccountTransaction,
     Parcel, ParcelStatus, MemberParcel, WorkHoursConfiguration, WorkHoursMode,
+    PurchaseRequest,
 )
 from tests.conftest import auth_header, login
 
@@ -430,6 +431,90 @@ async def test_parcels_csv_export_sanitizes_formula_injection(client, admin_user
     response = await client.get("/parcels/export/csv")
     assert response.status_code == 200
     assert f"'{FORMULA_PAYLOAD}" in response.text
+
+
+# ---------------------------------------------------------------------------
+# 9. Purchase-request confirmation links never expired
+# ---------------------------------------------------------------------------
+
+async def test_expired_confirmation_token_is_rejected(client):
+    """A purchase-request confirmation link used to work forever. An old
+    request's token (backdated past the max age) must now be treated
+    the same as an unknown one -- shown the "invalid" page, not the
+    confirmation form, and not usable to actually confirm."""
+    async with AsyncSessionLocal() as session:
+        pr = PurchaseRequest(
+            title="Alter Antrag", justification="Test",
+            requester_name="Extern", requester_email="extern@example.com",
+            confirmation_token="expired-token-abc",
+            created_at=datetime.now(timezone.utc) - timedelta(days=31),
+        )
+        session.add(pr)
+        await session.commit()
+        pr_id = pr.id
+
+    get_response = await client.get("/purchase-requests/confirm/expired-token-abc")
+    assert get_response.status_code == 200
+    assert "confirmation_invalid" not in get_response.text  # sanity: template renders, doesn't leak its own name
+    post_response = await client.post("/purchase-requests/confirm/expired-token-abc")
+    assert post_response.status_code == 200
+
+    async with AsyncSessionLocal() as session:
+        refreshed = await session.get(PurchaseRequest, pr_id)
+        assert refreshed.confirmed_by_requester is False, "an expired token must not be able to confirm"
+
+
+async def test_fresh_confirmation_token_still_works(client):
+    """Companion to the expiry test above: a token within the max age
+    must still confirm normally, so the fix doesn't just reject
+    everything."""
+    async with AsyncSessionLocal() as session:
+        pr = PurchaseRequest(
+            title="Neuer Antrag", justification="Test",
+            requester_name="Extern", requester_email="extern@example.com",
+            confirmation_token="fresh-token-xyz",
+        )
+        session.add(pr)
+        await session.commit()
+        pr_id = pr.id
+
+    response = await client.post("/purchase-requests/confirm/fresh-token-xyz")
+    assert response.status_code == 200
+
+    async with AsyncSessionLocal() as session:
+        refreshed = await session.get(PurchaseRequest, pr_id)
+        assert refreshed.confirmed_by_requester is True
+
+
+# ---------------------------------------------------------------------------
+# 10. crypto_utils.decrypt() used to silently return ciphertext on failure
+# ---------------------------------------------------------------------------
+
+async def test_decrypt_of_token_encrypted_with_a_different_key_raises():
+    """Simulates a SECRET_KEY rotation: a value that really was
+    encrypted (structurally a valid Fernet token) but with a different
+    key than the one currently derived from SECRET_KEY. Previously this
+    was returned unchanged -- a still-encrypted blob silently used as
+    if it were the real plaintext (e.g. sent as an SMTP password). It
+    must now fail loudly instead."""
+    from cryptography.fernet import Fernet
+    from app.crypto_utils import decrypt, DecryptionError
+
+    token_from_another_key = Fernet(Fernet.generate_key()).encrypt(b"hunter2").decode("utf-8")
+
+    with pytest.raises(DecryptionError):
+        decrypt(token_from_another_key)
+
+
+async def test_decrypt_still_returns_legacy_plaintext():
+    """Values stored before encryption was introduced aren't valid
+    Fernet tokens at all (unlike the rotated-key case above), so they
+    must still come back unchanged instead of raising."""
+    from app.crypto_utils import decrypt
+
+    assert decrypt("") == ""
+    assert decrypt(None) is None
+    assert decrypt("hunter2") == "hunter2"
 
 
 async def test_work_hours_evaluation_csv_sanitizes_formula_injection(client, admin_user):

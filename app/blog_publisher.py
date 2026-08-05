@@ -35,7 +35,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ClubSetting
-from app.crypto_utils import decrypt
+from app.crypto_utils import decrypt, DecryptionError
 
 logger = logging.getLogger(__name__)
 
@@ -196,7 +196,14 @@ async def load_wordpress_configuration(db: AsyncSession) -> Optional[dict]:
 
     site_url = stored.get("wordpress_site_url")
     username = stored.get("wordpress_username")
-    app_password = decrypt(stored.get("wordpress_app_password"))
+    try:
+        app_password = decrypt(stored.get("wordpress_app_password"))
+    except DecryptionError:
+        logger.error(
+            "Could not decrypt the stored WordPress app password -- did SECRET_KEY change? "
+            "Treating the blog connector as not configured until it's re-entered."
+        )
+        return None
 
     if not site_url or not username or not app_password:
         return None

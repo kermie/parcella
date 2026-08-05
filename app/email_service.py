@@ -20,7 +20,7 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.models import ClubSetting
-from app.crypto_utils import decrypt
+from app.crypto_utils import decrypt, DecryptionError
 from app.branding import DEFAULT_CLUB_NAME
 
 logger = logging.getLogger(__name__)
@@ -55,11 +55,20 @@ async def load_smtp_configuration(db: AsyncSession) -> dict:
     except ValueError:
         port = settings.smtp_port
 
+    try:
+        smtp_password = decrypt(stored.get("smtp_password")) or settings.smtp_password
+    except DecryptionError:
+        logger.error(
+            "Could not decrypt the stored SMTP password -- did SECRET_KEY change? "
+            "Falling back to the .env SMTP password (may also be unset)."
+        )
+        smtp_password = settings.smtp_password
+
     return {
         "host": stored.get("smtp_host") or settings.smtp_host,
         "port": port,
         "user": stored.get("smtp_user") or settings.smtp_user,
-        "password": decrypt(stored.get("smtp_password")) or settings.smtp_password,
+        "password": smtp_password,
         "from": stored.get("smtp_from") or settings.smtp_from,
         "from_name": stored.get("verein_name") or DEFAULT_CLUB_NAME,
         "tls": _bool(stored.get("smtp_tls")) if "smtp_tls" in stored else settings.smtp_tls,

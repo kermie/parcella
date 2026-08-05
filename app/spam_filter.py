@@ -35,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models import ClubSetting
-from app.crypto_utils import decrypt
+from app.crypto_utils import decrypt, DecryptionError
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +70,21 @@ async def _load_configuration(db: AsyncSession) -> dict:
     except ValueError:
         threshold = _DEFAULT_THRESHOLD
 
+    try:
+        api_key = decrypt(stored.get("spam_api_key")) or ""
+    except DecryptionError:
+        logger.error(
+            "Could not decrypt the stored spam-check API key -- did SECRET_KEY change? "
+            "Treating it as not configured until it's re-entered."
+        )
+        api_key = ""
+
     return {
         "domain_blocklist": _comma_separated_list(stored.get("spam_domain_blocklist")),
         "keyword_blocklist": _comma_separated_list(stored.get("spam_keyword_blocklist")),
         "threshold": threshold,
         "api_url": stored.get("spam_api_url", ""),
-        "api_key": decrypt(stored.get("spam_api_key")) or "",
+        "api_key": api_key,
     }
 
 

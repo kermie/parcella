@@ -33,3 +33,6 @@ Thumbs.db
 # a pile of these from test runs; don't let that happen again.
 app/static/uploads/announcements/
 app/static/uploads/avatars/
+
+# Local DB backup dumps (real member data + encrypted secrets), never committed
+backups/

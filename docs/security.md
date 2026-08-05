@@ -4,6 +4,9 @@ What protects this app, what a review found, and what is knowingly still
 open. Written after a full-codebase review in August 2026; keep it
 current when you touch anything below.
 
+To report a vulnerability, see [SECURITY.md](../SECURITY.md) at the repo
+root rather than opening a public issue.
+
 ## What the app relies on
 
 | Area | Mechanism |
@@ -55,6 +58,27 @@ current when you touch anything below.
    applied to every free-text cell in those four exports; the insurance
    CSV export was audited too but only ever writes numbers and
    admin-picked package names, so it was left alone.
+9. **Purchase-request confirmation links never expired.** A requester's
+   deep link (`/purchase-requests/confirm/{token}`) worked forever,
+   since `confirm()` only ever checked the DB for a matching token, never
+   the token's age. Now rejected (same "invalid" page as an unknown
+   token) once `PurchaseRequest.created_at` is more than 30 days old --
+   see `_confirmation_token_expired()` in `app/routers/purchase_requests.py`.
+10. **`crypto_utils.decrypt()` silently returned ciphertext on failure.**
+    After a `SECRET_KEY` rotation, a value that really was encrypted
+    (structurally a valid Fernet token) but no longer decryptable would
+    have been passed on unchanged -- e.g. sent as the literal SMTP
+    password. It now raises `DecryptionError` in that case, while a
+    value that was *never* encrypted (legacy plaintext, pre-dating this
+    feature) still passes through unchanged, distinguished by checking
+    for the Fernet version byte before deciding which case applies. The
+    four callers (SMTP, Nextcloud, WordPress, spam-check API key) treat
+    a `DecryptionError` the same as "not configured yet" and log an
+    error pointing at the likely cause, rather than 500ing an unrelated
+    request.
+11. **`python-jose` replaced with `PyJWT`** (`app/api_auth.py`), removing
+    the transitive `ecdsa` dependency and its Minerva timing advisory
+    entirely, rather than just noting it was unreachable.
 
 Regression tests for all of these live in `tests/test_security.py`.
 
@@ -72,10 +96,6 @@ setting.
   new `(request, name)` signature. Partially mitigated: the middlewares
   that make security decisions read `request.scope["path"]`, the same
   value routing uses, rather than the reconstructed `request.url`.
-- **`ecdsa` 0.19.2** (a transitive dependency of `python-jose`) has an
-  unfixed Minerva timing advisory. Not reachable here -- tokens are
-  HS256, no ECDSA keys involved. Migrating from `python-jose` to `PyJWT`
-  would remove the dependency entirely.
 - **The CSP still allows `'unsafe-inline'`** for scripts and styles,
   because the templates are full of inline blocks. See ADR 0064.
 - **Rate limits are in-memory and per-process.** They reset on restart
@@ -88,18 +108,13 @@ setting.
   browser. Deactivating an account *is* effective immediately (checked
   on every request). A fix would mean a token version per user, checked
   on each request.
-- **Purchase-request confirmation links don't expire** and aren't rate
-  limited (`/purchase-requests/confirm/{token}`).
+- **Purchase-request confirmation links still aren't rate limited**
+  (`/purchase-requests/confirm/{token}`) -- they do now expire after 30
+  days, see item 9 above.
 - **Upload size limits are checked after the body is read**
   (`app/avatars.py`, `app/routers/announcements.py`).
-- **`crypto_utils.decrypt()` returns the ciphertext unchanged** when it
-  can't decrypt, to stay compatible with pre-encryption plaintext rows.
-  After a `SECRET_KEY` change that means the app would send an encrypted
-  blob as an SMTP password instead of failing loudly.
 - **`/api/docs`, `/api/redoc` and `/api/openapi.json` are public.** They
   expose the API's shape, not its data.
-- **There is no `SECURITY.md`** and no documented way to report a
-  vulnerability privately, which a public AGPL repo should have.
 
 ## Running the audit yourself
 
@@ -108,6 +123,6 @@ pip install pip-audit
 pip-audit --no-deps -r requirements.txt
 ```
 
-`--no-deps` audits the pinned direct dependencies. Transitive packages
-(`starlette` is pinned explicitly for the reason above, `ecdsa` comes in
-via `python-jose`) need a resolved environment to be picked up.
+`--no-deps` audits the pinned direct dependencies. `starlette` is pinned
+explicitly for the reason above; other transitive packages need a
+resolved environment to be picked up.

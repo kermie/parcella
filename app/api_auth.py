@@ -8,7 +8,8 @@ header.
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWTError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +44,7 @@ def decode_access_token(token: str) -> Optional[dict]:
         if payload.get("type") != "access":
             return None
         return payload
-    except JWTError:
+    except PyJWTError:
         return None
 
 
