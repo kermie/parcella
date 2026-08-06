@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parcella · allotment garden manager</title>
+  <!-- Font Awesome Icons (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f7f5ee;
+      color: #2d3e2d;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    /* header & language bar */
+    .top-bar {
+      background: #e3dfd2;
+      padding: 0.75rem 0;
+      border-bottom: 2px solid #c5baa4;
+    }
+
+    .lang-switch {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem 1.2rem;
+      font-size: 0.9rem;
+    }
+
+    .lang-switch a {
+      text-decoration: none;
+      color: #2d3e2d;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      transition: 0.2s;
+      border-bottom: 2px solid transparent;
+      padding-bottom: 2px;
+    }
+
+    .lang-switch a:hover {
+      border-bottom-color: #5f7a5f;
+      color: #1d2a1d;
+    }
+
+    .lang-switch .active-lang {
+      border-bottom-color: #3b5e3b;
+      font-weight: 600;
+      color: #1d3a1d;
+    }
+
+    /* hero */
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2.5rem 0 3rem 0;
+      gap: 2rem;
+    }
+
+    .hero-text {
+      flex: 1 1 380px;
+    }
+
+    .hero-text h1 {
+      font-size: 3.4rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #2a452a;
+      line-height: 1.1;
+    }
+
+    .hero-text h1 i {
+      color: #4f7a4f;
+      margin-right: 0.3rem;
+    }
+
+    .hero-text .tagline {
+      font-size: 1.3rem;
+      font-weight: 300;
+      color: #3f553f;
+      margin: 0.8rem 0 1.8rem 0;
+      border-left: 6px solid #87a87a;
+      padding-left: 1.2rem;
+      font-style: italic;
+    }
+
+    .hero-text p {
+      font-size: 1.1rem;
+      max-width: 500px;
+      color: #3e4e3e;
+      margin-bottom: 2rem;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #3d5e3d;
+      color: #fcf8f0;
+      padding: 0.9rem 2.2rem;
+      border-radius: 60px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: 0.2s;
+      box-shadow: 0 4px 10px rgba(50, 70, 40, 0.15);
+      border: 1px solid #2d4a2d;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #2d4a2d;
+      border: 1px solid #5b7a5b;
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: #e4ede4;
+    }
+
+    .btn:hover {
+      background: #2a472a;
+      transform: scale(1.01);
+      box-shadow: 0 8px 18px rgba(40, 60, 30, 0.2);
+    }
+
+    .hero-image {
+      flex: 1 1 380px;
+      border-radius: 40px 40px 40px 0;
+      overflow: hidden;
+      box-shadow: 0 20px 30px -12px rgba(30, 40, 20, 0.25);
+      background: #d0dac4;
+      min-height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice"><rect width="800" height="500" fill="%23b5c9a5"/><circle cx="180" cy="120" r="80" fill="%23e3d6b0" opacity="0.4"/><circle cx="600" cy="320" r="140" fill="%239bb382" opacity="0.2"/><path d="M120 380 L220 240 L340 310 L480 190 L620 300 L720 200 L760 380 L120 380" fill="%237da07d" opacity="0.3"/><circle cx="400" cy="200" r="50" fill="%23d8c99a" opacity="0.5"/><path d="M300 390 L350 300 L430 340 L510 260 L580 340 L660 280 L710 390 L300 390" fill="%23638a63" opacity="0.2"/></svg>');
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    .hero-image .img-label {
+      background: rgba(44, 62, 44, 0.7);
+      backdrop-filter: blur(2px);
+      color: #f5f3e7;
+      padding: 1rem 2rem;
+      border-radius: 60px;
+      font-size: 1.1rem;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      border: 1px solid #d4dcc4;
+    }
+
+    .hero-image .img-label i {
+      margin-right: 8px;
+    }
+
+    /* features highlight */
+    .features {
+      padding: 3.5rem 0 4rem 0;
+      background: #f2efe6;
+      border-radius: 70px 70px 0 0;
+      margin-top: 1rem;
+    }
+
+    .features h2 {
+      font-size: 2.4rem;
+      font-weight: 500;
+      text-align: center;
+      color: #2d462d;
+    }
+
+    .features h2 i {
+      color: #b35f5f;
+      margin: 0 6px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 2.2rem;
+      margin: 3rem 0 1.5rem 0;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 2rem 1.5rem;
+      border-radius: 40px 20px 40px 20px;
+      box-shadow: 0 10px 25px -12px rgba(40, 50, 30, 0.12);
+      transition: 0.2s;
+      border: 1px solid #e2ddd0;
+      text-align: center;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-6px);
+      border-color: #b1c7a1;
+      box-shadow: 0 20px 30px -16px #4a6a4a30;
+    }
+
+    .feature-card i {
+      font-size: 2.8rem;
+      color: #4c7a4c;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #1d3a1d;
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-card p {
+      color: #455745;
+      font-size: 0.98rem;
+    }
+
+    .heart-touch {
+      background: #ece6d9;
+      padding: 2.8rem 1.5rem;
+      border-radius: 80px 20px 80px 20px;
+      margin: 2.5rem 0;
+      text-align: center;
+      background-image: radial-gradient(circle at 10% 30%, rgba(160, 190, 140, 0.1) 0%, transparent 30%);
+    }
+
+    .heart-touch h3 {
+      font-size: 2rem;
+      font-weight: 400;
+      color: #2e492e;
+    }
+
+    .heart-touch h3 i {
+      color: #b15a5a;
+      margin: 0 10px;
+    }
+
+    .heart-touch p {
+      max-width: 650px;
+      margin: 1rem auto 0.5rem;
+      font-size: 1.15rem;
+      color: #3d553d;
+      font-style: italic;
+    }
+
+    /* community / forum links */
+    .community-links {
+      padding: 3rem 0 2rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.8rem 4rem;
+      justify-content: center;
+      border-top: 2px dashed #bccdb0;
+      margin-top: 2rem;
+    }
+
+    .community-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.2rem;
+      color: #2e4a2e;
+      text-decoration: none;
+      font-weight: 450;
+      border-bottom: 2px solid transparent;
+      transition: 0.15s;
+    }
+
+    .community-links a i {
+      font-size: 1.7rem;
+      color: #3a6b3a;
+    }
+
+    .community-links a:hover {
+      border-bottom-color: #618f61;
+      color: #1f3a1f;
+    }
+
+    .github-cta {
+      background: #2d462d;
+      color: #f3f5eb;
+      padding: 1.5rem 2.5rem;
+      border-radius: 120px;
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      font-weight: 500;
+      font-size: 1.2rem;
+      transition: 0.2s;
+      box-shadow: 0 6px 0 #1b2c1b;
+      border: none;
+      text-decoration: none;
+    }
+
+    .github-cta i {
+      font-size: 1.8rem;
+    }
+
+    .github-cta:hover {
+      background: #3f643f;
+      transform: scale(1.02);
+    }
+
+    footer {
+      padding: 3rem 0 2rem 0;
+      text-align: center;
+      color: #576d57;
+      border-top: 1px solid #d6d8c9;
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    footer i {
+      margin: 0 4px;
+      color: #796a4e;
+    }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      .hero-text h1 {
+        font-size: 2.6rem;
+      }
+      .hero-text .tagline {
+        font-size: 1.1rem;
+      }
+      .container {
+        padding: 0 1.2rem;
+      }
+      .features {
+        border-radius: 40px 40px 0 0;
+        padding: 2.5rem 0;
+      }
+      .feature-grid {
+        gap: 1.2rem;
+      }
+      .community-links {
+        gap: 1.2rem;
+        flex-direction: column;
+        align-items: center;
+      }
+      .btn-group {
+        justify-content: center;
+      }
+      .heart-touch h3 {
+        font-size: 1.6rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .lang-switch {
+        gap: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+      }
+      .hero-text h1 {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- language bar : en, de, cs, sk, pl, nl, fr -->
+  <div class="top-bar">
+    <div class="container lang-switch">
+      <a href="#" class="active-lang">🇬🇧 EN</a>
+      <a href="#">🇩🇪 DE</a>
+      <a href="#">🇨🇿 CS</a>
+      <a href="#">🇸🇰 SK</a>
+      <a href="#">🇵🇱 PL</a>
+      <a href="#">🇳🇱 NL</a>
+      <a href="#">🇫🇷 FR</a>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- hero -->
+    <div class="hero">
+      <div class="hero-text">
+        <h1><i class="fas fa-seedling"></i> Parcella</h1>
+        <div class="tagline">allotment garden manager · open-source</div>
+        <p>
+          <i class="fas fa-hand-holding-heart" style="color: #7a9f7a; margin-right: 6px;"></i>
+          Built for associations, by gardeners. Manage members, parcels, work hours, and club life – all in one place.
+        </p>
+        <div class="btn-group">
+          <a href="#" class="btn"><i class="fas fa-arrow-right" style="margin-right: 8px;"></i>Explore features</a>
+          <a href="#" class="btn btn-outline"><i class="fab fa-github"></i> GitHub</a>
+        </div>
+      </div>
+      <div class="hero-image">
+        <span class="img-label"><i class="fas fa-leaf"></i>  ·  thriving community</span>
+      </div>
+    </div>
+
+    <!-- feature grid : curated from README -->
+    <div class="features">
+      <h2><i class="fas fa-heart"></i> everything your club needs <i class="fas fa-heart"></i></h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <i class="fas fa-users"></i>
+          <h3>Members & parcels</h3>
+          <p>Manage core data, multiple contacts, IBAN, and many-to-many assignments. Soft delete and CSV import/export.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-clock"></i>
+          <h3>Work hours</h3>
+          <p>Year-based system with sessions, tasks, sponsorships, and club roles. Track participation and generate annual reports.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-ticket-alt"></i>
+          <h3>Ticket & purchase</h3>
+          <p>Integrated ticket system with IMAP polling and a two-person approval principle for purchase requests.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-calendar-alt"></i>
+          <h3>Calendar & announcements</h3>
+          <p>Community calendar, member birthdays, council presence, and announcements that sync to email, WordPress, and PDF.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-plug"></i>
+          <h3>Water & electricity</h3>
+          <p>Metering points, meters, readings, and consumption reports – keep track of utilities per parcel.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-cloud"></i>
+          <h3>Cloud storage & inventory</h3>
+          <p>Nextcloud integration for per-parcel documents, plus a full asset register with a lending system.</p>
+        </div>
+      </div>
+
+      <!-- emotional heart-touch block -->
+      <div class="heart-touch">
+        <h3><i class="fas fa-hand-sparkles"></i>  from seed to table, together  <i class="fas fa-hand-sparkles"></i></h3>
+        <p>
+          “Gardening is the purest of human pleasures.” — we believe in the joy of digging in the soil,
+          the magic of first sprouts, and the warmth of a community that shares both tomatoes and stories.
+        </p>
+        <div style="margin-top: 1.5rem; font-size: 1rem; color: #4b654b;">
+          <i class="fas fa-sun" style="color: #d6a15a;"></i>  ·  <i class="fas fa-cloud-sun"></i>  ·  <i class="fas fa-water" style="color: #3b7b9b;"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- links to forum, github, community -->
+    <div class="community-links">
+      <a href="#"><i class="fab fa-github"></i> GitHub (dev & docs)</a>
+      <a href="#"><i class="fas fa-comments"></i> Forum & support</a>
+      <a href="#"><i class="fas fa-book-open"></i> API documentation</a>
+      <a href="#"><i class="fas fa-globe"></i> Project blog</a>
+    </div>
+
+    <!-- big call to action: github + forum -->
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; margin: 2.5rem 0 1.5rem 0;">
+      <a href="#" class="github-cta"><i class="fab fa-github"></i> Star on GitHub</a>
+      <a href="#" class="github-cta" style="background: #4e6f4e; box-shadow: 0 6px 0 #2f472f;"><i class="fas fa-users"></i> Join the community</a>
+    </div>
+  </main>
+
+  <!-- footer with multilingual hint & heart -->
+  <footer>
+    <div class="container">
+      <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+        <i class="fas fa-globe" style="margin-right: 8px;"></i> 
+        available in EN · DE · CS · SK · PL · NL · FR
+      </p>
+      <p>
+        <i class="fas fa-seedling" style="color: #597a59;"></i> 
+        Parcella · open-source allotment manager 
+        <i class="fas fa-heart" style="color: #b15a5a; margin: 0 6px;"></i> 
+        AGPL-3.0 · 2026
+      </p>
+      <p style="margin-top: 0.8rem; font-size: 0.85rem; opacity: 0.7;">
+        <i class="fas fa-paw"></i>  built with ❤️ for gardening clubs  <i class="fas fa-paw"></i>
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
