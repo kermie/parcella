@@ -87,7 +87,7 @@ http://localhost:8000/api/docs.
 
 Pushing the tag triggers `.github/workflows/release.yml`: it runs the full
 test suite, then (only if that passes and the tag matches `app_version`)
-builds and pushes `ghcr.io/kermie/parcella:X.Y.Z` and `:latest`. See
+builds and pushes `ghcr.io/parcella-garden/parcella:X.Y.Z` and `:latest`. See
 [ADR 0068](./docs/ADR/0068-publish-web-image-to-ghcr-prod-compose-split.md).
 
 ## What helps us most

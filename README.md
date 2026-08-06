@@ -12,7 +12,7 @@ lease administration, mandatory work hours and much more.
 
 Started as a vibe-coding project with the goal of replacing proprietary association software - hopefully generic enough for any allotment garden association, in any country.
 
-📖 **Detailed [documentation](https://github.com/kermie/parcella/tree/main/docs), which later will become an HTTP online help.**
+📖 **Detailed [documentation](https://github.com/parcella-garden/parcella/tree/main/docs), which later will become an HTTP online help.**
 
 ---
 
@@ -85,7 +85,7 @@ postcode-before-city vs. UK-style postcode-last).
 ### 1. Clone and configure the repository
 
 ```bash
-git clone https://github.com/kermie/parcella.git
+git clone https://github.com/parcella-garden/parcella.git
 cd parcella
 cp .env.example .env
 # adjust .env as needed (passwords, SMTP, etc.)
@@ -106,7 +106,7 @@ docker compose run --rm --entrypoint alembic web upgrade head
 docker compose up -d
 ```
 
-The application is now available at **http://localhost:8000**; documentation: **https://github.com/kermie/parcella/tree/main/docs**
+The application is now available at **http://localhost:8000**; documentation: **https://github.com/parcella-garden/parcella/tree/main/docs**
 
 ### 4. First login
 
@@ -212,7 +212,7 @@ docker compose run --rm web alembic revision --autogenerate -m "Short descriptio
 ```
 
 For an existing installation predating Alembic: see
-[MIGRATION-NOTE.md](https://github.com/kermie/parcella/blob/main/MIGRATION-NOTE.md).
+[MIGRATION-NOTE.md](https://github.com/parcella-garden/parcella/blob/main/MIGRATION-NOTE.md).
 
 ---
 
@@ -222,13 +222,13 @@ For an existing installation predating Alembic: see
 
 Running a club's own instance doesn't require cloning the whole repo or
 building the image yourself. Versioned images are published to
-[GHCR](https://github.com/kermie/parcella/pkgs/container/parcella) on every
+[GHCR](https://github.com/parcella-garden/parcella/pkgs/container/parcella) on every
 release. Grab just the two files you need:
 
 ```bash
 mkdir parcella && cd parcella
-curl -O https://raw.githubusercontent.com/kermie/parcella/main/docker-compose.prod.yml
-curl -o .env https://raw.githubusercontent.com/kermie/parcella/main/.env.example
+curl -O https://raw.githubusercontent.com/parcella-garden/parcella/main/docker-compose.prod.yml
+curl -o .env https://raw.githubusercontent.com/parcella-garden/parcella/main/.env.example
 # edit .env: passwords, SECRET_KEY, ENVIRONMENT=production, SMTP, etc.
 docker compose -f docker-compose.prod.yml run --rm --entrypoint alembic web upgrade head
 docker compose -f docker-compose.prod.yml up -d

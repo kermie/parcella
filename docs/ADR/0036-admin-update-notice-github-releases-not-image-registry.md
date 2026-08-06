@@ -9,7 +9,7 @@ actually fetch) is now closed -- see
 short of watching the GitHub repo themselves. Added a background check
 (`app/update_check.py`) that periodically compares the running
 `app_version` (`app/config.py`) against the latest GitHub release for
-`kermie/parcella`, caches the result in `ClubSettings`
+`parcella-garden/parcella`, caches the result in `ClubSettings`
 (`update_check_latest_version`, `update_check_checked_at`), and shows a
 notice with update instructions on `/admin/` when a newer release
 exists. Toggle: `update_check_enabled` in Admin -> Settings (default

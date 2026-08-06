@@ -19,7 +19,7 @@ services:
       retries: 5
 
   web:
-    image: ghcr.io/kermie/parcella:${PARCELLA_VERSION:-latest}
+    image: ghcr.io/parcella-garden/parcella:${PARCELLA_VERSION:-latest}
     restart: unless-stopped
     depends_on:
       db:

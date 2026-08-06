@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models import ClubSetting
 
-GITHUB_REPO = "kermie/parcella"
+GITHUB_REPO = "parcella-garden/parcella"
 LATEST_RELEASE_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
 KEY_ENABLED = "update_check_enabled"

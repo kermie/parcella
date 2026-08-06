@@ -51,5 +51,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/kermie/parcella:${{ env.TAG_VERSION }}
-            ghcr.io/kermie/parcella:latest
+            ghcr.io/${{ github.repository }}:${{ env.TAG_VERSION }}
+            ghcr.io/${{ github.repository }}:latest

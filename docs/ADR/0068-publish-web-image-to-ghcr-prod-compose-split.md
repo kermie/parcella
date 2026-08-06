@@ -7,7 +7,7 @@ compose up -d`, but `docker-compose.yml`'s `web` service only ever
 `pull` to actually fetch. That gap was accepted "for now," to be revisited
 once there was an actual production go-live. This closes it.
 
-**Registry: GHCR, not Docker Hub.** `ghcr.io/kermie/parcella` needs no new
+**Registry: GHCR, not Docker Hub.** `ghcr.io/parcella-garden/parcella` needs no new
 account and no new secret -- the CI workflow authenticates with the
 `GITHUB_TOKEN` GitHub Actions already provides, and it's tied to the repo
 admins already trust. Docker Hub would add a second account and a stored

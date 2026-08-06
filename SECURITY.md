@@ -7,7 +7,7 @@ vulnerability.
 
 Instead, use GitHub's private vulnerability reporting for this repository:
 
-1. Go to the [Security tab](https://github.com/kermie/parcella/security).
+1. Go to the [Security tab](https://github.com/parcella-garden/parcella/security).
 2. Click **"Report a vulnerability"**.
 3. Describe the issue, including steps to reproduce and the affected
    version/commit if known.
