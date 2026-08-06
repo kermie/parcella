@@ -11,6 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set UID/GID for the web container
+        run: |
+          echo "UID=$(id -u)" >> .env
+          echo "GID=$(id -g)" >> .env
+
       - name: Run test suite
         run: ./run_tests.sh
 
