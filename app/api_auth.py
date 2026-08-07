@@ -113,9 +113,14 @@ def require_api_role(*allowed_roles: UserRole):
 
 
 # Common combinations as ready-made dependencies
-require_write_access = require_api_role(
-    UserRole.ADMIN, UserRole.BOARD, UserRole.TREASURER
-)
+#
+# TREASURER is deliberately NOT in this list (see ADR 0071, amending
+# ADR 0041): the role itself grants nothing beyond the READONLY baseline
+# anywhere else in the app (HTML side, app/permissions.py) -- write
+# access for a treasurer-type user comes from Group membership
+# (e.g. a grants_full_access group), same as any other non-admin/board
+# user. Role alone no longer bypasses that.
+require_write_access = require_api_role(UserRole.ADMIN, UserRole.BOARD)
 require_admin_api = require_api_role(UserRole.ADMIN, UserRole.BOARD)
 
 

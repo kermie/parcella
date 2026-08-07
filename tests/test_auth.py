@@ -2,6 +2,35 @@
 from tests.conftest import login, auth_header
 
 
+async def test_treasurer_role_no_longer_has_blanket_api_write_access(client):
+    """ADR 0071 (amends ADR 0041): TREASURER used to be in
+    require_write_access's role allow-list, granting blanket API write
+    access to every module gated by it -- regardless of Group
+    configuration, unlike the HTML side where TREASURER was already
+    just the READONLY baseline widened by Groups. A TREASURER account
+    with no relevant Group grant must now be blocked, same as HTML
+    always was."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="treasurer-plain@example.com", name="Plain Treasurer",
+            password_hash=hash_password("testpasswort123"), role=UserRole.TREASURER,
+        )
+        db.add(user)
+        await db.commit()
+
+    token = await login(client, "treasurer-plain@example.com")
+    headers = auth_header(token)
+
+    response = await client.post(
+        "/api/v1/members", json={"first_name": "Petra", "last_name": "Beispiel"}, headers=headers,
+    )
+    assert response.status_code == 403
+
+
 async def test_login_success(client, admin_user):
     token = await login(client, "admin@example.com")
     assert token

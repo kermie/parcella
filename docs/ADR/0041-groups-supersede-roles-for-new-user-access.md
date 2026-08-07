@@ -1,5 +1,10 @@
 # Groups supersede roles for new user access
 
+**Update (2026-08-07):** one place TREASURER kept role-based privilege
+past this ADR's "additive, not a replacement" intent -- the REST API's
+`require_write_access` -- has been closed. See
+[ADR 0071](./0071-treasurer-role-privilege-retired-groups-only.md).
+
 **Context:** `UserRole` (ADMIN/BOARD/TREASURER/READONLY) is a fixed
 enum baked into the app -- but no two allotment associations are
 structured the same way (this one has 5 distinct council roles;
