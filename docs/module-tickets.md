@@ -290,3 +290,12 @@ changing status/assignment, adding messages -- all also possible
 programmatically, e.g. for a later automation of the email import in
 stage 2 (which would then likely reuse the same functions internally as
 the API, rather than duplicating its own logic).
+
+**Implementation note:** that reuse now exists. Status transitions,
+assignment (+ its notification email), member linking, spam-status
+changes, and message creation all live in `app/services/tickets.py`,
+called by both `app/routers/tickets.py` and `app/routers/api_tickets.py`
+-- see ADR 0070 for why and how. The API router also now checks
+permissions the same fine-grained, `Group`-based way the HTML side does
+(`require_api_permission`, ADR 0070), not the coarser role-only check
+most other API routers still use.

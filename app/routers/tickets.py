@@ -5,30 +5,38 @@ status changes, messages/notes.
 Stage 1: manual ticket management, no email fetching yet (that comes
 in stage 2). Assignment notification by email already works, since the
 general SMTP infrastructure (app/email_service.py) is reused.
+
+Business logic shared with app/routers/api_tickets.py lives in
+app/services/tickets.py (ADR 0070) -- this router owns authentication,
+the fine-grained permission check, Form(...) parsing, and rendering
+(templates/redirects/flash messages).
 """
-from datetime import date, datetime, timezone
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db, active_member_filter
+from app.database import get_db
 from app.models import (
-    Ticket, TicketMessage, TicketStatus, MessageDirection, User, Member,
+    Ticket, TicketMessage, TicketStatus, MessageDirection, User,
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
-from app.change_tracker import ChangeTracker
+from app.services.errors import ServiceError
+from app.services.tickets import (
+    filtered_tickets_query, create_ticket, change_status, bulk_change_status,
+    assign_ticket, bulk_assign_tickets, set_member, set_spam_status,
+    bulk_set_spam_status, add_message,
+)
 from app.ticket_utils import find_members_by_email
-from app.ticket_mailer import send_ticket_reply, process_incoming_mails
+from app.ticket_mailer import process_incoming_mails
 from app.spam_filter import check_for_spam
 from app.avatars import avatar_url
-from app.email_service import send_email
-from app.i18n import t_for
-from app.config import settings
+from app.i18n import t_for, DEFAULT_LANGUAGE
 
 router = APIRouter(
     prefix="/tickets",
@@ -36,6 +44,14 @@ router = APIRouter(
     dependencies=[Depends(require_module("tickets"))],
 )
 from app.templating import templates
+
+
+def _lang(request: Request) -> str:
+    return getattr(request.state, "language", DEFAULT_LANGUAGE)
+
+
+def _service_error_to_http(request: Request, e: ServiceError) -> HTTPException:
+    return HTTPException(status_code=e.http_status, detail=t_for(request, e.key, **e.params))
 
 
 async def _load_ticket_with_details(db: AsyncSession, ticket_id: str) -> Optional[Ticket]:
@@ -81,51 +97,6 @@ async def _reactivate_due_tickets(db: AsyncSession) -> int:
 TICKETS_PAGE_SIZE = 50
 
 
-def _tickets_filtered_query(filter: str, search: str, user_id: str):
-    """Shared between the HTML overview (first page) and the JSON
-    endpoint the infinite scroll polls for every page after that --
-    both must agree on exactly which tickets match the current filter/
-    search, and on a stable order (created_at ties broken by id,
-    otherwise offset-based paging can skip or repeat rows)."""
-    query = select(Ticket).options(selectinload(Ticket.assigned_to), selectinload(Ticket.member))
-
-    # "Active" and "Mine" deliberately show ONLY operationally open
-    # tickets (ACTIVE/ASSIGNED/WAITING) -- POSTPONED tickets are
-    # intentionally invisible until their date (see
-    # _reactivate_due_tickets above, which makes them reappear
-    # here automatically afterward). DELETED never appears in any view
-    # (soft-delete, no trash view built).
-    open_statuses = [TicketStatus.ACTIVE, TicketStatus.ASSIGNED, TicketStatus.WAITING]
-
-    if filter == "active":
-        query = query.where(Ticket.status.in_(open_statuses), Ticket.spam_suspected == False)
-    elif filter == "mine":
-        query = query.where(
-            Ticket.assigned_to_id == user_id, Ticket.status.in_(open_statuses)
-        )
-    elif filter == "waiting":
-        query = query.where(Ticket.status == TicketStatus.WAITING)
-    elif filter == "postponed":
-        query = query.where(Ticket.status == TicketStatus.POSTPONED)
-    elif filter == "closed":
-        query = query.where(Ticket.status == TicketStatus.CLOSED)
-    elif filter == "spam":
-        query = query.where(Ticket.spam_suspected == True, Ticket.status != TicketStatus.DELETED)
-    elif filter == "all":
-        query = query.where(Ticket.status != TicketStatus.DELETED)
-
-    if search:
-        query = query.where(
-            or_(
-                Ticket.subject.ilike(f"%{search}%"),
-                Ticket.sender_email.ilike(f"%{search}%"),
-                Ticket.sender_name.ilike(f"%{search}%"),
-            )
-        )
-
-    return query.order_by(Ticket.created_at.desc(), Ticket.id.desc())
-
-
 @router.get("/", response_class=HTMLResponse)
 async def tickets_overview(
     request: Request,
@@ -137,7 +108,7 @@ async def tickets_overview(
 
     reactivated_count = await _reactivate_due_tickets(db)
 
-    query = _tickets_filtered_query(filter, search, user.id).limit(TICKETS_PAGE_SIZE)
+    query = filtered_tickets_query(filter, search, user.id).limit(TICKETS_PAGE_SIZE)
     result = await db.execute(query)
     tickets = result.scalars().all()
 
@@ -184,7 +155,7 @@ async def tickets_list_json(
     after the first (which the HTML route above already renders)."""
     user = await require_permission(request, db, "tickets", "read")
 
-    query = _tickets_filtered_query(filter, search, user.id).limit(TICKETS_PAGE_SIZE).offset(offset)
+    query = filtered_tickets_query(filter, search, user.id).limit(TICKETS_PAGE_SIZE).offset(offset)
     result = await db.execute(query)
     tickets = result.scalars().all()
 
@@ -229,25 +200,11 @@ async def ticket_create(
     message: str = Form(...),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await require_permission(request, db, "tickets", "write")
+    await require_permission(request, db, "tickets", "write")
 
-    sender_email = sender_email.strip().lower()
-    matches = await find_members_by_email(db, sender_email)
-    member_id = matches[0].id if len(matches) == 1 else None
-
-    ticket = Ticket(
-        subject=subject.strip(),
-        sender_email=sender_email,
-        sender_name=sender_name.strip() or None,
-        member_id=member_id,
+    ticket = await create_ticket(
+        db, subject=subject, sender_email=sender_email, sender_name=sender_name, message=message,
     )
-    db.add(ticket)
-    await db.flush()
-
-    db.add(TicketMessage(
-        ticket_id=ticket.id, direction=MessageDirection.INCOMING,
-        content=message.strip(),
-    ))
     await db.commit()
 
     return RedirectResponse(f"/tickets/{ticket.id}", status_code=302)
@@ -272,13 +229,14 @@ async def tickets_bulk_status(
     current_user = await require_permission(request, db, "tickets", "write")
 
     new_status = TicketStatus(new_status_value)
+    parsed_postponed_until = date.fromisoformat(postponed_until) if postponed_until.strip() else None
     result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
     tickets = result.scalars().all()
 
-    for ticket in tickets:
-        tracker = ChangeTracker(ticket, "Ticket", ["status", "postponed_until", "closed_at"])
-        _apply_status(ticket, new_status, postponed_until, request)
-        await tracker.commit(db, current_user.id)
+    try:
+        await bulk_change_status(db, tickets, new_status, parsed_postponed_until, acting_user=current_user)
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
 
     await db.commit()
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
@@ -304,32 +262,8 @@ async def tickets_bulk_assign(
     result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
     tickets = result.scalars().all()
 
-    for ticket in tickets:
-        tracker = ChangeTracker(ticket, "Ticket", ["status", "assigned_to_id"])
-        if assignee:
-            ticket.assigned_to_id = assignee.id
-            ticket.status = TicketStatus.ASSIGNED
-        else:
-            ticket.assigned_to_id = None
-            ticket.status = TicketStatus.ACTIVE
-        await tracker.commit(db, current_user.id)
-
+    await bulk_assign_tickets(db, tickets, assignee, acting_user=current_user, lang=_lang(request))
     await db.commit()
-
-    if assignee:
-        # A single combined email instead of one per ticket, to avoid
-        # flooding the assignee's inbox.
-        subject = t_for(request, "email.ticket_assigned_bulk.subject", count=len(tickets), app_name=settings.app_name)
-        items = "".join(f"<li>{t.subject}</li>" for t in tickets)
-        html = f"""
-        <html><body>
-        <p>{t_for(request, "email.ticket_assigned_bulk.greeting", name=assignee.name)}</p>
-        <p>{t_for(request, "email.ticket_assigned_bulk.body", count=len(tickets), app_name=settings.app_name)}</p>
-        <ul>{items}</ul>
-        <p>{t_for(request, "email.ticket_assigned_bulk.instruction", app_name=settings.app_name)}</p>
-        </body></html>
-        """
-        await send_email(assignee.email, subject, html, db=db)
 
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
 
@@ -343,11 +277,7 @@ async def tickets_bulk_mark_spam(
 ):
     current_user = await require_permission(request, db, "tickets", "write")
     result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
-    now = datetime.now(timezone.utc)
-    for ticket in result.scalars().all():
-        ticket.spam_suspected = True
-        ticket.spam_reviewed_by_id = current_user.id
-        ticket.spam_reviewed_at = now
+    bulk_set_spam_status(result.scalars().all(), True, acting_user=current_user)
     await db.commit()
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
 
@@ -361,11 +291,7 @@ async def tickets_bulk_not_spam(
 ):
     current_user = await require_permission(request, db, "tickets", "write")
     result = await db.execute(select(Ticket).where(Ticket.id.in_(ticket_ids)))
-    now = datetime.now(timezone.utc)
-    for ticket in result.scalars().all():
-        ticket.spam_suspected = False
-        ticket.spam_reviewed_by_id = current_user.id
-        ticket.spam_reviewed_at = now
+    bulk_set_spam_status(result.scalars().all(), False, acting_user=current_user)
     await db.commit()
     return RedirectResponse(f"/tickets/?filter={filter}", status_code=302)
 
@@ -417,36 +343,15 @@ async def ticket_assign(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    tracker = ChangeTracker(ticket, "Ticket", ["status", "assigned_to_id"])
-
+    assignee = None
     if user_id.strip():
         result = await db.execute(select(User).where(User.id == user_id))
         assignee = result.scalar_one_or_none()
         if not assignee:
             raise HTTPException(status_code=404, detail=t_for(request, "errors.user_not_found"))
 
-        ticket.assigned_to_id = assignee.id
-        ticket.status = TicketStatus.ASSIGNED
-
-        await tracker.commit(db, current_user.id)
-        await db.commit()
-
-        # Notification by email (uses the existing club SMTP configuration)
-        subject = t_for(request, "email.ticket_assigned_single.subject", subject=ticket.subject)
-        html = f"""
-        <html><body>
-        <p>{t_for(request, "email.ticket_assigned_single.greeting", name=assignee.name)}</p>
-        <p>{t_for(request, "email.ticket_assigned_single.body", app_name=settings.app_name)}</p>
-        <p><strong>{ticket.subject}</strong></p>
-        <p>{t_for(request, "email.ticket_assigned_single.instruction", app_name=settings.app_name)}</p>
-        </body></html>
-        """
-        await send_email(assignee.email, subject, html, db=db)
-    else:
-        ticket.assigned_to_id = None
-        ticket.status = TicketStatus.ACTIVE
-        await tracker.commit(db, current_user.id)
-        await db.commit()
+    await assign_ticket(db, ticket, assignee, acting_user=current_user, lang=_lang(request))
+    await db.commit()
 
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -454,34 +359,6 @@ async def ticket_assign(
 # ---------------------------------------------------------------------------
 # Change status
 # ---------------------------------------------------------------------------
-
-def _apply_status(ticket: Ticket, new_status: TicketStatus, postponed_until_str: str, request: Request) -> None:
-    """
-    Sets the new status on a ticket including side effects
-    (postponed_until, closed_at, assigned_to_id) -- shared logic for
-    single-ticket and bulk status changes, so both are guaranteed to
-    apply the same rules.
-    """
-    if new_status == TicketStatus.ASSIGNED:
-        raise HTTPException(status_code=400, detail=t_for(request, "errors.ticket_status_assigned_manual"))
-
-    ticket.status = new_status
-
-    if new_status == TicketStatus.POSTPONED:
-        if not postponed_until_str.strip():
-            raise HTTPException(status_code=400, detail=t_for(request, "errors.deferred_date_required"))
-        ticket.postponed_until = date.fromisoformat(postponed_until_str)
-    else:
-        ticket.postponed_until = None
-
-    if new_status == TicketStatus.CLOSED:
-        ticket.closed_at = datetime.now(timezone.utc)
-    else:
-        ticket.closed_at = None
-
-    if new_status == TicketStatus.ACTIVE:
-        ticket.assigned_to_id = None
-
 
 @router.post("/{ticket_id}/status")
 async def ticket_status_update(
@@ -496,11 +373,13 @@ async def ticket_status_update(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    tracker = ChangeTracker(ticket, "Ticket", ["status", "postponed_until", "closed_at"])
+    parsed_postponed_until = date.fromisoformat(postponed_until) if postponed_until.strip() else None
 
-    _apply_status(ticket, TicketStatus(new_status_value), postponed_until, request)
+    try:
+        await change_status(db, ticket, TicketStatus(new_status_value), parsed_postponed_until, acting_user=current_user)
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
 
-    await tracker.commit(db, current_user.id)
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -522,7 +401,7 @@ async def ticket_member_assign(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    ticket.member_id = member_id.strip() or None
+    set_member(ticket, member_id)
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -547,9 +426,7 @@ async def ticket_mark_spam(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    ticket.spam_suspected = True
-    ticket.spam_reviewed_by_id = current_user.id
-    ticket.spam_reviewed_at = datetime.now(timezone.utc)
+    set_spam_status(ticket, True, acting_user=current_user)
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -566,9 +443,7 @@ async def ticket_mark_not_spam(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    ticket.spam_suspected = False
-    ticket.spam_reviewed_by_id = current_user.id
-    ticket.spam_reviewed_at = datetime.now(timezone.utc)
+    set_spam_status(ticket, False, acting_user=current_user)
     await db.commit()
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)
 
@@ -590,19 +465,7 @@ async def message_add(
     if not ticket:
         raise HTTPException(status_code=404)
 
-    direction_enum = MessageDirection(direction)
-    message_id = None
-
-    if direction_enum == MessageDirection.OUTGOING:
-        message_id = await send_ticket_reply(ticket, content.strip(), db)
-
-    db.add(TicketMessage(
-        ticket_id=ticket_id,
-        direction=direction_enum,
-        content=content.strip(),
-        authored_by_id=user.id,
-        message_id=message_id,
-    ))
+    await add_message(db, ticket, content, MessageDirection(direction), acting_user=user)
     await db.commit()
 
     return RedirectResponse(f"/tickets/{ticket_id}", status_code=302)

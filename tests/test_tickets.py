@@ -319,3 +319,154 @@ async def test_tickets_list_json_returns_the_remaining_page(client, admin_user):
     data = response.json()
     assert len(data["rows"]) == 5
     assert data["has_more"] is False
+
+
+# ---------------------------------------------------------------------------
+# ADR 0070: shared service layer -- audit trail via API, and unified
+# (Group-based, not role-only) authorization for the API.
+# ---------------------------------------------------------------------------
+
+async def test_audit_trail_written_for_api_driven_status_and_assignment_changes(client, admin_user):
+    """Issue #195 / ADR 0070: API-driven ticket changes used to leave no
+    ChangeHistory row at all (ChangeTracker was only wired into the HTML
+    router). Both the status and the assignment change now go through
+    app/services/tickets.py, which writes the audit trail unconditionally."""
+    from app.database import AsyncSessionLocal
+    from app.models import ChangeHistory
+    from sqlalchemy import select
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    ticket = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Test", "sender_email": "x@example.com", "message": "Hallo"},
+        headers=headers,
+    )).json()
+
+    status_response = await client.put(
+        f"/api/v1/tickets/{ticket['id']}/status",
+        json={"status": "WAITING"},
+        headers=headers,
+    )
+    assert status_response.status_code == 200
+
+    assignment_response = await client.put(
+        f"/api/v1/tickets/{ticket['id']}/assignment",
+        json={"assigned_to_id": admin_user.id},
+        headers=headers,
+    )
+    assert assignment_response.status_code == 200
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(ChangeHistory).where(
+                ChangeHistory.entity_type == "Ticket", ChangeHistory.entity_id == ticket["id"],
+            )
+        )
+        entries = result.scalars().all()
+
+    fields_changed = {e.field_name for e in entries}
+    assert "status" in fields_changed
+    assert "assigned_to_id" in fields_changed
+    assert all(e.changed_by_id == admin_user.id for e in entries)
+
+
+async def test_treasurer_without_group_grant_is_blocked_from_ticket_write_via_api(client):
+    """Issue #195 / ADR 0070: require_write_access only checked role, so
+    ANY TREASURER could write tickets via the API regardless of Group
+    configuration -- even one a Group deliberately did not grant
+    tickets:write to (correctly blocked in the HTML UI). Now the API
+    checks the same Group-derived permission as HTML."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="treasurer-no-group@example.com", name="Treasurer No Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.TREASURER,
+        )
+        db.add(user)
+        await db.commit()
+
+    token = await login(client, "treasurer-no-group@example.com")
+    headers = auth_header(token)
+
+    response = await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Test", "sender_email": "x@example.com", "message": "Hallo"},
+        headers=headers,
+    )
+    assert response.status_code == 403
+
+
+async def test_readonly_with_group_grant_can_write_tickets_via_api(client):
+    """Issue #195 / ADR 0070: the flip side of the bug above -- a
+    READONLY-role user granted tickets:write via a Group could already
+    write tickets through the HTML UI, but the role-only API check
+    (READONLY never in require_write_access's allow-list) blocked them
+    regardless of Group membership. Pure bug fix: both surfaces now
+    agree."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole, Group, GroupModulePermission, GroupMembership
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="readonly-with-group@example.com", name="Readonly With Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        )
+        db.add(user)
+        await db.flush()
+
+        group = Group(name="Ticket Handlers")
+        db.add(group)
+        await db.flush()
+        db.add(GroupModulePermission(group_id=group.id, module="tickets", can_read=True, can_write=True))
+        db.add(GroupMembership(user_id=user.id, group_id=group.id))
+        await db.commit()
+
+    token = await login(client, "readonly-with-group@example.com")
+    headers = auth_header(token)
+
+    response = await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Test", "sender_email": "x@example.com", "message": "Hallo"},
+        headers=headers,
+    )
+    assert response.status_code == 201, response.text
+
+
+async def test_status_rule_violation_shares_the_same_i18n_text_on_both_surfaces(client, admin_user):
+    """Issue #195 / ADR 0070: the API used to hard-code its own English
+    error strings for this rule instead of using the HTML side's i18n
+    key -- so the two surfaces could show different, un-translated text
+    for the same rule violation. Both now resolve app.services.tickets'
+    ServiceError against the same translation key."""
+    from app.i18n import translate
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+    ticket = (await client.post(
+        "/api/v1/tickets",
+        json={"subject": "Test", "sender_email": "x@example.com", "message": "Hallo"},
+        headers=headers,
+    )).json()
+
+    expected_text = translate("errors.ticket_status_assigned_manual", "en")
+
+    api_response = await client.put(
+        f"/api/v1/tickets/{ticket['id']}/status",
+        json={"status": "ASSIGNED"},
+        headers=headers,
+    )
+    assert api_response.status_code == 422
+    assert api_response.json()["detail"] == expected_text
+
+    await web_login(client)
+    html_response = await client.post(
+        f"/tickets/{ticket['id']}/status",
+        data={"new_status_value": "ASSIGNED"},
+    )
+    assert html_response.status_code == 400
+    assert html_response.json()["detail"] == expected_text

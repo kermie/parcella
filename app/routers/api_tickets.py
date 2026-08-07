@@ -1,22 +1,29 @@
 """
 API router: Ticket system -- tickets, messages, assignment, status.
+
+Business logic shared with app/routers/tickets.py (HTML) lives in
+app/services/tickets.py (ADR 0070) -- this router owns bearer-token
+authentication, the fine-grained permission check (require_api_permission,
+Group-based like the HTML side -- ADR 0070, not the coarser role-only
+require_write_access other API routers still use), Pydantic body
+parsing, and JSON response serialization.
 """
-from datetime import date, datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
-from app.config import settings
 from app.database import get_db
 from app.models import Ticket, TicketMessage, TicketStatus, MessageDirection, User
-from app.api_auth import get_current_api_user, require_write_access
+from app.api_auth import require_api_permission
 from app.module_flags import require_module
-from app.ticket_utils import find_members_by_email
-from app.ticket_mailer import send_ticket_reply
-from app.email_service import send_email
+from app.services.errors import ServiceError
+from app.services.tickets import (
+    create_ticket, change_status, assign_ticket, set_member, set_spam_status, add_message,
+)
+from app.i18n import t_for, DEFAULT_LANGUAGE
 from app.schemas import (
     TicketCreate, TicketOut, TicketDetailOut, TicketStatusUpdate,
     TicketAssignmentUpdate, TicketMemberUpdate, TicketSpamUpdate,
@@ -28,6 +35,20 @@ router = APIRouter(
     tags=["API: Tickets"],
     dependencies=[Depends(require_module("tickets"))],
 )
+
+
+def _lang(request: Request) -> str:
+    return getattr(request.state, "language", DEFAULT_LANGUAGE)
+
+
+def _service_error_to_http(request: Request, e: ServiceError) -> HTTPException:
+    # Deliberately always 422 here, independent of e.http_status (which
+    # is the HTML side's 400) -- 422 is this API's existing convention
+    # for "well-formed request, business-rule violation" (see
+    # api_metering.py), so the status code doesn't change, only the
+    # previously-hard-coded-English detail text now shares the HTML
+    # side's i18n key (ADR 0070).
+    return HTTPException(status_code=422, detail=t_for(request, e.key, **e.params))
 
 
 async def _load_ticket(db: AsyncSession, ticket_id: str) -> Optional[Ticket]:
@@ -47,7 +68,7 @@ async def tickets_list(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("tickets", "read")),
 ):
     query = select(Ticket).order_by(Ticket.created_at.desc()).limit(limit).offset(offset)
 
@@ -68,7 +89,7 @@ async def tickets_list(
 async def ticket_get(
     ticket_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("tickets", "read")),
 ):
     ticket = await _load_ticket(db, ticket_id)
     if not ticket:
@@ -86,22 +107,13 @@ async def ticket_get(
 async def ticket_create(
     daten: TicketCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("tickets", "write")),
 ):
-    email = str(daten.sender_email).lower()
-    matches = await find_members_by_email(db, email)
-    member_id = matches[0].id if len(matches) == 1 else None
-
-    ticket = Ticket(
-        subject=daten.subject, sender_email=email,
-        sender_name=daten.sender_name, member_id=member_id,
+    ticket = await create_ticket(
+        db, subject=daten.subject, sender_email=str(daten.sender_email),
+        sender_name=daten.sender_name, message=daten.message,
     )
-    db.add(ticket)
-    await db.flush()
-
-    db.add(TicketMessage(ticket_id=ticket.id, direction=MessageDirection.INCOMING, content=daten.message))
     await db.commit()
-
     return await _load_ticket(db, ticket.id)
 
 
@@ -112,30 +124,19 @@ async def ticket_create(
 async def status_update(
     ticket_id: str,
     daten: TicketStatusUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("tickets", "write")),
 ):
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    neuer_status = TicketStatus(daten.status)
-
-    if neuer_status == TicketStatus.ASSIGNED:
-        raise HTTPException(
-            status_code=422,
-            detail="ASSIGNED cannot be set directly; assign a user via PUT /{ticket_id}/assignment instead",
-        )
-
-    if neuer_status == TicketStatus.POSTPONED and not daten.postponed_until:
-        raise HTTPException(status_code=422, detail="postponed_until is required for status POSTPONED")
-
-    ticket.status = neuer_status
-    ticket.postponed_until = daten.postponed_until if neuer_status == TicketStatus.POSTPONED else None
-    ticket.closed_at = datetime.now(timezone.utc) if neuer_status == TicketStatus.CLOSED else None
-    if neuer_status == TicketStatus.ACTIVE:
-        ticket.assigned_to_id = None
+    try:
+        await change_status(db, ticket, TicketStatus(daten.status), daten.postponed_until, acting_user=user)
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
 
     await db.commit()
     await db.refresh(ticket)
@@ -149,39 +150,25 @@ async def status_update(
 async def assignment_update(
     ticket_id: str,
     daten: TicketAssignmentUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("tickets", "write")),
 ):
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
+    assignee = None
     if daten.assigned_to_id:
         assignee_result = await db.execute(select(User).where(User.id == daten.assigned_to_id))
         assignee = assignee_result.scalar_one_or_none()
         if not assignee:
             raise HTTPException(status_code=404, detail="User not found")
 
-        ticket.assigned_to_id = assignee.id
-        ticket.status = TicketStatus.ASSIGNED
-        await db.commit()
-        await db.refresh(ticket)
-
-        subject = f"Ticket assigned: {ticket.subject}"
-        html = (
-            f"<html><body><p>Hello {assignee.name},</p>"
-            f"<p>A ticket has been assigned to you in {settings.app_name}:</p>"
-            f"<p><strong>{ticket.subject}</strong></p>"
-            f"<p>Please log in to {settings.app_name} to process it.</p></body></html>"
-        )
-        await send_email(assignee.email, subject, html, db=db)
-    else:
-        ticket.assigned_to_id = None
-        ticket.status = TicketStatus.ACTIVE
-        await db.commit()
-        await db.refresh(ticket)
-
+    await assign_ticket(db, ticket, assignee, acting_user=user, lang=_lang(request))
+    await db.commit()
+    await db.refresh(ticket)
     return ticket
 
 
@@ -190,14 +177,14 @@ async def member_assign(
     ticket_id: str,
     daten: TicketMemberUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("tickets", "write")),
 ):
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    ticket.member_id = daten.member_id
+    set_member(ticket, daten.member_id)
     await db.commit()
     await db.refresh(ticket)
     return ticket
@@ -212,16 +199,14 @@ async def spam_status_update(
     ticket_id: str,
     daten: TicketSpamUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("tickets", "write")),
 ):
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    ticket.spam_suspected = daten.spam_suspected
-    ticket.spam_reviewed_by_id = user.id
-    ticket.spam_reviewed_at = datetime.now(timezone.utc)
+    set_spam_status(ticket, daten.spam_suspected, acting_user=user)
     await db.commit()
     await db.refresh(ticket)
     return ticket
@@ -234,7 +219,7 @@ async def spam_status_update(
 async def messages_list(
     ticket_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("tickets", "read")),
 ):
     result = await db.execute(
         select(TicketMessage).where(TicketMessage.ticket_id == ticket_id).order_by(TicketMessage.created_at)
@@ -252,7 +237,7 @@ async def message_create(
     ticket_id: str,
     daten: TicketMessageCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("tickets", "write")),
 ):
     ticket_result = await db.execute(
         select(Ticket).options(selectinload(Ticket.messages)).where(Ticket.id == ticket_id)
@@ -262,15 +247,7 @@ async def message_create(
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     direction = MessageDirection(daten.direction)
-    message_id = None
-    if direction == MessageDirection.OUTGOING:
-        message_id = await send_ticket_reply(ticket, daten.content, db)
-
-    message = TicketMessage(
-        ticket_id=ticket_id, direction=direction,
-        content=daten.content, authored_by_id=user.id, message_id=message_id,
-    )
-    db.add(message)
+    message = await add_message(db, ticket, daten.content, direction, acting_user=user)
     await db.commit()
     await db.refresh(message)
     return message

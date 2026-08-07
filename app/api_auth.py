@@ -4,13 +4,21 @@ JWT authentication for the REST API.
 Separate from the web UI's cookie-based session authentication (see
 app/auth.py). The API uses classic bearer tokens in the Authorization
 header.
+
+Authorization is a separate concern from authentication: require_api_role
+and its ready-made combinations (require_write_access, require_admin_api)
+are a coarse, role-only check, still used by most API routers today.
+require_api_permission is the fine-grained, Group-based alternative
+(same rules app/permissions.py's require_permission() applies to the
+HTML side) -- ADR 0070 starts migrating routers to it module by module,
+tickets first; the two coexist until that migration is done.
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import jwt
 from jwt import PyJWTError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -19,6 +27,8 @@ from app.config import settings
 from app.database import get_db
 from app.models import User, UserRole
 from app.auth import verify_password
+from app.i18n import t_for
+from app.permissions import get_user_permissions, has_permission
 
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_VALID_MINUTES = 60 * 24  # 24 Stunden
@@ -107,3 +117,28 @@ require_write_access = require_api_role(
     UserRole.ADMIN, UserRole.BOARD, UserRole.TREASURER
 )
 require_admin_api = require_api_role(UserRole.ADMIN, UserRole.BOARD)
+
+
+def require_api_permission(module: str, level: str):
+    """
+    API counterpart to app.permissions.require_permission() -- consults
+    the same Group-derived get_user_permissions() the HTML side uses,
+    instead of the coarser role-only require_api_role (ADR 0070).
+
+    Can't reuse request.state.permissions: it's populated by
+    permissions_middleware (app/main.py) from get_current_user(), which
+    only reads the session cookie -- always the anonymous baseline for
+    a JWT-authenticated API request. Computes it directly per request
+    instead.
+    """
+    async def checker(
+        request: Request,
+        user: User = Depends(get_current_api_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> User:
+        permissions = await get_user_permissions(db, user)
+        if not has_permission(permissions, module, level):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=t_for(request, "errors.no_permission"))
+        return user
+
+    return checker
