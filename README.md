@@ -88,12 +88,15 @@ postcode-before-city vs. UK-style postcode-last).
 git clone https://github.com/parcella-garden/parcella.git
 cd parcella
 cp .env.example .env
+
 # adjust .env as needed (passwords, SMTP, etc.)
 ```
 
 ### 2. Set UID/GID (avoids root-owned files on the host)
 
 ```bash
+# only if you work on Linux. Please do not do this on Mac or Windows
+
 echo "UID=$(id -u)" >> .env
 echo "GID=$(id -g)" >> .env
 ```
