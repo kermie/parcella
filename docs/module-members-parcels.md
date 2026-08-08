@@ -153,3 +153,16 @@ depends on the other.
 - `scalar_one_or_none()` raises an error as soon as more than one row comes
   back -- for duplicate *detection* (where multiple matches can be
   expected), `.scalars().first()` is the right choice.
+
+## Implementation note (ADR 0070)
+
+Member CRUD (create/update/soft-delete, phone/email sub-resources) and
+the "active member" query filter live in `app/services/members.py`,
+called by both `app/routers/members.py` and `app/routers/api_members.py`.
+The API's `active_only` filter now pushes `active_member_filter()` into
+SQL before pagination, same as the HTML list view -- it used to filter
+in Python afterward, which could return fewer than the requested page
+size (see ADR 0070). The API router also now checks permissions the
+same fine-grained, `Group`-based way the HTML side does
+(`require_api_permission`), not the coarser role-only check most other
+API routers still use.

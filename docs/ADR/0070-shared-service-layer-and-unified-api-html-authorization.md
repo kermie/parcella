@@ -122,20 +122,34 @@ it silently into a patch release:
 
 ## Not yet done -- tracked follow-up
 
+**Update (2026-08-08):** a scoping survey ahead of the wider rollout
+found this checklist wrong on scope in two ways, corrected below:
+`calendar`, `announcements`, and `finances` have no `api_<module>.py`
+at all -- there's no second router to diverge from, so this pattern
+doesn't apply to them; and `tasks` already has the *correct*,
+already-matched pair (`require_admin`/`require_admin_api`, both
+admin/board-only by deliberate design -- `tasks` is intentionally not
+in `app/permissions.py`'s `MODULES`), so `require_api_permission`
+would be the wrong tool there; its one genuinely shared piece (kanban
+drag-and-drop reordering) already lives in `app/task_board.py`,
+predating this ADR's naming convention. Both are dropped from the list.
+
 The remaining module pairs still have the same shape of duplication and
 the same API/HTML authorization split. Migrating them (a shared
 `app/services/<module>.py` + swapping that module's API router from
 `require_write_access`/`require_api_role` to `require_api_permission`)
-is follow-up work, module by module, not attempted in this change:
+is follow-up work, module by module:
 
-- [ ] members
+- [x] members (2026-08-08) -- mostly mechanical CRUD extraction; the one
+      real bug closed was `active_only` filtering in Python *after*
+      pagination instead of pushing `active_member_filter()` into SQL
+      like the HTML side always did (could return fewer than the
+      requested page size, or skip an active member depending on
+      offset) -- the exact SQL-vs-Python drift class this ADR's intro
+      cites (issue #167).
 - [ ] parcels
 - [ ] work_hours
 - [ ] insurance
 - [ ] metering (water/electricity -- arguably ahead already, `app/meter_utils.py` exists)
 - [ ] purchase_requests
-- [ ] calendar
-- [ ] announcements
 - [ ] inventory
-- [ ] tasks
-- [ ] finances

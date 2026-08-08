@@ -22,6 +22,10 @@ from app.i18n import t_for, load_current_language
 from app.branding import load_branding
 from app.pdf_chrome import load_org_footer_context
 from app.meeting_signin_sheet import render_meeting_signin_sheet_pdf
+from app.services.members import (
+    create_member, update_member, soft_delete_member,
+    add_phone, remove_phone, add_email, remove_email,
+)
 
 router = APIRouter(prefix="/members", tags=["members"])
 from app.templating import templates
@@ -236,7 +240,7 @@ async def member_create(
     notes: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await require_permission(request, db, "members_parcels", "write")
+    await require_permission(request, db, "members_parcels", "write")
 
     def parse_date(s: str) -> Optional[date]:
         if s:
@@ -246,20 +250,13 @@ async def member_create(
                 pass
         return None
 
-    member = Member(
-        first_name=first_name.strip(),
-        last_name=last_name.strip(),
-        street=street.strip() or None,
-        postal_code=postal_code.strip() or None,
-        city=city.strip() or None,
-        date_of_birth=parse_date(date_of_birth),
-        iban=iban.strip() or None,
-        member_since=parse_date(member_since),
-        member_until=parse_date(member_until),
-        email_notifications=email_notifications,
-        notes=notes.strip() or None,
+    member = await create_member(
+        db,
+        first_name=first_name, last_name=last_name, street=street,
+        postal_code=postal_code, city=city, date_of_birth=parse_date(date_of_birth),
+        iban=iban, member_since=parse_date(member_since), member_until=parse_date(member_until),
+        email_notifications=email_notifications, notes=notes,
     )
-    db.add(member)
     await db.commit()
 
     return RedirectResponse(f"/members/{member.id}", status_code=302)
@@ -343,18 +340,13 @@ async def member_update(
                 pass
         return None
 
-    member.first_name = first_name.strip()
-    member.last_name = last_name.strip()
-    member.street = street.strip() or None
-    member.postal_code = postal_code.strip() or None
-    member.city = city.strip() or None
-    member.date_of_birth = parse_date(date_of_birth)
-    member.iban = iban.strip() or None
-    member.member_since = parse_date(member_since)
-    member.member_until = parse_date(member_until)
-    member.email_notifications = email_notifications
-    member.notes = notes.strip() or None
-
+    await update_member(
+        db, member,
+        first_name=first_name, last_name=last_name, street=street,
+        postal_code=postal_code, city=city, date_of_birth=parse_date(date_of_birth),
+        iban=iban, member_since=parse_date(member_since), member_until=parse_date(member_until),
+        email_notifications=email_notifications, notes=notes,
+    )
     await db.commit()
     return RedirectResponse(f"/members/{member_id}", status_code=302)
 
@@ -376,7 +368,7 @@ async def member_delete(
     if not member:
         raise HTTPException(status_code=404, detail=t_for(request, "members.errors.member_not_found"))
 
-    member.deleted_at = datetime.now(timezone.utc)
+    await soft_delete_member(db, member)
     await db.commit()
 
     message = t_for(request, "members.detail.deleted_message", name=member.full_name)
@@ -400,13 +392,7 @@ async def phone_add(
     db: AsyncSession = Depends(get_db),
 ):
     await require_permission(request, db, "members_parcels", "write")
-    telefon = MemberPhone(
-        member_id=member_id,
-        number=number.strip(),
-        label=label.strip() or None,
-        is_primary=is_primary,
-    )
-    db.add(telefon)
+    await add_phone(db, member_id, number=number, label=label, is_primary=is_primary)
     await db.commit()
     return RedirectResponse(f"/members/{member_id}", status_code=302)
 
@@ -419,15 +405,7 @@ async def phone_delete(
     db: AsyncSession = Depends(get_db),
 ):
     await require_permission(request, db, "members_parcels", "delete")
-    result = await db.execute(
-        select(MemberPhone).where(
-            MemberPhone.id == phone_id,
-            MemberPhone.member_id == member_id,
-        )
-    )
-    telefon = result.scalar_one_or_none()
-    if telefon:
-        await db.delete(telefon)
+    if await remove_phone(db, member_id, phone_id):
         await db.commit()
     return RedirectResponse(f"/members/{member_id}", status_code=302)
 
@@ -442,13 +420,7 @@ async def email_add(
     db: AsyncSession = Depends(get_db),
 ):
     await require_permission(request, db, "members_parcels", "write")
-    email_obj = MemberEmail(
-        member_id=member_id,
-        address=address.strip().lower(),
-        label=label.strip() or None,
-        is_primary=is_primary,
-    )
-    db.add(email_obj)
+    await add_email(db, member_id, address=address, label=label, is_primary=is_primary)
     await db.commit()
     return RedirectResponse(f"/members/{member_id}", status_code=302)
 
@@ -461,15 +433,7 @@ async def email_delete(
     db: AsyncSession = Depends(get_db),
 ):
     await require_permission(request, db, "members_parcels", "delete")
-    result = await db.execute(
-        select(MemberEmail).where(
-            MemberEmail.id == email_id,
-            MemberEmail.member_id == member_id,
-        )
-    )
-    email_obj = result.scalar_one_or_none()
-    if email_obj:
-        await db.delete(email_obj)
+    if await remove_email(db, member_id, email_id):
         await db.commit()
     return RedirectResponse(f"/members/{member_id}", status_code=302)
 

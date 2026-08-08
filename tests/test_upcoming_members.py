@@ -232,3 +232,33 @@ async def test_rest_api_active_only_excludes_upcoming_member(client, admin_user)
 
     assert ("Pending", "ApiApplicant") not in names
     assert ("Actual", "ApiMember") in names
+
+
+async def test_rest_api_active_only_filters_before_pagination_not_after(client, admin_user):
+    """ADR 0070: active_only used to filter in Python AFTER limit/offset
+    had already been applied in SQL, so a page full of upcoming/inactive
+    members (sorted earlier alphabetically) could push real active
+    members off the page entirely -- fewer than `limit` rows back, or
+    none at all, despite active members existing further down the
+    table. Now active_member_filter() (the same one the HTML side always
+    used) is applied in SQL before pagination, exactly like the HTML
+    list view."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    async with AsyncSessionLocal() as session:
+        # Sorted first (by last_name) but NOT active -- would have
+        # occupied the whole page under the old Python-post-filter bug.
+        session.add(Member(first_name="A1", last_name="AAA Upcoming", member_since=date.today() + timedelta(days=30)))
+        session.add(Member(first_name="A2", last_name="AAB Upcoming", member_since=date.today() + timedelta(days=30)))
+        # Sorted later, genuinely active.
+        session.add(Member(first_name="Z1", last_name="ZZZ Active"))
+        session.add(Member(first_name="Z2", last_name="ZZY Active"))
+        await session.commit()
+
+    response = await client.get("/api/v1/members?active_only=true&limit=2", headers=headers)
+    assert response.status_code == 200
+    names = {(m["first_name"], m["last_name"]) for m in response.json()}
+
+    assert len(names) == 2
+    assert names == {("Z2", "ZZY Active"), ("Z1", "ZZZ Active")}

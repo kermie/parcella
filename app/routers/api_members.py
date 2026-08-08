@@ -1,22 +1,32 @@
 """
 API router: Members -- full CRUD via REST.
+
+Business logic shared with app/routers/members.py (HTML) lives in
+app/services/members.py (ADR 0070) -- this router owns bearer-token
+authentication, the fine-grained permission check (require_api_permission,
+Group-based like the HTML side), Pydantic body parsing, and JSON
+response serialization.
 """
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Member, MemberPhone, MemberEmail, MemberParcel
-from app.api_auth import get_current_api_user, require_write_access
+from app.models import Member, MemberParcel, User
+from app.api_auth import require_api_permission
+from app.services.members import (
+    active_members_query, create_member, update_member,
+    add_phone, remove_phone, add_email, remove_email,
+)
 from app.schemas import (
     MemberOut, MemberDetailOut, MemberCreate, MemberUpdate,
     PhoneOut, PhoneCreate, EmailAddressOut, EmailAddressCreate,
-    PaginatedResponse, MemberAssignmentBrief,
+    MemberAssignmentBrief,
 )
-from app.models import User
 
 router = APIRouter(prefix="/api/v1/members", tags=["API: Members"])
 
@@ -66,15 +76,12 @@ async def members_list(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("members_parcels", "read")),
 ):
     query = (
         select(Member)
         .options(selectinload(Member.phone_numbers), selectinload(Member.email_addresses))
         .where(Member.deleted_at.is_(None))
-        .order_by(Member.last_name, Member.first_name)
-        .limit(limit)
-        .offset(offset)
     )
     if search:
         query = query.where(
@@ -84,14 +91,17 @@ async def members_list(
                 Member.city.ilike(f"%{search}%"),
             )
         )
+    # active_only pushed into SQL via the same active_member_filter()
+    # the HTML side uses (ADR 0070), applied BEFORE pagination -- it
+    # used to filter in Python after limit/offset, which could return
+    # fewer than `limit` rows or skip an active member depending on
+    # which rows the page happened to land on.
+    if active_only:
+        query = active_members_query(query)
+    query = query.order_by(Member.last_name, Member.first_name).limit(limit).offset(offset)
 
     result = await db.execute(query)
-    members = result.scalars().all()
-
-    if active_only:
-        members = [m for m in members if m.is_active]
-
-    return members
+    return result.scalars().all()
 
 
 @router.get(
@@ -103,7 +113,7 @@ async def members_list(
 async def member_get(
     member_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("members_parcels", "read")),
 ):
     member = await _get_member_or_404(db, member_id, with_details=True)
     return _to_detail_schema(member)
@@ -118,10 +128,9 @@ async def member_get(
 async def member_create(
     data: MemberCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "write")),
 ):
-    member = Member(**data.model_dump())
-    db.add(member)
+    member = await create_member(db, **data.model_dump())
     await db.commit()
     await db.refresh(member, attribute_names=["phone_numbers", "email_addresses"])
     return member
@@ -137,13 +146,10 @@ async def member_update(
     member_id: str,
     data: MemberUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "write")),
 ):
     member = await _get_member_or_404(db, member_id)
-
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(member, field, value)
-
+    await update_member(db, member, **data.model_dump(exclude_unset=True))
     await db.commit()
     await db.refresh(member, attribute_names=["phone_numbers", "email_addresses"])
     return member
@@ -158,10 +164,8 @@ async def member_update(
 async def member_delete(
     member_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "delete")),
 ):
-    from datetime import datetime, timezone
-
     member = await _get_member_or_404(db, member_id)
     member.deleted_at = datetime.now(timezone.utc)
     await db.commit()
@@ -181,11 +185,10 @@ async def phone_add(
     member_id: str,
     data: PhoneCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "write")),
 ):
     await _get_member_or_404(db, member_id)
-    phone = MemberPhone(member_id=member_id, **data.model_dump())
-    db.add(phone)
+    phone = await add_phone(db, member_id, **data.model_dump())
     await db.commit()
     await db.refresh(phone)
     return phone
@@ -200,17 +203,10 @@ async def phone_remove(
     member_id: str,
     phone_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "delete")),
 ):
-    result = await db.execute(
-        select(MemberPhone).where(
-            MemberPhone.id == phone_id, MemberPhone.member_id == member_id
-        )
-    )
-    phone = result.scalar_one_or_none()
-    if not phone:
+    if not await remove_phone(db, member_id, phone_id):
         raise HTTPException(status_code=404, detail="Phone number not found")
-    await db.delete(phone)
     await db.commit()
 
 
@@ -228,16 +224,12 @@ async def email_add(
     member_id: str,
     data: EmailAddressCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "write")),
 ):
     await _get_member_or_404(db, member_id)
-    email_obj = MemberEmail(
-        member_id=member_id,
-        address=str(data.address).lower(),
-        label=data.label,
-        is_primary=data.is_primary,
+    email_obj = await add_email(
+        db, member_id, address=str(data.address), label=data.label, is_primary=data.is_primary,
     )
-    db.add(email_obj)
     await db.commit()
     await db.refresh(email_obj)
     return email_obj
@@ -252,15 +244,8 @@ async def email_remove(
     member_id: str,
     email_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "delete")),
 ):
-    result = await db.execute(
-        select(MemberEmail).where(
-            MemberEmail.id == email_id, MemberEmail.member_id == member_id
-        )
-    )
-    email_obj = result.scalar_one_or_none()
-    if not email_obj:
+    if not await remove_email(db, member_id, email_id):
         raise HTTPException(status_code=404, detail="Email address not found")
-    await db.delete(email_obj)
     await db.commit()
