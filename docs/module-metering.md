@@ -109,8 +109,9 @@ year -- same "nothing configured -> nothing billed" behavior as
   relationships (`relationship` fields) are not eagerly loaded. A later
   access triggers a synchronous lazy load, which raises `MissingGreenlet`
   with the async database driver. Fix: explicitly reload the row with
-  `selectinload(...)` after creating it (see `_get_or_create_pi()` in the
-  insurance module for an example of this pattern).
+  `selectinload(...)` after creating it (see
+  `get_or_create_parcel_insurance()` in `app/services/insurance.py` for
+  an example of this pattern).
 
 ## REST API
 
@@ -120,3 +121,23 @@ README for the endpoint overview. Background: early modules were
 initially built as web UI only, with the API added later -- since then
 the rule is that every new module gets **both** the web UI and API
 endpoints **from the start** (see Architecture Decisions).
+
+**Implementation note (ADR 0070):** metering-point/meter/reading CRUD
+and price-configuration upsert now live in `app/services/metering.py`,
+called by both `app/routers/metering.py` and
+`app/routers/api_metering.py` -- medium-agnostic like `app/meter_utils.py`
+already was (every function takes `medium` explicitly, same shape as
+the router factories themselves, ADR 0003). Closed one real gap along
+the way: the API used to resolve `check_monotonicity()`'s error via a
+German-only `format_monotonicity_error_de()` (now removed) instead of
+the shared i18n catalog the HTML side used via `t_for()` -- both now
+resolve the same `(key, params)` through one path
+(`record_reading()`), so the API's plausibility-check error is no
+longer always German regardless of the club's configured language. The
+API router also now checks permissions the same fine-grained,
+`Group`-based way the HTML side does (`require_api_permission`), not
+the coarser role-only check most other API routers still use.
+`price_configuration_update` (HTML-only: editing an existing price
+configuration's year by id, with a same-year collision check) has no
+API equivalent and stays router-local -- there's nothing to unify it
+against.

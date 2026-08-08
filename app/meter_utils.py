@@ -62,11 +62,12 @@ def check_monotonicity(
     On failure, returns a tuple (translation key, formatting
     parameters); otherwise None.
 
-    A tuple instead of a ready-formatted German string, so that both
-    the REST API (whose error text stays German -- see
-    format_monotonicity_error_de() below) and the (translatable) web
-    UI can share the same check code -- see app.i18n.translate() for
-    the web-UI side.
+    A tuple instead of a ready-formatted string, so the result can be
+    resolved via app.i18n.translate()/t_for() -- shared by both the
+    HTML and API surfaces via app.services.metering.record_reading()
+    (ADR 0070; the API used to format this in German only, via a now-
+    removed format_monotonicity_error_de(), regardless of the club's
+    configured language).
     """
     previous_value = reading_before_year(meter, year, exclude_id=exclude_id)
     if new_value < previous_value:
@@ -77,28 +78,6 @@ def check_monotonicity(
         return ("metering.errors.reading_above_later", {"new_value": new_value, "later_value": later_value})
 
     return None
-
-
-_MONOTONICITY_MESSAGES_DE = {
-    "metering.errors.reading_below_previous": (
-        "Der Zählerstand ({new_value}) darf nicht kleiner sein als der "
-        "vorherige Stand ({previous_value}) desselben Zählers."
-    ),
-    "metering.errors.reading_above_later": (
-        "Der Zählerstand ({new_value}) darf nicht größer sein als der "
-        "bereits erfasste spätere Stand ({later_value}) desselben Zählers."
-    ),
-}
-
-
-def format_monotonicity_error_de(key: str, params: dict) -> str:
-    """Formats the result of check_monotonicity() in German -- for the
-    REST API, which (like the rest of the API surface) is not
-    translated. See _MONOTONICITY_MESSAGES_DE above: this is a
-    deliberate scope decision (API error text stays German for now),
-    not an oversight -- flagged for a future i18n decision, not
-    changed as part of a code-comment cleanup."""
-    return _MONOTONICITY_MESSAGES_DE[key].format(**params)
 
 
 def total_consumption_for_type(metering_points: List, year: int) -> Decimal:

@@ -161,7 +161,13 @@ is follow-up work, module by module:
 - [x] insurance (2026-08-08) -- pure CRUD/query duplication, no audit
       trail or notifications involved on either side before or after;
       lowest-risk of the seven, mechanical extraction.
-- [ ] metering (water/electricity -- arguably ahead already, `app/meter_utils.py` exists)
+- [x] metering (2026-08-08) -- extended `app/meter_utils.py`'s already-
+      shared validation/computation to also cover persistence, same
+      medium-agnostic shape (ADR 0003's router-factory pattern). Real
+      finding: the API resolved the monotonicity-check error via a
+      German-only `format_monotonicity_error_de()` (now removed)
+      instead of the shared i18n catalog HTML used -- always German
+      regardless of the club's configured language.
 - [ ] purchase_requests
 - [x] inventory (2026-08-08) -- category uniqueness, owner-type
       validation, and loan-quantity rules were each independently

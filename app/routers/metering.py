@@ -24,14 +24,19 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import (
-    MeteringPoint, MeteringPointType, MeteringMedium, Meter, MeterReading,
+    MeteringPoint, MeteringPointType, MeteringMedium, Meter,
     Parcel, ParcelStatus, MeteringPriceConfiguration,
 )
 from app.permissions import require_permission
 from app.i18n import t_for, translate, DEFAULT_LANGUAGE
 from app.module_flags import require_module
 from app.meter_utils import (
-    calculate_consumption, check_monotonicity, total_consumption_for_type, reading_before_year
+    calculate_consumption, total_consumption_for_type, reading_before_year
+)
+from app.services.errors import ServiceError
+from app.services.metering import (
+    create_metering_point, update_metering_point, delete_metering_point, exchange_meter,
+    record_reading, delete_reading, get_price_configuration_for_year, save_price_configuration_for_year,
 )
 
 from app.templating import templates
@@ -235,28 +240,14 @@ def create_metering_router(
     ):
         await require_permission(request, db, modul_name, "write")
 
-        metering_point = MeteringPoint(
-            medium=medium,
-            type=MeteringPointType(type),
-            parcel_id=parcel_id.strip() or None,
-            label=label.strip() or None,
-            notes=notes.strip() or None,
+        metering_point = await create_metering_point(
+            db, medium,
+            type=type, parcel_id=(parcel_id.strip() or None), label=(label.strip() or None),
+            notes=(notes.strip() or None), number=number.strip(),
+            calibrated_until=(int(calibrated_until) if calibrated_until.strip() else None),
+            installed_at=(date.fromisoformat(installed_at) if installed_at.strip() else None),
+            initial_reading=(_parse_number(initial_reading, decimal_places) or Decimal("0")),
         )
-        db.add(metering_point)
-        await db.flush()
-
-        reading = _parse_number(initial_reading, decimal_places) or Decimal("0")
-
-        meter = Meter(
-            metering_point_id=metering_point.id,
-            number=number.strip(),
-            is_active=True,
-            calibrated_until=int(calibrated_until) if calibrated_until.strip() else None,
-            installed_at=date.fromisoformat(installed_at) if installed_at.strip() else None,
-            initial_reading=reading,
-        )
-        db.add(meter)
-
         await db.commit()
         return RedirectResponse(f"{url_prefix}/metering-points/{metering_point.id}", status_code=302)
 
@@ -314,8 +305,7 @@ def create_metering_router(
         if not metering_point:
             raise HTTPException(status_code=404)
 
-        metering_point.label = label.strip() or None
-        metering_point.notes = notes.strip() or None
+        await update_metering_point(db, metering_point, label=(label.strip() or None), notes=(notes.strip() or None))
         await db.commit()
         return RedirectResponse(f"{url_prefix}/metering-points/{metering_point_id}", status_code=302)
 
@@ -331,7 +321,7 @@ def create_metering_router(
         )
         metering_point = result.scalar_one_or_none()
         if metering_point:
-            await db.delete(metering_point)
+            await delete_metering_point(db, metering_point)
             await db.commit()
         return RedirectResponse(f"{url_prefix}/metering-points", status_code=302)
 
@@ -355,20 +345,13 @@ def create_metering_router(
         if not metering_point:
             raise HTTPException(status_code=404)
 
-        old_meter = metering_point.current_meter
-        if old_meter:
-            old_meter.is_active = False
-            old_meter.removed_at = date.fromisoformat(removed_at)
-
-        new_meter = Meter(
-            metering_point_id=metering_point_id,
-            number=new_number.strip(),
-            is_active=True,
-            calibrated_until=int(calibrated_until) if calibrated_until.strip() else None,
+        await exchange_meter(
+            db, metering_point,
+            new_number=new_number.strip(), removed_at=date.fromisoformat(removed_at),
             installed_at=date.fromisoformat(installed_at),
-            initial_reading=_parse_number(initial_reading, decimal_places) or Decimal("0"),
+            calibrated_until=(int(calibrated_until) if calibrated_until.strip() else None),
+            initial_reading=(_parse_number(initial_reading, decimal_places) or Decimal("0")),
         )
-        db.add(new_meter)
         await db.commit()
         return RedirectResponse(f"{url_prefix}/metering-points/{metering_point_id}", status_code=302)
 
@@ -401,26 +384,14 @@ def create_metering_router(
             message = urllib.parse.quote(t_for(request, "metering.errors.invalid_reading"))
             return RedirectResponse(f"{return_url}?error={message}", status_code=302)
 
-        error_info = check_monotonicity(meter, year, new_reading)
-        if error_info:
-            error = t_for(request, error_info[0], **error_info[1])
+        try:
+            await record_reading(
+                db, meter, year=year, reading_date=date.fromisoformat(date_value),
+                reading=new_reading, note=(note.strip() or None), recorded_by_id=user.id,
+            )
+        except ServiceError as e:
+            error = t_for(request, e.key, **e.params)
             return RedirectResponse(f"{return_url}?error={urllib.parse.quote(error)}", status_code=302)
-
-        existing = next((z for z in meter.readings if z.year == year), None)
-        if existing:
-            existing.reading = new_reading
-            existing.date = date.fromisoformat(date_value)
-            existing.note = note.strip() or None
-            existing.recorded_by_id = user.id
-        else:
-            db.add(MeterReading(
-                meter_id=meter.id,
-                year=year,
-                date=date.fromisoformat(date_value),
-                reading=new_reading,
-                note=note.strip() or None,
-                recorded_by_id=user.id,
-            ))
 
         await db.commit()
         return RedirectResponse(return_url, status_code=302)
@@ -432,14 +403,8 @@ def create_metering_router(
         db: AsyncSession = Depends(get_db),
     ):
         await require_permission(request, db, modul_name, "delete")
-        result = await db.execute(select(MeterReading).where(MeterReading.id == reading_id))
-        reading_entry = result.scalar_one_or_none()
-        metering_point_id = None
-        if reading_entry:
-            meter_result = await db.execute(select(Meter).where(Meter.id == reading_entry.meter_id))
-            meter = meter_result.scalar_one_or_none()
-            metering_point_id = meter.metering_point_id if meter else None
-            await db.delete(reading_entry)
+        metering_point_id = await delete_reading(db, reading_id)
+        if metering_point_id:
             await db.commit()
 
         if metering_point_id:
@@ -611,14 +576,6 @@ def create_metering_router(
     # app/routers/work_hours.py's configuration_* routes, mirrored here.
     # -----------------------------------------------------------------
 
-    async def _get_price_config_for_year(db: AsyncSession, year: int) -> Optional[MeteringPriceConfiguration]:
-        result = await db.execute(
-            select(MeteringPriceConfiguration).where(
-                MeteringPriceConfiguration.medium == medium, MeteringPriceConfiguration.year == year,
-            )
-        )
-        return result.scalar_one_or_none()
-
     @router.get("/configuration", response_class=HTMLResponse)
     async def price_configuration_page(request: Request, db: AsyncSession = Depends(get_db)):
         user = await require_permission(request, db, modul_name, "read")
@@ -649,16 +606,10 @@ def create_metering_router(
     ):
         await require_permission(request, db, modul_name, "write")
 
-        existing = await _get_price_config_for_year(db, year)
         parsed_price = float(price_per_unit.strip().replace(",", "."))
-        if existing:
-            existing.price_per_unit = parsed_price
-            existing.note = note.strip() or None
-        else:
-            db.add(MeteringPriceConfiguration(
-                medium=medium, year=year, price_per_unit=parsed_price, note=note.strip() or None,
-            ))
-
+        await save_price_configuration_for_year(
+            db, medium, year, price_per_unit=parsed_price, note=(note.strip() or None),
+        )
         await db.commit()
         return RedirectResponse(f"{url_prefix}/configuration", status_code=302)
 
@@ -703,7 +654,7 @@ def create_metering_router(
             raise HTTPException(status_code=404, detail=t_for(request, "metering.errors.configuration_not_found"))
 
         if year != configuration.year:
-            collision = await _get_price_config_for_year(db, year)
+            collision = await get_price_configuration_for_year(db, medium, year)
             if collision and collision.id != configuration_id:
                 raise HTTPException(
                     status_code=400,

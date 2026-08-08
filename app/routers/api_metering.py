@@ -2,12 +2,16 @@
 API router factory for metering (water & electricity) -- analogous to
 the HTML router factory in app/routers/metering.py. One codebase for
 both media, instantiated twice (see main.py).
+
+Business logic shared with app/routers/metering.py (HTML) lives in
+app/services/metering.py (ADR 0070) -- this router owns bearer-token
+authentication, the fine-grained permission check (require_api_permission,
+Group-based like the HTML side), Pydantic body parsing, and JSON
+response serialization.
 """
-from datetime import date
-from decimal import Decimal, InvalidOperation
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -17,9 +21,15 @@ from app.models import (
     MeteringPoint, MeteringPointType, MeteringMedium, Meter, MeterReading, User,
     MeteringPriceConfiguration,
 )
-from app.api_auth import get_current_api_user, require_write_access
+from app.api_auth import require_api_permission
 from app.module_flags import require_module
-from app.meter_utils import calculate_consumption, check_monotonicity, format_monotonicity_error_de, total_consumption_for_type
+from app.i18n import t_for
+from app.meter_utils import calculate_consumption
+from app.services.errors import ServiceError
+from app.services.metering import (
+    create_metering_point, update_metering_point, delete_metering_point, exchange_meter,
+    record_reading, delete_reading, get_price_configuration_for_year, save_price_configuration_for_year,
+)
 from app.schemas import (
     MeteringPointOut, MeteringPointDetailOut, MeteringPointCreate, MeteringPointUpdate,
     MeterOut, MeterSwapRequest, MeterReadingCreate, MeterReadingOut,
@@ -48,7 +58,7 @@ def create_metering_api_router(
     async def list_metering_points(
         type: Optional[str] = Query(None, description="MAIN_METER, PARCEL, or CLUB"),
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(get_current_api_user),
+        user: User = Depends(require_api_permission(modul_name, "read")),
     ):
         query = select(MeteringPoint).where(MeteringPoint.medium == medium)
         if type:
@@ -63,7 +73,7 @@ def create_metering_api_router(
     async def get_metering_point(
         metering_point_id: str,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(get_current_api_user),
+        user: User = Depends(require_api_permission(modul_name, "read")),
     ):
         zp = await _load_metering_point(db, metering_point_id)
         if not zp:
@@ -78,24 +88,17 @@ def create_metering_api_router(
         summary="Create metering point",
         description="Creates a metering point including its first meter in a single step.",
     )
-    async def create_metering_point(
+    async def create_metering_point_endpoint(
         daten: MeteringPointCreate,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(require_write_access),
+        user: User = Depends(require_api_permission(modul_name, "write")),
     ):
-        zp = MeteringPoint(
-            medium=medium, type=MeteringPointType(daten.type),
-            parcel_id=daten.parcel_id, label=daten.label, notes=daten.notes,
+        zp = await create_metering_point(
+            db, medium,
+            type=daten.type, parcel_id=daten.parcel_id, label=daten.label, notes=daten.notes,
+            number=daten.number, calibrated_until=daten.calibrated_until,
+            installed_at=daten.installed_at, initial_reading=daten.initial_reading,
         )
-        db.add(zp)
-        await db.flush()
-
-        meter = Meter(
-            metering_point_id=zp.id, number=daten.number, is_active=True,
-            calibrated_until=daten.calibrated_until, installed_at=daten.installed_at,
-            initial_reading=daten.initial_reading,
-        )
-        db.add(meter)
         await db.commit()
 
         zp = await _load_metering_point(db, zp.id)
@@ -105,11 +108,11 @@ def create_metering_api_router(
         return out
 
     @router.put("/metering-points/{metering_point_id}", response_model=MeteringPointOut, summary="Update metering point")
-    async def update_metering_point(
+    async def update_metering_point_endpoint(
         metering_point_id: str,
         daten: MeteringPointUpdate,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(require_write_access),
+        user: User = Depends(require_api_permission(modul_name, "write")),
     ):
         result = await db.execute(
             select(MeteringPoint).where(MeteringPoint.id == metering_point_id, MeteringPoint.medium == medium)
@@ -118,9 +121,7 @@ def create_metering_api_router(
         if not zp:
             raise HTTPException(status_code=404, detail="Metering point not found")
 
-        for field, value in daten.model_dump(exclude_unset=True).items():
-            setattr(zp, field, value)
-
+        await update_metering_point(db, zp, **daten.model_dump(exclude_unset=True))
         await db.commit()
         await db.refresh(zp)
         return zp
@@ -129,17 +130,17 @@ def create_metering_api_router(
         "/metering-points/{metering_point_id}", status_code=status.HTTP_204_NO_CONTENT,
         summary="Delete metering point", description="Also deletes all meters and readings (cascade).",
     )
-    async def delete_metering_point(
+    async def delete_metering_point_endpoint(
         metering_point_id: str,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(require_write_access),
+        user: User = Depends(require_api_permission(modul_name, "delete")),
     ):
         result = await db.execute(
             select(MeteringPoint).where(MeteringPoint.id == metering_point_id, MeteringPoint.medium == medium)
         )
         zp = result.scalar_one_or_none()
         if zp:
-            await db.delete(zp)
+            await delete_metering_point(db, zp)
             await db.commit()
 
     @router.post(
@@ -147,27 +148,21 @@ def create_metering_api_router(
         summary="Exchange meter",
         description="Deactivates the current meter (removal date) and creates a new one.",
     )
-    async def exchange_meter(
+    async def exchange_meter_endpoint(
         metering_point_id: str,
         daten: MeterSwapRequest,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(require_write_access),
+        user: User = Depends(require_api_permission(modul_name, "write")),
     ):
         zp = await _load_metering_point(db, metering_point_id)
         if not zp:
             raise HTTPException(status_code=404, detail="Metering point not found")
 
-        old_meter = zp.current_meter
-        if old_meter:
-            old_meter.is_active = False
-            old_meter.removed_at = daten.removed_at
-
-        new_meter = Meter(
-            metering_point_id=metering_point_id, number=daten.new_number, is_active=True,
-            calibrated_until=daten.calibrated_until, installed_at=daten.installed_at,
-            initial_reading=daten.initial_reading,
+        new_meter = await exchange_meter(
+            db, zp,
+            new_number=daten.new_number, removed_at=daten.removed_at, installed_at=daten.installed_at,
+            calibrated_until=daten.calibrated_until, initial_reading=daten.initial_reading,
         )
-        db.add(new_meter)
         await db.commit()
         await db.refresh(new_meter)
         return new_meter
@@ -179,7 +174,7 @@ def create_metering_api_router(
     async def list_meter_readings(
         metering_point_id: str,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(get_current_api_user),
+        user: User = Depends(require_api_permission(modul_name, "read")),
     ):
         zp = await _load_metering_point(db, metering_point_id)
         if not zp:
@@ -198,8 +193,9 @@ def create_metering_api_router(
     async def create_reading(
         metering_point_id: str,
         daten: MeterReadingCreate,
+        request: Request,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(require_write_access),
+        user: User = Depends(require_api_permission(modul_name, "write")),
     ):
         zp = await _load_metering_point(db, metering_point_id)
         if not zp:
@@ -208,42 +204,28 @@ def create_metering_api_router(
         if not meter:
             raise HTTPException(status_code=400, detail="No active meter for this metering point")
 
-        error = check_monotonicity(meter, daten.year, daten.reading)
-        if error:
-            raise HTTPException(status_code=422, detail=format_monotonicity_error_de(*error))
+        try:
+            reading = await record_reading(
+                db, meter, year=daten.year, reading_date=daten.date, reading=daten.reading,
+                note=daten.note, recorded_by_id=user.id,
+            )
+        except ServiceError as e:
+            raise HTTPException(status_code=422, detail=t_for(request, e.key, **e.params))
 
-        existing = next((z for z in meter.readings if z.year == daten.year), None)
-        if existing:
-            existing.reading = daten.reading
-            existing.date = daten.date
-            existing.note = daten.note
-            existing.recorded_by_id = user.id
-            await db.commit()
-            await db.refresh(existing)
-            return existing
-
-        new_reading = MeterReading(
-            meter_id=meter.id, year=daten.year, date=daten.date,
-            reading=daten.reading, note=daten.note, recorded_by_id=user.id,
-        )
-        db.add(new_reading)
         await db.commit()
-        await db.refresh(new_reading)
-        return new_reading
+        await db.refresh(reading)
+        return reading
 
     @router.delete(
         "/readings/{reading_id}", status_code=status.HTTP_204_NO_CONTENT,
         summary="Delete reading",
     )
-    async def delete_reading(
+    async def delete_reading_endpoint(
         reading_id: str,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(require_write_access),
+        user: User = Depends(require_api_permission(modul_name, "delete")),
     ):
-        result = await db.execute(select(MeterReading).where(MeterReading.id == reading_id))
-        reading_entry = result.scalar_one_or_none()
-        if reading_entry:
-            await db.delete(reading_entry)
+        if await delete_reading(db, reading_id):
             await db.commit()
 
     @router.get(
@@ -254,7 +236,7 @@ def create_metering_api_router(
         year: int,
         type: Optional[str] = Query(None, description="Filter by MAIN_METER, PARCEL, or CLUB"),
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(get_current_api_user),
+        user: User = Depends(require_api_permission(modul_name, "read")),
     ):
         query = (
             select(MeteringPoint)
@@ -286,7 +268,7 @@ def create_metering_api_router(
     @router.get("/configuration", response_model=List[MeteringPriceConfigurationOut], summary="List price configurations")
     async def price_configurations_list(
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(get_current_api_user),
+        user: User = Depends(require_api_permission(modul_name, "read")),
     ):
         result = await db.execute(
             select(MeteringPriceConfiguration)
@@ -299,14 +281,9 @@ def create_metering_api_router(
     async def price_configuration_get(
         year: int,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(get_current_api_user),
+        user: User = Depends(require_api_permission(modul_name, "read")),
     ):
-        result = await db.execute(
-            select(MeteringPriceConfiguration).where(
-                MeteringPriceConfiguration.medium == medium, MeteringPriceConfiguration.year == year,
-            )
-        )
-        config = result.scalar_one_or_none()
+        config = await get_price_configuration_for_year(db, medium, year)
         if not config:
             raise HTTPException(status_code=404, detail=f"No price configuration for {year}")
         return config
@@ -320,24 +297,11 @@ def create_metering_api_router(
         year: int,
         data: MeteringPriceConfigurationCreate,
         db: AsyncSession = Depends(get_db),
-        user: User = Depends(require_write_access),
+        user: User = Depends(require_api_permission(modul_name, "write")),
     ):
-        result = await db.execute(
-            select(MeteringPriceConfiguration).where(
-                MeteringPriceConfiguration.medium == medium, MeteringPriceConfiguration.year == year,
-            )
+        config = await save_price_configuration_for_year(
+            db, medium, year, price_per_unit=data.price_per_unit, note=data.note,
         )
-        config = result.scalar_one_or_none()
-
-        if config:
-            config.price_per_unit = data.price_per_unit
-            config.note = data.note
-        else:
-            config = MeteringPriceConfiguration(
-                medium=medium, year=year, price_per_unit=data.price_per_unit, note=data.note,
-            )
-            db.add(config)
-
         await db.commit()
         await db.refresh(config)
         return config
