@@ -18,11 +18,16 @@ from app.database import get_db
 from app.i18n import t_for
 from app.models import (
     PropertyInsurancePackage, InsuranceConfiguration, ParcelInsurance,
-    AccidentInsuranceAdditionalPerson, Parcel, ParcelStatus, MemberParcel, Member,
+    Parcel, ParcelStatus, MemberParcel,
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
 from app.insurance_utils import household_grouping, calculate_insurance_cost
+from app.services.insurance import (
+    get_configuration, save_configuration, get_packages_for_year,
+    create_package, update_package, delete_package,
+    get_or_create_parcel_insurance, save_parcel_insurance,
+)
 
 router = APIRouter(
     prefix="/insurance",
@@ -42,53 +47,6 @@ def _parse_decimal(value: str) -> Optional[Decimal]:
         return None
 
 
-async def _get_configuration(db: AsyncSession, year: int) -> Optional[InsuranceConfiguration]:
-    result = await db.execute(
-        select(InsuranceConfiguration).where(InsuranceConfiguration.year == year)
-    )
-    return result.scalar_one_or_none()
-
-
-async def _get_packages(db: AsyncSession, year: int) -> list:
-    result = await db.execute(
-        select(PropertyInsurancePackage)
-        .where(PropertyInsurancePackage.year == year)
-        .order_by(PropertyInsurancePackage.sort_order, PropertyInsurancePackage.amount_eur)
-    )
-    return result.scalars().all()
-
-
-async def _get_or_create_pi(db: AsyncSession, parcel_id: str, year: int) -> ParcelInsurance:
-    result = await db.execute(
-        select(ParcelInsurance)
-        .options(
-            selectinload(ParcelInsurance.property_package),
-            selectinload(ParcelInsurance.additional_persons),
-        )
-        .where(ParcelInsurance.parcel_id == parcel_id, ParcelInsurance.year == year)
-    )
-    pi = result.scalar_one_or_none()
-    if not pi:
-        pi = ParcelInsurance(parcel_id=parcel_id, year=year)
-        db.add(pi)
-        await db.commit()
-        # Reload the freshly created row with eagerly-loaded
-        # relationships. Without this, a later access to
-        # pi.property_package/pi.additional_persons would trigger a
-        # synchronous lazy load, which raises "MissingGreenlet" with
-        # the async database driver.
-        result = await db.execute(
-            select(ParcelInsurance)
-            .options(
-                selectinload(ParcelInsurance.property_package),
-                selectinload(ParcelInsurance.additional_persons),
-            )
-            .where(ParcelInsurance.id == pi.id)
-        )
-        pi = result.scalar_one()
-    return pi
-
-
 # ---------------------------------------------------------------------------
 # Overview
 # ---------------------------------------------------------------------------
@@ -103,8 +61,8 @@ async def insurance_overview(
     if not year:
         year = date.today().year
 
-    configuration = await _get_configuration(db, year)
-    packages = await _get_packages(db, year)
+    configuration = await get_configuration(db, year)
+    packages = await get_packages_for_year(db, year)
 
     pi_result = await db.execute(
         select(ParcelInsurance)
@@ -154,8 +112,8 @@ async def configuration_page(
     if not year:
         year = date.today().year
 
-    configuration = await _get_configuration(db, year)
-    packages = await _get_packages(db, year)
+    configuration = await get_configuration(db, year)
+    packages = await get_packages_for_year(db, year)
 
     all_years_result = await db.execute(
         select(InsuranceConfiguration.year).order_by(InsuranceConfiguration.year.desc())
@@ -182,18 +140,9 @@ async def configuration_save(
 ):
     await require_permission(request, db, "insurance", "write")
 
-    configuration = await _get_configuration(db, year)
     base = _parse_decimal(accident_base_amount_eur) or Decimal("0")
     additional = _parse_decimal(accident_additional_amount_eur) or Decimal("0")
-
-    if configuration:
-        configuration.accident_base_amount_eur = base
-        configuration.accident_additional_amount_eur = additional
-    else:
-        db.add(InsuranceConfiguration(
-            year=year, accident_base_amount_eur=base, accident_additional_amount_eur=additional,
-        ))
-
+    await save_configuration(db, year, accident_base_amount_eur=base, accident_additional_amount_eur=additional)
     await db.commit()
     return RedirectResponse(f"/insurance/configuration?year={year}", status_code=302)
 
@@ -210,9 +159,7 @@ async def package_create(
     await require_permission(request, db, "insurance", "write")
 
     amount = _parse_decimal(amount_eur) or Decimal("0")
-    db.add(PropertyInsurancePackage(
-        year=year, name=name.strip(), amount_eur=amount, sort_order=sort_order,
-    ))
+    await create_package(db, year=year, name=name, amount_eur=amount, sort_order=sort_order)
     await db.commit()
     return RedirectResponse(f"/insurance/configuration?year={year}", status_code=302)
 
@@ -233,10 +180,9 @@ async def package_update(
     if not package:
         raise HTTPException(status_code=404)
 
-    package.name = name.strip()
-    package.amount_eur = _parse_decimal(amount_eur) or package.amount_eur
-    package.sort_order = sort_order
-
+    await update_package(
+        db, package, name=name, amount_eur=_parse_decimal(amount_eur), sort_order=sort_order,
+    )
     await db.commit()
     return RedirectResponse(f"/insurance/configuration?year={package.year}", status_code=302)
 
@@ -249,12 +195,9 @@ async def package_delete(
 ):
     await require_permission(request, db, "insurance", "delete")
 
-    result = await db.execute(select(PropertyInsurancePackage).where(PropertyInsurancePackage.id == package_id))
-    package = result.scalar_one_or_none()
+    package = await delete_package(db, package_id)
     year = package.year if package else date.today().year
-    if package:
-        await db.delete(package)
-        await db.commit()
+    await db.commit()
 
     return RedirectResponse(f"/insurance/configuration?year={year}", status_code=302)
 
@@ -273,7 +216,7 @@ async def insurance_parcels_list(
     if not year:
         year = date.today().year
 
-    configuration = await _get_configuration(db, year)
+    configuration = await get_configuration(db, year)
 
     parcels_result = await db.execute(
         select(Parcel)
@@ -323,9 +266,9 @@ async def insurance_detail(
     if not parcel:
         raise HTTPException(status_code=404, detail=t_for(request, "insurance.errors.parcel_not_found"))
 
-    configuration = await _get_configuration(db, year)
-    packages = await _get_packages(db, year)
-    pi = await _get_or_create_pi(db, parcel_id, year)
+    configuration = await get_configuration(db, year)
+    packages = await get_packages_for_year(db, year)
+    pi = await get_or_create_parcel_insurance(db, parcel_id, year)
 
     grouping = household_grouping(parcel.member_assignments)
     additional_ids = {a.member_id for a in pi.additional_persons}
@@ -352,24 +295,14 @@ async def insurance_save(
 ):
     await require_permission(request, db, "insurance", "write")
 
-    pi = await _get_or_create_pi(db, parcel_id, year)
-
-    pi.has_property_insurance = has_property_insurance
-    pi.property_package_id = property_package_id.strip() or None if has_property_insurance else None
-
-    pi.has_accident_insurance = has_accident_insurance
-
-    # Fully replace additional persons (simpler than diffing, data volume is small)
-    for ap in list(pi.additional_persons):
-        await db.delete(ap)
-    await db.flush()
-
-    if has_accident_insurance:
-        for member_id in additional_persons:
-            db.add(AccidentInsuranceAdditionalPerson(
-                parcel_insurance_id=pi.id, member_id=member_id,
-            ))
-
+    pi = await get_or_create_parcel_insurance(db, parcel_id, year)
+    await save_parcel_insurance(
+        db, pi,
+        has_property_insurance=has_property_insurance,
+        property_package_id=(property_package_id.strip() or None),
+        has_accident_insurance=has_accident_insurance,
+        additional_person_member_ids=additional_persons,
+    )
     await db.commit()
     return RedirectResponse(f"/insurance/parcels/{parcel_id}?year={year}", status_code=302)
 
@@ -388,7 +321,7 @@ async def insurance_evaluation(
     if not year:
         year = date.today().year
 
-    configuration = await _get_configuration(db, year)
+    configuration = await get_configuration(db, year)
 
     pi_result = await db.execute(
         select(ParcelInsurance)
@@ -437,7 +370,7 @@ async def insurance_evaluation_csv(
     if not year:
         year = date.today().year
 
-    configuration = await _get_configuration(db, year)
+    configuration = await get_configuration(db, year)
 
     pi_result = await db.execute(
         select(ParcelInsurance)

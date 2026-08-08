@@ -149,7 +149,9 @@ is follow-up work, module by module:
       cites (issue #167).
 - [ ] parcels
 - [ ] work_hours
-- [ ] insurance
+- [x] insurance (2026-08-08) -- pure CRUD/query duplication, no audit
+      trail or notifications involved on either side before or after;
+      lowest-risk of the seven, mechanical extraction.
 - [ ] metering (water/electricity -- arguably ahead already, `app/meter_utils.py` exists)
 - [ ] purchase_requests
 - [ ] inventory

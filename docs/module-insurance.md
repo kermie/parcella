@@ -64,7 +64,8 @@ values that can change annually belong in a table, not in code.
   `ParcelInsurance` is created for the first time (when a parcel is
   opened for a year for the first time), the relationships must be
   explicitly reloaded after the commit before accessing `property_package`
-  or `additional_persons`. See `_get_or_create_pi()`.
+  or `additional_persons`. See `get_or_create_parcel_insurance()` in
+  `app/services/insurance.py`.
 
 ## REST API
 
@@ -74,3 +75,11 @@ README for the endpoint overview. Background: early modules were
 initially built as web UI only, with the API added later -- since then
 the rule is that every new module gets **both** the web UI and API
 endpoints **from the start** (see Architecture Decisions).
+
+**Implementation note (ADR 0070):** configuration/package CRUD and the
+parcel-insurance upsert (incl. "fully replace additional persons") now
+live in `app/services/insurance.py`, called by both
+`app/routers/insurance.py` and `app/routers/api_insurance.py`. The API
+router also now checks permissions the same fine-grained, `Group`-based
+way the HTML side does (`require_api_permission`), not the coarser
+role-only check most other API routers still use.

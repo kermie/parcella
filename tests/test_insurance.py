@@ -2,6 +2,64 @@
 from tests.conftest import login, auth_header
 
 
+async def test_treasurer_without_group_grant_is_blocked_from_insurance_write_via_api(client):
+    """ADR 0070: api_insurance.py used require_write_access (role-only)
+    -- ANY TREASURER could write insurance data via the API regardless
+    of Group configuration. Now the API checks the same Group-derived
+    permission as HTML."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="treasurer-no-group-insurance@example.com", name="Treasurer No Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.TREASURER,
+        )
+        db.add(user)
+        await db.commit()
+
+    token = await login(client, "treasurer-no-group-insurance@example.com")
+    response = await client.post(
+        "/api/v1/insurance/packages",
+        json={"year": 2026, "name": "Paket 1", "amount_eur": "40.00"},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 403
+
+
+async def test_readonly_with_group_grant_can_write_insurance_via_api(client):
+    """Flip side: a READONLY user granted insurance:write via a Group
+    could already write insurance data through the HTML UI, but the
+    role-only API check blocked them regardless of Group membership."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole, Group, GroupModulePermission, GroupMembership
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="readonly-with-group-insurance@example.com", name="Readonly With Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        )
+        db.add(user)
+        await db.flush()
+
+        group = Group(name="Insurance Handlers")
+        db.add(group)
+        await db.flush()
+        db.add(GroupModulePermission(group_id=group.id, module="insurance", can_read=True, can_write=True))
+        db.add(GroupMembership(user_id=user.id, group_id=group.id))
+        await db.commit()
+
+    token = await login(client, "readonly-with-group-insurance@example.com")
+    response = await client.post(
+        "/api/v1/insurance/packages",
+        json={"year": 2026, "name": "Paket 1", "amount_eur": "40.00"},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 201, response.text
+
+
 async def test_package_create_and_cost_calculation(client, admin_user):
     token = await login(client, "admin@example.com")
     headers = auth_header(token)

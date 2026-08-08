@@ -1,6 +1,12 @@
 """
 API router: Insurance -- property insurance packages, configuration,
 parcel insurance status, evaluation.
+
+Business logic shared with app/routers/insurance.py (HTML) lives in
+app/services/insurance.py (ADR 0070) -- this router owns bearer-token
+authentication, the fine-grained permission check (require_api_permission,
+Group-based like the HTML side), Pydantic body parsing, and JSON
+response serialization.
 """
 from typing import List, Optional
 
@@ -10,13 +16,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import (
-    PropertyInsurancePackage, InsuranceConfiguration, ParcelInsurance,
-    AccidentInsuranceAdditionalPerson, Parcel, User,
-)
-from app.api_auth import get_current_api_user, require_write_access
+from app.models import PropertyInsurancePackage, InsuranceConfiguration, ParcelInsurance, Parcel, User
+from app.api_auth import require_api_permission
 from app.module_flags import require_module
 from app.insurance_utils import calculate_insurance_cost
+from app.services.insurance import (
+    get_configuration, save_configuration, create_package, update_package, delete_package,
+    get_parcel_insurance, get_or_create_parcel_insurance, save_parcel_insurance,
+)
 from app.schemas import (
     PropertyInsurancePackageOut, PropertyInsurancePackageCreate,
     InsuranceConfigurationOut, InsuranceConfigurationCreate,
@@ -38,7 +45,7 @@ router = APIRouter(
 async def packages_list(
     year: Optional[int] = Query(None),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("insurance", "read")),
 ):
     query = select(PropertyInsurancePackage).order_by(PropertyInsurancePackage.year.desc(), PropertyInsurancePackage.sort_order)
     if year:
@@ -54,10 +61,9 @@ async def packages_list(
 async def package_create(
     daten: PropertyInsurancePackageCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("insurance", "write")),
 ):
-    package = PropertyInsurancePackage(**daten.model_dump())
-    db.add(package)
+    package = await create_package(db, **daten.model_dump())
     await db.commit()
     await db.refresh(package)
     return package
@@ -68,16 +74,17 @@ async def package_update(
     package_id: str,
     daten: PropertyInsurancePackageCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("insurance", "write")),
 ):
     result = await db.execute(select(PropertyInsurancePackage).where(PropertyInsurancePackage.id == package_id))
     package = result.scalar_one_or_none()
     if not package:
         raise HTTPException(status_code=404, detail="Package not found")
 
-    for field, value in daten.model_dump().items():
-        setattr(package, field, value)
-
+    await update_package(
+        db, package, name=daten.name, amount_eur=daten.amount_eur,
+        sort_order=daten.sort_order, year=daten.year,
+    )
     await db.commit()
     await db.refresh(package)
     return package
@@ -87,13 +94,10 @@ async def package_update(
 async def package_delete(
     package_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("insurance", "delete")),
 ):
-    result = await db.execute(select(PropertyInsurancePackage).where(PropertyInsurancePackage.id == package_id))
-    package = result.scalar_one_or_none()
-    if package:
-        await db.delete(package)
-        await db.commit()
+    await delete_package(db, package_id)
+    await db.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -107,10 +111,9 @@ async def package_delete(
 async def configuration_get(
     year: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("insurance", "read")),
 ):
-    result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
-    config = result.scalar_one_or_none()
+    config = await get_configuration(db, year)
     if not config:
         raise HTTPException(status_code=404, detail=f"No configuration for {year}")
     return config
@@ -124,21 +127,13 @@ async def configuration_set(
     year: int,
     daten: InsuranceConfigurationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("insurance", "write")),
 ):
-    result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
-    config = result.scalar_one_or_none()
-
-    if config:
-        config.accident_base_amount_eur = daten.accident_base_amount_eur
-        config.accident_additional_amount_eur = daten.accident_additional_amount_eur
-    else:
-        config = InsuranceConfiguration(
-            year=year, accident_base_amount_eur=daten.accident_base_amount_eur,
-            accident_additional_amount_eur=daten.accident_additional_amount_eur,
-        )
-        db.add(config)
-
+    config = await save_configuration(
+        db, year,
+        accident_base_amount_eur=daten.accident_base_amount_eur,
+        accident_additional_amount_eur=daten.accident_additional_amount_eur,
+    )
     await db.commit()
     await db.refresh(config)
     return config
@@ -147,18 +142,6 @@ async def configuration_set(
 # ---------------------------------------------------------------------------
 # Parcel insurance status
 # ---------------------------------------------------------------------------
-
-async def _load_pi(db: AsyncSession, parcel_id: str, year: int) -> Optional[ParcelInsurance]:
-    result = await db.execute(
-        select(ParcelInsurance)
-        .options(
-            selectinload(ParcelInsurance.property_package),
-            selectinload(ParcelInsurance.additional_persons),
-        )
-        .where(ParcelInsurance.parcel_id == parcel_id, ParcelInsurance.year == year)
-    )
-    return result.scalar_one_or_none()
-
 
 def _to_cost_schema(pi: ParcelInsurance, config: Optional[InsuranceConfiguration]) -> ParcelInsuranceCostOut:
     cost = calculate_insurance_cost(pi, config)
@@ -187,14 +170,13 @@ async def insurance_get(
     parcel_id: str,
     year: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("insurance", "read")),
 ):
-    pi = await _load_pi(db, parcel_id, year)
+    pi = await get_parcel_insurance(db, parcel_id, year)
     if not pi:
         raise HTTPException(status_code=404, detail="No insurance status for this parcel/year")
 
-    config_result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
-    config = config_result.scalar_one_or_none()
+    config = await get_configuration(db, year)
     return _to_cost_schema(pi, config)
 
 
@@ -208,50 +190,33 @@ async def insurance_set(
     year: int,
     daten: ParcelInsuranceUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("insurance", "write")),
 ):
     parcel_result = await db.execute(select(Parcel).where(Parcel.id == parcel_id))
     if not parcel_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Parcel not found")
 
-    pi = await _load_pi(db, parcel_id, year)
-    if not pi:
-        pi = ParcelInsurance(parcel_id=parcel_id, year=year)
-        db.add(pi)
-        await db.commit()
-        # Reload the freshly created row with eagerly-loaded
-        # relationships -- otherwise a later access to
-        # pi.additional_persons below triggers a synchronous lazy load,
-        # which raises "MissingGreenlet" with the async database driver
-        # (see docs/module-tickets.md for the same pattern in the
-        # ticket system).
-        pi = await _load_pi(db, parcel_id, year)
-
-    pi.has_property_insurance = daten.has_property_insurance
-    pi.property_package_id = daten.property_package_id if daten.has_property_insurance else None
-    pi.has_accident_insurance = daten.has_accident_insurance
-
-    for ap in list(pi.additional_persons):
-        await db.delete(ap)
-    await db.flush()
-
-    if daten.has_accident_insurance:
-        for member_id in daten.additional_person_member_ids:
-            db.add(AccidentInsuranceAdditionalPerson(parcel_insurance_id=pi.id, member_id=member_id))
-
+    pi = await get_or_create_parcel_insurance(db, parcel_id, year)
+    await save_parcel_insurance(
+        db, pi,
+        has_property_insurance=daten.has_property_insurance,
+        property_package_id=(daten.property_package_id if daten.has_property_insurance else None),
+        has_accident_insurance=daten.has_accident_insurance,
+        additional_person_member_ids=daten.additional_person_member_ids,
+    )
     await db.commit()
 
     # Important: pi.property_package may already have been loaded
     # BEFORE property_package_id was set (e.g. during creation above,
-    # when the value was still None). Querying again via _load_pi would,
-    # because of SQLAlchemy's identity map, return the same (already
-    # "loaded", but now stale) object WITHOUT re-fetching the
-    # relationship -- since expire_on_commit=False is set. db.refresh()
-    # forces exactly these relationships to be reloaded.
+    # when the value was still None). Querying again via
+    # get_parcel_insurance would, because of SQLAlchemy's identity map,
+    # return the same (already "loaded", but now stale) object WITHOUT
+    # re-fetching the relationship -- since expire_on_commit=False is
+    # set. db.refresh() forces exactly these relationships to be
+    # reloaded.
     await db.refresh(pi, attribute_names=["property_package", "additional_persons"])
 
-    config_result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
-    config = config_result.scalar_one_or_none()
+    config = await get_configuration(db, year)
     return _to_cost_schema(pi, config)
 
 
@@ -266,10 +231,9 @@ async def insurance_set(
 async def evaluation(
     year: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("insurance", "read")),
 ):
-    config_result = await db.execute(select(InsuranceConfiguration).where(InsuranceConfiguration.year == year))
-    config = config_result.scalar_one_or_none()
+    config = await get_configuration(db, year)
 
     result = await db.execute(
         select(ParcelInsurance)
