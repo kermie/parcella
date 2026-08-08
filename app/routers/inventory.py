@@ -19,7 +19,7 @@ catch-all, so a request like GET /inventory/categories/ can't
 accidentally be swallowed by /{item_id} treating "categories" as an
 item ID.
 """
-from datetime import date, datetime, timezone
+from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, HTTPException
@@ -34,7 +34,13 @@ from app.models import (
 )
 from app.permissions import require_permission
 from app.module_flags import require_module
+from app.i18n import t_for
 from app.templating import templates
+from app.services.errors import ServiceError
+from app.services.inventory import (
+    create_category, delete_category, create_item, update_item,
+    retire_item, checkout_loan, return_loan,
+)
 
 router = APIRouter(
     prefix="/inventory",
@@ -125,25 +131,16 @@ async def categories_list(request: Request, db: AsyncSession = Depends(get_db)):
 async def category_create(request: Request, db: AsyncSession = Depends(get_db)):
     user = await require_permission(request, db, "inventory", "write")
     form = await request.form()
-    name = (form.get("name") or "").strip()
-    description = (form.get("description") or "").strip() or None
 
-    if not name:
+    try:
+        await create_category(db, name=form.get("name") or "", description=form.get("description"))
+    except ServiceError as e:
         result = await db.execute(select(InventoryCategory).order_by(InventoryCategory.name))
         return templates.TemplateResponse("inventory/categories.html", {
             "request": request, "user": user, "categories": result.scalars().all(),
-            "error": "missing_name",
-        }, status_code=400)
+            "error": e.key,
+        }, status_code=e.http_status)
 
-    existing = await db.execute(select(InventoryCategory).where(InventoryCategory.name == name))
-    if existing.scalar_one_or_none():
-        result = await db.execute(select(InventoryCategory).order_by(InventoryCategory.name))
-        return templates.TemplateResponse("inventory/categories.html", {
-            "request": request, "user": user, "categories": result.scalars().all(),
-            "error": "duplicate_name",
-        }, status_code=400)
-
-    db.add(InventoryCategory(name=name, description=description))
     await db.commit()
     return RedirectResponse(url="/inventory/categories/", status_code=303)
 
@@ -153,11 +150,9 @@ async def category_delete(category_id: str, request: Request, db: AsyncSession =
     """Items in this category are not deleted -- see the API's
     delete_category for the same note; category_id is just cleared."""
     await require_permission(request, db, "inventory", "delete")
-    result = await db.execute(select(InventoryCategory).where(InventoryCategory.id == category_id))
-    category = result.scalar_one_or_none()
+    category = await delete_category(db, category_id)
     if category is None:
         raise HTTPException(status_code=404, detail="Category not found")
-    await db.delete(category)
     await db.commit()
     return RedirectResponse(url="/inventory/categories/", status_code=303)
 
@@ -192,8 +187,7 @@ async def loan_return(loan_id: str, request: Request, db: AsyncSession = Depends
     loan = result.scalar_one_or_none()
     if loan is None:
         raise HTTPException(status_code=404, detail="Loan not found")
-    if loan.returned_date is None:
-        loan.returned_date = date.today()
+    if await return_loan(db, loan):
         await db.commit()
     return RedirectResponse(url=f"/inventory/{loan.item_id}", status_code=303)
 
@@ -221,34 +215,14 @@ async def item_new_form(request: Request, db: AsyncSession = Depends(get_db)):
     return templates.TemplateResponse("inventory/form.html", await _item_form_context(request, db, user))
 
 
-@router.post("/new")
-async def item_create(request: Request, db: AsyncSession = Depends(get_db)):
-    user = await require_permission(request, db, "inventory", "write")
-    form = await request.form()
-
-    name = (form.get("name") or "").strip()
+def _item_fields_from_form(form: dict) -> dict:
     owner_type = form.get("owner_type") or "CLUB"
-    owner_member_id = (form.get("owner_member_id") or "").strip() or None
-
-    if not name:
-        return templates.TemplateResponse(
-            "inventory/form.html",
-            await _item_form_context(request, db, user, error="missing_name"),
-            status_code=400,
-        )
-    if owner_type == InventoryOwnerType.MEMBER.value and not owner_member_id:
-        return templates.TemplateResponse(
-            "inventory/form.html",
-            await _item_form_context(request, db, user, error="missing_owner_member"),
-            status_code=400,
-        )
-
-    item = InventoryItem(
-        name=name,
+    return dict(
+        name=form.get("name") or "",
         description=(form.get("description") or "").strip() or None,
         category_id=(form.get("category_id") or "").strip() or None,
-        owner_type=InventoryOwnerType(owner_type),
-        owner_member_id=owner_member_id if owner_type == InventoryOwnerType.MEMBER.value else None,
+        owner_type=owner_type,
+        owner_member_id=(form.get("owner_member_id") or "").strip() or None,
         storage_location=(form.get("storage_location") or "").strip() or None,
         purchase_date=_parse_date(form.get("purchase_date")),
         purchase_price=_parse_decimal(form.get("purchase_price")),
@@ -259,9 +233,23 @@ async def item_create(request: Request, db: AsyncSession = Depends(get_db)):
         is_borrowable=form.get("is_borrowable") == "true",
         default_loan_fee=_parse_decimal(form.get("default_loan_fee")),
         notes=(form.get("notes") or "").strip() or None,
-        created_by_id=user.id,
     )
-    db.add(item)
+
+
+@router.post("/new")
+async def item_create(request: Request, db: AsyncSession = Depends(get_db)):
+    user = await require_permission(request, db, "inventory", "write")
+    form = await request.form()
+
+    try:
+        item = await create_item(db, **_item_fields_from_form(form), created_by_id=user.id)
+    except ServiceError as e:
+        return templates.TemplateResponse(
+            "inventory/form.html",
+            await _item_form_context(request, db, user, error=e.key),
+            status_code=e.http_status,
+        )
+
     await db.commit()
     return RedirectResponse(url=f"/inventory/{item.id}", status_code=303)
 
@@ -279,38 +267,14 @@ async def item_update(item_id: str, request: Request, db: AsyncSession = Depends
     item = await _get_item_or_404(db, item_id)
     form = await request.form()
 
-    name = (form.get("name") or "").strip()
-    owner_type = form.get("owner_type") or "CLUB"
-    owner_member_id = (form.get("owner_member_id") or "").strip() or None
-
-    if not name:
+    try:
+        await update_item(db, item, **_item_fields_from_form(form))
+    except ServiceError as e:
         return templates.TemplateResponse(
             "inventory/form.html",
-            await _item_form_context(request, db, user, item=item, error="missing_name"),
-            status_code=400,
+            await _item_form_context(request, db, user, item=item, error=e.key),
+            status_code=e.http_status,
         )
-    if owner_type == InventoryOwnerType.MEMBER.value and not owner_member_id:
-        return templates.TemplateResponse(
-            "inventory/form.html",
-            await _item_form_context(request, db, user, item=item, error="missing_owner_member"),
-            status_code=400,
-        )
-
-    item.name = name
-    item.description = (form.get("description") or "").strip() or None
-    item.category_id = (form.get("category_id") or "").strip() or None
-    item.owner_type = InventoryOwnerType(owner_type)
-    item.owner_member_id = owner_member_id if owner_type == InventoryOwnerType.MEMBER.value else None
-    item.storage_location = (form.get("storage_location") or "").strip() or None
-    item.purchase_date = _parse_date(form.get("purchase_date"))
-    item.purchase_price = _parse_decimal(form.get("purchase_price"))
-    item.current_value = _parse_decimal(form.get("current_value"))
-    item.current_value_updated_at = _parse_date(form.get("current_value_updated_at"))
-    item.replacement_cost = _parse_decimal(form.get("replacement_cost"))
-    item.quantity_total = int(form.get("quantity_total") or 1)
-    item.is_borrowable = form.get("is_borrowable") == "true"
-    item.default_loan_fee = _parse_decimal(form.get("default_loan_fee"))
-    item.notes = (form.get("notes") or "").strip() or None
 
     await db.commit()
     return RedirectResponse(url=f"/inventory/{item.id}", status_code=303)
@@ -320,7 +284,7 @@ async def item_update(item_id: str, request: Request, db: AsyncSession = Depends
 async def item_retire(item_id: str, request: Request, db: AsyncSession = Depends(get_db)):
     await require_permission(request, db, "inventory", "write")
     item = await _get_item_or_404(db, item_id)
-    item.retired_at = datetime.now(timezone.utc)
+    await retire_item(db, item)
     await db.commit()
     return RedirectResponse(url=f"/inventory/{item.id}", status_code=303)
 
@@ -340,28 +304,19 @@ async def loan_checkout(item_id: str, request: Request, db: AsyncSession = Depen
     item = await _get_item_or_404(db, item_id)
     form = await request.form()
 
-    member_id = (form.get("member_id") or "").strip()
-    quantity = int(form.get("quantity") or 1)
-    borrowed_date = _parse_date(form.get("borrowed_date")) or date.today()
-    fee_charged = _parse_decimal(form.get("fee_charged"))
-    note = (form.get("note") or "").strip() or None
-
-    if not item.is_borrowable:
-        raise HTTPException(status_code=400, detail="This item isn't marked as borrowable")
-    if not member_id:
-        raise HTTPException(status_code=400, detail="A member must be selected")
-    if quantity < 1 or quantity > item.available_quantity:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Only {item.available_quantity} of {item.quantity_total} available right now",
+    try:
+        await checkout_loan(
+            db, item,
+            member_id=(form.get("member_id") or "").strip(),
+            quantity=int(form.get("quantity") or 1),
+            borrowed_date=_parse_date(form.get("borrowed_date")),
+            fee_charged=_parse_decimal(form.get("fee_charged")),
+            note=(form.get("note") or "").strip() or None,
+            created_by_id=user.id,
         )
+    except ServiceError as e:
+        raise HTTPException(status_code=e.http_status, detail=t_for(request, e.key, **e.params))
 
-    loan = ItemLoan(
-        item_id=item.id, member_id=member_id, quantity=quantity, borrowed_date=borrowed_date,
-        fee_charged=fee_charged if fee_charged is not None else item.default_loan_fee,
-        note=note, created_by_id=user.id,
-    )
-    db.add(loan)
     await db.commit()
     return RedirectResponse(url=f"/inventory/{item.id}", status_code=303)
 

@@ -1765,6 +1765,11 @@
       "col_since": "Depuis",
       "col_fee": "Frais",
       "empty": "Rien n'est actuellement emprunté."
+    },
+    "errors": {
+      "item_not_borrowable": "Cet article n'est pas marqué comme empruntable.",
+      "member_required": "Un membre doit être sélectionné.",
+      "insufficient_quantity": "Seulement {available} sur {total} disponible(s) actuellement."
     }
   },
   "tasks": {

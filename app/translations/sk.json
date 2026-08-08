@@ -1765,6 +1765,11 @@
       "col_since": "Od",
       "col_fee": "Poplatok",
       "empty": "Momentálne nič nie je požičané."
+    },
+    "errors": {
+      "item_not_borrowable": "Táto položka nie je označená ako požičateľná.",
+      "member_required": "Musí byť vybraný člen.",
+      "insufficient_quantity": "Momentálne je k dispozícii iba {available} z {total}."
     }
   },
   "tasks": {

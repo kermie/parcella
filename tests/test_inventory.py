@@ -22,6 +22,65 @@ async def web_login(client, email: str, password: str = "testpasswort123") -> No
 
 
 # ---------------------------------------------------------------------------
+# ADR 0070: shared service layer + unified (Group-based, not role-only)
+# authorization for the API.
+# ---------------------------------------------------------------------------
+
+async def test_treasurer_without_group_grant_is_blocked_from_inventory_write_via_api(client):
+    """api_inventory.py used require_write_access (role-only) -- ANY
+    TREASURER could write inventory data via the API regardless of
+    Group configuration. Now the API checks the same Group-derived
+    permission as HTML."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="treasurer-no-group-inventory@example.com", name="Treasurer No Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.TREASURER,
+        )
+        db.add(user)
+        await db.commit()
+
+    token = await login(client, "treasurer-no-group-inventory@example.com")
+    response = await client.post(
+        "/api/v1/inventory/categories", json={"name": "Fences"}, headers=auth_header(token),
+    )
+    assert response.status_code == 403
+
+
+async def test_readonly_with_group_grant_can_write_inventory_via_api(client):
+    """Flip side: a READONLY user granted inventory:write via a Group
+    could already write inventory data through the HTML UI, but the
+    role-only API check blocked them regardless of Group membership."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole, Group, GroupModulePermission, GroupMembership
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="readonly-with-group-inventory@example.com", name="Readonly With Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        )
+        db.add(user)
+        await db.flush()
+
+        group = Group(name="Inventory Handlers")
+        db.add(group)
+        await db.flush()
+        db.add(GroupModulePermission(group_id=group.id, module="inventory", can_read=True, can_write=True))
+        db.add(GroupMembership(user_id=user.id, group_id=group.id))
+        await db.commit()
+
+    token = await login(client, "readonly-with-group-inventory@example.com")
+    response = await client.post(
+        "/api/v1/inventory/categories", json={"name": "Fences"}, headers=auth_header(token),
+    )
+    assert response.status_code == 201, response.text
+
+
+# ---------------------------------------------------------------------------
 # Categories
 # ---------------------------------------------------------------------------
 
@@ -350,3 +409,31 @@ async def test_readonly_role_can_view_but_not_create_items(client, admin_user):
 
     create_response = await client.get("/inventory/new")
     assert create_response.status_code == 403
+
+
+async def test_insufficient_quantity_error_is_shared_and_formatted(client, admin_user):
+    """ADR 0070: the "only N of M available" rule now lives in
+    app/services/inventory.py's checkout_loan(), shared by HTML and API
+    -- confirms the ServiceError's {available}/{total} params actually
+    get substituted into the resolved i18n text via the API surface."""
+    from app.i18n import translate
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    member = (await client.post(
+        "/api/v1/members", json={"first_name": "Petra", "last_name": "Testperson"}, headers=headers,
+    )).json()
+    item = (await client.post(
+        "/api/v1/inventory/items", json={"name": "Wheelbarrow", "is_borrowable": True, "quantity_total": 2},
+        headers=headers,
+    )).json()
+
+    response = await client.post(
+        f"/api/v1/inventory/items/{item['id']}/loans",
+        json={"member_id": member["id"], "quantity": 5, "borrowed_date": "2026-07-01"},
+        headers=headers,
+    )
+    assert response.status_code == 400
+    expected = translate("inventory.errors.insufficient_quantity", "en", available=2, total=2)
+    assert response.json()["detail"] == expected

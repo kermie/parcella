@@ -1765,6 +1765,11 @@
       "col_since": "Seit",
       "col_fee": "Gebühr",
       "empty": "Aktuell nichts ausgeliehen."
+    },
+    "errors": {
+      "item_not_borrowable": "Dieser Gegenstand ist nicht als ausleihbar markiert.",
+      "member_required": "Es muss ein Mitglied ausgewählt werden.",
+      "insufficient_quantity": "Nur {available} von {total} sind gerade verfügbar."
     }
   },
   "tasks": {

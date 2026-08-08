@@ -1765,6 +1765,11 @@
       "col_since": "Od",
       "col_fee": "Opłata",
       "empty": "Obecnie nic nie jest wypożyczone."
+    },
+    "errors": {
+      "item_not_borrowable": "Ten przedmiot nie jest oznaczony jako wypożyczalny.",
+      "member_required": "Należy wybrać członka.",
+      "insufficient_quantity": "Dostępne jest tylko {available} z {total} w tej chwili."
     }
   },
   "tasks": {

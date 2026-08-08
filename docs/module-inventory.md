@@ -127,3 +127,14 @@ crash" risk already documented elsewhere in this project (see the
 work-hours module's own notes on the same class of bug). Fixed with
 `_reload_item()`: a full re-query with `selectinload(InventoryItem.loans)`
 after every commit, rather than a partial `refresh()`.
+
+## Implementation note (ADR 0070)
+
+Category CRUD, owner-type validation, item create/update, and the
+loan checkout/return rules now live in `app/services/inventory.py`,
+called by both `app/routers/inventory.py` and
+`app/routers/api_inventory.py`. The API router also now checks
+permissions the same fine-grained, `Group`-based way the HTML side
+does (`require_api_permission`), not the coarser role-only check most
+other API routers still use. `update_category` (API-only, no HTML
+counterpart exists) stays router-local.

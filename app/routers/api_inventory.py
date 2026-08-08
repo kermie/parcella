@@ -1,19 +1,29 @@
 """
 API-Router: Inventory -- categories, items, and the lending system.
+
+Business logic shared with app/routers/inventory.py (HTML) lives in
+app/services/inventory.py (ADR 0070) -- this router owns bearer-token
+authentication, the fine-grained permission check (require_api_permission,
+Group-based like the HTML side), Pydantic body parsing, and JSON
+response serialization.
 """
-from datetime import date
-from decimal import Decimal
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import InventoryCategory, InventoryItem, InventoryOwnerType, ItemLoan, User
-from app.api_auth import get_current_api_user, require_write_access
+from app.models import InventoryCategory, InventoryItem, ItemLoan, User
+from app.api_auth import require_api_permission
 from app.module_flags import require_module
+from app.i18n import t_for
+from app.services.errors import ServiceError
+from app.services.inventory import (
+    create_category, delete_category, create_item, update_item,
+    retire_item, checkout_loan, return_loan,
+)
 from app.schemas import (
     InventoryCategoryOut, InventoryCategoryCreate,
     InventoryItemOut, InventoryItemCreate, InventoryItemUpdate,
@@ -27,13 +37,26 @@ router = APIRouter(
 )
 
 
+def _service_error_to_http(request: Request, e: ServiceError) -> HTTPException:
+    # These specific short codes (missing_name/duplicate_name/
+    # missing_owner_member) map to the HTML template's own error
+    # namespaces -- see app/services/inventory.py's docstrings.
+    key_map = {
+        "missing_name": "inventory.form.error_missing_name",
+        "duplicate_name": "inventory.categories.error_duplicate_name",
+        "missing_owner_member": "inventory.form.error_missing_owner_member",
+    }
+    key = key_map.get(e.key, e.key)
+    return HTTPException(status_code=e.http_status, detail=t_for(request, key, **e.params))
+
+
 # ---------------------------------------------------------------------------
 # Categories
 # ---------------------------------------------------------------------------
 
 @router.get("/categories", response_model=List[InventoryCategoryOut], summary="List categories")
 async def list_categories(
-    db: AsyncSession = Depends(get_db), user: User = Depends(get_current_api_user),
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "read")),
 ):
     result = await db.execute(select(InventoryCategory).order_by(InventoryCategory.name))
     return result.scalars().all()
@@ -43,15 +66,14 @@ async def list_categories(
     "/categories", response_model=InventoryCategoryOut, status_code=status.HTTP_201_CREATED,
     summary="Create a category",
 )
-async def create_category(
-    daten: InventoryCategoryCreate,
-    db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+async def create_category_endpoint(
+    daten: InventoryCategoryCreate, request: Request,
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "write")),
 ):
-    existing = await db.execute(select(InventoryCategory).where(InventoryCategory.name == daten.name))
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="A category with this name already exists")
-    category = InventoryCategory(name=daten.name, description=daten.description)
-    db.add(category)
+    try:
+        category = await create_category(db, name=daten.name, description=daten.description)
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
     await db.commit()
     await db.refresh(category)
     return category
@@ -60,8 +82,11 @@ async def create_category(
 @router.put("/categories/{category_id}", response_model=InventoryCategoryOut, summary="Update a category")
 async def update_category(
     category_id: str, daten: InventoryCategoryCreate,
-    db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "write")),
 ):
+    """No HTML counterpart exists for editing a category (only create/
+    delete) -- API-only, so this stays router-local rather than moving
+    into the shared service."""
     result = await db.execute(select(InventoryCategory).where(InventoryCategory.id == category_id))
     category = result.scalar_one_or_none()
     if not category:
@@ -74,17 +99,16 @@ async def update_category(
 
 
 @router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a category")
-async def delete_category(
-    category_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+async def delete_category_endpoint(
+    category_id: str, db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_api_permission("inventory", "delete")),
 ):
     """Items in this category are NOT deleted -- their category_id is
     just cleared (ON DELETE SET NULL), so removing a category never
     loses inventory data."""
-    result = await db.execute(select(InventoryCategory).where(InventoryCategory.id == category_id))
-    category = result.scalar_one_or_none()
+    category = await delete_category(db, category_id)
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
-    await db.delete(category)
     await db.commit()
 
 
@@ -121,7 +145,7 @@ async def list_items(
     category_id: Optional[str] = Query(None),
     is_borrowable: Optional[bool] = Query(None),
     include_retired: bool = Query(False, description="Include retired items (excluded by default)"),
-    db: AsyncSession = Depends(get_db), user: User = Depends(get_current_api_user),
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "read")),
 ):
     query = select(InventoryItem).options(selectinload(InventoryItem.loans)).order_by(InventoryItem.name)
     if not include_retired:
@@ -136,7 +160,7 @@ async def list_items(
 
 @router.get("/items/{item_id}", response_model=InventoryItemOut, summary="Get an item")
 async def get_item(
-    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_api_user),
+    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "read")),
 ):
     result = await db.execute(
         select(InventoryItem).options(selectinload(InventoryItem.loans)).where(InventoryItem.id == item_id)
@@ -147,39 +171,24 @@ async def get_item(
     return _item_out(item)
 
 
-def _validate_owner(owner_type: str, owner_member_id: Optional[str]) -> None:
-    if owner_type == InventoryOwnerType.MEMBER.value and not owner_member_id:
-        raise HTTPException(status_code=400, detail="owner_member_id is required when owner_type is MEMBER")
-
-
 @router.post("/items", response_model=InventoryItemOut, status_code=status.HTTP_201_CREATED, summary="Create an item")
-async def create_item(
-    daten: InventoryItemCreate,
-    db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+async def create_item_endpoint(
+    daten: InventoryItemCreate, request: Request,
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "write")),
 ):
-    _validate_owner(daten.owner_type, daten.owner_member_id)
-    item = InventoryItem(
-        name=daten.name, description=daten.description, category_id=daten.category_id,
-        owner_type=InventoryOwnerType(daten.owner_type),
-        owner_member_id=daten.owner_member_id if daten.owner_type == InventoryOwnerType.MEMBER.value else None,
-        storage_location=daten.storage_location,
-        purchase_date=daten.purchase_date, purchase_price=daten.purchase_price,
-        current_value=daten.current_value, current_value_updated_at=daten.current_value_updated_at,
-        replacement_cost=daten.replacement_cost,
-        quantity_total=daten.quantity_total, is_borrowable=daten.is_borrowable,
-        default_loan_fee=daten.default_loan_fee, notes=daten.notes,
-        created_by_id=user.id,
-    )
-    db.add(item)
+    try:
+        item = await create_item(db, **daten.model_dump(), created_by_id=user.id)
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
     await db.commit()
     item = await _reload_item(db, item.id)
     return _item_out(item)
 
 
 @router.put("/items/{item_id}", response_model=InventoryItemOut, summary="Update an item")
-async def update_item(
-    item_id: str, daten: InventoryItemUpdate,
-    db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+async def update_item_endpoint(
+    item_id: str, daten: InventoryItemUpdate, request: Request,
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "write")),
 ):
     result = await db.execute(
         select(InventoryItem).options(selectinload(InventoryItem.loans)).where(InventoryItem.id == item_id)
@@ -188,23 +197,10 @@ async def update_item(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    _validate_owner(daten.owner_type, daten.owner_member_id)
-
-    item.name = daten.name
-    item.description = daten.description
-    item.category_id = daten.category_id
-    item.owner_type = InventoryOwnerType(daten.owner_type)
-    item.owner_member_id = daten.owner_member_id if daten.owner_type == InventoryOwnerType.MEMBER.value else None
-    item.storage_location = daten.storage_location
-    item.purchase_date = daten.purchase_date
-    item.purchase_price = daten.purchase_price
-    item.current_value = daten.current_value
-    item.current_value_updated_at = daten.current_value_updated_at
-    item.replacement_cost = daten.replacement_cost
-    item.quantity_total = daten.quantity_total
-    item.is_borrowable = daten.is_borrowable
-    item.default_loan_fee = daten.default_loan_fee
-    item.notes = daten.notes
+    try:
+        await update_item(db, item, **daten.model_dump())
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
 
     await db.commit()
     item = await _reload_item(db, item.id)
@@ -212,21 +208,19 @@ async def update_item(
 
 
 @router.post("/items/{item_id}/retire", response_model=InventoryItemOut, summary="Retire an item")
-async def retire_item(
-    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+async def retire_item_endpoint(
+    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "write")),
 ):
     """Marks the item as no longer owned/in service without deleting
     it -- see InventoryItem.retired_at's docstring in app/models.py for
     why this exists as a separate action from DELETE."""
-    from datetime import datetime, timezone
-
     result = await db.execute(
         select(InventoryItem).options(selectinload(InventoryItem.loans)).where(InventoryItem.id == item_id)
     )
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    item.retired_at = datetime.now(timezone.utc)
+    await retire_item(db, item)
     await db.commit()
     item = await _reload_item(db, item.id)
     return _item_out(item)
@@ -234,7 +228,7 @@ async def retire_item(
 
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete an item")
 async def delete_item(
-    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "delete")),
 ):
     """A genuine hard delete, for data-entry mistakes -- also deletes
     any loan history for this item (cascade). For an item that was
@@ -255,7 +249,7 @@ async def delete_item(
 @router.get("/loans", response_model=List[ItemLoanOut], summary="List loans (all items)")
 async def list_all_loans(
     outstanding_only: bool = Query(True, description="Only loans not yet returned (default)"),
-    db: AsyncSession = Depends(get_db), user: User = Depends(get_current_api_user),
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "read")),
 ):
     """Cross-item view of who currently has what borrowed -- the board
     overview, not scoped to a single item."""
@@ -268,7 +262,7 @@ async def list_all_loans(
 
 @router.get("/items/{item_id}/loans", response_model=List[ItemLoanOut], summary="List loans for an item")
 async def list_item_loans(
-    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(get_current_api_user),
+    item_id: str, db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "read")),
 ):
     result = await db.execute(
         select(ItemLoan).where(ItemLoan.item_id == item_id).order_by(ItemLoan.borrowed_date.desc())
@@ -281,8 +275,8 @@ async def list_item_loans(
     summary="Check out (borrow) some quantity of an item",
 )
 async def create_loan(
-    item_id: str, daten: ItemLoanCreate,
-    db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+    item_id: str, daten: ItemLoanCreate, request: Request,
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "write")),
 ):
     result = await db.execute(
         select(InventoryItem).options(selectinload(InventoryItem.loans)).where(InventoryItem.id == item_id)
@@ -290,40 +284,32 @@ async def create_loan(
     item = result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    if not item.is_borrowable:
-        raise HTTPException(status_code=400, detail="This item isn't marked as borrowable")
-    if daten.quantity < 1:
-        raise HTTPException(status_code=400, detail="Quantity must be at least 1")
-    if daten.quantity > item.available_quantity:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Only {item.available_quantity} of {item.quantity_total} available right now",
-        )
 
-    loan = ItemLoan(
-        item_id=item_id, member_id=daten.member_id, quantity=daten.quantity,
-        borrowed_date=daten.borrowed_date,
-        fee_charged=daten.fee_charged if daten.fee_charged is not None else item.default_loan_fee,
-        note=daten.note, created_by_id=user.id,
-    )
-    db.add(loan)
+    try:
+        loan = await checkout_loan(
+            db, item, member_id=daten.member_id, quantity=daten.quantity,
+            borrowed_date=daten.borrowed_date, fee_charged=daten.fee_charged,
+            note=daten.note, created_by_id=user.id,
+        )
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
+
     await db.commit()
     await db.refresh(loan)
     return loan
 
 
 @router.post("/loans/{loan_id}/return", response_model=ItemLoanOut, summary="Mark a loan as returned")
-async def return_loan(
+async def return_loan_endpoint(
     loan_id: str, daten: ItemLoanReturn,
-    db: AsyncSession = Depends(get_db), user: User = Depends(require_write_access),
+    db: AsyncSession = Depends(get_db), user: User = Depends(require_api_permission("inventory", "write")),
 ):
     result = await db.execute(select(ItemLoan).where(ItemLoan.id == loan_id))
     loan = result.scalar_one_or_none()
     if not loan:
         raise HTTPException(status_code=404, detail="Loan not found")
-    if loan.returned_date is not None:
+    if not await return_loan(db, loan, returned_date=daten.returned_date):
         raise HTTPException(status_code=400, detail="This loan was already marked as returned")
-    loan.returned_date = daten.returned_date or date.today()
     await db.commit()
     await db.refresh(loan)
     return loan

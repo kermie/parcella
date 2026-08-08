@@ -154,4 +154,10 @@ is follow-up work, module by module:
       lowest-risk of the seven, mechanical extraction.
 - [ ] metering (water/electricity -- arguably ahead already, `app/meter_utils.py` exists)
 - [ ] purchase_requests
-- [ ] inventory
+- [x] inventory (2026-08-08) -- category uniqueness, owner-type
+      validation, and loan-quantity rules were each independently
+      reimplemented; extracted with no audit trail/notification
+      concerns either side. Three loan-checkout error messages that
+      were hard-coded English on both sides got real translation keys
+      (`inventory.errors.*`, all 7 languages) as a small bonus while
+      centralizing them.

@@ -1765,6 +1765,11 @@
       "col_since": "Since",
       "col_fee": "Fee",
       "empty": "Nothing currently on loan."
+    },
+    "errors": {
+      "item_not_borrowable": "This item isn't marked as borrowable.",
+      "member_required": "A member must be selected.",
+      "insufficient_quantity": "Only {available} of {total} available right now."
     }
   },
   "tasks": {
