@@ -1,26 +1,40 @@
 """
 API router: Work Hours -- configuration, club roles, work sessions,
 sponsorships, evaluation.
+
+Business logic shared with app/routers/work_hours.py (HTML) lives in
+app/services/work_hours.py (ADR 0070) -- this router owns bearer-token
+authentication, the fine-grained permission check (require_api_permission,
+Group-based like the HTML side), Pydantic body parsing, and JSON
+response serialization.
 """
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import (
     WorkHoursConfiguration, WorkHoursMode,
-    ClubRole, MemberClubRole, ExemptionReason,
+    ClubRole, MemberClubRole,
     WorkSession, SessionParticipation, SessionType, ParticipationStatus,
-    Sponsorship, Member, Parcel, ParcelStatus, MemberParcel, User,
+    Sponsorship, User,
     WorkTask, TaskWorkload,
 )
-from app.api_auth import get_current_api_user, require_write_access
+from app.api_auth import require_api_permission
+from app.i18n import t_for
 from app.module_flags import require_module
+from app.services.errors import ServiceError
+from app.services.work_hours import (
+    get_config_for_year, save_configuration_for_year, evaluate_year,
+    create_club_role, update_club_role, assign_member_to_club_role,
+    create_session, update_session, add_participation, update_participation,
+    create_sponsorship, update_sponsorship,
+    create_task, schedule_task, assign_task_to_participant,
+)
 from app.schemas import (
     WorkHoursConfigurationOut, WorkHoursConfigurationCreate,
     ClubRoleOut, ClubRoleCreate,
@@ -46,7 +60,7 @@ router = APIRouter(
 @router.get("/configuration", response_model=List[WorkHoursConfigurationOut], summary="List configurations")
 async def configurations_list(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     result = await db.execute(
         select(WorkHoursConfiguration).order_by(WorkHoursConfiguration.year.desc())
@@ -58,12 +72,9 @@ async def configurations_list(
 async def configuration_get(
     year: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
-    result = await db.execute(
-        select(WorkHoursConfiguration).where(WorkHoursConfiguration.year == year)
-    )
-    config = result.scalar_one_or_none()
+    config = await get_config_for_year(db, year)
     if not config:
         raise HTTPException(status_code=404, detail=f"No configuration for {year}")
     return config
@@ -78,28 +89,12 @@ async def configuration_set(
     year: int,
     data: WorkHoursConfigurationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
-    result = await db.execute(
-        select(WorkHoursConfiguration).where(WorkHoursConfiguration.year == year)
+    config = await save_configuration_for_year(
+        db, year, hours_required=data.hours_required, rate_per_hour_eur=data.rate_per_hour_eur,
+        mode=data.mode, note=data.note,
     )
-    config = result.scalar_one_or_none()
-
-    if config:
-        config.hours_required = data.hours_required
-        config.rate_per_hour_eur = data.rate_per_hour_eur
-        config.mode = WorkHoursMode(data.mode)
-        config.note = data.note
-    else:
-        config = WorkHoursConfiguration(
-            year=year,
-            hours_required=data.hours_required,
-            rate_per_hour_eur=data.rate_per_hour_eur,
-            mode=WorkHoursMode(data.mode),
-            note=data.note,
-        )
-        db.add(config)
-
     await db.commit()
     await db.refresh(config)
     return config
@@ -112,7 +107,7 @@ async def configuration_set(
 @router.get("/club-roles", response_model=List[ClubRoleOut], summary="List club roles")
 async def club_roles_list(
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     result = await db.execute(select(ClubRole).order_by(ClubRole.name))
     return result.scalars().all()
@@ -125,15 +120,12 @@ async def club_roles_list(
 async def club_role_create(
     data: ClubRoleCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
-    role = ClubRole(
-        name=data.name,
-        description=data.description,
-        hours_exempt=data.hours_exempt,
-        exemption_reason=ExemptionReason(data.exemption_reason) if data.exemption_reason else None,
+    role = await create_club_role(
+        db, name=data.name, description=data.description, hours_exempt=data.hours_exempt,
+        exemption_reason=data.exemption_reason,
     )
-    db.add(role)
     await db.commit()
     await db.refresh(role)
     return role
@@ -144,18 +136,17 @@ async def club_role_update(
     role_id: str,
     data: ClubRoleCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
     result = await db.execute(select(ClubRole).where(ClubRole.id == role_id))
     role = result.scalar_one_or_none()
     if not role:
         raise HTTPException(status_code=404, detail="Club role not found")
 
-    role.name = data.name
-    role.description = data.description
-    role.hours_exempt = data.hours_exempt
-    role.exemption_reason = ExemptionReason(data.exemption_reason) if data.exemption_reason else None
-
+    await update_club_role(
+        db, role, name=data.name, description=data.description, hours_exempt=data.hours_exempt,
+        exemption_reason=data.exemption_reason,
+    )
     await db.commit()
     await db.refresh(role)
     return role
@@ -169,7 +160,7 @@ async def club_role_update(
 async def club_role_delete(
     role_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "delete")),
 ):
     result = await db.execute(select(ClubRole).where(ClubRole.id == role_id))
     role = result.scalar_one_or_none()
@@ -186,7 +177,7 @@ async def assignments_list(
     year: Optional[int] = Query(None),
     member_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     query = select(MemberClubRole)
     if year:
@@ -200,14 +191,19 @@ async def assignments_list(
 @router.post(
     "/club-roles/assignments", response_model=MemberClubRoleOut,
     status_code=status.HTTP_201_CREATED, summary="Assign member to a club role",
+    description="Returns 409 if this member/role/year combination is already assigned.",
 )
 async def assignment_create(
     data: MemberClubRoleCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
-    assignment = MemberClubRole(**data.model_dump())
-    db.add(assignment)
+    assignment = await assign_member_to_club_role(
+        db, member_id=data.member_id, club_role_id=data.club_role_id, year=data.year,
+        valid_from=data.valid_from, valid_until=data.valid_until, note=data.note,
+    )
+    if assignment is None:
+        raise HTTPException(status_code=409, detail="This member/role/year combination is already assigned")
     await db.commit()
     await db.refresh(assignment)
     return assignment
@@ -220,7 +216,7 @@ async def assignment_create(
 async def assignment_delete(
     assignment_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
     result = await db.execute(select(MemberClubRole).where(MemberClubRole.id == assignment_id))
     assignment = result.scalar_one_or_none()
@@ -238,7 +234,7 @@ async def sessions_list(
     year: Optional[int] = Query(None, description="Filter by year"),
     type: Optional[str] = Query(None, description="STANDARD or SPECIAL"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     query = select(WorkSession).order_by(WorkSession.date.desc())
     if year:
@@ -254,7 +250,7 @@ async def sessions_list(
 async def session_get(
     session_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     result = await db.execute(select(WorkSession).where(WorkSession.id == session_id))
     session = result.scalar_one_or_none()
@@ -270,15 +266,14 @@ async def session_get(
 async def session_create(
     data: WorkSessionCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
-    session = WorkSession(
-        title=data.title, description=data.description, type=SessionType(data.type),
-        date=data.date, time_from=data.time_from, time_until=data.time_until,
+    session = await create_session(
+        db, title=data.title, description=data.description, type=data.type, date_value=data.date,
+        time_from=data.time_from, time_until=data.time_until,
         max_participants=data.max_participants, hours_per_participant=data.hours_per_participant,
         created_by_id=user.id,
     )
-    db.add(session)
     await db.commit()
     await db.refresh(session)
     return session
@@ -289,19 +284,14 @@ async def session_update(
     session_id: str,
     data: WorkSessionUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
     result = await db.execute(select(WorkSession).where(WorkSession.id == session_id))
     session = result.scalar_one_or_none()
     if not session:
         raise HTTPException(status_code=404, detail="Work session not found")
 
-    update_daten = data.model_dump(exclude_unset=True)
-    if "type" in update_daten:
-        update_daten["type"] = SessionType(update_daten["type"])
-    for field, value in update_daten.items():
-        setattr(session, field, value)
-
+    await update_session(db, session, **data.model_dump(exclude_unset=True))
     await db.commit()
     await db.refresh(session)
     return session
@@ -314,7 +304,7 @@ async def session_update(
 async def session_delete(
     session_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "delete")),
 ):
     result = await db.execute(select(WorkSession).where(WorkSession.id == session_id))
     session = result.scalar_one_or_none()
@@ -334,7 +324,7 @@ async def session_delete(
 async def participations_list(
     session_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     result = await db.execute(
         select(SessionParticipation).where(SessionParticipation.session_id == session_id)
@@ -350,22 +340,14 @@ async def participation_create(
     session_id: str,
     data: SessionParticipationCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
-    existing = await db.execute(
-        select(SessionParticipation).where(
-            SessionParticipation.session_id == session_id, SessionParticipation.member_id == data.member_id
-        )
+    participation = await add_participation(
+        db, session_id, member_id=data.member_id, status=data.status,
+        hours_completed=data.hours_completed, note=data.note,
     )
-    if existing.scalar_one_or_none():
+    if participation is None:
         raise HTTPException(status_code=409, detail="Member is already registered")
-
-    participation = SessionParticipation(
-        session_id=session_id, member_id=data.member_id,
-        status=ParticipationStatus(data.status), hours_completed=data.hours_completed,
-        note=data.note,
-    )
-    db.add(participation)
     await db.commit()
     await db.refresh(participation)
     return participation
@@ -380,7 +362,7 @@ async def participation_update(
     participation_id: str,
     data: SessionParticipationUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
     result = await db.execute(
         select(SessionParticipation).where(
@@ -391,12 +373,7 @@ async def participation_update(
     if not participation:
         raise HTTPException(status_code=404, detail="Participation not found")
 
-    update_daten = data.model_dump(exclude_unset=True)
-    if "status" in update_daten:
-        update_daten["status"] = ParticipationStatus(update_daten["status"])
-    for field, value in update_daten.items():
-        setattr(participation, field, value)
-
+    await update_participation(db, participation, **data.model_dump(exclude_unset=True))
     await db.commit()
     await db.refresh(participation)
     return participation
@@ -410,7 +387,7 @@ async def participation_delete(
     session_id: str,
     participation_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "delete")),
 ):
     result = await db.execute(
         select(SessionParticipation).where(
@@ -431,7 +408,7 @@ async def participation_delete(
 async def sponsorships_list(
     year: Optional[int] = Query(None, description="Only sponsorships active in this year"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     query = select(Sponsorship).order_by(Sponsorship.area)
     if year:
@@ -451,10 +428,12 @@ async def sponsorships_list(
 async def sponsorship_create(
     data: SponsorshipCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
-    sponsorship = Sponsorship(**data.model_dump())
-    db.add(sponsorship)
+    sponsorship = await create_sponsorship(
+        db, member_id=data.member_id, area=data.area, description=data.description,
+        credited_hours=data.credited_hours, valid_from=data.valid_from, valid_until=data.valid_until,
+    )
     await db.commit()
     await db.refresh(sponsorship)
     return sponsorship
@@ -465,16 +444,14 @@ async def sponsorship_update(
     sponsorship_id: str,
     data: SponsorshipUpdate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
     result = await db.execute(select(Sponsorship).where(Sponsorship.id == sponsorship_id))
     sponsorship = result.scalar_one_or_none()
     if not sponsorship:
         raise HTTPException(status_code=404, detail="Sponsorship not found")
 
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(sponsorship, field, value)
-
+    await update_sponsorship(db, sponsorship, **data.model_dump(exclude_unset=True))
     await db.commit()
     await db.refresh(sponsorship)
     return sponsorship
@@ -487,7 +464,7 @@ async def sponsorship_update(
 async def sponsorship_delete(
     sponsorship_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "delete")),
 ):
     result = await db.execute(select(Sponsorship).where(Sponsorship.id == sponsorship_id))
     sponsorship = result.scalar_one_or_none()
@@ -512,67 +489,36 @@ async def sponsorship_delete(
 async def evaluation_get(
     year: int,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
-    from app.routers.work_hours import (
-        _get_config_for_year, _calculate_hours_for_member, _is_exempt
-    )
-
-    config = await _get_config_for_year(db, year)
+    config, rows = await evaluate_year(db, year)
     if not config:
         raise HTTPException(status_code=404, detail=f"No configuration for {year}")
 
-    rows: List[EvaluationRowOut] = []
     required = Decimal(str(config.hours_required))
-
+    rate = Decimal(str(config.rate_per_hour_eur))
+    out: List[EvaluationRowOut] = []
     if config.mode == WorkHoursMode.PER_PARCEL:
-        result = await db.execute(
-            select(Parcel)
-            .options(selectinload(Parcel.member_assignments).selectinload(MemberParcel.member))
-            .where(Parcel.status == ParcelStatus.ACTIVE)
-            .order_by(Parcel.plot_number)
-        )
-        for parcel in result.scalars().all():
-            tenants = [z.member for z in parcel.member_assignments]
-            if not tenants:
-                continue
-            total = Decimal("0")
-            # Same rule as the web UI: ONE exempt tenant is enough to
-            # exempt the whole parcel (any(), not all() -- see
-            # docs/ADR/README.md).
-            is_exempt = False
-            for m in tenants:
-                standing = await _calculate_hours_for_member(db, m.id, year)
-                total += Decimal(str(standing["total"]))
-                if await _is_exempt(db, m.id, year):
-                    is_exempt = True
-            outstanding = max(Decimal("0"), required - total) if not is_exempt else Decimal("0")
-            rows.append(EvaluationRowOut(
-                label=parcel.plot_number,
+        for row in rows:
+            total = Decimal(str(row["total_hours"]))
+            outstanding = Decimal(str(row["outstanding_hours"]))
+            out.append(EvaluationRowOut(
+                label=row["parcel"].plot_number,
                 hours_required=required, hours_completed=total, hours_open=outstanding,
-                amount_due_eur=outstanding * Decimal(str(config.rate_per_hour_eur)),
-                exempt=is_exempt, fulfilled=is_exempt or total >= required,
+                amount_due_eur=outstanding * rate,
+                exempt=row["exempt"], fulfilled=row["fulfilled"],
             ))
     else:
-        result = await db.execute(
-            select(Member)
-            .options(selectinload(Member.parcel_assignments))
-            .where(Member.deleted_at.is_(None), Member.parcel_assignments.any())
-            .order_by(Member.last_name, Member.first_name)
-        )
-        for m in result.scalars().all():
-            standing = await _calculate_hours_for_member(db, m.id, year)
-            exempt = await _is_exempt(db, m.id, year)
-            total = Decimal(str(standing["total"]))
-            outstanding = max(Decimal("0"), required - total) if not exempt else Decimal("0")
-            rows.append(EvaluationRowOut(
-                label=m.full_name,
+        for row in rows:
+            total = Decimal(str(row["hours"]["total"]))
+            outstanding = Decimal(str(row["outstanding_hours"]))
+            out.append(EvaluationRowOut(
+                label=row["member"].full_name,
                 hours_required=required, hours_completed=total, hours_open=outstanding,
-                amount_due_eur=outstanding * Decimal(str(config.rate_per_hour_eur)),
-                exempt=exempt, fulfilled=exempt or total >= required,
+                amount_due_eur=outstanding * rate,
+                exempt=row["exempt"], fulfilled=row["fulfilled"],
             ))
-
-    return rows
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -588,7 +534,7 @@ async def list_tasks(
     session_id: Optional[str] = Query(None, description="Filter by session (omit for all tasks, including the backlog)"),
     backlog_only: bool = Query(False, description="Only tasks not yet scheduled to any session"),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("work_hours", "read")),
 ):
     query = select(WorkTask).order_by(WorkTask.created_at.desc())
     if backlog_only:
@@ -600,19 +546,15 @@ async def list_tasks(
 
 
 @router.post("/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED, summary="Create a task")
-async def create_task(
+async def create_task_endpoint(
     data: TaskCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
-    task = WorkTask(
-        title=data.title,
-        description=data.description,
-        workload=TaskWorkload(data.workload),
-        session_id=data.session_id,
-        created_by_id=user.id,
+    task = await create_task(
+        db, title=data.title, description=data.description, workload=data.workload,
+        session_id=data.session_id, created_by_id=user.id,
     )
-    db.add(task)
     await db.commit()
     await db.refresh(task)
     return task
@@ -622,8 +564,9 @@ async def create_task(
 async def update_task(
     task_id: str,
     data: TaskUpdate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "write")),
 ):
     result = await db.execute(select(WorkTask).where(WorkTask.id == task_id))
     task = result.scalar_one_or_none()
@@ -637,26 +580,16 @@ async def update_task(
     if data.workload is not None:
         task.workload = TaskWorkload(data.workload)
     if data.session_id is not None:
-        # An assignment to a specific participant only makes sense for the
-        # session they actually signed up for -- clear it when the
-        # session changes, same rule the web UI enforces.
-        if data.session_id != task.session_id:
-            task.assigned_participation_id = None
-        task.session_id = data.session_id or None
+        await schedule_task(db, task, session_id=data.session_id)
     if data.assigned_participation_id is not None:
-        if not task.session_id:
-            raise HTTPException(status_code=400, detail="This task isn't scheduled to a session yet")
-        participation_id = data.assigned_participation_id or None
-        if participation_id:
-            check = await db.execute(
-                select(SessionParticipation).where(
-                    SessionParticipation.id == participation_id,
-                    SessionParticipation.session_id == task.session_id,
-                )
-            )
-            if not check.scalar_one_or_none():
-                raise HTTPException(status_code=400, detail="This participant isn't signed up for this session")
-        task.assigned_participation_id = participation_id
+        try:
+            await assign_task_to_participant(db, task, participation_id=data.assigned_participation_id)
+        except ServiceError as e:
+            # This API's pre-existing convention for these two checks was
+            # 400 (not the 422 tickets/metering use for their own rule
+            # violations) -- kept as-is (e.http_status is 400), only the
+            # previously-hard-coded English text now shares HTML's i18n key.
+            raise HTTPException(status_code=e.http_status, detail=t_for(request, e.key, **e.params))
     if data.is_done is not None:
         task.is_done = data.is_done
 
@@ -669,7 +602,7 @@ async def update_task(
 async def delete_task(
     task_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("work_hours", "delete")),
 ):
     result = await db.execute(select(WorkTask).where(WorkTask.id == task_id))
     task = result.scalar_one_or_none()

@@ -157,7 +157,34 @@ is follow-up work, module by module:
       endpoint used to hard-delete an *active* assignment unconditionally
       -- it now soft-ends an active one like HTML does, hard-deletes
       only an already-ended one.
-- [ ] work_hours
+- [x] work_hours (2026-08-08) -- the headline finding of the entire
+      rollout: the evaluation/exemption engine was reimplemented
+      independently 3 times (HTML page, HTML CSV export, and the API,
+      which imported the HTML router's private helpers directly) --
+      this exact duplication already caused a real shipped bug once
+      (an inverted `all()`-copy of the any()-exempt rule). All three
+      now share one path. Also closed a silent-duplicate-assignment gap
+      (`MemberClubRole` has no DB uniqueness constraint) and shared the
+      task-participant-assignment validation's i18n text. Largest
+      module in the rollout (37/28 endpoints, ~1469/679 lines).
+      **Caught mid-migration:** removing the HTML router's private
+      helpers broke a *fourth*, previously unnoticed consumer --
+      `app/work_hours_evaluation.py` (work-hours-shortfall invoice
+      billing) imported them directly too, its own independent
+      re-derivation of the same any()-exempt logic. Fixed by pointing
+      it at `app/services/work_hours.py`'s `evaluate_parcel()`/
+      `evaluate_member()` instead of just renaming the import --
+      closing that duplication too rather than leaving a repointed but
+      still-separate copy. A reminder that grepping for a router's
+      "private" (underscore-prefixed) helpers being imported elsewhere
+      is worth doing before assuming a module's true consumers are only
+      its own HTML+API router pair.
+
+**Rollout complete as of 2026-08-08.** All modules with a genuine
+HTML/API router pair have been migrated; `calendar`/`announcements`/
+`finances` (no API router) and `tasks` (already correctly role-gated,
+outside the Group-permission system by design) were confirmed out of
+scope, not skipped.
 - [x] insurance (2026-08-08) -- pure CRUD/query duplication, no audit
       trail or notifications involved on either side before or after;
       lowest-risk of the seven, mechanical extraction.

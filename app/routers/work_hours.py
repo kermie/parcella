@@ -10,7 +10,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db, active_member_filter
@@ -19,7 +19,7 @@ from app.models import (
     WorkSession, SessionParticipation, SessionType, ParticipationStatus,
     Sponsorship, ClubRole, MemberClubRole, ExemptionReason,
     WorkHoursConfiguration, WorkHoursMode,
-    Member, MemberParcel, Parcel, ParcelStatus,
+    Member, MemberParcel,
     WorkTask, TaskWorkload,
 )
 from app.permissions import require_permission
@@ -30,6 +30,14 @@ from app.l10n import load_current_region, format_number
 from app.session_attendee_sheet import render_session_attendee_sheet_pdf, AttendeeRow
 
 from app.module_flags import require_module
+from app.services.errors import ServiceError
+from app.services.work_hours import (
+    get_config_for_year, evaluate_year, save_configuration_for_year,
+    create_club_role, update_club_role, assign_member_to_club_role,
+    create_session, update_session, add_participation, update_participation,
+    create_sponsorship, update_sponsorship,
+    create_task, schedule_task, assign_task_to_participant, toggle_task_done,
+)
 
 router = APIRouter(
     prefix="/work-hours",
@@ -37,64 +45,6 @@ router = APIRouter(
     dependencies=[Depends(require_module("work_hours"))],
 )
 from app.templating import templates
-
-
-# ---------------------------------------------------------------------------
-# Helper functions
-# ---------------------------------------------------------------------------
-
-async def _get_config_for_year(db: AsyncSession, year: int) -> Optional[WorkHoursConfiguration]:
-    result = await db.execute(
-        select(WorkHoursConfiguration).where(WorkHoursConfiguration.year == year)
-    )
-    return result.scalar_one_or_none()
-
-
-async def _calculate_hours_for_member(
-    db: AsyncSession, member_id: str, year: int
-) -> dict:
-    """Calculates a member's required-work-hours standing for a year."""
-
-    # Session participations (only ATTENDED counts)
-    session_hours = await db.scalar(
-        select(func.coalesce(func.sum(SessionParticipation.hours_completed), 0))
-        .join(WorkSession)
-        .where(
-            SessionParticipation.member_id == member_id,
-            SessionParticipation.status == ParticipationStatus.ATTENDED,
-            func.extract("year", WorkSession.date) == year,
-        )
-    ) or 0
-
-    # Sponsorship (active in the queried year)
-    sponsorship_hours = await db.scalar(
-        select(func.coalesce(func.sum(Sponsorship.credited_hours), 0))
-        .where(
-            Sponsorship.member_id == member_id,
-            Sponsorship.valid_from <= date(year, 12, 31),
-            (Sponsorship.valid_until.is_(None)) | (Sponsorship.valid_until >= date(year, 1, 1)),
-        )
-    ) or 0
-
-    return {
-        "session_hours": float(session_hours),
-        "sponsorship_hours": float(sponsorship_hours),
-        "total": float(session_hours) + float(sponsorship_hours),
-    }
-
-
-async def _is_exempt(db: AsyncSession, member_id: str, year: int) -> bool:
-    """Checks whether a member is exempt from required work hours for a year."""
-    result = await db.execute(
-        select(MemberClubRole)
-        .join(ClubRole, MemberClubRole.club_role_id == ClubRole.id)
-        .where(
-            MemberClubRole.member_id == member_id,
-            MemberClubRole.year == year,
-            ClubRole.hours_exempt == True,
-        )
-    )
-    return result.scalar_one_or_none() is not None
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +62,7 @@ async def work_hours_overview(
     if not year:
         year = date.today().year
 
-    config = await _get_config_for_year(db, year)
+    config = await get_config_for_year(db, year)
 
     # All available years, for the dropdown
     years_result = await db.execute(
@@ -217,7 +167,7 @@ async def configuration_update(
 
     # If the year is being changed: check for a collision with another entry
     if year != configuration.year:
-        kollision = await _get_config_for_year(db, year)
+        kollision = await get_config_for_year(db, year)
         if kollision and kollision.id != configuration_id:
             raise HTTPException(
                 status_code=400,
@@ -265,22 +215,12 @@ async def configuration_create(
 ):
     await require_permission(request, db, "work_hours", "write")
 
-    existing = await _get_config_for_year(db, year)
-    if existing:
-        existing.hours_required = float(hours_required.replace(",", "."))
-        existing.rate_per_hour_eur = float(rate_per_hour_eur.replace(",", "."))
-        existing.mode = WorkHoursMode(mode)
-        existing.note = note.strip() or None
-    else:
-        config = WorkHoursConfiguration(
-            year=year,
-            hours_required=float(hours_required.replace(",", ".")),
-            rate_per_hour_eur=float(rate_per_hour_eur.replace(",", ".")),
-            mode=WorkHoursMode(mode),
-            note=note.strip() or None,
-        )
-        db.add(config)
-
+    await save_configuration_for_year(
+        db, year,
+        hours_required=float(hours_required.replace(",", ".")),
+        rate_per_hour_eur=float(rate_per_hour_eur.replace(",", ".")),
+        mode=mode, note=(note.strip() or None),
+    )
     await db.commit()
     return RedirectResponse("/work-hours/configuration", status_code=302)
 
@@ -318,18 +258,14 @@ async def session_create(
 ):
     user = await require_permission(request, db, "work_hours", "write")
 
-    session = WorkSession(
-        title=title.strip(),
-        description=description.strip() or None,
-        type=SessionType(type),
-        date=date.fromisoformat(date_value),
-        time_from=time_from.strip() or None,
-        time_until=time_until.strip() or None,
-        max_participants=int(max_participants) if max_participants.strip() else None,
-        hours_per_participant=float(hours_per_participant.replace(",", ".")) if hours_per_participant.strip() else None,
+    session = await create_session(
+        db,
+        title=title, description=description, type=type, date_value=date.fromisoformat(date_value),
+        time_from=time_from, time_until=time_until,
+        max_participants=(int(max_participants) if max_participants.strip() else None),
+        hours_per_participant=(float(hours_per_participant.replace(",", ".")) if hours_per_participant.strip() else None),
         created_by_id=user.id,
     )
-    db.add(session)
     await db.commit()
     return RedirectResponse(f"/work-hours/sessions/{session.id}", status_code=302)
 
@@ -379,17 +315,13 @@ async def session_update(
     if not session:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.session_not_found"))
 
-    session.title = title.strip()
-    session.description = description.strip() or None
-    session.type = SessionType(type)
-    session.date = date.fromisoformat(date_value)
-    session.time_from = time_from.strip() or None
-    session.time_until = time_until.strip() or None
-    session.max_participants = int(max_participants) if max_participants.strip() else None
-    session.hours_per_participant = (
-        float(hours_per_participant.replace(",", ".")) if hours_per_participant.strip() else None
+    await update_session(
+        db, session,
+        title=title, description=description, type=type, date=date.fromisoformat(date_value),
+        time_from=time_from, time_until=time_until,
+        max_participants=(int(max_participants) if max_participants.strip() else None),
+        hours_per_participant=(float(hours_per_participant.replace(",", ".")) if hours_per_participant.strip() else None),
     )
-
     await db.commit()
     return RedirectResponse(f"/work-hours/sessions/{session_id}", status_code=302)
 
@@ -562,25 +494,13 @@ async def participant_add(
 ):
     await require_permission(request, db, "work_hours", "write")
 
-    # Already registered?
-    existing = await db.execute(
-        select(SessionParticipation).where(
-            SessionParticipation.session_id == session_id,
-            SessionParticipation.member_id == member_id,
-        )
+    participation = await add_participation(
+        db, session_id, member_id=member_id, status=status,
+        hours_completed=(float(hours_completed.replace(",", ".")) if hours_completed.strip() else None),
+        note=note,
     )
-    if existing.scalar_one_or_none():
-        return RedirectResponse(f"/work-hours/sessions/{session_id}", status_code=302)
-
-    participation = SessionParticipation(
-        session_id=session_id,
-        member_id=member_id,
-        status=ParticipationStatus(status),
-        hours_completed=float(hours_completed.replace(",", ".")) if hours_completed.strip() else None,
-        note=note.strip() or None,
-    )
-    db.add(participation)
-    await db.commit()
+    if participation is not None:
+        await db.commit()
     return RedirectResponse(f"/work-hours/sessions/{session_id}", status_code=302)
 
 
@@ -600,9 +520,10 @@ async def participation_status_change(
     )
     participation = result.scalar_one_or_none()
     if participation:
-        participation.status = ParticipationStatus(status)
+        fields = {"status": status}
         if hours_completed.strip():
-            participation.hours_completed = float(hours_completed.replace(",", "."))
+            fields["hours_completed"] = float(hours_completed.replace(",", "."))
+        await update_participation(db, participation, **fields)
         await db.commit()
 
     return RedirectResponse(f"/work-hours/sessions/{session_id}", status_code=302)
@@ -694,23 +615,13 @@ async def member_club_role_assign(
 ):
     await require_permission(request, db, "work_hours", "write")
 
-    existing = await db.execute(
-        select(MemberClubRole).where(
-            MemberClubRole.member_id == member_id,
-            MemberClubRole.club_role_id == club_role_id,
-            MemberClubRole.year == year,
-        )
+    assignment = await assign_member_to_club_role(
+        db, member_id=member_id, club_role_id=club_role_id, year=year,
+        valid_from=(date.fromisoformat(valid_from) if valid_from.strip() else None),
+        valid_until=(date.fromisoformat(valid_until) if valid_until.strip() else None),
+        note=note,
     )
-    if not existing.scalar_one_or_none():
-        assignment = MemberClubRole(
-            member_id=member_id,
-            club_role_id=club_role_id,
-            year=year,
-            valid_from=date.fromisoformat(valid_from) if valid_from.strip() else None,
-            valid_until=date.fromisoformat(valid_until) if valid_until.strip() else None,
-            note=note.strip() or None,
-        )
-        db.add(assignment)
+    if assignment is not None:
         await db.commit()
 
     return RedirectResponse(f"/work-hours/club-roles?year={year}", status_code=302)
@@ -822,13 +733,9 @@ async def club_role_create(
 ):
     await require_permission(request, db, "work_hours", "write")
 
-    role = ClubRole(
-        name=name.strip(),
-        description=description.strip() or None,
-        hours_exempt=hours_exempt,
-        exemption_reason=ExemptionReason(exemption_reason) if exemption_reason else None,
+    await create_club_role(
+        db, name=name, description=description, hours_exempt=hours_exempt, exemption_reason=(exemption_reason or None),
     )
-    db.add(role)
     await db.commit()
     return RedirectResponse("/work-hours/club-roles", status_code=302)
 
@@ -871,10 +778,10 @@ async def club_role_update(
     result = await db.execute(select(ClubRole).where(ClubRole.id == role_id))
     role = result.scalar_one_or_none()
     if role:
-        role.name = name.strip()
-        role.description = description.strip() or None
-        role.hours_exempt = hours_exempt
-        role.exemption_reason = ExemptionReason(exemption_reason) if exemption_reason else None
+        await update_club_role(
+            db, role, name=name, description=description, hours_exempt=hours_exempt,
+            exemption_reason=(exemption_reason or None),
+        )
         await db.commit()
 
     return RedirectResponse("/work-hours/club-roles", status_code=302)
@@ -935,7 +842,7 @@ async def sponsorships_page(
     all_areas = [r[0] for r in alle_bereiche_result.all()]
 
     # Current work-hours configuration, for pre-filling
-    config = await _get_config_for_year(db, year)
+    config = await get_config_for_year(db, year)
 
     members_result = await db.execute(
         select(Member)
@@ -972,15 +879,12 @@ async def sponsorship_create(
 ):
     await require_permission(request, db, "work_hours", "write")
 
-    sponsorship = Sponsorship(
-        member_id=member_id.strip() or None,
-        area=area.strip(),
-        description=description.strip() or None,
+    await create_sponsorship(
+        db, member_id=member_id, area=area, description=description,
         credited_hours=float(credited_hours.replace(",", ".")),
         valid_from=date.fromisoformat(valid_from),
-        valid_until=date.fromisoformat(valid_until) if valid_until.strip() else None,
+        valid_until=(date.fromisoformat(valid_until) if valid_until.strip() else None),
     )
-    db.add(sponsorship)
     await db.commit()
     return RedirectResponse("/work-hours/sponsorships", status_code=302)
 
@@ -1045,12 +949,13 @@ async def sponsorship_update(
     if not sponsorship:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.sponsorship_not_found"))
 
-    sponsorship.member_id = member_id.strip() or None
-    sponsorship.area = area.strip()
-    sponsorship.description = description.strip() or None
-    sponsorship.credited_hours = float(credited_hours.replace(",", "."))
-    sponsorship.valid_from = date.fromisoformat(valid_from)
-    sponsorship.valid_until = date.fromisoformat(valid_until) if valid_until.strip() else None
+    await update_sponsorship(
+        db, sponsorship,
+        member_id=member_id, area=area, description=description,
+        credited_hours=float(credited_hours.replace(",", ".")),
+        valid_from=date.fromisoformat(valid_from),
+        valid_until=(date.fromisoformat(valid_until) if valid_until.strip() else None),
+    )
 
     await db.commit()
 
@@ -1088,113 +993,12 @@ async def evaluation(
     if not year:
         year = date.today().year
 
-    config = await _get_config_for_year(db, year)
-
     years_result = await db.execute(
         select(WorkHoursConfiguration.year).order_by(WorkHoursConfiguration.year.desc())
     )
     available_years = [r[0] for r in years_result.all()]
 
-    if not config:
-        return templates.TemplateResponse(
-            "work_hours/evaluation.html",
-            {
-                "request": request,
-                "user": user,
-                "year": year,
-                "config": None,
-                "rows": [],
-                "available_years": available_years,
-            },
-        )
-
-    rows = []
-
-    if config.mode == WorkHoursMode.PER_PARCEL:
-        # Evaluate per parcel -- all active parcels with tenants
-        parcels_result = await db.execute(
-            select(Parcel)
-            .options(
-                selectinload(Parcel.member_assignments).selectinload(MemberParcel.member)
-            )
-            .where(Parcel.status == ParcelStatus.ACTIVE)
-            .order_by(Parcel.plot_number)
-        )
-        parcels = parcels_result.scalars().all()
-
-        for parcel in parcels:
-            tenants = [
-                z.member for z in parcel.member_assignments
-                if z.member.deleted_at is None
-                and (z.member.member_until is None or z.member.member_until >= date.today())
-            ]
-            if not tenants:
-                continue  # skip vacant parcels or those with only inactive tenants
-
-            # Sum hours across all tenants
-            total_hours = 0.0
-            tenant_details = []
-            for m in tenants:
-                hours = await _calculate_hours_for_member(db, m.id, year)
-                exempt = await _is_exempt(db, m.id, year)
-                total_hours += hours["total"]
-                tenant_details.append({
-                    "member": m,
-                    "hours": hours,
-                    "exempt": exempt,
-                })
-
-            required = float(config.hours_required)
-            outstanding = max(0.0, required - total_hours)
-            amount_due = outstanding * float(config.rate_per_hour_eur)
-
-            # Exempt if AT LEAST ONE tenant is exempt (any(), not all() --
-            # see docs/ADR/README.md). Deliberately NOT called
-            # "all_exempt" -- that name once led to an inverted all()-copy
-            # bug in the CSV export and the API.
-            is_exempt = any(p["exempt"] for p in tenant_details)
-
-            rows.append({
-                "parcel": parcel,
-                "tenant_details": tenant_details,
-                "total_hours": total_hours,
-                "required_hours": required,
-                "outstanding_hours": outstanding if not is_exempt else 0.0,
-                "amount_due": amount_due if not is_exempt else 0.0,
-                "fulfilled": is_exempt or total_hours >= required,
-                "all_exempt": is_exempt,
-                "exempt": is_exempt,  # unified key for the template
-            })
-
-    else:
-        # PER_MEMBER: evaluate each member with a parcel individually
-        members_result = await db.execute(
-            select(Member)
-            .options(selectinload(Member.parcel_assignments))
-            .where(
-                Member.deleted_at.is_(None),
-                Member.parcel_assignments.any(),
-            )
-            .order_by(Member.last_name, Member.first_name)
-        )
-        members = members_result.scalars().all()
-
-        for m in members:
-            hours = await _calculate_hours_for_member(db, m.id, year)
-            exempt = await _is_exempt(db, m.id, year)
-            required = float(config.hours_required)
-            outstanding = max(0.0, required - hours["total"])
-            amount_due = outstanding * float(config.rate_per_hour_eur)
-
-            rows.append({
-                "member": m,
-                "hours": hours,
-                "exempt": exempt,
-                "required_hours": required,
-                "outstanding_hours": outstanding if not exempt else 0.0,
-                "amount_due": amount_due if not exempt else 0.0,
-                "fulfilled": exempt or hours["total"] >= required,
-            })
+    config, rows = await evaluate_year(db, year)
 
     return templates.TemplateResponse(
         "work_hours/evaluation.html",
@@ -1221,7 +1025,7 @@ async def evaluation_export_csv(
     if not year:
         year = date.today().year
 
-    config = await _get_config_for_year(db, year)
+    config, rows = await evaluate_year(db, year)
     if not config:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.no_configuration_for_year", year=year))
 
@@ -1233,52 +1037,26 @@ async def evaluation_export_csv(
         "Schuldbetrag (EUR)", "Befreit", "Erfüllt"
     ])
 
+    # Same rule as the evaluation page for what counts as "exempt": ONE
+    # exempt tenant is enough to exempt the whole parcel (any(), not
+    # all() -- see docs/ADR/README.md). Computed once, in
+    # app.services.work_hours.evaluate_parcel(), not re-derived here.
     if config.mode == WorkHoursMode.PER_PARCEL:
-        parcels_result = await db.execute(
-            select(Parcel)
-            .options(selectinload(Parcel.member_assignments).selectinload(MemberParcel.member))
-            .where(Parcel.status == ParcelStatus.ACTIVE)
-            .order_by(Parcel.plot_number)
-        )
-        for parcel in parcels_result.scalars().all():
-            tenants = [
-                z.member for z in parcel.member_assignments
-                if z.member.deleted_at is None
-                and (z.member.member_until is None or z.member.member_until >= date.today())
-            ]
-            if not tenants:
-                continue
-            total = 0.0
-            session_hours = 0.0
-            sponsorship_hours = 0.0
-            # Same rule as the evaluation page: ONE exempt tenant is enough
-            # to exempt the whole parcel (any(), not all() -- see
-            # docs/ADR/README.md).
-            is_exempt = False
-            names = []
-            for m in tenants:
-                standing = await _calculate_hours_for_member(db, m.id, year)
-                exempt = await _is_exempt(db, m.id, year)
-                total += standing["total"]
-                session_hours += standing["session_hours"]
-                sponsorship_hours += standing["sponsorship_hours"]
-                if exempt:
-                    is_exempt = True
-                names.append(m.full_name)
-            required = float(config.hours_required)
-            outstanding = max(0.0, required - total) if not is_exempt else 0.0
-            amount_due = outstanding * float(config.rate_per_hour_eur)
+        for row in rows:
+            session_hours = sum(t["hours"]["session_hours"] for t in row["tenant_details"])
+            sponsorship_hours = sum(t["hours"]["sponsorship_hours"] for t in row["tenant_details"])
+            names = [t["member"].full_name for t in row["tenant_details"]]
             writer.writerow([
-                parcel.plot_number,
+                row["parcel"].plot_number,
                 csv_safe("; ".join(names)),
-                f"{required:.1f}",
+                f"{row['required_hours']:.1f}",
                 f"{session_hours:.1f}",
                 f"{sponsorship_hours:.1f}",
-                f"{total:.1f}",
-                f"{outstanding:.1f}",
-                f"{amount_due:.2f}".replace(".", ","),
-                "Ja" if is_exempt else "Nein",
-                "Ja" if (is_exempt or total >= required) else "Nein",
+                f"{row['total_hours']:.1f}",
+                f"{row['outstanding_hours']:.1f}",
+                f"{row['amount_due']:.2f}".replace(".", ","),
+                "Ja" if row["exempt"] else "Nein",
+                "Ja" if row["fulfilled"] else "Nein",
             ])
 
     output.seek(0)
@@ -1363,14 +1141,10 @@ async def task_create(
 ):
     user = await require_permission(request, db, "work_hours", "write")
 
-    task = WorkTask(
-        title=title.strip(),
-        description=description.strip() or None,
-        workload=TaskWorkload(workload),
-        session_id=session_id or None,
-        created_by_id=user.id,
+    await create_task(
+        db, title=title, description=description, workload=workload,
+        session_id=(session_id or None), created_by_id=user.id,
     )
-    db.add(task)
     await db.commit()
     return RedirectResponse("/work-hours/tasks", status_code=302)
 
@@ -1391,11 +1165,7 @@ async def task_assign_to_session(
     if not task:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.task_not_found"))
 
-    new_session_id = session_id or None
-    if new_session_id != task.session_id:
-        task.assigned_participation_id = None
-    task.session_id = new_session_id
-
+    await schedule_task(db, task, session_id=session_id)
     await db.commit()
     return RedirectResponse("/work-hours/tasks", status_code=302)
 
@@ -1413,22 +1183,11 @@ async def task_participant_assign(
     task = await _load_task(db, task_id)
     if not task:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.task_not_found"))
-    if not task.session_id:
-        raise HTTPException(status_code=400, detail=t_for(request, "work_hours.errors.task_not_scheduled"))
 
-    if participation_id:
-        result = await db.execute(
-            select(SessionParticipation).where(
-                SessionParticipation.id == participation_id,
-                SessionParticipation.session_id == task.session_id,
-            )
-        )
-        participation = result.scalar_one_or_none()
-        if not participation:
-            raise HTTPException(status_code=400, detail=t_for(request, "work_hours.errors.participant_not_in_session"))
-        task.assigned_participation_id = participation.id
-    else:
-        task.assigned_participation_id = None
+    try:
+        await assign_task_to_participant(db, task, participation_id=participation_id)
+    except ServiceError as e:
+        raise HTTPException(status_code=e.http_status, detail=t_for(request, e.key, **e.params))
 
     await db.commit()
     referer = request.headers.get("referer", "/work-hours/tasks")
@@ -1446,7 +1205,7 @@ async def task_toggle_done(
     if not task:
         raise HTTPException(status_code=404, detail=t_for(request, "work_hours.errors.task_not_found"))
 
-    task.is_done = not task.is_done
+    await toggle_task_done(db, task)
     await db.commit()
     referer = request.headers.get("referer", "/work-hours/tasks")
     return RedirectResponse(referer, status_code=302)

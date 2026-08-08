@@ -132,6 +132,29 @@ cleanly but felt like over-engineering for what's currently a single
 field with this ambiguity; revisit if it becomes a real integration
 pain point.
 
+**Implementation note (ADR 0070):** the evaluation/exemption engine
+(`get_config_for_year`, `calculate_hours_for_member`, `is_exempt`,
+`evaluate_year`/`evaluate_parcel`/`evaluate_member`) plus configuration
+upsert, club-role/assignment CRUD, session/participation CRUD,
+sponsorship CRUD, and task scheduling/assignment now live in
+`app/services/work_hours.py`, called by both `app/routers/work_hours.py`
+and `app/routers/api_work_hours.py`. This was the headline fix of the
+whole ADR 0070 rollout: the evaluation engine used to be reimplemented
+independently 3 times (the HTML evaluation page, the HTML CSV export --
+which only ever supported PER_PARCEL mode, unchanged -- and the API,
+which imported the HTML router's private helper functions directly, a
+fragile shape this replaces). That exact duplication already caused a
+real shipped bug once: an inverted `all()`-copy of the "any exempt
+tenant exempts the whole parcel" rule. All three now compute a row's
+standing through one path, so that mistake can't be reintroduced
+independently in a fourth place. Also closed: `MemberClubRole` has no
+DB uniqueness constraint, so the API's assignment-create used to allow
+silent duplicates for the same (member, role, year) where the HTML side
+already checked first -- now shared, surfaced as a 409 via the API. The
+API router also now checks permissions the same fine-grained,
+`Group`-based way the HTML side does (`require_api_permission`), not
+the coarser role-only check most other API routers still use.
+
 ## Attendee sheet (PDF)
 
 `/work-hours/sessions/{id}/attendee-sheet` (button on the session

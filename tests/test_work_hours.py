@@ -175,3 +175,137 @@ async def test_exemption_applies_to_whole_parcel_under_per_parcel(client, admin_
     assert row["exempt"] is True
     assert float(row["hours_open"]) == 0.0
     assert float(row["amount_due_eur"]) == 0.0
+
+    # ADR 0070: the same result must come from the HTML evaluation page
+    # too -- both surfaces now go through app.services.work_hours'
+    # evaluate_year()/evaluate_parcel(), the exact code path whose
+    # duplication (3 independent copies: HTML page, HTML CSV export,
+    # API) already caused a real shipped any()/all() inversion bug once.
+    await client.post("/auth/login", data={"email": "admin@example.com", "password": "testpasswort123"})
+    html_response = await client.get("/work-hours/evaluation", params={"year": 2026})
+    assert html_response.status_code == 200
+    assert "G100" in html_response.text
+
+
+# ---------------------------------------------------------------------------
+# ADR 0070: shared service layer + unified (Group-based, not role-only)
+# authorization for the API.
+# ---------------------------------------------------------------------------
+
+async def test_treasurer_without_group_grant_is_blocked_from_work_hours_write_via_api(client):
+    """api_work_hours.py used require_write_access (role-only) -- ANY
+    TREASURER could write work-hours data via the API regardless of
+    Group configuration. Now the API checks the same Group-derived
+    permission as HTML."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="treasurer-no-group-workhours@example.com", name="Treasurer No Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.TREASURER,
+        )
+        db.add(user)
+        await db.commit()
+
+    token = await login(client, "treasurer-no-group-workhours@example.com")
+    response = await client.post(
+        "/api/v1/work-hours/club-roles",
+        json={"name": "Blocked Role", "hours_exempt": False},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 403
+
+
+async def test_readonly_with_group_grant_can_write_work_hours_via_api(client):
+    """Flip side: a READONLY user granted work_hours:write via a Group
+    could already write through the HTML UI, but the role-only API
+    check blocked them regardless of Group membership."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole, Group, GroupModulePermission, GroupMembership
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="readonly-with-group-workhours@example.com", name="Readonly With Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        )
+        db.add(user)
+        await db.flush()
+
+        group = Group(name="Work Hours Handlers")
+        db.add(group)
+        await db.flush()
+        db.add(GroupModulePermission(group_id=group.id, module="work_hours", can_read=True, can_write=True))
+        db.add(GroupMembership(user_id=user.id, group_id=group.id))
+        await db.commit()
+
+    token = await login(client, "readonly-with-group-workhours@example.com")
+    response = await client.post(
+        "/api/v1/work-hours/club-roles",
+        json={"name": "Allowed Role", "hours_exempt": False},
+        headers=auth_header(token),
+    )
+    assert response.status_code == 201, response.text
+
+
+async def test_duplicate_club_role_assignment_rejected_via_api(client, admin_user):
+    """ADR 0070: MemberClubRole has no DB uniqueness constraint --
+    assignment_create used to silently create a duplicate row for the
+    same (member, role, year). Now shares the HTML side's existing
+    check-first behavior, surfaced as 409 via the API."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    member = (await client.post(
+        "/api/v1/members", json={"first_name": "Doppelt", "last_name": "Test"}, headers=headers,
+    )).json()
+    role = (await client.post(
+        "/api/v1/work-hours/club-roles", json={"name": "Kassenwart", "hours_exempt": False}, headers=headers,
+    )).json()
+
+    first = await client.post(
+        "/api/v1/work-hours/club-roles/assignments",
+        json={"member_id": member["id"], "club_role_id": role["id"], "year": 2026},
+        headers=headers,
+    )
+    assert first.status_code == 201
+
+    duplicate = await client.post(
+        "/api/v1/work-hours/club-roles/assignments",
+        json={"member_id": member["id"], "club_role_id": role["id"], "year": 2026},
+        headers=headers,
+    )
+    assert duplicate.status_code == 409
+
+
+async def test_task_assignment_validation_shares_i18n_text_via_api(client, admin_user):
+    """ADR 0070: the API's "participant not in session" check used to
+    raise a hard-coded English 400; now shares the same rule and i18n
+    key app.services.work_hours.assign_task_to_participant() enforces
+    for both surfaces."""
+    from app.i18n import translate
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    session = (await client.post(
+        "/api/v1/work-hours/sessions",
+        json={"title": "Test session", "type": "STANDARD", "date": "2026-06-01"},
+        headers=headers,
+    )).json()
+    task = (await client.post(
+        "/api/v1/work-hours/tasks",
+        json={"title": "Test task", "workload": "MODERATE", "session_id": session["id"]},
+        headers=headers,
+    )).json()
+
+    response = await client.put(
+        f"/api/v1/work-hours/tasks/{task['id']}",
+        json={"assigned_participation_id": "nonexistent-participation-id"},
+        headers=headers,
+    )
+    assert response.status_code == 400
+    expected = translate("work_hours.errors.participant_not_in_session", "en")
+    assert response.json()["detail"] == expected
