@@ -166,3 +166,19 @@ size (see ADR 0070). The API router also now checks permissions the
 same fine-grained, `Group`-based way the HTML side does
 (`require_api_permission`), not the coarser role-only check most other
 API routers still use.
+
+Parcel CRUD, plot-number-uniqueness checking (now enforced on update
+too, not just create), and the tenant-assignment lifecycle (assign/
+reactivate, edit, end, hard-delete-history) live in
+`app/services/parcels.py`, same pairing. This closed the most serious
+finding in the whole ADR 0070 rollout after tickets itself:
+API-driven parcel edits (`PUT /api/v1/parcels/{id}`), including status
+and termination changes, previously wrote no audit trail at all. Three
+further real divergences were found and fixed along the way -- a former
+tenant could never be reassigned to the same parcel via the API (it
+403/409'd on any historical row; HTML always reactivated), the
+invoice-address rule (issue #172) wasn't applied on the HTML side's
+brand-new-assignment path, and the API's single `DELETE .../assignments/
+{id}` endpoint used to hard-delete an *active* assignment unconditionally
+-- it now soft-ends an active one and only hard-deletes an already-ended
+one, same distinction the HTML UI's two separate actions make.

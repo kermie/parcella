@@ -21,11 +21,15 @@ from app.models import (
 from app.auth import require_admin
 from app.permissions import require_permission
 from app.i18n import t_for
-from app.change_tracker import ChangeTracker
 from app.module_flags import require_module
 from app.cloud_storage import get_nextcloud_provider, CloudStorageError
 from app.parcel_cloud_folders import (
     get_active_folder, set_active_folder, deactivate_if_vacant, InvalidCloudPathError,
+)
+from app.services.errors import ServiceError
+from app.services.parcels import (
+    create_parcel, update_parcel, assign_member, update_assignment,
+    end_assignment, delete_assignment_history,
 )
 
 router = APIRouter(prefix="/parcels", tags=["parcels"])
@@ -99,23 +103,7 @@ async def parcel_create(
     notes: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
-    user_result = await require_permission(request, db, "members_parcels", "write")
-
-    # Check for a duplicate plot number
-    existing = await db.execute(
-        select(Parcel).where(Parcel.plot_number == plot_number.strip().upper())
-    )
-    if existing.scalar_one_or_none():
-        return templates.TemplateResponse(
-            "parcels/form.html",
-            {
-                "request": request,
-                "user": user_result,
-                "parcel": None,
-                "error": t_for(request, "parcels.form.duplicate_plot_number_error", plot_number=plot_number),
-            },
-            status_code=400,
-        )
+    user = await require_permission(request, db, "members_parcels", "write")
 
     area = None
     if area_sqm.strip():
@@ -124,14 +112,16 @@ async def parcel_create(
         except ValueError:
             pass
 
-    parcel = Parcel(
-        plot_number=plot_number.strip().upper(),
-        area_sqm=area,
-        notes=notes.strip() or None,
-    )
-    db.add(parcel)
-    await db.commit()
+    try:
+        parcel = await create_parcel(db, plot_number=plot_number, area_sqm=area, notes=notes)
+    except ServiceError as e:
+        return templates.TemplateResponse(
+            "parcels/form.html",
+            {"request": request, "user": user, "parcel": None, "error": t_for(request, e.key, **e.params)},
+            status_code=e.http_status,
+        )
 
+    await db.commit()
     return RedirectResponse(f"/parcels/{parcel.id}", status_code=302)
 
 
@@ -242,11 +232,6 @@ async def parcel_update(
     if not parcel:
         raise HTTPException(status_code=404)
 
-    tracker = ChangeTracker(
-        parcel, "Parcel",
-        ["plot_number", "area_sqm", "status", "termination_note", "notes"]
-    )
-
     area = None
     if area_sqm.strip():
         try:
@@ -254,16 +239,21 @@ async def parcel_update(
         except ValueError:
             pass
 
-    parcel.plot_number = plot_number.strip().upper()
-    parcel.area_sqm = area
-    parcel.notes = notes.strip() or None
+    new_status = ParcelStatus(status) if status in [s.value for s in ParcelStatus] else parcel.status
 
-    if status in [s.value for s in ParcelStatus]:
-        parcel.status = ParcelStatus(status)
+    try:
+        await update_parcel(
+            db, parcel, acting_user=user,
+            plot_number=plot_number, area_sqm=area, status=new_status,
+            termination_note=termination_note, notes=notes,
+        )
+    except ServiceError as e:
+        return templates.TemplateResponse(
+            "parcels/form.html",
+            {"request": request, "user": user, "parcel": parcel, "error": t_for(request, e.key, **e.params)},
+            status_code=e.http_status,
+        )
 
-    parcel.termination_note = termination_note.strip() or None
-
-    await tracker.commit(db, user.id)
     await db.commit()
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
@@ -310,32 +300,11 @@ async def member_assign(
 ):
     await require_permission(request, db, "members_parcels", "write")
 
-    # Bereits (auch historisch) zugeordnet?
-    existing = await db.execute(
-        select(MemberParcel).where(
-            MemberParcel.parcel_id == parcel_id,
-            MemberParcel.member_id == member_id,
-        )
+    await assign_member(
+        db, parcel_id, member_id,
+        is_invoice_address=is_invoice_address,
+        assigned_from=(date.fromisoformat(assigned_from) if assigned_from else None),
     )
-    assignment = existing.scalar_one_or_none()
-
-    if assignment:
-        if assignment.assigned_until is None:
-            # Already actively assigned, nothing to do
-            return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
-        # Reactivate a former (ended) assignment instead of creating a duplicate
-        assignment.assigned_until = None
-        assignment.assigned_from = date.fromisoformat(assigned_from) if assigned_from else date.today()
-        assignment.is_invoice_address = is_invoice_address
-    else:
-        assignment = MemberParcel(
-            parcel_id=parcel_id,
-            member_id=member_id,
-            is_invoice_address=is_invoice_address,
-            assigned_from=date.fromisoformat(assigned_from) if assigned_from else None,
-        )
-        db.add(assignment)
-
     await db.commit()
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 
@@ -392,16 +361,12 @@ async def member_assignment_update(
     if not assignment:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.assignment_not_found"))
 
-    assignment.assigned_from = date.fromisoformat(assigned_from) if assigned_from.strip() else None
-    assignment.assigned_until = date.fromisoformat(assigned_until) if assigned_until.strip() else None
-    # A former tenant can never be the invoice address -- but a future-
-    # dated assigned_until (notice given, not yet moved out -- issue
-    # #130/ADR 0052) doesn't make them former yet, so it must not clear
-    # this (issue #172: this used to zero it out the moment ANY
-    # assigned_until was set, silently un-billing a still-occupied
-    # parcel for the months until the tenant actually leaves).
-    assignment.is_invoice_address = is_invoice_address if assignment.is_current else False
-
+    await update_assignment(
+        db, assignment,
+        is_invoice_address=is_invoice_address,
+        assigned_from=(date.fromisoformat(assigned_from) if assigned_from.strip() else None),
+        assigned_until=(date.fromisoformat(assigned_until) if assigned_until.strip() else None),
+    )
     await db.commit()
     await deactivate_if_vacant(db, parcel_id)
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
@@ -427,9 +392,7 @@ async def member_remove(
         )
     )
     assignment = result.scalar_one_or_none()
-    if assignment and assignment.assigned_until is None:
-        assignment.assigned_until = date.today()
-        assignment.is_invoice_address = False
+    if assignment and await end_assignment(db, assignment):
         await db.commit()
         await deactivate_if_vacant(db, parcel_id)
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
@@ -463,13 +426,12 @@ async def former_assignment_delete(
     assignment = result.scalar_one_or_none()
     if not assignment:
         raise HTTPException(status_code=404, detail=t_for(request, "parcels.errors.assignment_not_found"))
-    if assignment.assigned_until is None:
-        raise HTTPException(
-            status_code=400,
-            detail=t_for(request, "parcels.detail.cannot_delete_active_assignment"),
-        )
 
-    await db.delete(assignment)
+    try:
+        await delete_assignment_history(db, assignment)
+    except ServiceError as e:
+        raise HTTPException(status_code=e.http_status, detail=t_for(request, e.key, **e.params))
+
     await db.commit()
     return RedirectResponse(f"/parcels/{parcel_id}", status_code=302)
 

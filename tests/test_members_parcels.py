@@ -28,6 +28,60 @@ async def test_treasurer_without_group_grant_is_blocked_from_member_write_via_ap
     assert response.status_code == 403
 
 
+async def test_treasurer_without_group_grant_is_blocked_from_parcel_write_via_api(client):
+    """ADR 0070: api_parcels.py used require_write_access (role-only) --
+    ANY TREASURER could write parcels via the API regardless of Group
+    configuration. Now the API checks the same Group-derived permission
+    as HTML (members_parcels governs both members and parcels)."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="treasurer-no-group-parcels@example.com", name="Treasurer No Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.TREASURER,
+        )
+        db.add(user)
+        await db.commit()
+
+    token = await login(client, "treasurer-no-group-parcels@example.com")
+    response = await client.post(
+        "/api/v1/parcels", json={"plot_number": "G900"}, headers=auth_header(token),
+    )
+    assert response.status_code == 403
+
+
+async def test_readonly_with_group_grant_can_write_parcels_via_api(client):
+    """Flip side: a READONLY user granted members_parcels:write via a
+    Group could already write parcels through the HTML UI, but the
+    role-only API check blocked them regardless of Group membership."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole, Group, GroupModulePermission, GroupMembership
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="readonly-with-group-parcels@example.com", name="Readonly With Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        )
+        db.add(user)
+        await db.flush()
+
+        group = Group(name="Parcel Handlers")
+        db.add(group)
+        await db.flush()
+        db.add(GroupModulePermission(group_id=group.id, module="members_parcels", can_read=True, can_write=True))
+        db.add(GroupMembership(user_id=user.id, group_id=group.id))
+        await db.commit()
+
+    token = await login(client, "readonly-with-group-parcels@example.com")
+    response = await client.post(
+        "/api/v1/parcels", json={"plot_number": "G901"}, headers=auth_header(token),
+    )
+    assert response.status_code == 201, response.text
+
+
 async def test_readonly_with_group_grant_can_write_members_via_api(client):
     """Flip side of the bug above: a READONLY user granted
     members_parcels:write via a Group could already write members
@@ -90,6 +144,124 @@ async def test_parcel_create_duplicate_plot_number_rejected(client, admin_user):
         "/api/v1/parcels", json={"plot_number": "g001"}, headers=auth_header(token)
     )
     assert response.status_code == 409  # case is normalized (G001 == g001)
+
+
+async def test_parcel_update_rejects_duplicate_plot_number_via_api(client, admin_user):
+    """ADR 0070: the duplicate-plot-number check used to only run on
+    CREATE on the HTML side (its edit form had no check at all) -- now
+    shared and enforced on UPDATE too, both surfaces."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    p1 = (await client.post("/api/v1/parcels", json={"plot_number": "G100"}, headers=headers)).json()
+    await client.post("/api/v1/parcels", json={"plot_number": "G101"}, headers=headers)
+
+    response = await client.put(
+        f"/api/v1/parcels/{p1['id']}", json={"plot_number": "G101"}, headers=headers,
+    )
+    assert response.status_code == 409
+
+
+async def test_parcel_update_writes_audit_trail_via_api(client, admin_user):
+    """ADR 0070: API-driven parcel edits used to leave no ChangeHistory
+    row at all (ChangeTracker was only wired into the HTML router) --
+    the most serious finding for this module, same shape as tickets'
+    worst finding."""
+    from app.database import AsyncSessionLocal
+    from app.models import ChangeHistory
+    from sqlalchemy import select
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    p1 = (await client.post("/api/v1/parcels", json={"plot_number": "G110"}, headers=headers)).json()
+    response = await client.put(
+        f"/api/v1/parcels/{p1['id']}", json={"area_sqm": 321.5}, headers=headers,
+    )
+    assert response.status_code == 200
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(ChangeHistory).where(
+                ChangeHistory.entity_type == "Parcel", ChangeHistory.entity_id == p1["id"],
+            )
+        )
+        entries = result.scalars().all()
+
+    assert any(e.field_name == "area_sqm" for e in entries)
+    assert all(e.changed_by_id == admin_user.id for e in entries)
+
+
+async def test_reassigning_a_former_tenant_to_the_same_parcel_via_api_reactivates(client, admin_user):
+    """ADR 0070: the API used to 409 if ANY assignment row already
+    existed for a member/parcel pair, even an already-ended one -- a
+    former tenant could never be reassigned to the same parcel via the
+    API at all, unlike the HTML side, which always reactivated."""
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    member = (await client.post(
+        "/api/v1/members", json={"first_name": "Rosa", "last_name": "Wiederkehr"}, headers=headers,
+    )).json()
+    parcel = (await client.post("/api/v1/parcels", json={"plot_number": "G120"}, headers=headers)).json()
+
+    first = await client.post(
+        f"/api/v1/parcels/{parcel['id']}/assignments",
+        json={"member_id": member["id"], "parcel_id": parcel["id"]},
+        headers=headers,
+    )
+    assert first.status_code == 201
+    assignment_id = first.json()["id"]
+
+    ended = await client.delete(
+        f"/api/v1/parcels/{parcel['id']}/assignments/{assignment_id}", headers=headers,
+    )
+    assert ended.status_code == 204
+
+    reassigned = await client.post(
+        f"/api/v1/parcels/{parcel['id']}/assignments",
+        json={"member_id": member["id"], "parcel_id": parcel["id"]},
+        headers=headers,
+    )
+    assert reassigned.status_code == 201, reassigned.text
+    assert reassigned.json()["id"] == assignment_id  # reactivated, not a new row
+
+
+async def test_api_assignment_delete_ends_active_assignment_instead_of_hard_deleting(client, admin_user):
+    """ADR 0070: the API's single DELETE endpoint used to hard-delete
+    unconditionally, including an ACTIVE assignment -- silently
+    discarding tenancy history the HTML side deliberately protects (it
+    only ever soft-ends an active assignment; hard-delete is reserved
+    for already-ended ones). The API now makes the same distinction."""
+    from app.database import AsyncSessionLocal
+    from app.models import MemberParcel
+    from sqlalchemy import select
+
+    token = await login(client, "admin@example.com")
+    headers = auth_header(token)
+
+    member = (await client.post(
+        "/api/v1/members", json={"first_name": "Theo", "last_name": "Aktiv"}, headers=headers,
+    )).json()
+    parcel = (await client.post("/api/v1/parcels", json={"plot_number": "G121"}, headers=headers)).json()
+
+    created = (await client.post(
+        f"/api/v1/parcels/{parcel['id']}/assignments",
+        json={"member_id": member["id"], "parcel_id": parcel["id"]},
+        headers=headers,
+    )).json()
+
+    response = await client.delete(
+        f"/api/v1/parcels/{parcel['id']}/assignments/{created['id']}", headers=headers,
+    )
+    assert response.status_code == 204
+
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(MemberParcel).where(MemberParcel.id == created["id"]))
+        assignment = result.scalar_one_or_none()
+
+    assert assignment is not None  # still exists -- soft-ended, not hard-deleted
+    assert assignment.assigned_until is not None
 
 
 async def test_member_parcel_assignment_and_double_garden(client, admin_user):

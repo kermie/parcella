@@ -1,23 +1,41 @@
 """
 API router: Parcels -- full CRUD via REST, including member assignment.
+
+Business logic shared with app/routers/parcels.py (HTML) lives in
+app/services/parcels.py (ADR 0070) -- this router owns bearer-token
+authentication, the fine-grained permission check (require_api_permission,
+Group-based like the HTML side), Pydantic body parsing, and JSON
+response serialization.
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Parcel, ParcelStatus, MemberParcel, Member
-from app.api_auth import get_current_api_user, require_write_access
+from app.models import Parcel, ParcelStatus, MemberParcel, Member, User
+from app.api_auth import require_api_permission
+from app.i18n import t_for
+from app.parcel_cloud_folders import deactivate_if_vacant
+from app.services.errors import ServiceError
+from app.services.parcels import create_parcel, update_parcel, assign_member, remove_assignment
 from app.schemas import (
     ParcelOut, ParcelDetailOut, ParcelCreate, ParcelUpdate, ParcelAssignmentBrief,
     AssignmentCreate, AssignmentOut,
 )
-from app.models import User
-from sqlalchemy.orm import selectinload
 
 router = APIRouter(prefix="/api/v1/parcels", tags=["API: Parcels"])
+
+
+def _service_error_to_http(request: Request, e: ServiceError) -> HTTPException:
+    # Deliberately always 409 here, independent of e.http_status (which
+    # is the HTML side's 400) -- 409 CONFLICT is this API's pre-existing
+    # convention for a duplicate plot number, kept as-is; only the text
+    # (now i18n'd via the same key HTML uses, previously hard-coded
+    # English here) changes.
+    return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=t_for(request, e.key, **e.params))
 
 
 async def _get_parcel_or_404(db: AsyncSession, parcel_id: str, with_details: bool = False) -> Parcel:
@@ -57,7 +75,7 @@ async def parcels_list(
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("members_parcels", "read")),
 ):
     query = select(Parcel).order_by(Parcel.plot_number).limit(limit).offset(offset)
 
@@ -79,7 +97,7 @@ async def parcels_list(
 async def parcel_get(
     parcel_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(get_current_api_user),
+    user: User = Depends(require_api_permission("members_parcels", "read")),
 ):
     parcel = await _get_parcel_or_404(db, parcel_id, with_details=True)
     return _to_detail_schema(parcel)
@@ -92,25 +110,14 @@ async def parcel_get(
     summary="Create new parcel",
 )
 async def parcel_create(
-    data: ParcelCreate,
+    data: ParcelCreate, request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "write")),
 ):
-    plot_number = data.plot_number.strip().upper()
-
-    existing = await db.execute(select(Parcel).where(Parcel.plot_number == plot_number))
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Plot number '{plot_number}' already exists.",
-        )
-
-    parcel = Parcel(
-        plot_number=plot_number,
-        area_sqm=data.area_sqm,
-        notes=data.notes,
-    )
-    db.add(parcel)
+    try:
+        parcel = await create_parcel(db, plot_number=data.plot_number, area_sqm=data.area_sqm, notes=data.notes)
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
     await db.commit()
     await db.refresh(parcel)
     return parcel
@@ -123,30 +130,16 @@ async def parcel_create(
     description="Partial update: only the fields provided are changed. Also covers status changes (active/terminated/deleted) and termination data.",
 )
 async def parcel_update(
-    parcel_id: str,
-    data: ParcelUpdate,
+    parcel_id: str, data: ParcelUpdate, request: Request,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "write")),
 ):
     parcel = await _get_parcel_or_404(db, parcel_id)
 
-    update_data = data.model_dump(exclude_unset=True)
-
-    if "plot_number" in update_data and update_data["plot_number"]:
-        new_number = update_data["plot_number"].strip().upper()
-        if new_number != parcel.plot_number:
-            existing = await db.execute(
-                select(Parcel).where(Parcel.plot_number == new_number, Parcel.id != parcel_id)
-            )
-            if existing.scalar_one_or_none():
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Plot number '{new_number}' already exists.",
-                )
-        update_data["plot_number"] = new_number
-
-    for field, value in update_data.items():
-        setattr(parcel, field, value)
+    try:
+        await update_parcel(db, parcel, acting_user=user, **data.model_dump(exclude_unset=True))
+    except ServiceError as e:
+        raise _service_error_to_http(request, e)
 
     await db.commit()
     await db.refresh(parcel)
@@ -162,10 +155,10 @@ async def parcel_update(
 async def parcel_delete(
     parcel_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "delete")),
 ):
     parcel = await _get_parcel_or_404(db, parcel_id)
-    parcel.status = ParcelStatus.DELETED
+    await update_parcel(db, parcel, acting_user=user, status=ParcelStatus.DELETED)
     await db.commit()
 
 
@@ -178,13 +171,15 @@ async def parcel_delete(
     response_model=AssignmentOut,
     status_code=status.HTTP_201_CREATED,
     summary="Assign member to a parcel",
-    description="Enables multiple parcels per member and multiple members sharing a parcel.",
+    description="Enables multiple parcels per member and multiple members sharing a parcel. "
+                "Reactivates a former (ended) assignment for the same member/parcel pair "
+                "instead of creating a duplicate, if one already exists.",
 )
 async def member_assign(
     parcel_id: str,
     data: AssignmentCreate,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "write")),
 ):
     if data.parcel_id != parcel_id:
         raise HTTPException(status_code=400, detail="parcel_id in body must match the URL")
@@ -197,26 +192,11 @@ async def member_assign(
     if not member_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Member not found")
 
-    existing = await db.execute(
-        select(MemberParcel).where(
-            MemberParcel.parcel_id == parcel_id,
-            MemberParcel.member_id == data.member_id,
-        )
+    assignment, _created = await assign_member(
+        db, parcel_id, data.member_id,
+        is_invoice_address=data.is_invoice_address,
+        assigned_from=data.assigned_from, assigned_until=data.assigned_until,
     )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=409, detail="Assignment already exists")
-
-    assignment = MemberParcel(
-        parcel_id=parcel_id,
-        member_id=data.member_id,
-        assigned_from=data.assigned_from,
-        assigned_until=data.assigned_until,
-    )
-    # A former tenant can never be the invoice address -- but a future-
-    # dated assigned_until (notice given, not yet moved out -- issue
-    # #130/ADR 0052) doesn't make them former yet (issue #172).
-    assignment.is_invoice_address = data.is_invoice_address if assignment.is_current else False
-    db.add(assignment)
     await db.commit()
     await db.refresh(assignment)
     return assignment
@@ -226,12 +206,15 @@ async def member_assign(
     "/{parcel_id}/assignments/{assignment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove member assignment",
+    description="Ends an active assignment (soft -- history preserved), or hard-deletes an "
+                "already-ended one -- same distinction the web UI makes between "
+                "ending a tenancy and cleaning up a historical entry.",
 )
 async def assignment_remove(
     parcel_id: str,
     assignment_id: str,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_write_access),
+    user: User = Depends(require_api_permission("members_parcels", "delete")),
 ):
     result = await db.execute(
         select(MemberParcel).where(
@@ -241,5 +224,6 @@ async def assignment_remove(
     assignment = result.scalar_one_or_none()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")
-    await db.delete(assignment)
+    await remove_assignment(db, assignment)
     await db.commit()
+    await deactivate_if_vacant(db, parcel_id)

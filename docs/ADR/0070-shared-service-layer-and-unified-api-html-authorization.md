@@ -147,7 +147,16 @@ is follow-up work, module by module:
       requested page size, or skip an active member depending on
       offset) -- the exact SQL-vs-Python drift class this ADR's intro
       cites (issue #167).
-- [ ] parcels
+- [x] parcels (2026-08-08) -- the most serious finding after tickets
+      itself: API-driven parcel edits (incl. status/termination) wrote
+      no audit trail at all. Also found and fixed along the way: a
+      former tenant could never be reassigned to the same parcel via
+      the API (409'd on any historical row; HTML always reactivated),
+      the invoice-address rule (issue #172) wasn't applied on HTML's
+      brand-new-assignment path, and the API's single assignment DELETE
+      endpoint used to hard-delete an *active* assignment unconditionally
+      -- it now soft-ends an active one like HTML does, hard-deletes
+      only an already-ended one.
 - [ ] work_hours
 - [x] insurance (2026-08-08) -- pure CRUD/query duplication, no audit
       trail or notifications involved on either side before or after;
