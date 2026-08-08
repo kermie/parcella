@@ -28,7 +28,7 @@ from app.database import get_db
 from app.models import User, UserRole
 from app.auth import verify_password
 from app.i18n import t_for
-from app.permissions import get_user_permissions, has_permission
+from app.permissions import get_user_permissions, has_permission, is_full_access_user
 
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_VALID_MINUTES = 60 * 24  # 24 Stunden
@@ -147,3 +147,24 @@ def require_api_permission(module: str, level: str):
         return user
 
     return checker
+
+
+async def require_api_full_access(
+    request: Request,
+    user: User = Depends(get_current_api_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    API counterpart to app.auth.require_admin -- Group-aware full-access
+    check (ADMIN/BOARD role, or membership in a grants_full_access/
+    grants_system_admin group, ADR 0041), NOT the coarser role-only
+    require_admin_api. First use: purchase_requests' approve/reject
+    (ADR 0070/0071 rollout), where HTML's require_admin already let a
+    grants_full_access group member act but the API's role-only
+    require_vorstand_api did not -- the reverse-direction version of
+    TREASURER's blanket-API-write bug (ADR 0071): here the API was
+    *stricter* than HTML, not looser.
+    """
+    if not await is_full_access_user(db, user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=t_for(request, "errors.no_permission"))
+    return user

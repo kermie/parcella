@@ -168,7 +168,19 @@ is follow-up work, module by module:
       German-only `format_monotonicity_error_de()` (now removed)
       instead of the shared i18n catalog HTML used -- always German
       regardless of the club's configured language.
-- [ ] purchase_requests
+- [x] purchase_requests (2026-08-08) -- highest-risk module (this
+      repo's own documented highest-regression-risk area, per
+      docs/testing.md): the four-eyes rule itself (self-approval block,
+      2-distinct-approvals threshold) is now shared, but deliberately
+      narrow -- the "already handled" short-circuits stay per-router
+      since they weren't identified as a bug. Needed a new dependency,
+      `require_api_full_access` (app/api_auth.py), since approval
+      authority is Group-aware but narrower than ordinary write access
+      -- `require_api_permission` would have been the wrong tool. Found
+      the reverse-direction version of ADR 0071's TREASURER bug (API
+      was *stricter* than HTML here, via role-only `require_vorstand_api`)
+      and a broken confirmation email (no actual link for external
+      requesters, told them to "log in" with no account to log into).
 - [x] inventory (2026-08-08) -- category uniqueness, owner-type
       validation, and loan-quantity rules were each independently
       reimplemented; extracted with no audit trail/notification

@@ -58,8 +58,33 @@ model from the start instead of retrofitted later.
 ## REST API
 
 Complete from the start (`/api/v1/purchase-requests`), following the same
-pattern as the other modules. Notably, `approve` and `reject` use
-`require_api_role(UserRole.ADMIN, UserRole.BOARD)` instead of the
-generic `require_write_access` (which also covers the treasurer role) --
-approval authority here is deliberately narrower than the usual write
-access.
+pattern as the other modules. `approve` and `reject` use
+`require_api_full_access` (`app/api_auth.py`) instead of the per-module
+`require_api_permission` other write endpoints in this module use --
+approval authority here is deliberately narrower than ordinary module
+write access, mirroring the HTML side's `require_admin`.
+
+**Implementation note (ADR 0070):** request creation, the four-eyes
+approval/rejection rules, and the confirmation email now live in
+`app/services/purchase_requests.py`, called by both
+`app/routers/purchase_requests.py` and
+`app/routers/api_purchase_requests.py`. Two real divergences were found
+and fixed:
+- The API's `require_vorstand_api` (role-only ADMIN/BOARD) was
+  *stricter* than HTML's `require_admin` (Group-aware: ADMIN/BOARD role,
+  or a `grants_full_access`/`grants_system_admin` group) -- the
+  reverse-direction version of ADR 0071's TREASURER bug. Replaced with
+  `require_api_full_access`, the Group-aware API counterpart.
+- The API's confirmation email for an external (no-login) requester
+  never actually included the confirmation link/button -- it told the
+  requester to "log in", which they have no account to do. Both
+  surfaces now share the same email content, including the real link.
+
+What's deliberately NOT shared: the "already handled" short-circuits
+(status no longer OPEN, this user already approved) -- HTML redirects
+silently for both, the API 409s for both, and that difference predates
+this change and wasn't identified as a bug, so it wasn't unified. Only
+the two rules that must hold regardless of caller (self-approval block,
+the 2-distinct-approvals threshold) are shared. The unauthenticated
+deep-link confirmation flow (`/purchase-requests/confirm/{token}`) has
+no API equivalent and stays entirely HTML-side.

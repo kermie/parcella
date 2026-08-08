@@ -100,6 +100,76 @@ async def test_rejection_by_one_person_is_enough(client, admin_user, board_user)
     assert r.json()["rejection_reason"] == "Nicht notwendig"
 
 
+async def test_group_granted_full_access_can_approve_via_api(client, admin_user, board_user):
+    """ADR 0070/0071: approve/reject used to require require_vorstand_api
+    (role-only ADMIN/BOARD) -- a non-admin/board user granted full
+    access via a Group (the exact mechanism ADR 0041 introduced so
+    installations don't have to use the legacy roles) could already
+    approve through the HTML UI (require_admin is Group-aware) but was
+    blocked via the API. The reverse-direction version of ADR 0071's
+    TREASURER bug: here the API was stricter than HTML, not looser."""
+    from app.database import AsyncSessionLocal
+    from app.models import User, UserRole, Group, GroupMembership
+    from app.auth import hash_password
+
+    async with AsyncSessionLocal() as db:
+        user = User(
+            email="full-access-via-group@example.com", name="Full Access Via Group",
+            password_hash=hash_password("testpasswort123"), role=UserRole.READONLY,
+        )
+        db.add(user)
+        await db.flush()
+
+        group = Group(name="Honorary Board", grants_full_access=True)
+        db.add(group)
+        await db.flush()
+        db.add(GroupMembership(user_id=user.id, group_id=group.id))
+        await db.commit()
+
+    token_admin = await login(client, "admin@example.com")
+    pr = (await client.post(
+        "/api/v1/purchase-requests",
+        json={"title": "Test", "justification": "Test"},
+        headers=auth_header(token_admin),
+    )).json()
+
+    token_group = await login(client, "full-access-via-group@example.com")
+    response = await client.post(
+        f"/api/v1/purchase-requests/{pr['id']}/approve", headers=auth_header(token_group)
+    )
+    assert response.status_code == 200, response.text
+
+
+async def test_confirmation_email_includes_the_actual_confirmation_link(client, admin_user, monkeypatch):
+    """ADR 0070: the API's confirmation email for an external (no-login)
+    requester used to just say "please log in" -- with no actual link,
+    even though a confirmation_token and the unauthenticated /confirm/
+    {token} page already existed. Now shares the same email content
+    (including the link) the HTML side already built correctly."""
+    captured = {}
+
+    async def fake_send_email(recipient, subject, html_body, text_body=None, db=None):
+        captured["recipient"] = recipient
+        captured["html"] = html_body
+        return True
+
+    monkeypatch.setattr("app.services.purchase_requests.send_email", fake_send_email)
+
+    token = await login(client, "admin@example.com")
+    pr = (await client.post(
+        "/api/v1/purchase-requests",
+        json={
+            "title": "Neuer Rasenmäher", "justification": "Test",
+            "requester_name": "Extern Person", "requester_email": "extern@example.com",
+        },
+        headers=auth_header(token),
+    )).json()
+
+    assert captured["recipient"] == "extern@example.com"
+    assert "/purchase-requests/confirm/" in captured["html"]
+    assert pr["id"]  # sanity: the request itself was created
+
+
 async def test_regular_members_cannot_approve(client, admin_user):
     """Only board/admin may approve -- regular members may not."""
     from app.models import User, UserRole

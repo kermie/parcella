@@ -19,12 +19,15 @@ from app.database import get_db
 from app.models import (
     PurchaseRequest, PurchaseRequestApproval, PurchaseRequestStatus, User,
 )
-from app.auth import require_admin, serializer
+from app.auth import require_admin
 from app.permissions import require_permission
-from app.i18n import t_for
+from app.i18n import t_for, DEFAULT_LANGUAGE
 from app.module_flags import require_module
-from app.email_service import send_email
-from app.config import settings
+from app.services.errors import ServiceError
+from app.services.purchase_requests import (
+    REQUIRED_APPROVALS, create_purchase_request, send_confirmation_email,
+    approve_purchase_request, reject_purchase_request,
+)
 
 router = APIRouter(
     prefix="/purchase-requests",
@@ -32,8 +35,6 @@ router = APIRouter(
     dependencies=[Depends(require_module("purchase_requests"))],
 )
 from app.templating import templates
-
-_REQUIRED_APPROVALS = 2
 
 # How long a requester has to confirm via the emailed deep link before it
 # stops working. The token itself never expires cryptographically (it's
@@ -95,7 +96,7 @@ async def purchase_requests_overview(
     return templates.TemplateResponse("purchase_requests/overview.html", {
         "request": request, "user": user,
         "purchase_requests": purchase_requests, "filter": filter,
-        "required_approvals": _REQUIRED_APPROVALS,
+        "required_approvals": REQUIRED_APPROVALS,
     })
 
 
@@ -132,41 +133,21 @@ async def purchase_request_create(
         except ValueError:
             pass
 
-    purchase_request = PurchaseRequest(
-        title=title.strip(),
-        justification=justification.strip(),
-        link=link.strip() or None,
-        estimated_cost_eur=estimated_cost,
+    purchase_request = await create_purchase_request(
+        db,
+        title=title, justification=justification, link=link, estimated_cost_eur=estimated_cost,
         created_by_id=user.id,
+        requester_name=(requester_name if for_other_person else None),
+        requester_email=(requester_email if for_other_person and requester_email.strip() else None),
     )
-
-    if for_other_person and requester_email.strip():
-        purchase_request.requester_name = requester_name.strip() or None
-        purchase_request.requester_email = requester_email.strip().lower()
-        purchase_request.confirmation_token = serializer.dumps(
-            requester_email.strip().lower(), salt="purchase_request"
-        )
-    else:
-        purchase_request.requested_by_id = user.id
-
-    db.add(purchase_request)
-    await db.flush()
 
     if purchase_request.confirmation_token:
         base_url = str(request.base_url).rstrip("/")
         confirmation_link = f"{base_url}/purchase-requests/confirm/{purchase_request.confirmation_token}"
-        subject = t_for(request, "email.purchase_request_confirm.subject", title=purchase_request.title)
-        html = f"""
-        <html><body style="font-family: sans-serif;">
-        <p>{t_for(request, "email.purchase_request_confirm.greeting", name=purchase_request.requester_name or '')}</p>
-        <p>{t_for(request, "email.purchase_request_confirm.body", admin_name=user.name, app_name=settings.app_name)}</p>
-        <p><strong>{purchase_request.title}</strong><br>{purchase_request.justification}</p>
-        <p>{t_for(request, "email.purchase_request_confirm.instruction")}</p>
-        <p><a href="{confirmation_link}" style="background: #2d6a4f; color: white; padding: 10px 20px;
-           text-decoration: none; border-radius: 4px;">{t_for(request, "email.purchase_request_confirm.button")}</a></p>
-        </body></html>
-        """
-        await send_email(purchase_request.requester_email, subject, html, db=db)
+        lang = getattr(request.state, "language", DEFAULT_LANGUAGE)
+        await send_confirmation_email(
+            purchase_request, admin_name=user.name, confirmation_link=confirmation_link, lang=lang, db=db,
+        )
 
     await db.commit()
     return RedirectResponse(f"/purchase-requests/{purchase_request.id}", status_code=302)
@@ -189,7 +170,7 @@ async def purchase_request_detail(request_id: str, request: Request, db: AsyncSe
 
     return templates.TemplateResponse("purchase_requests/detail.html", {
         "request": request, "user": user, "pr": pr,
-        "required_approvals": _REQUIRED_APPROVALS,
+        "required_approvals": REQUIRED_APPROVALS,
         "is_board_member": is_board_member,
         "has_already_approved": has_already_approved,
         "is_requester": is_requester,
@@ -211,22 +192,13 @@ async def purchase_request_approve(request_id: str, request: Request, db: AsyncS
     if pr.status != PurchaseRequestStatus.OPEN:
         return RedirectResponse(f"/purchase-requests/{request_id}", status_code=302)
 
-    if user.id in (pr.requested_by_id, pr.created_by_id):
-        raise HTTPException(
-            status_code=403,
-            detail=t_for(request, "errors.requester_cannot_self_approve")
-        )
-
     if any(a.user_id == user.id for a in pr.approvals):
         return RedirectResponse(f"/purchase-requests/{request_id}", status_code=302)
 
-    db.add(PurchaseRequestApproval(purchase_request_id=request_id, user_id=user.id))
-    await db.flush()
-
-    new_count = len(pr.approvals) + 1  # +1 since not yet reloaded
-    if new_count >= _REQUIRED_APPROVALS:
-        pr.status = PurchaseRequestStatus.APPROVED
-        pr.approved_at = datetime.now(timezone.utc)
+    try:
+        await approve_purchase_request(db, pr, acting_user_id=user.id)
+    except ServiceError as e:
+        raise HTTPException(status_code=e.http_status, detail=t_for(request, e.key, **e.params))
 
     await db.commit()
     return RedirectResponse(f"/purchase-requests/{request_id}", status_code=302)
@@ -247,11 +219,7 @@ async def purchase_request_reject(
     if pr.status != PurchaseRequestStatus.OPEN:
         return RedirectResponse(f"/purchase-requests/{request_id}", status_code=302)
 
-    pr.status = PurchaseRequestStatus.REJECTED
-    pr.rejection_reason = rejection_reason.strip()
-    pr.rejected_by_id = user.id
-    pr.rejected_at = datetime.now(timezone.utc)
-
+    await reject_purchase_request(db, pr, acting_user_id=user.id, reason=rejection_reason)
     await db.commit()
     return RedirectResponse(f"/purchase-requests/{request_id}", status_code=302)
 
